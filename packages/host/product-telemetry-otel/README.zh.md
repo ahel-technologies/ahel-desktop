@@ -31,7 +31,7 @@ kind: "package-reference"
 - name: '@ahel/dsh-otel'
 - name: '@ahel/dsh-host-product-telemetry-otel'
   config:
-    endpoint: https://dsh-otel-collector.deepseeksvc.com/v1/logs
+    endpoint: https://otel-collector.example.com/v1/logs
     serviceName: deepseek-harness
     serviceVersion: !!js process.env.DSH_APP_VERSION
     compression: gzip
@@ -40,7 +40,7 @@ kind: "package-reference"
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `endpoint` | `https://dsh-otel-collector.deepseeksvc.com/v1/logs` | 完整 HTTP(S) 日志地址 |
+| `endpoint` | 无默认值；须显式设置 endpoint | 完整 HTTP(S) 日志地址 |
 | `serviceName`, `serviceVersion` | 必填 | OTel resource 中的应用标识 |
 | `channel` | `dsh_otel_report` | 接收服务的 `x-channel` 请求头 |
 | `compression` | SDK 环境变量 | `gzip` 或 `none`；省略时遵循 OTel 压缩环境变量 |

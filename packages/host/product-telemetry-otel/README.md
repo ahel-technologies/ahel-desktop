@@ -31,7 +31,7 @@ Mount the plugin in a Cordis composition with the application identity; override
 - name: '@ahel/dsh-otel'
 - name: '@ahel/dsh-host-product-telemetry-otel'
   config:
-    endpoint: https://dsh-otel-collector.deepseeksvc.com/v1/logs
+    endpoint: https://otel-collector.example.com/v1/logs
     serviceName: deepseek-harness
     serviceVersion: !!js process.env.DSH_APP_VERSION
     compression: gzip
@@ -40,7 +40,7 @@ Mount the plugin in a Cordis composition with the application identity; override
 
 | Field | Default | Meaning |
 |---|---|---|
-| `endpoint` | `https://dsh-otel-collector.deepseeksvc.com/v1/logs` | Full HTTP(S) logs URL |
+| `endpoint` | No default; set an endpoint explicitly | Full HTTP(S) logs URL |
 | `serviceName`, `serviceVersion` | required | Application identity on the OTel resource |
 | `channel` | `dsh_otel_report` | Collector `x-channel` header |
 | `compression` | SDK environment | `gzip` or `none`; omission honors OTel compression environment variables |
