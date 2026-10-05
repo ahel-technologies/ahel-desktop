@@ -242,6 +242,7 @@
       "@ahel/dsh-client-ui-sidebar": ["./packages/client/ui-sidebar/src"],
       "@ahel/dsh-client-ui-brand-ahel": ["./packages/client/ui-brand-ahel/src"],
       "@ahel/dsh-client-ui-ahel-account": ["./packages/client/ui-ahel-account/src"],
+      "@ahel/dsh-client-ui-local-cli": ["./packages/client/ui-local-cli/src"],
       "@ahel/dsh-client-ui-approval": ["./packages/client/ui-approval/src"],
       "@ahel/dsh-client-ui-approval/client": ["./packages/client/ui-approval/src/client/index.ts"],
       "@ahel/dsh-client-ui-chat": ["./packages/client/ui-chat/src"],

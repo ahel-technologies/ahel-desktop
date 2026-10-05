@@ -51,7 +51,8 @@
   },
   "dependencies": {
     "@ahel/dsh-home-paths": "workspace:*",
-    "@ahel/schemastery": "workspace:~"
+    "@ahel/schemastery": "workspace:~",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@ahel/cordis": "workspace:~",

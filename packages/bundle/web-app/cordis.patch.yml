@@ -300,12 +300,21 @@
 
     # Claude Code, Codex and Gemini CLIs the person installed and signed into
     # themselves; detection and enable state only, the person's own vendor plan pays.
+    # Local child processes for the llm-local-cli probes and CLI turns; the
+    # web and desktop profiles do not list dsh-agent-tools, which also provides it.
+    - id: subprocess
+      name: '@ahel/dsh-subprocess-local'
+
     - id: llm-local-cli
       name: '@ahel/dsh-llm-local-cli'
 
     # Sidebar account menu and the Ahel row in Settings > Models.
     - id: ui-ahel-account
       name: '@ahel/dsh-client-ui-ahel-account'
+
+    # Detected-on-this-computer rows in Settings > Models, after the Ahel row.
+    - id: ui-local-cli
+      name: '@ahel/dsh-client-ui-local-cli'
 
     - id: ui-workspace
       name: '@ahel/dsh-client-ui-workspace'

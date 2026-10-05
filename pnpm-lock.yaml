@@ -2381,6 +2381,9 @@ importers:
       '@ahel/dsh-client-ui-layout':
         specifier: workspace:*
         version: link:../../client/ui-layout
+      '@ahel/dsh-client-ui-local-cli':
+        specifier: workspace:*
+        version: link:../../client/ui-local-cli
       '@ahel/dsh-client-ui-mcp-app':
         specifier: workspace:*
         version: link:../../client/ui-mcp-app
@@ -2522,6 +2525,9 @@ importers:
       '@ahel/dsh-subprocess':
         specifier: workspace:*
         version: link:../../subprocess/subprocess
+      '@ahel/dsh-subprocess-local':
+        specifier: workspace:*
+        version: link:../../subprocess/subprocess-local
       '@ahel/dsh-time-context':
         specifier: workspace:*
         version: link:../../context/time-context
@@ -3804,6 +3810,48 @@ importers:
       react:
         specifier: ^18.2.0
         version: 18.3.1
+
+  packages/client/ui-local-cli:
+    devDependencies:
+      '@ahel/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@ahel/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@ahel/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@ahel/dsh-client-ui-layout':
+        specifier: workspace:*
+        version: link:../ui-layout
+      '@ahel/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@ahel/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@ahel/dsh-client-ui-settings-models':
+        specifier: workspace:*
+        version: link:../ui-settings-models
+      '@ahel/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@ahel/dsh-llm-local-cli':
+        specifier: workspace:*
+        version: link:../../llm/llm-local-cli
+      '@ahel/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
 
   packages/client/ui-mcp-app:
     dependencies:
@@ -9369,6 +9417,9 @@ importers:
       '@ahel/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@ahel/cordis':
         specifier: workspace:~

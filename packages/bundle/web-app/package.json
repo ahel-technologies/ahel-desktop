@@ -114,6 +114,7 @@
     "@ahel/dsh-session-stats": "workspace:*",
     "@ahel/dsh-session-turn-outline": "workspace:*",
     "@ahel/dsh-subprocess": "workspace:*",
+    "@ahel/dsh-subprocess-local": "workspace:*",
     "@ahel/dsh-time-context": "workspace:*",
     "@ahel/dsh-tool-ask-user": "workspace:*",
     "@ahel/dsh-web-frontend": "workspace:*",
@@ -125,6 +126,7 @@
     "@ahel/dsh-llm-ahel": "workspace:*",
     "@ahel/dsh-llm-local-cli": "workspace:*",
     "@ahel/dsh-client-ui-ahel-account": "workspace:*",
+    "@ahel/dsh-client-ui-local-cli": "workspace:*",
     "@ahel/dsh-mcp-client": "workspace:*"
   },
   "peerDependencies": {
