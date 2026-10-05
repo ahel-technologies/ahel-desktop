@@ -48,6 +48,8 @@ const MANAGER_ROLES: ReadonlySet<string> = new Set(['OWNER', 'ADMIN'])
 function selectedRole(view: AhelAccountView | null, state: TeamSummaryState): string | undefined {
   if (view?.status !== 'signed-in') return undefined
   const id = view.workspace ?? state.summary?.workspace.id
+  // An outdated ahel.ai sends no summary to name its default workspace; any managed workspace shows the row and its update notice.
+  if (id === undefined && state.outdated) return view.profile?.workspaces.find(item => MANAGER_ROLES.has(item.role))?.role
   if (id === undefined) return undefined
   return view.profile?.workspaces.find(item => item.id === id)?.role
     ?? (state.summary?.workspace.id === id ? state.summary.workspace.role : undefined)

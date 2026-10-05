@@ -4,8 +4,7 @@
  * ah-tile, ah-h1, ah-lead in src/components/ui/foundations.css), the
  * Discover page (dsc-* in src/components/catalog/discover/discover.css),
  * the row (dr-* in discover-row.css), the concept header (pcat-* in
- * discovery-surface.css) and the Knowledge cards (store.css,
- * knowledge-packs.css). Values are ported as they are; only the class
+ * discovery-surface.css). Values are ported as they are; only the class
  * names are this module's. DM Sans, Outfit and DM Mono come from
  * @ahel/dsh-client-ui-theme/ahel-font.css, which the Web entry loads.
  */
@@ -586,61 +585,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .skeletonFill { animation: none; }
-}
-
-/* ── Knowledge products (KnowledgeDirectory: store-card, knowledge-*) ─── */
-
-.knowledge { margin: 4px 0 32px; color: var(--ahel-ink); }
-.knowledgeHeading { display: flex; justify-content: space-between; gap: 2rem; align-items: flex-end; margin-bottom: 1.4rem; }
-.knowledgeHeading h2 { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.15; color: var(--ahel-ink); text-wrap: balance; }
-.knowledgeHeading p:not(.knowledgeEyebrow) { max-width: 27rem; margin: 0; font-size: 14px; line-height: 1.6; color: var(--ahel-body); }
-.knowledgeEyebrow { display: block; margin: 0 0 6px; font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; line-height: 1.4; text-transform: uppercase; color: var(--ahel-muted); }
-.products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-
-.card {
-  display: grid;
-  gap: 8px;
-  align-content: start;
-  min-width: 0;
-  padding: 20px;
-  background: var(--ahel-card);
-  border: 1px solid var(--ahel-line);
-  border-radius: var(--ahel-radius-card);
-  box-shadow: var(--ahel-shadow-rest);
-}
-
-.card > * { min-width: 0; }
-.cardTile { display: inline-grid; place-items: center; width: 48px; height: 48px; background: var(--ahel-tile-ground); color: var(--ahel-tile-ink); border-radius: var(--ahel-radius-tile); box-shadow: var(--ahel-shadow-tile); }
-.cardName { margin: 4px 0 0; font-size: 18px; font-weight: 600; color: var(--ahel-ink); }
-.promise { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ahel-body); }
-.strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0; padding: 0; list-style: none; }
-.chip { padding: 2px 8px; border: 1px solid transparent; border-radius: var(--ahel-radius-chip); background: var(--ahel-teal-soft); color: var(--ahel-teal-ink); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.fact { font-size: 13px; color: var(--ahel-muted); }
-.stripEnd { margin-left: auto; }
-.includes { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ahel-muted); }
-.includes span { display: block; margin-bottom: 2px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ahel-muted); }
-
-.askQuote {
-  margin: 0;
-  padding: 10px 12px;
-  border-left: 2px solid var(--ahel-line-tile);
-  border-radius: 0 var(--ahel-radius-row) var(--ahel-radius-row) 0;
-  background: var(--ahel-soft);
-  color: var(--ahel-body);
-  font-size: 14px;
-  font-style: italic;
-  line-height: 1.5;
-}
-
-.askQuote::before { content: 'Ask your AI'; display: block; margin-bottom: 4px; font-size: 12px; font-style: normal; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ahel-muted); }
-.sources { min-width: 0; padding-top: 12px; border-top: 1px solid var(--ahel-line-row); }
-.sourcesHeading { margin: 0 0 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; line-height: 1.4; text-transform: uppercase; color: var(--ahel-muted); }
-.sources .list { box-shadow: none; }
-
-@media (max-width: 860px) {
-  .products { grid-template-columns: 1fr; }
-  .knowledgeHeading { display: block; }
-  .knowledgeHeading > p:not(.knowledgeEyebrow) { margin-top: 0.8rem; }
 }
 
 @media (max-width: 760px) {

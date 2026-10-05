@@ -100,7 +100,7 @@ export function AccountMenu({
             {credits?.visible === true && (
               <div className={css.balance}>
                 <div className={css.balanceText}>
-                  {t('balanceRow', { balance: formatCents(credits.balanceCents) })} · {t('today', { spent: formatCents(credits.spentTodayCents) })}
+                  {t('balanceRow', { balance: formatCents(credits.balanceCents) })} · {t('today', { spent: formatCents(credits.workspaceSpentTodayCents) })}
                 </div>
                 {credits.low && <div className={css.low}>{t('balanceLow')}</div>}
                 {credits.canTopUp

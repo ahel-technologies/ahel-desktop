@@ -1,25 +1,23 @@
 /**
  * The Discover panel in ahel.ai's own layout: the section strip (Discover,
- * then Apps, MCP servers, Skills, Knowledge and Packs, as ahel.ai's
+ * then Apps, MCP servers, Skills and Packs, as ahel.ai's
  * ConceptCrumbs), the Discover hero or a section's header, then the rail,
  * the kind and sort controls, the status line and the rows of ahel.ai's
- * public listing. The Knowledge section adds the four products when
- * ahel.ai serves them.
+ * public listing.
  */
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { IconSearchOutlineRegular } from '@ahel/dsh-client-ui-primitives'
 import type {
-  CatalogBrowsePage, CatalogBrowseQuery, CatalogConcept, CatalogGroup, CatalogSort, KnowledgeProduct,
+  CatalogBrowsePage, CatalogBrowseQuery, CatalogConcept, CatalogGroup, CatalogSort,
 } from '@ahel/dsh-ahel-account/types'
 import type { DiscoverPageProps } from './contract.ts'
 import { AppRow } from './AppRow.tsx'
 import { DetailDrawer } from './DetailDrawer.tsx'
-import { KnowledgeProducts } from './KnowledgeProducts.tsx'
 import css from './Catalog.module.css'
 
 /** ahel.ai's sections in its strip order (`CONCEPTS` in src/lib/catalog/concepts.ts). */
-const CONCEPTS: readonly CatalogConcept[] = ['apps', 'mcp-servers', 'skills', 'knowledge', 'packs']
+const CONCEPTS: readonly CatalogConcept[] = ['apps', 'mcp-servers', 'skills', 'packs']
 
 /** ahel.ai's 15 Discover categories, in its rail order. */
 const CATEGORIES = [
@@ -84,7 +82,7 @@ function SearchIcon() {
  * @returns the page; a result opens in the detail sheet.
  */
 export function DiscoverPage(props: DiscoverPageProps) {
-  const { browse, knowledgeProducts, openLink, useAccount, useInstalled, t } = props
+  const { browse, openLink, useAccount, useInstalled, t } = props
   const signedIn = useAccount(view => view?.status === 'signed-in')
   const installed = useInstalled(value => value)
   const [concept, setConcept] = useState<CatalogConcept | null>(null)
@@ -100,7 +98,6 @@ export function DiscoverPage(props: DiscoverPageProps) {
   const [more, setMore] = useState<'idle' | 'loading' | 'error'>('idle')
   const [attempt, setAttempt] = useState(0)
   const [selected, setSelected] = useState<CatalogGroup | null>(null)
-  const [products, setProducts] = useState<readonly KnowledgeProduct[] | null>(null)
   // Each request takes a ticket; only the newest one may publish.
   const ticket = useRef(0)
 
@@ -127,12 +124,6 @@ export function DiscoverPage(props: DiscoverPageProps) {
       if (mine === ticket.current) setStatus('error')
     })
   }, [browse, q, kind, category, concept, official, free, sort, effectiveSort, attempt])
-
-  useEffect(() => {
-    if (concept !== 'knowledge' || products !== null) return
-    // A missing products route (null) or a failed read leaves the section on its rows.
-    knowledgeProducts().then(setProducts, () => undefined)
-  }, [concept, knowledgeProducts, products])
 
   const go = (next: CatalogConcept | null): void => {
     setConcept(next)
@@ -170,7 +161,6 @@ export function DiscoverPage(props: DiscoverPageProps) {
   const total = status === 'ready' ? page?.total ?? 0 : 0
   const remaining = Math.max(0, total - shown)
   const hasDataset = groups.some(group => group.row.facts.some(part => part.key === 'price' && part.source === 'ahel'))
-  const productsShown = concept === 'knowledge' && !searching && products !== null && products.length > 0
   const sorts: CatalogSort[] = searching ? ['best', 'added', 'newest'] : ['added', 'name', 'newest']
   // A section with no rows under no filter is empty on ahel.ai too (Packs today): its header and one sentence.
   const emptyConcept = concept !== null && status === 'ready' && total === 0 && !searching && category === null && !official && !free
@@ -319,68 +309,58 @@ export function DiscoverPage(props: DiscoverPageProps) {
                 </div>
               </div>
 
-              {productsShown && (
-                <KnowledgeProducts products={products} installed={installed} signedIn={signedIn}
-                  onOpen={(row) => { setSelected({ key: row.id, row, skills: null, copies: 0 }) }}
-                  install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t} />
+              <p className={css.status} role="status" aria-live="polite">{statusLine}</p>
+              {status === 'loading' && (
+                <ul className={css.list} aria-hidden="true">
+                  {Array.from({ length: SKELETON_ROWS }, (_, index) => (
+                    <li key={index} className={css.row}>
+                      <div className={css.vrow}>
+                        <span className={`${css.tile} ${css.skeletonFill}`} />
+                        <span>
+                          <span className={`${css.skeletonBar} ${css.skeletonName} ${css.skeletonFill}`} />
+                          <span className={`${css.skeletonBar} ${css.skeletonLine} ${css.skeletonFill}`} />
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               )}
-
-              {!productsShown && (
-                <>
-                  <p className={css.status} role="status" aria-live="polite">{statusLine}</p>
-                  {status === 'loading' && (
-                    <ul className={css.list} aria-hidden="true">
-                      {Array.from({ length: SKELETON_ROWS }, (_, index) => (
-                        <li key={index} className={css.row}>
-                          <div className={css.vrow}>
-                            <span className={`${css.tile} ${css.skeletonFill}`} />
-                            <span>
-                              <span className={`${css.skeletonBar} ${css.skeletonName} ${css.skeletonFill}`} />
-                              <span className={`${css.skeletonBar} ${css.skeletonLine} ${css.skeletonFill}`} />
-                            </span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {status === 'error' && (
-                    <div className={css.empty} role="alert">
-                      <button type="button" className={`${css.btn} ${css.btnSecondary}`} onClick={() => { setAttempt(value => value + 1) }}>{t('retry')}</button>
-                    </div>
-                  )}
-                  {groups.length > 0 && (
-                    <ul className={css.list}>
-                      {groups.map(group => (
-                        <AppRow key={group.key} row={group.row} installed={installed} signedIn={signedIn} showDescription={searching}
-                          onOpen={() => { setSelected(group) }}
-                          install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t}>
-                          {group.skills !== null && group.skills.rows.length > 0 && (
-                            <>
-                              <p className={css.nestLabel}>{t('nestLabel', { vendor: group.skills.vendorName, count: group.skills.count.toLocaleString('en-US') })}</p>
-                              <ul className={css.subRows}>
-                                {group.skills.rows.map(skill => (
-                                  <AppRow key={skill.id} row={skill} nested installed={installed} signedIn={signedIn}
-                                    onOpen={(item) => { setSelected({ key: item.id, row: item, skills: null, copies: 0 }) }}
-                                    install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t} />
-                                ))}
-                              </ul>
-                            </>
-                          )}
-                        </AppRow>
-                      ))}
-                    </ul>
-                  )}
-                  {searching && groups.length > 0 && <p className={css.note}>{t(hasDataset ? 'datasetNote' : 'officialNote')}</p>}
-                  {more === 'error' && <p className={`${css.note} ${css.error}`} role="alert">{t('browseFailed')}</p>}
-                  {status === 'ready' && remaining > 0 && (
-                    <div className={css.more}>
-                      <span>{t('shownOf', { shown: shown.toLocaleString('en-US'), total: total.toLocaleString('en-US') })}</span>
-                      <button type="button" className={`${css.btn} ${css.btnSecondary}`} disabled={more === 'loading'} onClick={showMore}>
-                        {t('showMoreCount', { count: Math.min(remaining, page?.pageSize ?? 24) })}
-                      </button>
-                    </div>
-                  )}
-                </>
+              {status === 'error' && (
+                <div className={css.empty} role="alert">
+                  <button type="button" className={`${css.btn} ${css.btnSecondary}`} onClick={() => { setAttempt(value => value + 1) }}>{t('retry')}</button>
+                </div>
+              )}
+              {groups.length > 0 && (
+                <ul className={css.list}>
+                  {groups.map(group => (
+                    <AppRow key={group.key} row={group.row} installed={installed} signedIn={signedIn} showDescription={searching}
+                      onOpen={() => { setSelected(group) }}
+                      install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t}>
+                      {group.skills !== null && group.skills.rows.length > 0 && (
+                        <>
+                          <p className={css.nestLabel}>{t('nestLabel', { vendor: group.skills.vendorName, count: group.skills.count.toLocaleString('en-US') })}</p>
+                          <ul className={css.subRows}>
+                            {group.skills.rows.map(skill => (
+                              <AppRow key={skill.id} row={skill} nested installed={installed} signedIn={signedIn}
+                                onOpen={(item) => { setSelected({ key: item.id, row: item, skills: null, copies: 0 }) }}
+                                install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t} />
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </AppRow>
+                  ))}
+                </ul>
+              )}
+              {searching && groups.length > 0 && <p className={css.note}>{t(hasDataset ? 'datasetNote' : 'officialNote')}</p>}
+              {more === 'error' && <p className={`${css.note} ${css.error}`} role="alert">{t('browseFailed')}</p>}
+              {status === 'ready' && remaining > 0 && (
+                <div className={css.more}>
+                  <span>{t('shownOf', { shown: shown.toLocaleString('en-US'), total: total.toLocaleString('en-US') })}</span>
+                  <button type="button" className={`${css.btn} ${css.btnSecondary}`} disabled={more === 'loading'} onClick={showMore}>
+                    {t('showMoreCount', { count: Math.min(remaining, page?.pageSize ?? 24) })}
+                  </button>
+                </div>
               )}
               <div className={css.ask}>
                 <span>
