@@ -36,6 +36,14 @@ const PEER_SECTIONS = ['peerDependencies'] as const
 /** The workspace root manifest, which is never a release member. */
 const WORKSPACE_ROOT_PACKAGE = '@deepseek-ai/dsh-root'
 
+/**
+ * The installations Ahel Desktop ships: the `dsh` CLI the desktop runtime runs
+ * and its private Host. The dsh family releases only their runtime closure, so
+ * unmounted packages (agent tools, unshipped profiles, experiments) stay in the
+ * workspace without being packed into the desktop runtime or published.
+ */
+export const SHIPPED_ROOT_PACKAGES = ['@deepseek-ai/dsh', '@deepseek-ai/dsh-desktop-host'] as const
+
 /** One peer declaration the publish order leaves unordered. */
 interface DroppedPeerEdge {
   readonly consumer: string
@@ -143,6 +151,16 @@ export abstract class ReleaseFamily {
       })
     }
     return members
+  }
+
+  /**
+   * The members `release:pack` packs. Families that ship everything they can
+   * publish return {@link members}.
+   * @param root - repository root.
+   * @returns Publishable members to pack, sorted by directory.
+   */
+  shippedMembers(root: string): ReleaseMember[] {
+    return this.members(root)
   }
 
   /**
@@ -326,6 +344,37 @@ class DshFamily extends ReleaseFamily {
     'apps/*/package.json',
   ] as const
   readonly tagPrefix = 'dsh-v'
+
+  /**
+   * The members `release:pack` packs: the runtime closure of {@link SHIPPED_ROOT_PACKAGES},
+   * walked through install and peer sections of every workspace manifest, private ones included.
+   * @param root - repository root.
+   * @returns Publishable members the shipped installations reach, sorted by directory.
+   */
+  override shippedMembers(root: string): ReleaseMember[] {
+    const all = this.members(root)
+    const manifests = new Map<string, Record<string, unknown>>()
+    for (const path of globSync([...this.patterns], { cwd: root })) {
+      const manifest = readManifest(resolve(root, path))
+      if (typeof manifest.name === 'string') manifests.set(manifest.name, manifest)
+    }
+    const shipped = new Set<string>()
+    const visit = (name: string): void => {
+      const manifest = manifests.get(name)
+      if (manifest === undefined || shipped.has(name)) return
+      shipped.add(name)
+      for (const section of [...INSTALL_SECTIONS, ...PEER_SECTIONS]) {
+        const dependencies = manifest[section]
+        if (dependencies === null || typeof dependencies !== 'object' || Array.isArray(dependencies)) continue
+        for (const dependency of Object.keys(dependencies)) visit(dependency)
+      }
+    }
+    for (const name of SHIPPED_ROOT_PACKAGES) {
+      if (!manifests.has(name)) throw new Error(`release family ${this.id}: shipped root ${name} has no workspace manifest`)
+      visit(name)
+    }
+    return all.filter(member => shipped.has(member.name))
+  }
 
   /** Require current artifacts from a complete official client build. */
   override verifyBuildArtifacts(root: string): void {

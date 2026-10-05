@@ -73,6 +73,28 @@ describe('release families', () => {
     ])
   })
 
+  it('packs only the runtime closure of the shipped installations', () => {
+    const root = mkdtempSync(join(tmpdir(), 'dsh-release-shipped-'))
+    roots.push(root)
+    write(join(root, 'apps/cli/package.json'), JSON.stringify({
+      name: '@deepseek-ai/dsh', version: '0.0.1', dependencies: { '@deepseek-ai/dsh-core': 'workspace:*' },
+      devDependencies: { '@deepseek-ai/dsh-tool': 'workspace:*' },
+    }))
+    write(join(root, 'apps/desktop-host/package.json'), JSON.stringify({
+      name: '@deepseek-ai/dsh-desktop-host', version: '0.0.1', private: true,
+      peerDependencies: { '@deepseek-ai/dsh-host-seam': 'workspace:*' },
+    }))
+    write(join(root, 'packages/core/core/package.json'), '{"name":"@deepseek-ai/dsh-core","version":"0.0.1"}\n')
+    write(join(root, 'packages/core/host-seam/package.json'), '{"name":"@deepseek-ai/dsh-host-seam","version":"0.0.1"}\n')
+    write(join(root, 'packages/tool/tool/package.json'), '{"name":"@deepseek-ai/dsh-tool","version":"0.0.1"}\n')
+
+    const family = releaseFamily('dsh')
+    expect(family.members(root).map(entry => entry.name)).toContain('@deepseek-ai/dsh-tool')
+    expect(family.shippedMembers(root).map(entry => entry.name).sort()).toEqual([
+      '@deepseek-ai/dsh', '@deepseek-ai/dsh-core', '@deepseek-ai/dsh-host-seam',
+    ])
+  })
+
   it('excludes private applications from the publish set', () => {
     const root = mkdtempSync(join(tmpdir(), 'dsh-release-private-'))
     roots.push(root)

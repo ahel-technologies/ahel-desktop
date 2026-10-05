@@ -61,7 +61,7 @@ async function main(): Promise<void> {
   const family = releaseFamily(values.family)
   const root = process.cwd()
   const destination = resolve(root, values.out ?? DEFAULT_OUTPUT)
-  const members = family.publishOrder(family.members(root)).order
+  const members = family.publishOrder(family.shippedMembers(root)).order
   family.verifyBuildArtifacts(root)
   family.verifyVersions(members)
 
