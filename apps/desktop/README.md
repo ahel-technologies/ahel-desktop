@@ -178,7 +178,9 @@ The welcome window follows system appearance with the Ahel light and dark inks a
 
 ### Release versions
 
-Before each Desktop packaging run, first confirm the complete version string with the current user. Check the dsh base version, the published GitHub releases of `ahel-technologies/ahel-desktop`, and local artifacts, then propose the exact version for approval. Do not start packaging until the user confirms that version.
+Before each Desktop packaging run, first confirm the complete version string with the current user. Check the dsh base version, the published GitHub releases of `ahel-technologies/ahel-desktop-releases`, and local artifacts, then propose the exact version for approval. Do not start packaging until the user confirms that version.
+
+A pushed `v*` tag is that confirmation for CI: `.github/workflows/desktop-release.yml` runs `node apps/desktop/scripts/set-release-version.mjs <tag>`, which rewrites the root manifest and every workspace manifest that shares its version, before packaging.
 
 Record the current dsh version as the base. A production Desktop release uses that exact version, including any `alpha`, `beta`, or `rc` identifiers. A test release preserves the complete prerelease base and appends `.YYYYMMDD.index`; a stable base uses `-test.YYYYMMDD.index` instead.
 
@@ -370,7 +372,7 @@ Native update overlays wait for a ready document and a visible parent, and reapp
 
 <a id="upload-updates"></a>
 
-Packaged applications read their update feed from the `app-update.yml` that packaging seals into every application: the GitHub releases of `ahel-technologies/ahel-desktop`, release type `release`. The updater uses the `latest` channel (`latest.yml` on Windows, `latest-mac.yml` on macOS), with prereleases and downgrades disabled. An application without `app-update.yml`, such as a development launch, has no update source. Packaging passes `--publish never` and never publishes; each target's artifact directory holds the installers, blockmaps, and channel metadata that a GitHub release of that repository carries.
+Packaged applications read their update feed from the `app-update.yml` that packaging seals into every application: the GitHub releases of the public repository `ahel-technologies/ahel-desktop-releases`, so no token is needed. The updater uses the default `latest` channel (`latest.yml` on Windows, `latest-mac.yml` on macOS), allows prereleases, and disables downgrades. An application without `app-update.yml`, such as a development launch, has no update source. Packaging passes `--publish never` and never publishes; `.github/workflows/desktop-release.yml` uploads the installers, blockmaps, and channel metadata of each target to a release of that repository (release steps: `docs/phase3/RELEASE.md`).
 
 Packaged applications check the feed asynchronously at startup. Ordinary polling uses a ten-minute base interval with independently sampled ±20% jitter. Each check failure doubles the base delay up to one hour; success resets it. The randomized delay is bounded by that cap and starts after all joined callers settle. Foreground and system-resume checks respect the same monotonic deadline; the localized Check for Updates menu item, including in the Windows caption's Application menu, runs immediately and joins an in-flight check. Automatic checks never open dialogs or download packages. Manual checks display checking, failure, or no-update feedback with the installed version. Ordinary update dialogs fade in and out in place; consecutive prompts replace the card content and reset its scroll position while retaining the dark translucent backdrop without blurring the parent page.
 
@@ -403,11 +405,7 @@ An unpackaged Electron process uses `.desktop-build/development/project` under i
 ## Known limitations
 
 - Sign in with Ahel is not connected; its welcome button is disabled. Windows material rendering still requires platform QA.
-- The update feed is the private `ahel-technologies/ahel-desktop` repository, and packaged applications carry no GitHub token, so update checks cannot read its releases.
+- Released builds are unsigned: macOS shows a Gatekeeper warning and cannot apply updates until the app carries a Developer ID signature; Windows shows SmartScreen and does not verify update signatures.
 - Release signing, notarization, update hosting, and previous-version installed-artifact qualification require the production release environment.
 - Dependency lifecycle scripts follow pnpm’s build permissions; Desktop provides no separate approval dialog.
 - The desktop shell shares sessions, settings, credentials, workspaces, and storage under `$DSH_HOME` with CLI dsh, while executable packages, plugin activation, and lockfiles remain separate.
-
-## Dev Note
-
-Non-authoritative and undecided: how packaged applications read the private release feed, either through a token supplied at build time or through a public release mirror.

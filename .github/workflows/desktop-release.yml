@@ -1,0 +1,121 @@
+# Build unsigned Ahel Desktop installers from a v* tag and publish them as a
+# GitHub release of the public ahel-technologies/ahel-desktop-releases
+# repository, the feed packaged applications read through electron-updater.
+# Code signing and notarization are not wired yet; see docs/phase3/RELEASE.md.
+name: Desktop release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '24'
+  DSH_TELEMETRY_DISABLED: '1'
+  RELEASES_REPOSITORY: ahel-technologies/ahel-desktop-releases
+
+jobs:
+  package:
+    name: package / ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: macos-14
+            target: mac-arm64
+            script: package:desktop:mac:arm64:dev
+            installer: dmg
+          - os: windows-latest
+            target: win-x64
+            script: package:desktop:win:x64:unsigned
+            installer: exe
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Enable Developer Mode (symlink support)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >-
+          reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
+          /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Set the product version from the tag
+        run: node apps/desktop/scripts/set-release-version.mjs "$GITHUB_REF_NAME"
+
+      - name: Build
+        run: pnpm run build
+
+      # electron-builder's beforeBuild hook runs prepare-windows-installer.ps1 (MSVC on the hosted image).
+      - name: Package (unsigned)
+        run: pnpm run ${{ matrix.script }}
+
+      - name: Collect release assets
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          source="apps/desktop/.desktop-build/targets/${{ matrix.target }}/unsigned-artifacts"
+          mkdir -p release-assets
+          cp "$source"/*.${{ matrix.installer }} "$source"/*.blockmap "$source"/latest*.yml release-assets/
+          if [ "${{ matrix.target }}" = mac-arm64 ]; then cp "$source"/*.zip release-assets/; fi
+          # A version-free copy keeps the landing's releases/latest/download/<asset> link stable.
+          cp "$source/ahel-desktop-$version-${{ matrix.target }}-unsigned.${{ matrix.installer }}" \
+            "release-assets/ahel-desktop-${{ matrix.target }}.${{ matrix.installer }}"
+          ls -la release-assets
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.target }}
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: publish
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create the release in ${{ env.RELEASES_REPOSITORY }}
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then echo "RELEASES_TOKEN secret is not set" >&2; exit 1; fi
+          version="${GITHUB_REF_NAME#v}"
+          prerelease=()
+          case "$version" in *-*) prerelease=(--prerelease) ;; esac
+          ls -la release-assets
+          gh release create "$GITHUB_REF_NAME" release-assets/* \
+            --repo "$RELEASES_REPOSITORY" \
+            --title "Ahel Desktop $version" \
+            --notes "Unsigned build of Ahel Desktop $version from ${GITHUB_SHA::12}. macOS: right-click the app and choose Open, or allow it in System Settings > Privacy & Security. Windows: SmartScreen > More info > Run anyway." \
+            "${prerelease[@]}"

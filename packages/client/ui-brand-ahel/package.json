@@ -1,7 +1,7 @@
 {
   "name": "@ahel/dsh-client-ui-brand-ahel",
   "description": "Ahel brand occupants for the Web client's sidebar and conversation hero slots",
-  "version": "0.2.1-alpha.1",
+  "version": "0.1.0",
   "publishConfig": {
     "access": "public"
   },

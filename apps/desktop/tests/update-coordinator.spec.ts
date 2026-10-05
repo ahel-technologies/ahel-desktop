@@ -73,9 +73,10 @@ function fixture(version = '1.1.0-alpha.1') {
 }
 
 describe('desktop update coordinator', () => {
-  it('offers prereleases only to a prerelease build', () => {
+  it('offers prereleases to stable and prerelease builds on the default channel', () => {
     expect(fixture('1.1.0-alpha.1').updater.allowPrerelease).toBe(true)
-    expect(fixture('1.1.0').updater.allowPrerelease).toBe(false)
+    expect(fixture('1.1.0').updater).toMatchObject({ allowPrerelease: true, allowDowngrade: false })
+    expect(fixture('1.1.0').updater.channel ?? null).toBeNull()
   })
 
   it('keeps safe preparation diagnostics separate and clears them on an explicit retry', async () => {
@@ -150,7 +151,7 @@ describe('desktop update coordinator', () => {
       'available', 'downloading', 'downloading', 'verifying', 'ready', 'installing',
     ])
     expect(f.updater).toMatchObject({
-      autoDownload: false, autoInstallOnAppQuit: false, channel: 'latest',
+      autoDownload: false, autoInstallOnAppQuit: false,
       allowPrerelease: true, allowDowngrade: false,
     })
   })

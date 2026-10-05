@@ -1,7 +1,7 @@
 {
   "name": "@ahel/dsh-cordis-host-runner",
   "description": "Dynamic package definition registry, host-half sandbox lifecycle, and invoke handler table for model-mounted dual-half packages",
-  "version": "0.2.1-alpha.1",
+  "version": "0.1.0",
   "publishConfig": {
     "access": "public"
   },

@@ -8,7 +8,7 @@ import {
 describe('desktop auto-update environment', () => {
   it('reads full releases of the Ahel Desktop GitHub repository without a token', () => {
     expect(desktopUpdatePublishConfig()).toEqual([
-      { provider: 'github', owner: 'ahel-technologies', repo: 'ahel-desktop', releaseType: 'release' },
+      { provider: 'github', owner: 'ahel-technologies', repo: 'ahel-desktop-releases', releaseType: 'release' },
     ])
   })
 

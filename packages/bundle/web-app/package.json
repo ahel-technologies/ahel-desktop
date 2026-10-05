@@ -1,7 +1,7 @@
 {
   "name": "@ahel/dsh-web-app",
   "description": "The Ahel Desktop browser-surface bundle: the chat-and-MCP web patch layer over dsh-base plus the runtime glue plugin (frontend dist serving, web-surface prompt, URL line)",
-  "version": "0.2.1-alpha.1",
+  "version": "0.1.0",
   "publishConfig": {
     "access": "public"
   },

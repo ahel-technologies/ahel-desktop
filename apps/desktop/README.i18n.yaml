@@ -42,8 +42,8 @@
   en: 4cd8a8da6977928d
   zh: 9f624855a2edac37
 /ahel-desktop/package/release-versions:
-  en: 47ddcc2de4bf4782
-  zh: ed0fb19220faae7a
+  en: efefb6edb7c2582b
+  zh: 9cb222fa8cf0a1b0
 /ahel-desktop/package/runtime-file-selection:
   en: b7a6daf607b053a3
   zh: 81a75f0937a19d58
@@ -63,8 +63,8 @@
   en: 777494d3b3dfc5ab
   zh: a9800063afeccbbf
 /ahel-desktop/updates:
-  en: e0a027507045cd7e
-  zh: 7bb0f2dc5109cd92
+  en: c30f22a479bdbae9
+  zh: b430afe8bc85f3eb
 /ahel-desktop/updates/local-updater-qualification:
   en: 787c129cbd192f86
   zh: 3d2f789773219ba9
@@ -72,8 +72,5 @@
   en: bf926f512ca79f87
   zh: 0897ef96349df536
 /ahel-desktop/known-limitations:
-  en: 345a5602779d5d7c
-  zh: e1e0d0c424c0d806
-/ahel-desktop/dev-note:
-  en: 50a32c1ef1826181
-  zh: 2d8e5ac975cacc48
+  en: 8f8053d450c893c7
+  zh: 455d4cdc093b26b7

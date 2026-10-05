@@ -231,7 +231,6 @@ export function createElectronBuilderConfig(
     },
     detectUpdateChannel: false,
     // Unsigned builds embed the same feed so a local app exercises the updater; packaging always runs with --publish never.
-    // TODO(phase3): private-repo update token strategy (GH_TOKEN at build time vs public release mirror)
     publish: desktopUpdatePublishConfig(),
   }
 }

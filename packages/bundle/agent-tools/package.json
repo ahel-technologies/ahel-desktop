@@ -1,7 +1,7 @@
 {
   "name": "@ahel/dsh-agent-tools",
   "description": "The local agent tool plane as a profile bundle: shell, filesystem tools, sandboxes, skills, subagents, PTC, workflows, jobs, goals, plan mode, web tools and opt-in telemetry rows, inserted over dsh-base for the headless, sdk and acp profiles",
-  "version": "0.2.1-alpha.1",
+  "version": "0.1.0",
   "private": true,
   "repository": {
     "type": "git",

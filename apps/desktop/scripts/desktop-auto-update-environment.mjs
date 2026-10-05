@@ -2,15 +2,18 @@
 
 import { valid } from 'semver'
 
-/** GitHub repository whose published releases carry the Desktop update metadata and installers. */
-export const DESKTOP_UPDATE_REPOSITORY = Object.freeze({ owner: 'ahel-technologies', repo: 'ahel-desktop' })
+/**
+ * Public GitHub repository whose releases carry the Desktop update metadata and installers.
+ * The application source repository stays private; a public release repository lets electron-updater read the feed without a token.
+ */
+export const DESKTOP_UPDATE_REPOSITORY = Object.freeze({ owner: 'ahel-technologies', repo: 'ahel-desktop-releases' })
 
 const UPDATE_TARGETS = new Set(['mac-arm64', 'mac-x64', 'win-x64'])
 
 /**
  * Create the electron-builder publish setting that every packaged application embeds as `app-update.yml`.
- * Packaging never publishes: `package-target.ts` passes `--publish never`, so this only selects the feed.
- * @returns {[{ provider: 'github', owner: 'ahel-technologies', repo: 'ahel-desktop', releaseType: 'release' }]} One GitHub provider reading full releases.
+ * Packaging never publishes: `package-target.ts` passes `--publish never`, and `.github/workflows/desktop-release.yml` uploads the release.
+ * @returns {[{ provider: 'github', owner: 'ahel-technologies', repo: 'ahel-desktop-releases', releaseType: 'release' }]} One GitHub provider reading full releases.
  */
 export function desktopUpdatePublishConfig() {
   return [{ provider: 'github', ...DESKTOP_UPDATE_REPOSITORY, releaseType: 'release' }]

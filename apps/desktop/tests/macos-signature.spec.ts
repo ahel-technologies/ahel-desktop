@@ -76,7 +76,7 @@ describe('desktop macOS release signature', () => {
         sign: true,
         writeUpdateInfo: false,
       },
-      publish: [{ provider: 'github', owner: 'ahel-technologies', repo: 'ahel-desktop', releaseType: 'release' }],
+      publish: [{ provider: 'github', owner: 'ahel-technologies', repo: 'ahel-desktop-releases', releaseType: 'release' }],
     })
     expect(typeof config.artifactBuildCompleted).toBe('function')
   })
@@ -115,7 +115,7 @@ describe('desktop macOS release signature', () => {
     expect(portablePath(config.nsis.include)).toMatch(/\/scripts\/installer\.nsh$/u)
     expect(config).toMatchObject({
       win: { forceCodeSigning: false, signtoolOptions: { sign: undefined } },
-      publish: [{ provider: 'github', owner: 'ahel-technologies', repo: 'ahel-desktop', releaseType: 'release' }],
+      publish: [{ provider: 'github', owner: 'ahel-technologies', repo: 'ahel-desktop-releases', releaseType: 'release' }],
     })
   })
 

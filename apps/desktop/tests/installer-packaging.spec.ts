@@ -82,7 +82,7 @@ describe('installer preparation preserves application dependencies', () => {
         extendInfo: { CFBundleLocalizations: ['en', 'zh_CN'], NSMicrophoneUsageDescription: expect.stringContaining('Ahel Desktop') as unknown },
       },
       dmg: { sign: false },
-      publish: [{ provider: 'github', owner: 'ahel-technologies', repo: 'ahel-desktop', releaseType: 'release' }],
+      publish: [{ provider: 'github', owner: 'ahel-technologies', repo: 'ahel-desktop-releases', releaseType: 'release' }],
     })
     expect(JSON.stringify(config.asarUnpack)).not.toMatch(/libreoffice/u)
   })

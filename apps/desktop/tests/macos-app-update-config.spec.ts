@@ -10,7 +10,7 @@ import {
 } from '../scripts/macos-app-update-config.mjs'
 
 const roots: string[] = []
-const update = { owner: 'ahel-technologies', repo: 'ahel-desktop', releaseType: 'release' }
+const update = { owner: 'ahel-technologies', repo: 'ahel-desktop-releases', releaseType: 'release' }
 
 async function fixture(): Promise<{ appPath: string; resourcesDir: string }> {
   const root = await mkdtemp(join(tmpdir(), 'desktop-macos-update-config-'))
@@ -39,7 +39,7 @@ describe('macOS packaged updater configuration', () => {
     const paths = await fixture()
     expect(createMacOSAppUpdateConfig(update, 'ahel-desktop-updater')).toEqual({
       owner: 'ahel-technologies',
-      repo: 'ahel-desktop',
+      repo: 'ahel-desktop-releases',
       provider: 'github',
       releaseType: 'release',
       updaterCacheDirName: 'ahel-desktop-updater',
@@ -52,7 +52,7 @@ describe('macOS packaged updater configuration', () => {
     ['missing', undefined],
     ['wrong repository', 'owner: ahel-technologies\nrepo: other\nprovider: github\nreleaseType: release\nupdaterCacheDirName: fixture\n'],
     ['generic provider', 'provider: generic\nurl: https://updates.example.com/\nupdaterCacheDirName: fixture\n'],
-    ['missing cache directory', 'owner: ahel-technologies\nrepo: ahel-desktop\nprovider: github\nreleaseType: release\n'],
+    ['missing cache directory', 'owner: ahel-technologies\nrepo: ahel-desktop-releases\nprovider: github\nreleaseType: release\n'],
   ] as const)('rejects %s updater configuration', async (_label, contents) => {
     const paths = await fixture()
     if (contents !== undefined) await writeFile(join(paths.resourcesDir, 'app-update.yml'), contents)
