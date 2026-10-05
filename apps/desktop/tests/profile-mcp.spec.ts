@@ -24,7 +24,10 @@ it('retains one shared resource consumer in the Desktop Web profile', () => {
     expect(rows.filter(row => row.name === '@ahel/dsh-mcp-resources')).toEqual([
       { id: 'mcp-resources', name: '@ahel/dsh-mcp-resources' },
     ])
-    expect(rows.filter(row => row.name === '@ahel/dsh-mcp-client')).toEqual([])
+    // The only MCP client row is the Ahel MCP server, signed in through the Ahel account.
+    expect(rows.filter(row => row.name === '@ahel/dsh-mcp-client')).toMatchObject([
+      { id: 'mcp-ahel', config: { serverName: 'ahel', url: 'https://mcp.ahel.ai/mcp' } },
+    ])
     expect(rows.find(row => row.id === 'webserver')).toMatchObject({ name: '@ahel/dsh-host-webserver' })
     expect(rows.find(row => row.id === 'webserver')?.disabled).not.toBe(true)
     expect(warnings).toEqual([])

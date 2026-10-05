@@ -343,10 +343,10 @@ describe('loadProfile', () => {
       .toThrow('profile "custom" does not exist')
     expect(PROFILE_TEMPLATES.web?.bundles).toContain('@ahel/dsh-base')
     expect(PROFILE_TEMPLATES.acp).toEqual({
-      bundles: ['@ahel/dsh-base', '@ahel/dsh-acp-app'],
+      bundles: ['@ahel/dsh-base', '@ahel/dsh-agent-tools', '@ahel/dsh-acp-app'],
     })
     expect(PROFILE_TEMPLATES.sdk).toEqual({
-      bundles: ['@ahel/dsh-base', '@ahel/dsh-sdk-app'],
+      bundles: ['@ahel/dsh-base', '@ahel/dsh-agent-tools', '@ahel/dsh-sdk-app'],
     })
     expect(PROFILE_TEMPLATES['sdk-minimal']).toEqual({
       bundles: ['@ahel/dsh-sdk-minimal'],
@@ -372,7 +372,7 @@ describe('loadProfile', () => {
     writeProfileManifest(stock, retiredManifest)
     loadProfile('t', 'headless', anchor, home)
     expect(readProfileManifest('t', stock).dsh?.profile).toEqual({
-      bundles: ['@ahel/dsh-base', '@ahel/dsh-headless'],
+      bundles: ['@ahel/dsh-base', '@ahel/dsh-agent-tools', '@ahel/dsh-headless'],
     })
 
     const customHome = tmp()
