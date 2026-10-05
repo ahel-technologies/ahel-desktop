@@ -356,10 +356,19 @@ async function main(): Promise<void> {
   }
   // Copy comes from the same locale as the update prompts so the dialog
   // chrome and its content never mix languages.
+  // LICENSE and THIRD_PARTY_NOTICES.md ship in Resources/licenses; development reads the repository root.
+  const licensesDirectory = development ? join(app.getAppPath(), '..', '..') : join(process.resourcesPath, 'licenses')
+  const openLicenses = async (): Promise<void> => {
+    for (const name of ['LICENSE', 'THIRD_PARTY_NOTICES.md']) {
+      const failure = await shell.openPath(join(licensesDirectory, name))
+      if (failure !== '') console.error(`desktop licenses: ${name}: ${failure}`)
+    }
+  }
   const showAbout = async (): Promise<void> => {
-    await ordinaryMessageBox({ type: 'info', title: locale.messages.aboutMenu, message: locale.messages.aboutProduct,
+    const { response } = await ordinaryMessageBox({ type: 'info', title: locale.messages.aboutMenu, message: locale.messages.aboutProduct,
       detail: `${formatDesktopMessage(locale.messages.aboutVersion, { version: app.getVersion() })}\n${locale.messages.aboutCredits}`,
-      buttons: [locale.messages.updateAcknowledge], cancelId: 0 })
+      buttons: [locale.messages.updateAcknowledge, locale.messages.licensesMenu], cancelId: 0, defaultId: 0 })
+    if (response === 1) await openLicenses()
   }
   const commandManager = new DesktopCommandManager({
     resources: process.resourcesPath,
@@ -766,6 +775,8 @@ async function main(): Promise<void> {
       ? { label: currentDesktopLocale().messages.aboutMenu,
         click: () => { void showAbout().catch((error: unknown) => { console.error(error) }) } }
       : { label: currentDesktopLocale().messages.aboutMenu, role: 'about' },
+    { label: currentDesktopLocale().messages.licensesMenu,
+      click: () => { void openLicenses().catch((error: unknown) => { console.error(error) }) } },
     { type: 'separator' },
     { label: currentDesktopLocale().messages.checkUpdatesMenu, click: () => { void openUpdatePrompt(true) } },
     ...process.platform === 'darwin' || process.platform === 'win32'
