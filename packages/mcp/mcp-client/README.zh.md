@@ -86,6 +86,10 @@ kind: "package-reference"
 
 当前模型接受图片输入且 harness 启用了附件功能时支持图片；图片会像其他图片一样出现在对话中。不支持图片时——以及服务器返回音频或嵌入资源时——模型会看到清晰的诊断消息，而不是什么都没有。
 
+### MCP Apps 卡片
+
+客户端会声明 MCP Apps 扩展（`io.modelcontextprotocol/ui`、`text/html;profile=mcp-app`）。工具在 `tools/list` 中的 `_meta` 会以 `definition.mcp` 保留在其注册项上，包含所属服务器、原始名称，以及解析后的 `ui.resourceUri` 和 `ui.visibility`；已弃用的扁平键 `ui/resourceUri` 也会被读取。可见性不含 `model` 的工具不会被注册。当工具声明了 `ui://` 资源时，每次成功的顶层调用都会持久化 `result.meta.mcpApp`（版本 1）：服务器、原始工具名、资源 URI、可见性、`structuredContent` 以及结果 `_meta`。结果 `_meta` 从不进入规范值，因此模型和 PTC 程序无法读取一次性按压令牌等仅供应用使用的字段。超过 256 KiB JSON 的结构化字段会被丢弃，记录标记为 `truncated`；此时 Client 改为渲染文本结果。
+
 ### 启动、工具更新与重连
 
 服务器的工具会在 harness 开始首个轮次之前出现。服务器更改工具列表时，模型的工具集会自动更新；更新失败时，上一组工具继续可用。
@@ -115,6 +119,7 @@ kind: "package-reference"
 | 文件 | 职责 |
 |---|---|
 | [`src/index.ts`](src/index.ts) | 插件入口：`Config` schema、`serverName` 预留、激活等待 |
+| [`src/apps.ts`](src/apps.ts) | MCP Apps 工具描述符、可见性解析、持久化的 `mcpApp` 卡片记录 |
 | [`src/connection.ts`](src/connection.ts) | 连接监督器：客户端世代、重连策略、尝试预算、dispose（资源释放） |
 | [`src/server-context.ts`](src/server-context.ts) | 资源提供方注册与字面服务器指令 |
 | [`src/tools.ts`](src/tools.ts) | 工具桥接：发现、命名、注册交换、执行、图片投影 |

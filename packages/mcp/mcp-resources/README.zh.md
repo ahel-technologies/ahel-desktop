@@ -39,6 +39,10 @@ kind: "package-reference"
 
 每个操作都在调用 agent 的作用域中解析服务器。缺少服务器参数或服务器不可用时，会在派发前失败。连接所有者负责请求取消、超时与恢复；失败的请求仍表现为失败的工具调用。
 
+### MCP Apps 资源读取
+
+`ctx.mcpResources.readAppResource(agent, server, uri, signal)` 在任何工具调用之外，为 MCP Apps 卡片宿主读取资源。`ui://` 结果按服务器连接、连接代次和 URI 缓存；重连会开始新的代次，失败的读取不会被缓存。其他 URI 不经缓存直接读取。`appResourceCacheEntries`（默认 16）限制每个服务器的缓存大小，并优先淘汰最近最少使用的条目。调用方取消只会停止它自己的等待，不会使共享读取失败。
+
 -----
 
 <a id="understand-the-implementation"></a>

@@ -45,6 +45,10 @@ ctx.slots.inject('tool.call.toolview', () =>
 
 owner 载荷为 `ToolCallOwnerProps`：`callId`、`toolName`、`phase` 判别字段及对应阶段的 `block`、可选 `cwd` 与 `home`、会话授权的 `loadImage` loader（供结果携带持久图像的视图使用），以及普通的 `openFile`/`inspect` 回调。PTC dispatch 块保留事件的 `parentCallId`；根会话调用没有该字段，因此后代调用都走同一条按 key 分发路径：已注册视图的调用（如 `read_image`）也会在嵌套处渲染对应卡片，未注册的后代调用则保持通用压平形式。路径摘要先相对会话 cwd 缩短，再把剩余的 POSIX Host home 写成 `~`；`filePath` 与 Host 打开仍使用作者给出的文件系统路径。注册项会收到常规的会话 slot 运行时共享数据，但不会收到 React 节点或运行时服务。
 
+### MCP Apps 卡片插槽
+
+当一个已结束且成功的调用在持久化结果元数据中带有 `mcpApp` 记录时，还会在该调用自身的行下方直接渲染单一插槽 `tool.call.app`。所有者载荷为 `ToolAppOwnerProps`：`callId`、`toolName` 以及已结束的 `block`。占位组件自行校验记录；没有占位组件时只渲染该行。[`@deepseek-ai/dsh-client-ui-mcp-app`](../ui-mcp-app/README.zh.md) 负责填充该插槽。
+
 ### 内置视图
 
 每个注册视图都接收[工具 slot 类型](src/client/contract/slots.ts)声明的显式 `preparing`、`start` 和 `result` props。所有块都提供 `name` 和懒计算的 `args` 读器，原有 `argsRaw` 和 result 的 `call` 字段仍可使用。行模型统一选择标题，并组合通用工具名前缀与已有参数摘要，不按生命周期阶段改变前缀；专用标题不附带英文名。write/edit 和 Bash 在各阶段共用组件。自定义 renderer 可保留独立准备态分支；依赖参数的组件接收 `StartedToolCallViewProps`。
