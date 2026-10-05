@@ -1,0 +1,11 @@
+# Ahel Desktop Phase 1B: mount the MCP Apps card host.
+# One row loads both halves of @deepseek-ai/dsh-client-ui-mcp-app: the Host
+# `mcpApps` Remote controller (needs mcp-resources and tools, both in the base
+# bundle) and the browser card that fills ui-tool's `tool.call.app` slot.
+# Use: dsh --profile web --patch docs/phase1/ui-mcp-app.cordis.patch.yml
+# Merge note: this is the row to add to the Ahel web/desktop bundle roster
+# (packages/bundle/web-app/cordis.patch.yml, next to `ui-tool`) once
+# phase1/strip-rebrand owns the bundle.
+- insert:
+    - id: ui-mcp-app
+      name: '@deepseek-ai/dsh-client-ui-mcp-app'

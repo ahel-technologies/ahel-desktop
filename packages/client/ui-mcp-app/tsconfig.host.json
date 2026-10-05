@@ -1,0 +1,19 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo"
+  },
+  "files": ["src/call-result.ts", "src/index.ts", "src/types.ts"],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../core/agent" },
+    { "path": "../../core/tools" },
+    { "path": "../../llm/llm" },
+    { "path": "../../mcp/mcp-client" },
+    { "path": "../../mcp/mcp-resources" },
+    { "path": "../../typert/protocol" },
+    { "path": "../../util/values" }
+  ]
+}
