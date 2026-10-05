@@ -48,6 +48,13 @@
       name: '@ahel/dsh-credentials-safe-storage'
       disabled: !!js "ctx.get('profileContext')?.name !== 'desktop'"
 
+# Ahel product builds install no plugins: the plugin page offers no Add
+# plugin control and the Host refuses installBundle.
+- id: plugin-manager
+  disabled: !!js "!ctx.get('profileContext')"
+  config:
+    installEnabled: false
+
 # ── web-only host rows, the transport layer, and the browser roster ─────────
 
 # `dsh.client` rows are the browser roster the modules node half scans into
@@ -229,11 +236,14 @@
     - id: ui-settings-models
       name: '@ahel/dsh-client-ui-settings-models'
 
-    # Plugin management: the sidebar Plugins page installs, enables, disables,
-    # and removes the profile's bundles through the `pluginManager` Remote.
+    # Plugin management: the sidebar Plugins page (Developer tools only)
+    # enables, disables, and removes the profile's bundles through the
+    # `pluginManager` Remote.
     # Without a profile-backed Host it reports itself unavailable.
     - id: ui-plugin-manager
       name: '@ahel/dsh-client-ui-plugin-manager'
+      config:
+        registryProbeEnabled: false
 
     # Read-only Plugin list tab in the Settings Plugins section; the built-in
     # bundles the sidebar page leaves out are inspected here.

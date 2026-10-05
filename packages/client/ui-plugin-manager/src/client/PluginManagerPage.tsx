@@ -2,8 +2,8 @@
  * Global plugin management: the Official group's cards for the bundles the
  * installation ships switched off and for the official plugins that register
  * their configuration, the Installed group's cards for the profile's bundles,
- * their row switches, the install dialog with its guide and folded pnpm
- * output, the uninstall confirmation, and the toasts an action's outcome
+ * their row switches, the install-progress dialog with its guide and folded
+ * pnpm output (the page offers no Add plugin control), the uninstall confirmation, and the toasts an action's outcome
  * becomes. A bundle's page lists the rows it contributes as the Host runs
  * them; a plugin's configuration renders on its own page through the slots
  * the page declares.
@@ -15,8 +15,8 @@ import type { PluginInstallFailureKind, Registry } from '@ahel/dsh-api-remotes/c
 import {
   Button, IconCheckCircleFillRegular, IconChevronDownOutlineRegular, IconChevronLeftOutlineMedium,
   IconChevronRightOutlineRegular, IconCloseOutlineMedium,
-  IconDownloadOutlineRegular, IconInfoOutlineRegular, IconPlusOutlineRegular, IconRefreshOutlineRegular, IconTrashOutlineRegular,
-  IconWarningOutlineRegular, Input, Menu, MenuItemButton, Modal, pointerModality,
+  IconInfoOutlineRegular, IconRefreshOutlineRegular, IconTrashOutlineRegular,
+  IconWarningOutlineRegular, Input, Modal, pointerModality,
   PluginArtworkDefault, PluginArtworkLoop, PluginArtworkSearch, PluginArtworkSubagent, PluginArtworkTerminal,
   StateDot, Switch, Tag, TerminalBlock, Toast, Tooltip, useAnchoredPosition, useDismissOnOutsidePointer,
   type IconProps, type StateDotState, type TerminalBlockLabels,
@@ -52,44 +52,6 @@ type RenderConfig = PluginManagerPageProps['renderSlot']
 type ResolveText = PluginManagerFace['resolveText']
 
 type RowPhase = NonNullable<PackageRow['phase']>
-
-/** The primary action installs; the adjacent menu offers every add-plugin path. */
-function AddPluginMenu({ t, disabled, openInstall, renderSlot }: {
-  readonly t: Translate
-  readonly disabled: boolean
-  readonly openInstall: () => void
-  readonly renderSlot: RenderConfig
-}): ReactNode {
-  const [open, setOpen] = useState(false)
-  const onDismiss = (): void => { setOpen(false) }
-  return (
-    <span className={css.addGroup} role="group" aria-label={t('addPlugin')}>
-      <Button variant="primary" size="sm" className={css.addPrimary} icon={<IconPlusOutlineRegular size={13} />}
-        disabled={disabled} onClick={() => { onDismiss(); openInstall() }}>
-        {t('addPlugin')}
-      </Button>
-      <Menu open={open} onClose={onDismiss} align="end" portal autoFocus listClassName={css.addMenu}
-        anchor={(
-          <Button variant="primary" size="sm" className={css.addMore}
-            disabled={disabled} aria-label={t('chooseAddMethod')} aria-haspopup="menu" aria-expanded={open}
-            onClick={() => { setOpen(value => !value) }}
-            onKeyDown={(event) => {
-              if (!open && event.key === 'ArrowDown') { event.preventDefault(); setOpen(true) }
-            }}>
-            <IconChevronDownOutlineRegular size={12} aria-hidden="true" />
-          </Button>
-        )}>
-        <MenuItemButton icon={<IconDownloadOutlineRegular size={14} />} onSelect={() => { onDismiss(); openInstall() }}>
-          <span className={css.addMenuItem}>
-            <span>{t('installExisting')}</span>
-            <span className={css.addMenuDescription}>{t('installExistingDescription')}</span>
-          </span>
-        </MenuItemButton>
-        {renderSlot('plugins.add.actions', { onDismiss })}
-      </Menu>
-    </span>
-  )
-}
 
 /** How long the list marks a package an install just enabled. */
 const HIGHLIGHT_MS = 2_400
@@ -1437,11 +1399,6 @@ export function PluginManagerPage(props: PluginManagerPageProps): ReactNode {
                   </span>
                 </button>
               </Tooltip>
-              {state.install.requestId === undefined
-                ? <AddPluginMenu t={t} disabled={!loaded} openInstall={props.openInstall} renderSlot={renderSlot} />
-                : <Button variant="primary" size="sm" className={css.addButton} icon={<IconPlusOutlineRegular size={13} />} disabled={!loaded} onClick={props.openInstall}>
-                  {t('installViewTask')}
-                </Button>}
             </div>
           </header>
         )

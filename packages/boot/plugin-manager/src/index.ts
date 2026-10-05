@@ -22,7 +22,7 @@ import type { ProfileContext, ProfileManifest } from '@ahel/dsh-app-boot'
 import { bundleManifest, readProfileRegistry, registryArguments, runProfilePnpm, saveManifest, viewProfilePackage } from './operations.ts'
 import { classifyInstallFailure } from './install-failure.ts'
 import { dependencySpec, InvalidInstallSpecError, parseInstallSpec, type ParsedInstallSpec } from './install-spec.ts'
-import { attributeFailure, normalizeRegistry, NPMMIRROR_REGISTRY, registryPlan } from './registry.ts'
+import { attributeFailure, normalizeRegistry, registryPlan } from './registry.ts'
 import { writePluginEnabled } from './patch.ts'
 import { incompatiblePlugin, ManagementFailure } from './failure.ts'
 import { approveBuilds, readPendingBuilds } from './build-approval.ts'
@@ -58,6 +58,8 @@ export interface Config {
    * unless that is npm's own registry or one of these.
    */
   fallbackRegistries?: string[]
+  /** Whether `installBundle` may add packages to the profile; false refuses every installation. */
+  installEnabled?: boolean
 }
 
 /** An http(s) URL, as pnpm's `--registry` takes it. */
@@ -183,7 +185,8 @@ export class PluginManager extends TypertRemoteService {
     githubConnectionTimeoutMs: z.number().step(1).min(1000).default(5000),
     idleTimeoutMs: z.number().step(1).min(1000).default(600000),
     registry: z.string().pattern(REGISTRY_URL),
-    fallbackRegistries: z.array(z.string().pattern(REGISTRY_URL)).default([NPMMIRROR_REGISTRY]),
+    fallbackRegistries: z.array(z.string().pattern(REGISTRY_URL)).default([]),
+    installEnabled: z.boolean().default(true),
   })
   /** Management bundles remain protected if their files become unreadable. */
   private readonly managementBundles = new Set<string>()
@@ -196,6 +199,7 @@ export class PluginManager extends TypertRemoteService {
   private readonly githubConnectionTimeoutMs: number
   private readonly idleTimeoutMs: number
   private readonly pnpmCommand: string
+  private readonly installEnabled: boolean
   private readonly configuredRegistries: Omit<PluginRegistries, 'resolved'>
   private readonly ownerContext: Context
   private readonly abort = new AbortController()
@@ -214,6 +218,7 @@ export class PluginManager extends TypertRemoteService {
     this.githubConnectionTimeoutMs = (config as Required<Config>).githubConnectionTimeoutMs
     this.idleTimeoutMs = (config as Required<Config>).idleTimeoutMs
     this.pnpmCommand = (config as Required<Config>).pnpmCommand
+    this.installEnabled = (config as Required<Config>).installEnabled
     this.configuredRegistries = {
       registry: config.registry === undefined ? null : normalizeRegistry(config.registry),
       fallbackRegistries: (config as Required<Config>).fallbackRegistries.map(normalizeRegistry),
@@ -479,6 +484,7 @@ export class PluginManager extends TypertRemoteService {
       if (requestId !== undefined) this.ownerContext.emit('plugin-manager/install-state', { requestId, phase, ...attempt === undefined ? {} : { attempt } })
     }
     const result = this.change(async (result) => {
+      if (!this.installEnabled) throw new ManagementFailure('management-required')
       if (spec.trim() === '' || spec.startsWith('-')) throw new ManagementFailure('invalid-spec')
       if (stopped()) throw new InstallCancelledError()
       if (options?.approvedBuilds !== undefined) {
