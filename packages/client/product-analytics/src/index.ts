@@ -3,7 +3,6 @@ import { type Context, type Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-host-product-telemetry-otel'
-import type {} from '@deepseek-ai/dsh-deepseek-account'
 import type {} from '@deepseek-ai/dsh-settings'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {} from '@deepseek-ai/dsh-session'
@@ -12,7 +11,7 @@ import type { ProductEvent } from './events.ts'
 
 /** Application-owned collection policy; no user settings surface. */
 export interface Config {
-  /** Live application collection policy; ordinary Web does not mount this service. */
+  /** Live application collection policy, off unless a composition opts in; ordinary Web does not mount this service. */
   enabled: Volatile<boolean>
   /** Running Desktop release, absent when unavailable. */
   appVersion?: string
@@ -24,10 +23,10 @@ declare module '@deepseek-ai/cordis' {
   }
 }
 
-/** Authenticated event intake; disabled instances do not inspect identity or accept new events. */
+/** Anonymous event intake; disabled instances accept no new events. */
 export default class ProductAnalytics extends TypertRemoteService {
-  static inject = ['deepseekAccount', 'productTelemetry']
-  static Config = z.object({ enabled: z.boolean().default(true).volatile(), appVersion: z.string() })
+  static inject = ['productTelemetry']
+  static Config = z.object({ enabled: z.boolean().default(false).volatile(), appVersion: z.string() })
   private active = true
   private readonly listeners = new Set<() => void>()
 
@@ -74,28 +73,24 @@ export default class ProductAnalytics extends TypertRemoteService {
   }
 
   /**
-   * Submit selected Desktop fields; missing identity is omitted and never generated.
+   * Submit selected Desktop fields. No account or device identity is attached.
    * @param event - typed product event without message contents or credentials.
    * @returns after local submission; no delivery or warehouse acknowledgement.
    */
   @Remote
-  async report(event: ProductEvent): Promise<void> {
-    if (!this.enabled()) return
+  report(event: ProductEvent): Promise<void> {
+    if (!this.enabled()) return Promise.resolve()
     try {
-      const identity = await this.ctx.deepseekAccount.getDeviceIdentity().catch(() => undefined)
-      if (!this.enabled()) return
       this.ctx.productTelemetry.emit({
         ...event, body: event.eventName,
         attributes: {
           ...event.attributes,
-          ...identity?.deviceId === undefined ? {} : { device_id: identity.deviceId },
-          ...identity?.userId === undefined ? {} : { user_id: identity.userId },
           ...this.config.appVersion === undefined ? {} : { app_version: this.config.appVersion },
-          ...identity === undefined ? {} : { os_version: identity.osVersion },
         },
       })
     } catch (error) {
       this.ctx.logger.warn('Product analytics submission failed', error)
     }
+    return Promise.resolve()
   }
 }

@@ -77,17 +77,6 @@ export async function unpackPrimaryRuntimeWheel(archive: string, destination: st
   })
 }
 
-/**
- * Copy the skill package's complete asset tree to ordinary filesystem resources.
- * @param source - The package's assets directory.
- * @param destination - External Office skill resource directory.
- * @returns Resolves after replacing the external assets with the complete package tree.
- */
-export async function prepareOfficeSkillAssets(source: string, destination: string): Promise<void> {
-  rmSync(destination, { recursive: true, force: true })
-  await cp(source, destination, { recursive: true, dereference: true })
-}
-
 /** A locked interpreter and wheel target. */
 export type PrimaryRuntimeTarget = keyof typeof lock.targets
 
@@ -95,7 +84,7 @@ export type PrimaryRuntimeTarget = keyof typeof lock.targets
 export interface PreparePrimaryRuntimeOptions {
   /** Target whose archives and wheels are downloaded. */
   readonly target: PrimaryRuntimeTarget
-  /** Resource directory receiving primary-runtime/ and office-skills/. */
+  /** Resource directory receiving primary-runtime/. */
   readonly output: string
   /** SHA-256-addressed archive cache. */
   readonly cache: string
@@ -106,7 +95,7 @@ export interface PreparePrimaryRuntimeOptions {
 }
 
 /**
- * Materialize locked interpreters, libraries and Office resources without executing target code.
+ * Materialize locked interpreters and libraries without executing target code.
  * @param options - Explicit target and carrier-owned output locations.
  * @returns Resolves after the complete payload and skills have been copied to the output directory.
  */
@@ -162,9 +151,6 @@ export async function preparePrimaryRuntime(options: PreparePrimaryRuntimeOption
   } finally {
     rmSync(staging, { recursive: true, force: true })
   }
-  const require = createRequire(import.meta.url)
-  await prepareOfficeSkillAssets(join(dirname(require.resolve('@deepseek-ai/dsh-skill-office/package.json')), 'assets'),
-    join(paths.runtime, 'office-skills'))
 }
 
 /**
@@ -182,7 +168,7 @@ export function smokePrimaryRuntime(root: string, environment: NodeJS.ProcessEnv
   const options = { stdio: 'inherit', timeout: 120_000, env: environment } as const
   execFileSync(entries.python, ['-I', '-B', '-c', 'import decimal, xml.parsers.expat, lzma, uuid, numpy, pandas; assert numpy.arange(4).sum() == 6; assert pandas.DataFrame({"n": [1, 2]}).n.sum() == 3'], options)
   execFileSync(entries.python, ['-I', '-B', join(import.meta.dirname, 'smoke.py'), JSON.stringify(manifest.pythonPackages),
-    manifest.python, join(dirname(root), 'office-skills', 'scripts', 'check_office.py')], options)
+    manifest.python], options)
   execFileSync(entries.python, ['-I', '-B', '-m', 'pip', 'check'], options)
   if (entries.node !== undefined) execFileSync(entries.node, ['-e', `if (process.versions.node !== ${JSON.stringify(manifest.node)}) process.exit(1)`], options)
   if (entries.pnpm !== undefined && entries.node !== undefined) execFileSync(entries.node, [entries.pnpm, '--version'], options)

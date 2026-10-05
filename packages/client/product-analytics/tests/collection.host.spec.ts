@@ -14,49 +14,42 @@ afterEach(async () => { for (const dispose of cleanup.splice(0).reverse()) await
 async function setup(enabled: boolean) {
   const ctx = new Context()
   cleanup.push(() => ctx.fiber.dispose())
-  const getDeviceIdentity = vi.fn().mockResolvedValue({ deviceId: 'login-device', userId: 'user-1', osVersion: 'fixture-os', ignored: 'private-field' })
   const emit = vi.fn<(record: ProductTelemetryRecord) => void>()
-  ctx.provide('deepseekAccount', { getDeviceIdentity } as never)
   ctx.provide('webServer', {} as never)
   ctx.provide('productTelemetry', { emit } as never)
   const fiber = await ctx.plugin(Analytics, { enabled, appVersion: 'test-version' })
-  return { ctx, fiber, getDeviceIdentity, emit }
+  return { ctx, fiber, emit }
 }
 
-it('disabled collection does not read identity or submit an event', async () => {
+it('collection is off by default', async () => {
+  const ctx = new Context()
+  cleanup.push(() => ctx.fiber.dispose())
+  ctx.provide('productTelemetry', { emit: vi.fn() } as never)
+  await ctx.plugin(Analytics, {})
+  expect(ctx.productAnalytics.enabled()).toBe(false)
+})
+
+it('disabled collection does not submit an event', async () => {
   const b = await setup(false)
   expect(b.ctx.productAnalytics.enabled()).toBe(false)
   await b.ctx.productAnalytics.report({ eventName: 'desktop_app_launch', timestamp: 100, attributes: {} })
-  expect(b.getDeviceIdentity).not.toHaveBeenCalled()
   expect(b.emit).not.toHaveBeenCalled()
 })
 
-it('reuses login identity and copies only approved common fields', async () => {
+it('copies only approved common fields and attaches no identity', async () => {
   const b = await setup(true)
   await b.ctx.productAnalytics.report({ eventName: 'auth_page_click', timestamp: 100, attributes: { button_name: 'sign_in' } })
-  expect(b.getDeviceIdentity).toHaveBeenCalledWith()
   expect(b.emit).toHaveBeenCalledExactlyOnceWith({
     eventName: 'auth_page_click', body: 'auth_page_click', timestamp: 100,
-    attributes: { button_name: 'sign_in', device_id: 'login-device', user_id: 'user-1', app_version: 'test-version', os_version: expect.any(String) as string },
+    attributes: { button_name: 'sign_in', app_version: 'test-version' },
   })
-  expect(JSON.stringify(b.emit.mock.calls)).not.toContain('private-')
 })
 
-it('missing identity does not discard an otherwise valid event', async () => {
+it('unload stops intake', async () => {
   const b = await setup(true)
-  b.getDeviceIdentity.mockRejectedValueOnce(new Error('credential store unavailable'))
-  await b.ctx.productAnalytics.report({ eventName: 'plugin_add_button_click', timestamp: 100, attributes: {} })
-  expect(b.emit.mock.calls[0]?.[0].attributes).toEqual({ app_version: 'test-version' })
-})
-
-it('unload suppresses an identity lookup that settles after disposal', async () => {
-  const b = await setup(true)
-  const pending = Promise.withResolvers<undefined>()
-  b.getDeviceIdentity.mockReturnValueOnce(pending.promise)
-  const reporting = b.ctx.productAnalytics.report({ eventName: 'desktop_app_launch', timestamp: 100, attributes: {} })
+  const analytics = b.ctx.productAnalytics
   await b.fiber.dispose()
-  pending.resolve(undefined)
-  await reporting
+  await analytics.report({ eventName: 'desktop_app_launch', timestamp: 100, attributes: {} })
   expect(b.emit).not.toHaveBeenCalled()
 })
 
@@ -75,7 +68,6 @@ it('writes the selected event through the real exporter to an isolated collector
   const ctx = new Context()
   cleanup.push(() => ctx.fiber.dispose())
   ctx.provide('credentials', { readRecord: async () => undefined } as never)
-  ctx.provide('deepseekAccount', { getDeviceIdentity: async () => undefined } as never)
   ctx.provide('webServer', {} as never)
   await ctx.plugin(OTel)
   const exporter = await ctx.plugin(ProductTelemetry, TelemetryConfig({ endpoint: `http://127.0.0.1:${address.port}/v1/logs`, serviceName: 'test', serviceVersion: '1', compression: 'none' }))
@@ -98,14 +90,10 @@ it.each([true, false])('collects live manual and automatic compaction only when 
   }
   if (enabled) await vi.waitFor(() => { expect(b.emit).toHaveBeenCalledTimes(2) })
   expect(b.emit.mock.calls.map(([event]) => event.attributes?.trigger_type)).toEqual(enabled ? ['manual', 'auto'] : [])
-  expect(b.getDeviceIdentity).toHaveBeenCalledTimes(enabled ? 2 : 0)
 })
 
-it('omits an unavailable account and isolates exporter submission failure', async () => {
+it('isolates exporter submission failure', async () => {
   const b = await setup(true)
-  b.getDeviceIdentity.mockRejectedValueOnce(new Error('account unavailable'))
-  await b.ctx.productAnalytics.report({ eventName: 'desktop_app_launch', timestamp: 1, attributes: {} })
-  expect(b.emit.mock.calls[0]![0].attributes).not.toHaveProperty('user_id')
   b.emit.mockImplementationOnce(() => { throw new Error('exporter unavailable') })
   await expect(b.ctx.productAnalytics.report({ eventName: 'desktop_app_launch', timestamp: 2, attributes: {} })).resolves.toBeUndefined()
 })
@@ -114,7 +102,6 @@ it('omits an unavailable account and isolates exporter submission failure', asyn
 it('requires the exporter even when collection is disabled', async () => {
   const ctx = new Context()
   cleanup.push(() => ctx.fiber.dispose())
-  ctx.provide('deepseekAccount', { getDeviceIdentity: async () => undefined } as never)
   const fiber = ctx.plugin(Analytics, { enabled: false })
   await Promise.resolve()
   expect(ctx.get('productAnalytics')).toBeUndefined()
@@ -123,14 +110,11 @@ it('requires the exporter even when collection is disabled', async () => {
   expect(ctx.productAnalytics.enabled()).toBe(false)
 })
 
-it('streams live policy changes and rejects intake disabled during identity lookup', async () => {
+it('streams live policy changes and rejects intake after disabling', async () => {
   const b = await setup(true)
   const lifetime = new AbortController()
   const iterator = b.ctx.productAnalytics.watchPolicy(lifetime.signal)[Symbol.asyncIterator]()
   expect(await iterator.next()).toEqual({ value: true, done: false })
-  const identity = Promise.withResolvers<undefined>()
-  b.getDeviceIdentity.mockReturnValueOnce(identity.promise)
-  const report = b.ctx.productAnalytics.report({ eventName: 'auth_page_view', timestamp: 1, attributes: {} })
   const next = iterator.next()
   // Loader commits the stable Config reference before publishing this notification.
   const { updateVolatile, createVolatile } = await import('../../../../vendor/cosmokit/src/volatile.ts')
@@ -138,8 +122,7 @@ it('streams live policy changes and rejects intake disabled during identity look
   updateVolatile(config.enabled, createVolatile(false))
   b.fiber.ctx.emit('loader/volatile-update', [['enabled']])
   expect(await next).toEqual({ value: false, done: false })
-  identity.resolve(undefined)
-  await report
+  await b.ctx.productAnalytics.report({ eventName: 'auth_page_view', timestamp: 1, attributes: {} })
   expect(b.emit).not.toHaveBeenCalled()
   const closed = iterator.next()
   lifetime.abort()

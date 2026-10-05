@@ -50,30 +50,6 @@ const FIRST_PARTY = new Set([
   '@deepseek-ai/node-addon-system-linux-x64',
 ])
 
-/** Official SDK identity covered by the project's narrow owner authorization. */
-export const CLAUDE_AGENT_SDK_PACKAGE = '@anthropic-ai/claude-agent-sdk'
-const CLAUDE_PLATFORM_PACKAGE_PREFIX = `${CLAUDE_AGENT_SDK_PACKAGE}-`
-const CLAUDE_PLATFORM_DECLARED_LICENSE = 'SEE LICENSE IN LICENSE.md'
-const LIBREOFFICE_KIT_PACKAGE = '@deepseek-ai/libreoffice-kit'
-const LIBREOFFICE_PACKAGES = new Set([
-  LIBREOFFICE_KIT_PACKAGE,
-  '@deepseek-ai/libreoffice-kit-wasm',
-  '@deepseek-ai/libreoffice-kit-darwin-arm64',
-  '@deepseek-ai/libreoffice-kit-darwin-x64',
-  '@deepseek-ai/libreoffice-kit-win32-arm64',
-  '@deepseek-ai/libreoffice-kit-win32-x64',
-])
-
-/**
- * Whether a non-permissive runtime declaration has an identity-scoped owner
- * authorization. This does not reclassify its terms as permissive.
- * @param name - exact npm package identity.
- * @returns true only for the official Claude Agent SDK package.
- */
-export function isOwnerAuthorizedRuntime(name: string): boolean {
-  return name === CLAUDE_AGENT_SDK_PACKAGE
-}
-
 /**
  * Metadata overrides where the installed manifest is wrong or unreachable.
  * Each entry documents why the store cannot answer.
@@ -188,72 +164,9 @@ function loadWorkspaceManifests(): { manifests: Map<string, Manifest>; names: Se
 }
 
 type VirtualManifest = Manifest & {
-  claudeCodeVersion?: string
   license?: string
   repository?: string | { url?: string }
   homepage?: string
-}
-
-/** One platform payload declared by the official Claude Agent SDK. */
-export interface ClaudePlatformPayload {
-  readonly name: string
-  readonly version: string
-}
-
-/** Current SDK and CLI distribution facts derived from the installed SDK manifest. */
-export interface ClaudeDistribution {
-  readonly sdkVersion: string
-  readonly claudeCodeVersion: string
-  readonly payloads: ClaudePlatformPayload[]
-}
-
-function requiredManifestString(
-  value: string | undefined,
-  field: string,
-): string {
-  if (value === undefined || value.length === 0) {
-    throw new Error(`gen-third-party-notices: ${CLAUDE_AGENT_SDK_PACKAGE} has no ${field}.`)
-  }
-  return value
-}
-
-/**
- * Derive the official platform payload set without a version or platform
- * allowlist. Only identities in the SDK's own package namespace are covered.
- * @param manifest - installed official SDK manifest.
- * @returns current SDK, CLI, and optional platform payload facts.
- */
-export function claudeDistributionFromManifest(
-  manifest: VirtualManifest,
-): ClaudeDistribution {
-  if (manifest.name !== CLAUDE_AGENT_SDK_PACKAGE) {
-    throw new Error(
-      `gen-third-party-notices: expected ${CLAUDE_AGENT_SDK_PACKAGE} manifest, got ${JSON.stringify(manifest.name)}.`,
-    )
-  }
-  const sdkVersion = requiredManifestString(manifest.version, 'version')
-  const claudeCodeVersion = requiredManifestString(
-    manifest.claudeCodeVersion,
-    'claudeCodeVersion',
-  )
-  const entries = Object.entries(manifest.optionalDependencies ?? {})
-  if (entries.length === 0) {
-    throw new Error(
-      `gen-third-party-notices: ${CLAUDE_AGENT_SDK_PACKAGE} declares no optional platform payloads.`,
-    )
-  }
-  const payloads = entries.map(([name, version]) => {
-    if (!name.startsWith(CLAUDE_PLATFORM_PACKAGE_PREFIX)) {
-      throw new Error(
-        `gen-third-party-notices: ${CLAUDE_AGENT_SDK_PACKAGE} optional dependency ${name} is outside its authorized platform-payload identity.`,
-      )
-    }
-    return {
-      name,
-      version: requiredManifestString(version, `${name} optional dependency version`),
-    }
-  }).sort((left, right) => left.name.localeCompare(right.name))
-  return { sdkVersion, claudeCodeVersion, payloads }
 }
 
 /**
@@ -349,37 +262,6 @@ function installedMetadata(name: string, manifests: Map<string, Manifest>): { li
     throw new Error(`gen-third-party-notices: cannot resolve ${license === undefined ? 'license' : 'repository'} for ${name}; run \`pnpm install\`, or add an OVERRIDES entry.`)
   }
   return { license, repo }
-}
-
-function collectClaudeDistribution(manifests: Map<string, Manifest>): ClaudeDistribution {
-  const manifest = installedManifest(CLAUDE_AGENT_SDK_PACKAGE, manifests)
-  if (manifest === undefined) {
-    throw new Error(
-      `gen-third-party-notices: cannot resolve ${CLAUDE_AGENT_SDK_PACKAGE}; run \`pnpm install\`.`,
-    )
-  }
-  const distribution = claudeDistributionFromManifest(manifest)
-  let installedPayloads = 0
-  for (const payload of distribution.payloads) {
-    const installed = installedManifest(payload.name, manifests, payload.version)
-    if (installed === undefined) continue
-    installedPayloads += 1
-    if (
-      installed.name !== payload.name
-      || installed.version !== payload.version
-      || installed.license !== CLAUDE_PLATFORM_DECLARED_LICENSE
-    ) {
-      throw new Error(
-        `gen-third-party-notices: installed ${payload.name} does not match its SDK-declared version and ${CLAUDE_PLATFORM_DECLARED_LICENSE} license field.`,
-      )
-    }
-  }
-  if (installedPayloads === 0) {
-    throw new Error(
-      'gen-third-party-notices: no SDK-declared Claude platform payload is installed; install optional dependencies before regenerating.',
-    )
-  }
-  return distribution
 }
 
 /** Normalize a manifest repository/homepage value to a browsable https URL. */
@@ -685,14 +567,12 @@ export function isPermissive(license: string): boolean {
 }
 
 /**
- * Reject unapproved non-permissive licenses on installed or browser-bundled code.
+ * Reject non-permissive licenses on installed or browser-bundled code.
  * @param dependencies - Disclosed runtime package identities and declared licenses.
- * @throws When a runtime package has no permissive license or exact owner authorization.
+ * @throws When a runtime package has no permissive license.
  */
 export function assertRuntimeLicenses(dependencies: readonly { name: string; license: string }[]): void {
-  const rejected = dependencies.filter(dep => !isPermissive(dep.license)
-    && !isOwnerAuthorizedRuntime(dep.name)
-    && !(LIBREOFFICE_PACKAGES.has(dep.name) && dep.license === 'MPL-2.0'))
+  const rejected = dependencies.filter(dep => !isPermissive(dep.license))
   if (rejected.length > 0) {
     throw new Error(`gen-third-party-notices: runtime ${rejected.map(dep => `${dep.name} (${dep.license})`).join(', ')} is not a permissive license; review the distribution terms and record the decision before regenerating.`)
   }
@@ -708,7 +588,7 @@ function renderNonPermissiveNote(deps: ExternalDep[]): string {
   if (deps.length === 0) return ''
   const named = deps.map(dep => `\`${dep.name}\` (${dep.license})`)
   const subject = named.length === 1 ? named[0] : `${named.slice(0, -1).join(', ')} and ${named.at(-1)}`
-  return `\n${subject} ${named.length === 1 ? 'runs' : 'run'} only as development tooling; their code is not linked into or distributed with any DeepSeek Harness artifact.\n`
+  return `\n${subject} ${named.length === 1 ? 'runs' : 'run'} only as development tooling; their code is not linked into or distributed with any Ahel Desktop artifact.\n`
 }
 
 /** Render one npm dependency table. */
@@ -716,26 +596,6 @@ function renderNpmTable(deps: ExternalDep[]): string {
   const lines = ['| Package | License |', '| --- | --- |']
   for (const dep of deps) lines.push(`| [\`${dep.name}\`](${dep.repo}) | ${dep.license} |`)
   return lines.join('\n')
-}
-
-function renderClaudeDistribution(
-  distribution: ClaudeDistribution | undefined,
-): string {
-  if (distribution === undefined) return ''
-  const rows = distribution.payloads.map(payload =>
-    `| [\`${payload.name}\`](https://www.npmjs.com/package/${payload.name}) | ${payload.version} | ${CLAUDE_PLATFORM_DECLARED_LICENSE} |`,
-  )
-  return `
-## Official Claude Code platform payloads
-
-The project owner authorizes distribution of every version of the official \`${CLAUDE_AGENT_SDK_PACKAGE}\` package and the official Claude Code CLI/platform payloads that each version declares through \`optionalDependencies\`. This identity-scoped authorization does not classify their declared terms as permissive and does not cover any unrelated runtime package; version, declared-license, and payload-set changes still require the ordinary dependency, lockfile, compatibility, terms, and notices review.
-
-The installed SDK ${distribution.sdkVersion} declares the following optional platform packages. Each carries the official Claude Code ${distribution.claudeCodeVersion} executable; the package identities and versions come from the SDK manifest, while the declared license field is verified against the platform payload installed for the current host.
-
-| Optional platform package | Version | Declared license |
-| --- | --- | --- |
-${rows.join('\n')}
-`
 }
 
 /**
@@ -753,16 +613,11 @@ export async function render(): Promise<string> {
   const npm = collectNpmDeps(manifests, names, browser)
   const runtimeDeps = npm.filter(dep => dep.runtime)
   const devDeps = npm.filter(dep => !dep.runtime)
-  const kitRuntime = runtimeDeps.some(dep => dep.name === LIBREOFFICE_KIT_PACKAGE)
+  const sharpRuntime = runtimeDeps.some(dep => dep.name === 'sharp')
   const vendored = collectVendored()
   const python = collectPython()
   const bundledPython = collectBundledPythonDependencies(primaryRuntimeLock.pythonPackages)
   const patched = collectPatched()
-  const claudeDistribution = runtimeDeps.some(
-    dep => dep.name === CLAUDE_AGENT_SDK_PACKAGE,
-  )
-    ? collectClaudeDistribution(manifests)
-    : undefined
   const nonPermissiveDev = devDeps.filter(dep => !isPermissive(dep.license))
   assertRuntimeLicenses(runtimeDeps)
   assertRuntimeLicenses(bundledPython)
@@ -773,9 +628,9 @@ export async function render(): Promise<string> {
 
 # Third-Party Notices
 
-DeepSeek Harness is licensed under [MIT](LICENSE). It depends on the third-party software listed below. Each project remains under its own license; nothing in this file changes those terms.
+Ahel Desktop is licensed under [MIT](LICENSE). It is built on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), Copyright (c) 2026 DeepSeek, used under the MIT License; that copyright notice and permission notice are kept in [LICENSE](LICENSE). Ahel Desktop depends on the third-party software listed below. Each project remains under its own license; nothing in this file changes those terms.
 
-This file lists **direct** dependencies declared by the workspace, the explicitly disclosed official Claude Code platform payload closure, and the Bundled Python distributions. It is generated by \`scripts/gen-third-party-notices.ts\`: a pre-commit hook regenerates it whenever a staged file changes one of its inputs, and \`scripts/gen-third-party-notices.spec.ts\` asserts in the test lane that the committed bytes match. Deleting a manifest runs no hook, so that case is caught by the assertion instead. Run \`pnpm run verify-third-party-notices\` for the standalone check.
+This file lists **direct** dependencies declared by the workspace, the LGPL image library shipped with \`sharp\`, and the Bundled Python distributions. It is generated by \`scripts/gen-third-party-notices.ts\`: a pre-commit hook regenerates it whenever a staged file changes one of its inputs, and \`scripts/gen-third-party-notices.spec.ts\` asserts in the test lane that the committed bytes match. Deleting a manifest runs no hook, so that case is caught by the assertion instead. Run \`pnpm run verify-third-party-notices\` for the standalone check.
 
 The complete npm transitive closure, including the Landlock launcher workspace, is recorded with exact pinned versions in [\`pnpm-lock.yaml\`](pnpm-lock.yaml) — inspect it with \`pnpm licenses list\`. The Python SDK closure is recorded separately in [\`python/sdk/uv.lock\`](python/sdk/uv.lock).
 
@@ -801,13 +656,10 @@ ${patchedLines.join('\n')}
 
 The optional experimental Inspector distributes a locally compiled copy of [chrome-devtools-frontend ${DEVTOOLS_NPM_VERSION}](https://www.npmjs.com/package/chrome-devtools-frontend/v/${DEVTOOLS_NPM_VERSION}), from upstream revision [${DEVTOOLS_SOURCE_REVISION}](https://chromium.googlesource.com/devtools/devtools-frontend/+/${DEVTOOLS_SOURCE_REVISION}). The build includes the Chromium [BSD-3-Clause license](packages/experimental/inspector/assets/devtools/LICENSE) and the third-party license and notice files supplied by the npm source. The Chromium root license does not replace those dependencies' licenses.
 
-${renderClaudeDistribution(claudeDistribution)}
-${kitRuntime ? `
-## LibreOffice conversion kit
+${sharpRuntime ? `
+## LGPL image library (libvips)
 
-${[...LIBREOFFICE_PACKAGES].map(name => `\`${name}\``).join(', ')} declare MPL-2.0, which remains outside the permissive-license allowlist; the notices check accepts only these package identities at those terms. The [distribution decision](.agents/notes/implemented/architecture/2026-09-14-independent-libreoffice-kit.md) records the source obligations.
-
-The [kit repository](https://github.com/deepseek-ai/dsh-libreoffice-kit) supplies the corresponding LibreOffice source pin, modifications, build instructions, Node API, and artifact validation. Its engine packages retain their license and third-party notices; the Node API retains its MPL-2.0 declaration and NOTICE. Recipients must have access to those corresponding sources and notices.
+\`sharp\` (Apache-2.0) loads prebuilt [libvips](https://github.com/libvips/libvips) binaries from the platform packages \`@img/sharp-libvips-<platform>\`, which are licensed under [LGPL-3.0-or-later](https://www.gnu.org/licenses/lgpl-3.0.html). Ahel Desktop links libvips dynamically and does not modify it; the exact version is pinned in [\`pnpm-lock.yaml\`](pnpm-lock.yaml). The corresponding source, build scripts and the license and notice files of the libraries bundled into those binaries are published at [lovell/sharp-libvips](https://github.com/lovell/sharp-libvips) and are installed with each platform package. You may replace the shared library in an installed copy with a compatible build of your own.
 ` : ''}
 
 ## Development-only npm dependencies

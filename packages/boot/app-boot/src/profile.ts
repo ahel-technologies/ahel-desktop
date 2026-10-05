@@ -178,16 +178,16 @@ export function resolveProfileDir(name: string, home: string = resolveDshHome())
 /** The shipped profile templates auto-initialized on first use, by name. */
 export const PROFILE_TEMPLATES: Record<string, ProfileTemplate> = {
   acp: {
-    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-acp-app'],
+    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-agent-tools', '@deepseek-ai/dsh-acp-app'],
   },
   web: {
     bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'],
   },
   headless: {
-    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-headless'],
+    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-agent-tools', '@deepseek-ai/dsh-headless'],
   },
   sdk: {
-    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-sdk-app'],
+    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-agent-tools', '@deepseek-ai/dsh-sdk-app'],
   },
   'sdk-minimal': {
     bundles: ['@deepseek-ai/dsh-sdk-minimal'],
@@ -197,6 +197,8 @@ export const PROFILE_TEMPLATES: Record<string, ProfileTemplate> = {
 /** Installation-owned bundle tuples normalized to the shipped template. */
 const INSTALLATION_OWNED_PROFILE_TUPLES: Record<string, readonly string[]> = {
   headless: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@deepseek-ai/dsh-headless'],
+  acp: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-acp-app'],
+  sdk: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-sdk-app'],
 }
 
 /**
@@ -220,12 +222,8 @@ export const DEFAULT_PROFILE_BUNDLES: readonly string[] = ['@deepseek-ai/dsh-bas
  * ([rationale](../../../../.agents/notes/implemented/process/2026-09-15-shipped-optional-bundles.md),
  * [admission](../../../../.agents/notes/implemented/architecture/2026-09-21-experimental-capabilities-as-optional-bundles.md)).
  */
-export const OPTIONAL_BUNDLES: readonly string[] = [
-  '@deepseek-ai/dsh-experimental-agent-team-profile',
-  '@deepseek-ai/dsh-experimental-voice-input-bundle',
-  '@deepseek-ai/dsh-experimental-auto-review',
-  '@deepseek-ai/dsh-experimental-inspector-profile',
-]
+// Ahel Desktop ships chat plus MCP only, so it offers no optional bundles.
+export const OPTIONAL_BUNDLES: readonly string[] = []
 
 const PROFILE_PATCH_TEMPLATE = `# Your patch layer for this dsh profile, applied after every bundle layer:
 # a top-level YAML array of loader patch entries (id-targeted config

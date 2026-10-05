@@ -4,12 +4,9 @@ import { tmpdir } from 'node:os'
 import { describe, expect, it } from 'vitest'
 import primaryRuntimeLock from './primary-runtime/lock.json' with { type: 'json' }
 import {
-  CLAUDE_AGENT_SDK_PACKAGE,
   assertRuntimeLicenses,
-  claudeDistributionFromManifest,
   collectPythonDependencies,
   collectBundledPythonDependencies,
-  isOwnerAuthorizedRuntime,
   isPermissive,
   type Manifest,
   manifestPatterns,
@@ -32,10 +29,12 @@ describe('THIRD_PARTY_NOTICES.md', () => {
     timeout: 120_000,
   }, async () => {
     const generated = await render()
-    expect(generated).toContain('It depends on the third-party software listed below.')
+    expect(generated).toContain('Ahel Desktop depends on the third-party software listed below.')
+    expect(generated).toContain('It is built on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), Copyright (c) 2026 DeepSeek')
     expect(generated).toContain(`| [\`numpy\`](https://github.com/numpy/numpy) | ${primaryRuntimeLock.pythonPackages.numpy} | BSD-3-Clause |`)
-    expect(generated).toContain('## LibreOffice conversion kit')
-    expect(generated).toContain('Recipients must have access to those corresponding sources and notices.')
+    expect(generated).toContain('## LGPL image library (libvips)')
+    expect(generated).not.toContain('LibreOffice')
+    expect(generated).not.toContain('claude-agent-sdk')
     expect(generated.split('## Development-only npm dependencies')[0]).toContain('| [`chrome-devtools-frontend`]')
     expect(generated).toContain('third-party license and notice files supplied by the npm source')
     expect(readFileSync(resolve(root, 'THIRD_PARTY_NOTICES.md'), 'utf8'), 'stale notices — run `pnpm run gen-third-party-notices`').toBe(generated)
@@ -53,21 +52,11 @@ function workspace(entries: Record<string, Manifest>): { manifests: Map<string, 
 }
 
 describe('tierExternalDeps', () => {
-  it('limits the LibreOffice exception to its reviewed package identity and MPL terms', () => {
-    for (const name of [
-      '@deepseek-ai/libreoffice-kit', '@deepseek-ai/libreoffice-kit-wasm',
-      '@deepseek-ai/libreoffice-kit-darwin-arm64', '@deepseek-ai/libreoffice-kit-darwin-x64',
-      '@deepseek-ai/libreoffice-kit-win32-arm64', '@deepseek-ai/libreoffice-kit-win32-x64',
-    ]) {
-      expect(() => { assertRuntimeLicenses([{ name, license: 'MPL-2.0' }]) }).not.toThrow()
-      expect(() => { assertRuntimeLicenses([{ name, license: 'GPL-3.0-only' }]) }).toThrow(name)
-    }
+  it('rejects every non-permissive runtime license', () => {
     for (const dependency of [
       { name: 'unrelated-library', license: 'MPL-2.0' },
-      { name: '@deepseek-ai/dsh-libreoffice-kit', license: 'MPL-2.0' },
-      { name: '@deepseek-ai/libreoffice-kit-unreviewed', license: 'MPL-2.0' },
-      { name: '@deepseek-ai/libreoffice-kit', license: 'GPL-3.0-only' },
-      { name: '@deepseek-ai/libreoffice-kit', license: 'UNKNOWN' },
+      { name: 'copyleft-library', license: 'GPL-3.0-only' },
+      { name: 'unlabelled-library', license: 'UNKNOWN' },
     ]) {
       expect(() => { assertRuntimeLicenses([dependency]) }).toThrow(`${dependency.name} (${dependency.license})`)
     }
@@ -84,8 +73,6 @@ describe('tierExternalDeps', () => {
     expect(dependencies.map(dep => dep.name)).toEqual(['browser-lib'])
     expect(() => { assertRuntimeLicenses(dependencies) }).toThrow('browser-lib (GPL-3.0-only)')
     expect(() => { assertRuntimeLicenses([{ name: 'browser-lib', license: 'MIT' }]) }).not.toThrow()
-    expect(() => { assertRuntimeLicenses([{ name: CLAUDE_AGENT_SDK_PACKAGE, license: 'SEE LICENSE IN README.md' }]) })
-      .not.toThrow()
   })
 
   it('keeps browser-bundled development dependencies in runtime disclosures', () => {
@@ -395,66 +382,6 @@ describe('isPermissive', () => {
     expect(['MIT)', '((MIT', '(MIT OR GPL-3.0-only', 'MIT OR OR GPL-3.0-only'].some(isPermissive)).toBe(false)
     expect(isPermissive('MIT+')).toBe(false)
     expect(isPermissive('GPL-2.0-only WITH Classpath-exception-2.0')).toBe(false)
-  })
-})
-
-describe('official Claude distribution authorization', () => {
-  it('authorizes only the direct SDK identity without relabeling its license', () => {
-    expect(isOwnerAuthorizedRuntime(CLAUDE_AGENT_SDK_PACKAGE)).toBe(true)
-    expect(isOwnerAuthorizedRuntime(`${CLAUDE_AGENT_SDK_PACKAGE}-linux-x64`))
-      .toBe(false)
-    expect(isOwnerAuthorizedRuntime('@anthropic-ai/unrelated')).toBe(false)
-    expect(isPermissive('SEE LICENSE IN README.md')).toBe(false)
-  })
-
-  it('derives version-independent platform payloads from the official SDK manifest', () => {
-    expect(claudeDistributionFromManifest({
-      name: CLAUDE_AGENT_SDK_PACKAGE,
-      version: '9.8.7',
-      license: 'future declared terms',
-      claudeCodeVersion: '6.5.4',
-      optionalDependencies: {
-        [`${CLAUDE_AGENT_SDK_PACKAGE}-linux-x64`]: '9.8.7',
-        [`${CLAUDE_AGENT_SDK_PACKAGE}-darwin-arm64`]: '9.8.7',
-      },
-    })).toEqual({
-      sdkVersion: '9.8.7',
-      claudeCodeVersion: '6.5.4',
-      payloads: [
-        {
-          name: `${CLAUDE_AGENT_SDK_PACKAGE}-darwin-arm64`,
-          version: '9.8.7',
-        },
-        {
-          name: `${CLAUDE_AGENT_SDK_PACKAGE}-linux-x64`,
-          version: '9.8.7',
-        },
-      ],
-    })
-  })
-
-  it('rejects a wrong SDK identity, missing payloads, and unrelated optionals', () => {
-    expect(() => claudeDistributionFromManifest({
-      name: '@anthropic-ai/unrelated',
-      version: '1.0.0',
-      claudeCodeVersion: '1.0.0',
-      optionalDependencies: {
-        [`${CLAUDE_AGENT_SDK_PACKAGE}-linux-x64`]: '1.0.0',
-      },
-    })).toThrow(`expected ${CLAUDE_AGENT_SDK_PACKAGE} manifest`)
-    expect(() => claudeDistributionFromManifest({
-      name: CLAUDE_AGENT_SDK_PACKAGE,
-      version: '1.0.0',
-      claudeCodeVersion: '1.0.0',
-    })).toThrow('declares no optional platform payloads')
-    expect(() => claudeDistributionFromManifest({
-      name: CLAUDE_AGENT_SDK_PACKAGE,
-      version: '1.0.0',
-      claudeCodeVersion: '1.0.0',
-      optionalDependencies: {
-        '@anthropic-ai/unrelated': '1.0.0',
-      },
-    })).toThrow('outside its authorized platform-payload identity')
   })
 })
 
