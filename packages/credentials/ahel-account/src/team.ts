@@ -3,15 +3,15 @@
  * workspace over ahel.ai's `/api/desktop/*` routes, with the account's own
  * bearer and the selected `?workspace=`: held calls to approve, the vault's
  * key Connect form and sign-ins, teammate handoffs, and the balance line.
- * An ahel.ai without those routes answers every method with
- * `ahel-team/outdated`.
+ * An ahel.ai without those routes answers every route method with
+ * `ahel-team/outdated`. `sessionDraft` reads a local chat only.
  */
 
 import type { Context } from '@ahel/cordis'
 import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type {
-  ApprovalDecision, DesktopSummary, HandoffDraft, HandoffList, HandoffRead, HandoffReview, HandoffSent, HandoffShare, KeyConnectAnswer,
-  KeyConnectSaved, VaultDisconnected, VaultSignInList,
+  ApprovalDecision, DesktopSummary, HandoffDraft, HandoffList, HandoffRead, HandoffReview, HandoffSent, HandoffSessionDraft, HandoffShare,
+  KeyConnectAnswer, KeyConnectSaved, VaultDisconnected, VaultSignInList,
 } from './types.ts'
 
 declare module '@ahel/cordis' {
@@ -51,6 +51,33 @@ function record(value: unknown): Record<string, unknown> {
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value !== '' ? value : null
+}
+
+/** The part of `ctx.sessionQuery` a handoff draft reads; the service is optional in a composition. */
+interface SessionReader {
+  readTitleSnapshots(sessionIds: readonly string[]): Promise<readonly ({ status: 'fulfilled'; value: { title?: { title: string } } } | { status: 'rejected' })[]>
+  readSession(sessionId: string): Promise<{ events: readonly { type: string; data: unknown }[] }>
+}
+
+const DRAFT_TITLE_MAX = 120
+const DRAFT_GOAL_MAX = 4000
+const DRAFT_CHANGES_MAX = 6000
+
+/** The text blocks of a message's content; reasoning and tool calls stay out. */
+function contentText(content: unknown): string {
+  if (!Array.isArray(content)) return ''
+  return content
+    .map(block => record(block))
+    .filter(block => block.type === 'text' && typeof block.text === 'string')
+    .map(block => (block.text as string).trim())
+    .filter(Boolean)
+    .join('\n\n')
+}
+
+/** Cut text to `max` characters at a character boundary, marking the cut. */
+function clip(value: string, max: number): string {
+  const chars = Array.from(value.trim())
+  return chars.length <= max ? chars.join('') : `${chars.slice(0, max - 1).join('')}…`
 }
 
 /** Read a JSON body; undefined when it is not JSON. */
@@ -201,6 +228,42 @@ export class AhelTeam extends TypertRemoteService {
   @Remote
   async markHandoffDone(id: string): Promise<HandoffSent> {
     return await this.api('POST', '/api/desktop/handoffs', { operation: 'done', id }) as HandoffSent
+  }
+
+  /**
+   * Prefill for "Share with teammate" from one local chat; no network.
+   * @param sessionId - the chat's session id.
+   * @returns its title, the first message the person typed and the last assistant reply;
+   * empty strings for what the session store could not give.
+   */
+  @Remote
+  async sessionDraft(sessionId: string): Promise<HandoffSessionDraft> {
+    const query = this.ctx.get('sessionQuery') as SessionReader | undefined
+    if (query === undefined) return { title: '', goal: '', changes: '' }
+    let title = ''
+    try {
+      const [result] = await query.readTitleSnapshots([sessionId])
+      if (result?.status === 'fulfilled') title = clip(result.value.title?.title ?? '', DRAFT_TITLE_MAX)
+    } catch (_unreadable) {
+      // No title; the dialog asks for one.
+    }
+    try {
+      const { events } = await query.readSession(sessionId)
+      let goal = ''
+      let changes = ''
+      for (const event of events) {
+        const data = record(event.data)
+        // Only what the person typed; injected context and goal rounds carry other sources.
+        if (goal === '' && event.type === 'user/message' && record(data.source).kind === 'user') goal = contentText(data.content)
+        if (event.type === 'assistant/message') {
+          const reply = contentText(record(data.message).content)
+          if (reply !== '') changes = reply
+        }
+      }
+      return { title, goal: clip(goal, DRAFT_GOAL_MAX), changes: clip(changes, DRAFT_CHANGES_MAX) }
+    } catch (_unreadable) {
+      return { title, goal: '', changes: '' }
+    }
   }
 
   /** Call one `/api/desktop` route with the account's bearer; refresh once after a 401 from the route itself. */

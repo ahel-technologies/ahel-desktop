@@ -490,6 +490,16 @@ export interface HandoffShare extends HandoffDraft {
   readonly requestKey: string
 }
 
+/** What one local chat offers to prefill a handoff; empty strings where the chat could not be read. */
+export interface HandoffSessionDraft {
+  /** The chat's title, up to 120 characters. */
+  readonly title: string
+  /** The first message the person typed, up to 4000 characters. */
+  readonly goal: string
+  /** The last assistant reply's text, up to 6000 characters. */
+  readonly changes: string
+}
+
 declare module '@ahel/cordis' {
   interface Events {
     /**
