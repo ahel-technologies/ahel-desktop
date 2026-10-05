@@ -10,14 +10,14 @@ import type {} from '@ahel/dsh-client-connection'
  * agent (including subagents and turns waiting for approval), queued inbox
  * messages, or a running or stopping background job.
  * @param liveAgents - Current agent roster.
- * @param jobs - Job registry queried for the global roster and each agent's own jobs.
+ * @param jobs - Job registry queried for the global roster and each agent's own jobs; absent in a profile that mounts no jobs.
  * @returns true when any of those conditions holds.
  */
-export function hasDesktopActiveTasks(liveAgents: ReturnType<Context['agents']['list']>, jobs: Context['jobs']): boolean {
+export function hasDesktopActiveTasks(liveAgents: ReturnType<Context['agents']['list']>, jobs: Context['jobs'] | undefined): boolean {
   return liveAgents.some(agent => agent.status === 'running'
     || agent.inbox.nextTurn.length > 0 || agent.inbox.nextStep.length > 0)
-    || [undefined, ...liveAgents].some(agent => jobs.list(agent?.id)
-      .some(job => job.status === 'running' || job.status === 'stopping'))
+    || (jobs !== undefined && [undefined, ...liveAgents].some(agent => jobs.list(agent?.id)
+      .some(job => job.status === 'running' || job.status === 'stopping')))
 }
 
 /**
@@ -47,7 +47,7 @@ export function installDesktopUpdateTaskControl(ctx: Context): (action: 'inspect
     if (action === 'unlock') { locked = false; lockGeneration++ }
     const agents = ctx.get('agents')
     const jobs = ctx.get('jobs')
-    if (agents === undefined || jobs === undefined) throw new Error('desktop update: task services are unavailable')
+    if (agents === undefined) throw new Error('desktop update: task services are unavailable')
     if (action === 'lock') {
       locked = true
       const generation = ++lockGeneration

@@ -26,8 +26,9 @@ export function installDesktopQuitInspection(ctx: Context): () => Promise<Deskto
   return async () => {
     if (stopped) throw new Error('desktop quit: Host is stopping')
     const agents = ctx.get('agents')
+    // The Ahel profile mounts no jobs service; agents alone then decide.
     const jobs = ctx.get('jobs')
-    if (agents === undefined || jobs === undefined) throw new Error('desktop quit: task services are unavailable')
+    if (agents === undefined) throw new Error('desktop quit: task services are unavailable')
     const liveAgents = agents.list()
     const activeTasks = hasDesktopActiveTasks(liveAgents, jobs)
     let scheduledTasks = false
