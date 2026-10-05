@@ -60,10 +60,11 @@ function mount(
   version?: string,
   mutateImpl: () => Promise<unknown> = () =>
     Promise.resolve(remoteAnswer(welcomeView({ [WELCOME_NOTICE_ACK_FIELD]: WELCOME_NOTICE_VERSION }, 1))),
+  options: { appRoot?: boolean } = {},
 ) {
   const appRoot = document.createElement('div')
   appRoot.id = 'root'
-  document.body.append(appRoot)
+  if (options.appRoot !== false) document.body.append(appRoot)
   const mutate = vi.fn(mutateImpl)
   const api = {
     settings: {
@@ -107,11 +108,17 @@ describe('WelcomeNotice', () => {
   it('uses the exact owner copy in both GUI locales', () => {
     expect(WELCOME_NOTICE_COPY.en).toEqual({
       title: 'Preview Notice',
-      body: 'DeepSeek Harness 0.2 is still in preview, and many areas need continued improvement and refinement. We welcome feedback and suggestions from all developers and users. The new desktop app now targets a broad range of users, while developer-related advanced features can be enabled in the settings. DeepSeek Harness’s product features and plugin APIs are expected to continue rapid iteration and evolution, and will gradually stabilize over time.\n\nWe look forward to exploring the limits of intelligence together with users and developers around the world, building on open-source, reusable, and composable infrastructure. We welcome everyone to bring their ideas to life with DeepSeek Harness and participate in the community to enrich the plugin ecosystem.',
+      body: 'Ahel Desktop is in preview. Some areas still need work, and features may change between releases. Your feedback helps us improve it.\n\nTo start, add a model provider with your own API key in Settings → Models. Anthropic and OpenAI-compatible providers are supported.',
       continueLabel: 'Continue',
     })
     expect(en.welcomeBody).toBe(WELCOME_NOTICE_COPY.en.body)
     expect(zh.welcomeBody).toBe(WELCOME_NOTICE_COPY.zh.body)
+  })
+
+  it('renders without an application root to make inert', async () => {
+    mount(undefined, undefined, { appRoot: false })
+    expect(await screen.findByRole('dialog', { name: WELCOME_NOTICE_COPY.zh.title })).toBeTruthy()
+    expect(document.getElementById('root')).toBeNull()
   })
 
   it('renders one blocking modal action and focuses the title', async () => {

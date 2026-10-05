@@ -266,7 +266,7 @@ export class SessionCommandController {
     const childId = brandString<SessionId>(`session-${randomUUID()}`)
     const composition = await this.agents.composeAgent(this.agents.presetForObservation(source))
     try {
-      const { provider, model } = this.ctx.agentDefaultModel.currentSelection()
+      const selected = await this.ctx.agentDefaultModel.resolveSelection()
       await this.ctx.agents.create({
         sessionId: childId,
         seed,
@@ -279,7 +279,7 @@ export class SessionCommandController {
             ? {}
             : { agentPreset: composition.agentPreset }),
         },
-        agentOptions: { provider, model },
+        agentOptions: selected === undefined ? {} : { provider: selected.provider, model: selected.model },
         setup: composition.setup,
       })
     } catch (error) {
@@ -333,11 +333,12 @@ export class SessionCommandController {
       rpcId: request.requestId,
       ...(clientTimeZone === undefined ? {} : { clientTimeZone }),
     }
+    await this.requireConfiguredModel(agent)
     const hasImage = request.content.some(part => part.type === 'image')
     const admit = async (): Promise<SessionPromptValue> => {
       try {
-        if (hasImage) {
-          const current = this.agents.selectionFor(agent).current
+        const current = this.agents.selectionFor(agent).current
+        if (hasImage && current !== undefined) {
           const model = await this.ctx.llm.resolveModelInfo(current.provider, current.model)
           if (model.inputModalities !== undefined && !model.inputModalities.includes('image')) {
             throw new RemoteError(
@@ -374,6 +375,18 @@ export class SessionCommandController {
       return { accepted: true }
     }
     return hasImage ? this.agents.serializeImageAdmission(agent, admit) : admit()
+  }
+
+  /**
+   * Refuse a prompt before admission when neither the Session nor the deployment
+   * names a model, so the user sees setup guidance instead of a failed turn.
+   * @param agent - live Agent about to receive the prompt.
+   */
+  private async requireConfiguredModel(agent: Agent): Promise<void> {
+    if (this.agents.selectionFor(agent).current !== undefined) return
+    if (agent.options.provider !== undefined && agent.options.model !== undefined) return
+    if (await this.ctx.agentDefaultModel.resolveSelection() !== undefined) return
+    throw new RemoteError('session/model-not-configured', 'Add a model in Settings → Models to start chatting.', {})
   }
 
   private async requireModel(selection: Pick<AgentModelSelection, 'provider' | 'model'>): Promise<void> {

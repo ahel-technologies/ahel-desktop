@@ -15,6 +15,16 @@ import type {} from '@deepseek-ai/dsh-workspace'
 import type { WebhookRuleId } from './brand.ts'
 import type { VerifiedWebhookDelivery, WebhookSessionRequest } from './types.ts'
 
+/** The provider route a webhook Session starts on. */
+interface WebhookSessionRoute {
+  readonly modelSelection: ModelSelection
+  readonly agentOptions: {
+    readonly provider: string
+    readonly model: string
+    readonly maxTokens?: number
+  }
+}
+
 /** Detached values the creation transaction keeps across asynchronous preflight. */
 interface ResolvedWebhookSessionRequest {
   readonly workspacePath: string
@@ -22,12 +32,8 @@ interface ResolvedWebhookSessionRequest {
   readonly prompt: string
   readonly agentPreset: string
   readonly permissionPreset: string
-  readonly modelSelection: ModelSelection
-  readonly agentOptions: {
-    readonly provider: string
-    readonly model: string
-    readonly maxTokens?: number
-  }
+  /** The rule's explicit model; undefined defers to the deployment default. */
+  readonly route: WebhookSessionRoute | undefined
 }
 
 /** Require one non-empty string field from an untyped rule result. */
@@ -40,7 +46,7 @@ function requiredString(record: Record<string, unknown>, field: string): string 
 }
 
 /** Snapshot and validate a same-process rule result before crossing awaits. */
-function resolveRequest(ctx: Context, input: WebhookSessionRequest): ResolvedWebhookSessionRequest {
+function resolveRequest(input: WebhookSessionRequest): ResolvedWebhookSessionRequest {
   const candidate: unknown = input
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) {
     throw new TypeError('webhook rule result must be null or a Session request object')
@@ -58,13 +64,8 @@ function resolveRequest(ctx: Context, input: WebhookSessionRequest): ResolvedWeb
   if (model !== undefined && (model === null || typeof model !== 'object' || Array.isArray(model))) {
     throw new TypeError('webhook Session request model must be an object')
   }
-  let agentOptions: ResolvedWebhookSessionRequest['agentOptions']
-  let modelSelection: ModelSelection
-  if (model === undefined) {
-    const selected = ctx.agentDefaultModel.currentSelection()
-    agentOptions = { provider: selected.provider, model: selected.model }
-    modelSelection = { ...selected }
-  } else {
+  let route: WebhookSessionRoute | undefined
+  if (model !== undefined) {
     const modelRecord = model as Record<string, unknown>
     const provider = requiredString(modelRecord, 'provider')
     const modelId = requiredString(modelRecord, 'model')
@@ -73,14 +74,33 @@ function resolveRequest(ctx: Context, input: WebhookSessionRequest): ResolvedWeb
       && (typeof maxTokens !== 'number' || !Number.isSafeInteger(maxTokens) || maxTokens <= 0)) {
       throw new TypeError('webhook Session request model.maxTokens must be a positive safe integer')
     }
-    agentOptions = {
-      provider,
-      model: modelId,
-      ...(maxTokens === undefined ? {} : { maxTokens }),
+    route = {
+      agentOptions: {
+        provider,
+        model: modelId,
+        ...(maxTokens === undefined ? {} : { maxTokens }),
+      },
+      modelSelection: { provider, model: modelId },
     }
-    modelSelection = { provider, model: modelId }
   }
-  return { workspacePath, title, prompt, agentPreset, permissionPreset, modelSelection, agentOptions }
+  return { workspacePath, title, prompt, agentPreset, permissionPreset, route }
+}
+
+/**
+ * Resolve the deployment default route for a rule result that names no model.
+ * @param ctx - runtime context carrying the default model service.
+ * @returns the default route.
+ * @throws Error when no provider offers a model yet.
+ */
+async function defaultRoute(ctx: Context): Promise<WebhookSessionRoute> {
+  const selected = await ctx.agentDefaultModel.resolveSelection()
+  if (selected === undefined) {
+    throw new Error('webhook: no model is configured; add a model in Settings → Models or name one in the rule result')
+  }
+  return {
+    agentOptions: { provider: selected.provider, model: selected.model },
+    modelSelection: { ...selected },
+  }
 }
 
 /** Log a rollback failure without replacing the operation's original failure. */
@@ -121,8 +141,9 @@ export async function createWebhookSession(
   request: WebhookSessionRequest,
   signal: AbortSignal,
 ): Promise<void> {
-  const resolved = resolveRequest(ctx, request)
+  const resolved = resolveRequest(request)
   ctx.permissionPresets.resolve(resolved.permissionPreset)
+  const route = resolved.route ?? await defaultRoute(ctx)
   const preset = await ctx.agentPresets.resolve(resolved.agentPreset)
   await using presetScope = await ctx.agentPresets.acquireScope(preset.id)
   void presetScope
@@ -135,10 +156,10 @@ export async function createWebhookSession(
     sessionId,
     signal,
     meta: { cwd: workspace.path, agentPreset: preset.id },
-    agentOptions: resolved.agentOptions,
+    agentOptions: route.agentOptions,
     setup: async (agentCtx) => {
       await ctx.agentPresets.mount(agentCtx, preset.id)
-      installInitialModelSelection(agentCtx, resolved.modelSelection)
+      installInitialModelSelection(agentCtx, route.modelSelection)
     },
   })
 

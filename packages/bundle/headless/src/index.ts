@@ -329,7 +329,10 @@ async function run(ctx: Context, config: Config, io: HeadlessIo): Promise<void> 
     throw new Error('a task is required, for example: dsh --profile headless "run the tests"')
   }
 
-  const selection = defaultModel.currentSelection()
+  const selection = await defaultModel.resolveSelection()
+  if (selection === undefined) {
+    throw new Error('no model is configured: add a model in Settings → Models, or add a provider to the llm-pi-ai settings section')
+  }
   const agentOptions = { provider: selection.provider, model: selection.model }
   // This bundle composes no preset roster, so the model-facing rows sit in the
   // host plane and the agent reads them from the global layer. A deployment

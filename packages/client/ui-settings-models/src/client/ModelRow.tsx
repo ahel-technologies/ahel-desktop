@@ -1,10 +1,10 @@
-/** Shared model fields and actions for both adapter catalog editors. */
+/** Shared model fields and actions for the provider catalog editors. */
 
 import type { ReactNode } from 'react'
 import {
   IconChevronDownOutlineRegular, IconChevronRightOutlineRegular, IconTrashOutlineRegular,
 } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { DeepSeekModelDraft } from './DeepSeekModelsEditor.tsx'
+import type { ModelDraft } from './model-drafts.ts'
 import type { ModelsKey } from './locales.ts'
 import { ModelInputTypes } from './ModelInputTypes.tsx'
 import styles from './ModelsSection.module.css'
@@ -19,9 +19,8 @@ interface CapacityInput {
 
 /** Adapter-owned data and actions for one model row. */
 interface ModelRowProps {
-  model: DeepSeekModelDraft
+  model: ModelDraft
   position: number
-  inputField: 'inputModalities' | 'input'
   inputFallback?: readonly string[] | undefined
   inputLoading?: boolean
   expanded: boolean
@@ -30,8 +29,7 @@ interface ModelRowProps {
   contextWindow: CapacityInput
   maxTokens: CapacityInput
   onFieldChange: (field: 'id' | 'name', value: string | undefined) => void
-  onIdBlur?: (value: string) => void
-  onChange: (model: DeepSeekModelDraft) => void
+  onChange: (model: ModelDraft) => void
   onToggle: () => void
   onRemove: () => void
 }
@@ -59,7 +57,6 @@ export function ModelRow(props: ModelRowProps): ReactNode {
               const value = event.target.value
               props.onFieldChange(field, field === 'name' && value === '' ? undefined : value)
             }}
-            onBlur={field === 'id' ? event => props.onIdBlur?.(event.target.value) : undefined}
           />
         ))}
         <button
@@ -103,7 +100,7 @@ export function ModelRow(props: ModelRowProps): ReactNode {
               </label>
             ))}
             <ModelInputTypes
-              model={model} field={props.inputField} position={position}
+              model={model} position={position}
               fallback={props.inputFallback} disabled={disabled || props.inputLoading === true} t={t} onChange={props.onChange}
             />
           </div>

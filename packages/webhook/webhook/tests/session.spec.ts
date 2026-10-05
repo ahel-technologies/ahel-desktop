@@ -15,6 +15,7 @@ interface HarnessOptions {
   failDetach?: boolean
   failDispose?: boolean
   abortAt?: 'workspace' | 'agent'
+  noDefaultModel?: boolean
 }
 
 interface SessionHarness {
@@ -87,9 +88,11 @@ function harness(options: HarnessOptions = {}): SessionHarness {
       },
     },
     agentDefaultModel: {
-      currentSelection() {
+      async resolveSelection() {
         calls.push('default-model')
-        return { provider: 'default-provider', model: 'default-model', reasoningEffort: 'high' }
+        return options.noDefaultModel === true
+          ? undefined
+          : { provider: 'default-provider', model: 'default-model', reasoningEffort: 'high' }
       },
     },
     agentPresets: {
@@ -197,8 +200,8 @@ describe('webhook Session creation', () => {
     const test = harness()
     await create(test)
     expect(test.calls).toEqual([
-      'default-model',
       'permission-resolve:read-only',
+      'default-model',
       'preset-resolve:standard',
       'standing:standard',
       'workspace:/workspace',
@@ -217,6 +220,12 @@ describe('webhook Session creation', () => {
         kind: 'webhook', provider: 'github', source: 'primary', deliveryId: 'delivery', ruleId: 'review',
       },
     })
+  })
+
+  it('refuses a rule result without a model while no default model exists', async () => {
+    const test = harness({ noDefaultModel: true })
+    await expect(create(test)).rejects.toThrow('add a model in Settings → Models')
+    expect(test.calls).toEqual(['permission-resolve:read-only', 'default-model'])
   })
 
   it('uses a complete explicit model without consulting the default', async () => {

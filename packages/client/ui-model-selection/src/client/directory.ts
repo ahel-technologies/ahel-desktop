@@ -176,8 +176,10 @@ export class ModelDirectory {
       })
       return
     }
-    const selection = projected.next ?? catalog.value.default
-    const routable = catalog.value.groups.some(group => group.id === selection.provider
+    // No Session selection and no deployment default: no provider offers a
+    // model yet, so the seat shows its add-a-model state.
+    const selection = projected.next ?? catalog.value.default ?? null
+    const routable = selection !== null && catalog.value.groups.some(group => group.id === selection.provider
       && group.models.some(model => model.id === selection.model))
     this.store.set({
       current: selection,

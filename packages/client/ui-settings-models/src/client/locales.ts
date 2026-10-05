@@ -3,7 +3,6 @@
 /** English strings (the key-set source of truth for this pair). */
 export const en = {
   nav: 'Models',
-  deepSeekAccount: 'DeepSeek Account',
   title: 'Models',
   intro: 'Enter your API keys to use models from the following providers.',
   edit: 'Edit',
@@ -43,8 +42,6 @@ export const en = {
   customized: 'Customized settings',
   baseUrl: 'Base URL',
   baseUrlDefault: 'Provider default',
-  deepSeekBaseUrl: 'https://api.deepseek.com/anthropic',
-  deepSeekEndpointHint: 'Use an API endpoint compatible with Anthropic Messages.',
   models: 'Models',
   modelsInherited: 'Using the adapter defaults',
   modelsCustomized: 'Customized model catalog',
@@ -106,15 +103,9 @@ export const en = {
   create: 'Create provider',
   creating: 'Creating\u2026',
   welcomeTitle: 'Preview Notice',
-  welcomeBody: 'DeepSeek Harness 0.2 is still in preview, and many areas need continued improvement and refinement. We welcome feedback and suggestions from all developers and users. The new desktop app now targets a broad range of users, while developer-related advanced features can be enabled in the settings. DeepSeek Harness’s product features and plugin APIs are expected to continue rapid iteration and evolution, and will gradually stabilize over time.\n\nWe look forward to exploring the limits of intelligence together with users and developers around the world, building on open-source, reusable, and composable infrastructure. We welcome everyone to bring their ideas to life with DeepSeek Harness and participate in the community to enrich the plugin ecosystem.',
+  welcomeBody: 'Ahel Desktop is in preview. Some areas still need work, and features may change between releases. Your feedback helps us improve it.\n\nTo start, add a model provider with your own API key in Settings → Models. Anthropic and OpenAI-compatible providers are supported.',
   welcomeContinue: 'Continue',
   welcomeError: 'The acknowledgement could not be saved. Please try again.',
-  onboardingTitle: 'Add an API key to get started',
-  onboardingDescription: 'Configure the official DeepSeek provider to start building.',
-  onboardingLater: 'Configure later',
-  onboardingSave: 'Save and continue',
-  onboardingSaving: 'Saving…',
-  keyRequired: 'Enter an API key to continue.',
 }
 
 /** The settings.models namespace key union. */
@@ -123,7 +114,6 @@ export type ModelsKey = keyof typeof en
 /** Chinese strings (same keys as {@link en}). */
 export const zh: { [Key in keyof typeof en]: string } = {
   nav: '模型',
-  deepSeekAccount: 'DeepSeek 账号',
   title: '模型',
   intro: '填入各提供商的 API 密钥即可使用其模型。',
   edit: '编辑',
@@ -163,8 +153,6 @@ export const zh: { [Key in keyof typeof en]: string } = {
   customized: '自定义设置',
   baseUrl: 'API 地址',
   baseUrlDefault: '提供商默认',
-  deepSeekBaseUrl: 'https://api.deepseek.com/anthropic',
-  deepSeekEndpointHint: '请填写兼容 Anthropic Messages 协议的 API 地址。',
   models: '模型目录',
   modelsInherited: '正在使用适配器默认模型',
   modelsCustomized: '已自定义模型目录',
@@ -226,13 +214,7 @@ export const zh: { [Key in keyof typeof en]: string } = {
   create: '创建提供商',
   creating: '创建中\u2026',
   welcomeTitle: '预览版说明',
-  welcomeBody: 'DeepSeek Harness 目前的 0.2 版本仍处于预览阶段，还有许多地方需要持续改进和打磨，希望听取广大开发者和用户的反馈建议。现在，新的桌面端面向广泛用户，开发者相关的进阶功能可在配置中开启使用。预计 DeepSeek Harness 的产品功能以及插件 API 都会继续快速迭代、持续演化，并逐渐趋于稳定。\n\n我们期待与全球用户和开发者一起，在开源、可复用、可组合的基础设施之上，共同探索智能上限。欢迎大家用 DeepSeek Harness 将想法变成现实，与社区一起丰富插件生态。',
+  welcomeBody: 'Ahel Desktop 目前处于预览阶段，部分功能仍在完善，各版本之间可能会有变化。欢迎反馈意见，帮助我们改进。\n\n开始使用前，请在“设置 → 模型”中用你自己的 API 密钥添加模型提供商。支持 Anthropic 及兼容 OpenAI 协议的提供商。',
   welcomeContinue: '继续',
   welcomeError: '暂时无法保存确认状态，请重试。',
-  onboardingTitle: '添加一个 API Key 开始使用',
-  onboardingDescription: '配置 DeepSeek 官方模型，即可开始使用。',
-  onboardingLater: '稍后配置',
-  onboardingSave: '保存并继续',
-  onboardingSaving: '保存中…',
-  keyRequired: '请输入 API 密钥后继续。',
 }

@@ -66,7 +66,8 @@ export type ApiSessionAgentResult =
   | { readonly error: ApiSessionAgentError }
 
 type InstalledSelection = ModelSelectionRef & {
-  current: AgentModelSelection
+  /** Session pick, logged request, or deployment default; undefined while no model exists. */
+  current: AgentModelSelection | undefined
   consume(provider: string, model: string, reasoningEffort: string | undefined): boolean
 }
 
@@ -292,7 +293,7 @@ export class ApiSessionAgentController {
       : agentModelSelection(projectionState.pending)
     const defaultModel = this.ctx.agentDefaultModel
     const selection: InstalledSelection = {
-      get current(): AgentModelSelection {
+      get current(): AgentModelSelection | undefined {
         if (picked !== undefined) return picked
         const loggedHeader = agent.session.requestHeader()
         if (loggedHeader === undefined) return defaultModel.currentSelection()
@@ -308,7 +309,7 @@ export class ApiSessionAgentController {
             : { reasoningEffort: logged.reasoningEffort }),
         }
       },
-      set current(next: AgentModelSelection) {
+      set current(next: AgentModelSelection | undefined) {
         picked = next
       },
       consume(provider: string, model: string, reasoningEffort: string | undefined): boolean {
@@ -428,6 +429,7 @@ export class ApiSessionAgentController {
     if (hasApiSessionSubagentOwner(this.ctx, { header: observation.header }, undefined)) {
       throw new ApiSessionSubagentOwnership(sessionId)
     }
+    const agentOptions = await this.agentOptions()
     const composition = await this.composeAgent(this.presetForObservation(observation))
     const published = this.ctx.sessions.get(sessionId)
     const live = this.ctx.agents.get(sessionId)
@@ -436,7 +438,7 @@ export class ApiSessionAgentController {
     }
     return (await this.ctx.agents.resume({
       resumeSessionId: sessionId,
-      agentOptions: this.agentOptions(),
+      agentOptions,
       setup: composition.setup,
     })).agent
   }
@@ -465,10 +467,11 @@ export class ApiSessionAgentController {
         }
         const storedPreset = this.presetForObservation(observation)
         this.assertPresetUnchanged(sessionId, presetId, storedPreset)
+        const agentOptions = await this.agentOptions()
         const composition = await this.composeAgent(storedPreset)
         return (await this.ctx.agents.resume({
           resumeSessionId: sessionId,
-          agentOptions: this.agentOptions(),
+          agentOptions,
           setup: composition.setup,
         })).agent
       } catch (error: unknown) {
@@ -482,10 +485,11 @@ export class ApiSessionAgentController {
     } catch (error: unknown) {
       throw new Error(`failed to ensure project directory "${cwd}": ${String(error)}`, { cause: error })
     }
+    const agentOptions = await this.agentOptions()
     const composition = await this.composeAgent(presetId)
     return (await this.ctx.agents.create({
       sessionId,
-      agentOptions: this.agentOptions(),
+      agentOptions,
       meta: {
         cwd,
         ...(composition.agentPreset === undefined ? {} : { agentPreset: composition.agentPreset }),
@@ -494,9 +498,10 @@ export class ApiSessionAgentController {
     })).agent
   }
 
-  private agentOptions(): AgentOptions {
-    const { provider, model } = this.ctx.agentDefaultModel.currentSelection()
-    return { provider, model }
+  /** Route options for a new or resumed Agent; empty while no model exists, so a prompt reports it. */
+  private async agentOptions(): Promise<AgentOptions> {
+    const selected = await this.ctx.agentDefaultModel.resolveSelection()
+    return selected === undefined ? {} : { provider: selected.provider, model: selected.model }
   }
 
   private installSelection(agent: Agent): void {

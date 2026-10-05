@@ -4,7 +4,7 @@ import type { RpcResponse } from '@deepseek-ai/dsh-api-remotes/client'
 import { RemoteError } from '@deepseek-ai/dsh-client-test-runtime'
 import { SettingsDescribeMirror } from '@deepseek-ai/dsh-client-ui-settings/src/client/settings-mirror.ts'
 import { settingsSchema } from './settings-schema.client.ts'
-import { joinProviderDirectory, ModelsSettingsStore, providerUsable } from '../src/client/store.ts'
+import { joinProviderDirectory, ModelsSettingsStore } from '../src/client/store.ts'
 
 it.each([false, true])('retains configuration diagnostics when the route is active: %s', (active) => {
   expect(joinProviderDirectory(active ? [{ id: 'openai', name: 'openai' }] : [], [{
@@ -16,13 +16,13 @@ it.each([false, true])('retains configuration diagnostics when the route is acti
   }])
 })
 
-it('places account and official before third-party providers', () => {
-  const providers = ['custom', 'deepseek-official', 'deepseek-account', 'openai']
+it('keeps declared providers in declaration order before undeclared live routes', () => {
+  const providers = ['custom', 'gateway', 'anthropic', 'openai']
   const directory = providers.map(provider => ({
     provider, displayName: provider, settingsNs: 'fixture', settingsPath: [],
   }))
-  expect(joinProviderDirectory([], directory).map(row => row.provider))
-    .toEqual(['deepseek-account', 'deepseek-official', 'custom', 'openai'])
+  expect(joinProviderDirectory([{ id: 'ghost', name: 'Ghost' }], directory).map(row => row.provider))
+    .toEqual([...providers, 'ghost'])
   expect(directory.map(row => row.provider)).toEqual(providers)
 })
 
@@ -46,7 +46,7 @@ function remoteFail<T>(message: string): RemoteAnswer<T> {
 }
 
 const DIRECTORY = [
-  { provider: 'deepseek-official', displayName: 'DeepSeek', settingsNs: 'llm-deepseek', settingsPath: [], active: true },
+  { provider: 'gateway', displayName: 'Gateway', settingsNs: 'llm-gateway', settingsPath: [], active: true },
   { provider: 'openai', displayName: 'openai', settingsNs: 'llm-pi-ai', settingsPath: ['providers', 'openai'], active: true },
   { provider: 'anthropic', displayName: 'anthropic', settingsNs: 'llm-pi-ai', settingsPath: ['providers', 'anthropic'], active: false },
   { provider: 'ghost', displayName: 'Ghost', settingsNs: '', settingsPath: [], active: true },
@@ -54,18 +54,9 @@ const DIRECTORY = [
 
 const NAMESPACES = [
   {
-    ns: 'llm-deepseek',
+    ns: 'llm-gateway',
     schema: {},
-    value: { apiKeyEnv: 'DEEPSEEK_API_KEY', baseURL: 'https://base' },
-    base: { baseURL: 'https://base' },
-    autoGenerate: true, applies: 'live' as const,
-    secrets: [],
-    revision: 0,
-  },
-  {
-    ns: 'llm-deepseek-account',
-    schema: {},
-    value: { baseURL: 'https://base' },
+    value: { apiKeyEnv: 'GATEWAY_API_KEY', baseURL: 'https://base' },
     base: { baseURL: 'https://base' },
     autoGenerate: true, applies: 'live' as const,
     secrets: [],
@@ -83,7 +74,6 @@ const NAMESPACES = [
 ]
 
 function api(overrides: {
-  accountAvailable?: boolean
   providers?: () => Promise<RpcResponse<{ providers: typeof DIRECTORY }>>
   describeSettings?: () => Promise<RemoteAnswer<{ writable: boolean; hasDocument: boolean; namespaces: typeof NAMESPACES }>>
   describeCredentials?: (refs: readonly string[]) => Promise<RemoteAnswer<Record<string, unknown>>>
@@ -108,8 +98,6 @@ function api(overrides: {
       : remoteFail(response.result.error.message)
   }
   const face = {
-    session: { modelCatalog: async () => remoteOk({ groups: overrides.accountAvailable
-      ? [{ id: 'deepseek-account', models: [{ id: 'deepseek-flash' }] }] : [] }) },
     llm: {
       listProviders: () => mapProviderBatch(rows => rows
         .filter(row => row.active)
@@ -151,12 +139,12 @@ describe('ModelsSettingsStore', () => {
     expect(state.credentialError).toBeNull()
     // Named references first (rows order), then the derived <ROUTE>_API_KEY
     // of every row whose profile names none — one batched describe.
-    expect(seenRefs).toEqual([['DEEPSEEK_API_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GHOST_API_KEY']])
+    expect(seenRefs).toEqual([['GATEWAY_API_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GHOST_API_KEY']])
     const byProvider = new Map(state.rows.map(row => [row.entry.provider, row]))
-    expect(byProvider.get('deepseek-official')).toMatchObject({
+    expect(byProvider.get('gateway')).toMatchObject({
       configured: true,
       removable: false,
-      apiKeyEnv: 'DEEPSEEK_API_KEY',
+      apiKeyEnv: 'GATEWAY_API_KEY',
       credential: { configured: false, writable: true },
     })
     expect(byProvider.get('openai')).toMatchObject({
@@ -350,38 +338,4 @@ describe('edge joins', () => {
     // The stale empty directory never overwrote the newer join.
     expect(store.store.getSnapshot().rows).toHaveLength(4)
   })
-})
-
-
-it.each([false, true])('uses account availability without asking for an API key: %s', async (accountAvailable) => {
-  const { ctx, mirror, seenRefs } = api({ accountAvailable, providers: async () => ok({ providers: [{
-    provider: 'deepseek-account', displayName: 'DeepSeek Account', settingsNs: 'llm-deepseek-account', settingsPath: [], active: true,
-  }] }) })
-  const store = new ModelsSettingsStore(ctx, settingsSchema, mirror)
-  await store.load()
-  const rows = store.store.getSnapshot().rows
-  expect(rows).toHaveLength(accountAvailable ? 1 : 0)
-  if (accountAvailable) {
-    expect(rows[0]).toMatchObject({ accountAvailable: true, apiKeyEnv: undefined, credential: undefined })
-    expect(providerUsable(rows[0]!)).toBe(true)
-  }
-  expect(store.store.getSnapshot().namespaces.get('llm-deepseek-account')?.ns).toBe('llm-deepseek-account')
-  expect(seenRefs).toEqual([])
-})
-
-it('removes the account row after sign-out and restores it after sign-in', async () => {
-  const overrides = { accountAvailable: true, providers: async () => ok({ providers: [{
-    provider: 'deepseek-account', displayName: 'DeepSeek Account', settingsNs: 'llm-deepseek-account', settingsPath: [], active: true,
-  }, ...DIRECTORY] }) }
-  const { ctx, mirror } = api(overrides)
-  const store = new ModelsSettingsStore(ctx, settingsSchema, mirror)
-  await store.load()
-  expect(store.store.getSnapshot().rows[0]?.entry.provider).toBe('deepseek-account')
-  overrides.accountAvailable = false
-  await store.load()
-  expect(store.store.getSnapshot().rows.map(row => row.entry.provider)).not.toContain('deepseek-account')
-  expect(store.store.getSnapshot().rows).toHaveLength(DIRECTORY.length)
-  overrides.accountAvailable = true
-  await store.load()
-  expect(store.store.getSnapshot().rows[0]?.entry.provider).toBe('deepseek-account')
 })

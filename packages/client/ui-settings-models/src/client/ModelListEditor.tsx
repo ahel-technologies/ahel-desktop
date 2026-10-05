@@ -18,9 +18,9 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { LlmDiscoveredModel } from '@deepseek-ai/dsh-api-remotes/client'
 import { Button, IconPlusOutlineRegular, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
-import { formatCapacity, parseCapacity } from './DeepSeekModelsEditor.tsx'
+import { formatCapacity, parseCapacity } from './model-drafts.ts'
 import type { ModelsOperations } from './operations.ts'
-import type { DeepSeekModelDraft } from './DeepSeekModelsEditor.tsx'
+import type { ModelDraft as CatalogModelDraft } from './model-drafts.ts'
 import type { en } from './locales.ts'
 import { ModelRow } from './ModelRow.tsx'
 import styles from './ModelsSection.module.css'
@@ -29,7 +29,7 @@ import styles from './ModelsSection.module.css'
  * One configured model row. Fields this card does not edit must survive an
  * edit rather than being dropped by a rebuild.
  */
-export type ModelDraft = DeepSeekModelDraft
+export type ModelDraft = CatalogModelDraft
 
 /** A row's text field, or the empty string when unset or not a string. */
 function textOf(model: ModelDraft, key: string): string {
@@ -120,8 +120,8 @@ const CAPACITY_HINT: Readonly<Record<CapacityField, string>> = {
 
 /**
  * Spell a stored count for a field that may be unset. The spelling itself is
- * {@link formatCapacity}, shared with the DeepSeek catalog editor so both
- * surfaces read and write one K/M vocabulary.
+ * {@link formatCapacity}, so every capacity field reads and writes one K/M
+ * vocabulary.
  * @param value - stored capacity, or `undefined` for an unset field.
  * @returns the field text, empty when unset.
  */
@@ -359,7 +359,6 @@ export function ModelListEditor(props: ModelListEditorProps): ReactNode {
             key={index}
             model={model}
             position={index + 1}
-            inputField="input"
             inputFallback={inputDefaults.get(textOf(model, 'id')) ?? props.defaultInput}
             inputLoading={catalogProvider !== undefined && catalog === undefined}
             expanded={expanded.has(index)}

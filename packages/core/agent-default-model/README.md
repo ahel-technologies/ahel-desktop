@@ -29,28 +29,28 @@ Mount this package wherever agents are created without an explicit model route. 
 
 ### Configure the default
 
-The composition requires a provider and model. Consumers read the live references even when no configuration editor is mounted.
+Every field is optional. Without a provider and model, the default is the first model of the first registered provider route that advertises one; with neither, there is no default and the entry point asks the user to add a model.
 
 ```yaml
 - name: '@deepseek-ai/dsh-agent-default-model'
   config:
-    provider: deepseek
-    model: deepseek-chat
+    provider: anthropic
+    model: claude-sonnet-4-5
 ```
 
 | Field | Default | Meaning |
 |---|---|---|
-| `provider` | required | Registered provider route for fresh agents |
-| `model` | required | Provider-owned model id for fresh agents |
+| `provider` | first routable provider | Registered provider route for fresh agents |
+| `model` | that provider's first model | Provider-owned model id for fresh agents |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-agent-default-model) lists every accepted field. `reasoningEffort` is optional; saving a selection without it removes that field from the profile’s complete config override.
 
 ### Read and change the default
 
-`currentSelection()` returns a detached `{ provider, model, reasoningEffort? }` for a newly created agent; `saveSelection()` stores the complete selection for later agents.
+`resolveSelection()` returns a detached `{ provider, model, reasoningEffort? }` after rechecking the provider registry, or `undefined` when no model exists; `currentSelection()` answers synchronously from the last check; `saveSelection()` stores the complete selection for later agents.
 
 ```text
-const selection = ctx.agentDefaultModel.currentSelection()
+const selection = await ctx.agentDefaultModel.resolveSelection()
 await ctx.agentDefaultModel.saveSelection({ provider, model, reasoningEffort: 'high' })
 ```
 
