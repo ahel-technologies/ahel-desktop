@@ -25,6 +25,18 @@ export interface McpAppInjected {
    */
   callTool(server: string, tool: string, args: McpAppJsonObject, signal: AbortSignal): Promise<McpAppCallResult>
   /**
+   * Read a call's live result `_meta` from Host memory.
+   * @param callId - the settled call the card renders.
+   * @returns the `_meta`, or `null` after a Host restart.
+   */
+  resultMeta(callId: string): Promise<McpAppJsonObject | null>
+  /**
+   * Report a card's `ui/update-model-context` payload for the next model turn.
+   * @param server - the card's MCP server.
+   * @param update - the payload.
+   */
+  updateModelContext(server: string, update: McpAppJsonObject): void
+  /**
    * Open an `http:` or `https:` URL outside the card.
    * @param url - absolute URL.
    */

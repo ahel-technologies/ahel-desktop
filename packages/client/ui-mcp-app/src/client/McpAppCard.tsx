@@ -17,7 +17,7 @@ const TEARDOWN_TIMEOUT_MS = 500
 
 type CardState =
   | { readonly kind: 'loading' }
-  | { readonly kind: 'ready'; readonly srcDoc: string; readonly prefersBorder?: boolean }
+  | { readonly kind: 'ready'; readonly srcDoc: string; readonly prefersBorder?: boolean; readonly resultMeta: McpAppJsonObject | null }
   | { readonly kind: 'failed'; readonly reason: 'failed' | 'tooLarge' | 'navigated' }
 
 /** Parse the recorded call arguments; a malformed or out-of-window call sends `{}`. */
@@ -83,7 +83,7 @@ export function McpAppCard(props: McpAppCardProps) {
 }
 
 function McpAppFrame({
-  block, toolName, record, readResource, callTool, openLink, maxHeight, platform, useColorScheme, t,
+  block, toolName, record, readResource, resultMeta, callTool, updateModelContext, openLink, maxHeight, platform, useColorScheme, t,
 }: McpAppCardProps & { record: McpAppRecord }) {
   const colorScheme = useColorScheme(scheme => scheme)
   const [state, setState] = useState<CardState>(record.truncated ? { kind: 'failed', reason: 'tooLarge' } : { kind: 'loading' })
@@ -96,17 +96,24 @@ function McpAppFrame({
     if (truncated) return undefined
     const abort = new AbortController()
     setState({ kind: 'loading' })
-    readResource(server, resourceUri, abort.signal).then((result) => {
+    // Result `_meta` (for example a press token) lives only in Host memory;
+    // after a Host restart the card renders without it.
+    const meta = resultMeta(block.callId).catch(() => null)
+    readResource(server, resourceUri, abort.signal).then(async (result) => {
       const resource = readAppResource(result, resourceUri)
       const srcDoc = withContentSecurityPolicy(resource.html, appContentSecurityPolicy(resource.csp))
+      const live = await meta
       if (!abort.signal.aborted) {
-        setState({ kind: 'ready', srcDoc, ...resource.prefersBorder === undefined ? {} : { prefersBorder: resource.prefersBorder } })
+        setState({
+          kind: 'ready', srcDoc, resultMeta: live,
+          ...resource.prefersBorder === undefined ? {} : { prefersBorder: resource.prefersBorder },
+        })
       }
     }).catch(() => {
       if (!abort.signal.aborted) setState({ kind: 'failed', reason: 'failed' })
     })
     return () => { abort.abort() }
-  }, [server, resourceUri, truncated, readResource])
+  }, [server, resourceUri, truncated, readResource, resultMeta, block.callId])
 
   const hostContext = useMemo((): McpAppHostContext => ({
     theme: colorScheme,
@@ -123,6 +130,7 @@ function McpAppFrame({
   hostContextRef.current = hostContext
 
   const srcDoc = state.kind === 'ready' ? state.srcDoc : undefined
+  const liveMeta = state.kind === 'ready' ? state.resultMeta : null
   // Layout effect: the listener must exist before the srcdoc document's first
   // script can post `ui/initialize`, which happens in a later task.
   useLayoutEffect(() => {
@@ -136,6 +144,8 @@ function McpAppFrame({
         callTool: (name, args, signal) => callTool(server, name, args, signal),
         readResource: (uri, signal) => readResource(server, uri, signal),
         openLink,
+        hasUserActivation: () => navigator.userActivation.isActive,
+        updateModelContext: (update) => { updateModelContext(server, update) },
         sizeChanged: (size) => {
           if (size.height !== undefined) setHeight(Math.ceil(size.height))
         },
@@ -146,7 +156,7 @@ function McpAppFrame({
     bridge.sendToolResult({
       content: mcpContent(block.content),
       ...record.structuredContent === undefined ? {} : { structuredContent: record.structuredContent },
-      ...record.resultMeta === undefined ? {} : { _meta: record.resultMeta },
+      ...liveMeta === null ? {} : { _meta: liveMeta },
     })
     // The opaque-origin frame posts with origin "null"; only its own window is accepted.
     const onMessage = (event: MessageEvent): void => {

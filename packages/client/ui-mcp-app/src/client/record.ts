@@ -1,7 +1,6 @@
 /** Client-side validation of the persisted `mcpApp` card record and MCP Apps resource reads. */
 
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
-import type { McpAppJsonObject } from '../types.ts'
 
 /** MIME type of an MCP Apps HTML resource. */
 export const MCP_APP_MIME_TYPE = 'text/html;profile=mcp-app'
@@ -21,8 +20,6 @@ export interface McpAppRecord {
   readonly visibility: readonly McpAppVisibility[]
   /** Structured result, when persisted. */
   readonly structuredContent?: JsonValue
-  /** Result `_meta`, when persisted. */
-  readonly resultMeta?: McpAppJsonObject
   /** Whether the structured fields were dropped for size. */
   readonly truncated: boolean
 }
@@ -49,10 +46,6 @@ function isObject(value: unknown): value is { [key: string]: unknown } {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function isJsonObject(value: unknown): value is McpAppJsonObject {
-  return isObject(value)
-}
-
 /**
  * Read a version-1 card record from a settled call's metadata.
  * @param meta - persisted `tool/result` metadata (untrusted wire value).
@@ -73,7 +66,6 @@ export function readAppRecord(meta: unknown): McpAppRecord | null {
     resourceUri,
     visibility: audiences,
     ...record.structuredContent === undefined ? {} : { structuredContent: record.structuredContent as JsonValue },
-    ...isJsonObject(record.resultMeta) ? { resultMeta: record.resultMeta } : {},
     truncated: record.truncated === true,
   }
 }

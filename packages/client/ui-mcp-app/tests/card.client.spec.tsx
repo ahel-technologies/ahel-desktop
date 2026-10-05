@@ -2,7 +2,7 @@
 
 /** MCP Apps card: sandboxed frame, CSP, bridge wiring through the frame window, and the text fallback. */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { act, cleanup, render, waitFor } from '@testing-library/react'
 import { McpAppCard } from '../src/client/McpAppCard.tsx'
 import { en } from '../src/client/locales.ts'
@@ -14,9 +14,12 @@ afterEach(cleanup)
 const RECORD = {
   mcpApp: {
     v: 1, server: 'cards', tool: 'show', resourceUri: CARD_URI, visibility: ['model', 'app'],
-    structuredContent: { view: 'question', id: 'a1' }, resultMeta: { 'ai.ahel/pressToken': 'token-a1' },
+    structuredContent: { view: 'question', id: 'a1' },
   },
 }
+
+/** Live result `_meta` served from Host memory for call-1. */
+const liveMeta = async (callId: string) => callId === 'call-1' ? { 'ai.ahel/pressToken': 'token-a1' } : null
 
 describe('McpAppCard', () => {
   it('renders nothing for a call without a valid card record', () => {
@@ -36,7 +39,7 @@ describe('McpAppCard', () => {
   })
 
   it('delivers tool input and the tool result to the frame after the app initializes', async () => {
-    const { frame, posted } = await mountedCard(cardProps(cardNode(RECORD)))
+    const { frame, posted } = await mountedCard(cardProps(cardNode(RECORD), { resultMeta: liveMeta }))
     fromFrame(frame, { jsonrpc: '2.0', id: 1, method: 'ui/initialize', params: { protocolVersion: '2026-01-26' } })
     await waitFor(() => { expect(postedTo(posted).some(message => message.id === 1)).toBe(true) })
     expect(postedTo(posted).some(message => message.method === 'ui/notifications/tool-result')).toBe(false)
@@ -79,6 +82,9 @@ describe('McpAppCard', () => {
 
   it('opens links through the injected opener', async () => {
     const openLink = vi.fn()
+    // jsdom has no user activation; the card admits links only during one.
+    Object.defineProperty(navigator, 'userActivation', { configurable: true, value: { isActive: true, hasBeenActive: true } })
+    onTestFinished(() => { Reflect.deleteProperty(navigator, 'userActivation') })
     const { frame } = await mountedCard(cardProps(cardNode(RECORD), { openLink }))
     fromFrame(frame, { jsonrpc: '2.0', id: 6, method: 'ui/open-link', params: { url: 'https://ahel.ai/x' } })
     await waitFor(() => { expect(openLink).toHaveBeenCalledWith('https://ahel.ai/x') })

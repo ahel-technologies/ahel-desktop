@@ -12,12 +12,14 @@ interface Harness {
   handlers: HandlerMocks
 }
 
-function harness(overrides: Partial<McpAppBridgeHandlers> = {}): Harness {
+function harness(overrides: Partial<McpAppBridgeHandlers> = {}, clock = { now: 10_000 }): Harness {
   const posted: JsonValue[] = []
   const handlers: HandlerMocks = {
     callTool: vi.fn<McpAppBridgeHandlers['callTool']>(overrides.callTool ?? (async () => ({ content: [{ type: 'text', text: 'called' }] }))),
     readResource: vi.fn<McpAppBridgeHandlers['readResource']>(overrides.readResource ?? (async () => ({ contents: [] }))),
     openLink: vi.fn<McpAppBridgeHandlers['openLink']>(),
+    hasUserActivation: vi.fn<McpAppBridgeHandlers['hasUserActivation']>(overrides.hasUserActivation ?? (() => true)),
+    updateModelContext: vi.fn<McpAppBridgeHandlers['updateModelContext']>(),
     sizeChanged: vi.fn<McpAppBridgeHandlers['sizeChanged']>(),
   }
   const bridge = new McpAppBridge({
@@ -28,8 +30,11 @@ function harness(overrides: Partial<McpAppBridgeHandlers> = {}): Harness {
       callTool: (...args) => handlers.callTool(...args),
       readResource: (...args) => handlers.readResource(...args),
       openLink: (...args) => { handlers.openLink(...args) },
+      hasUserActivation: () => handlers.hasUserActivation(),
+      updateModelContext: (...args) => { handlers.updateModelContext(...args) },
       sizeChanged: (...args) => { handlers.sizeChanged(...args) },
     },
+    now: () => clock.now,
   })
   return { bridge, posted, handlers }
 }
@@ -148,6 +153,45 @@ describe('McpAppBridge app requests', () => {
     expect(posted).toContainEqual({ jsonrpc: '2.0', id: 12, error: { code: RPC_ERRORS.refused, message: 'only http and https links can be opened' } })
   })
 
+  it('opens links only during a user gesture and at most once every 3 seconds', async () => {
+    let active = false
+    const clock = { now: 10_000 }
+    const { bridge, posted, handlers } = harness({ hasUserActivation: () => active }, clock)
+    const open = (id: number): void => { bridge.receive({ jsonrpc: '2.0', id, method: 'ui/open-link', params: { url: 'https://ahel.ai/' } }) }
+    open(30)
+    active = true
+    open(31)
+    clock.now += 2_999
+    open(32)
+    clock.now += 1
+    open(33)
+    await settle()
+    expect(handlers.openLink).toHaveBeenCalledTimes(2)
+    expect(posted).toContainEqual({ jsonrpc: '2.0', id: 30, error: { code: RPC_ERRORS.refused, message: 'links open only from a user action' } })
+    expect(posted).toContainEqual({ jsonrpc: '2.0', id: 31, result: {} })
+    expect(posted).toContainEqual({ jsonrpc: '2.0', id: 32, error: { code: RPC_ERRORS.refused, message: 'links open at most once every 3 seconds' } })
+    expect(posted).toContainEqual({ jsonrpc: '2.0', id: 33, result: {} })
+  })
+
+  it('refuses a second card tools/call while one is running', async () => {
+    let finish: (() => void) | undefined
+    const { bridge, posted } = harness({
+      callTool: () => new Promise((resolve) => { finish = () => { resolve({ content: [] }) } }),
+    })
+    bridge.receive({ jsonrpc: '2.0', id: 40, method: 'tools/call', params: { name: 'run_action' } })
+    bridge.receive({ jsonrpc: '2.0', id: 41, method: 'tools/call', params: { name: 'run_action' } })
+    await settle()
+    expect(posted).toContainEqual({ jsonrpc: '2.0', id: 41, error: { code: RPC_ERRORS.refused, message: 'another card action is still running' } })
+    finish?.()
+    await settle()
+    expect(posted).toContainEqual({ jsonrpc: '2.0', id: 40, result: { content: [] } })
+    bridge.receive({ jsonrpc: '2.0', id: 42, method: 'tools/call', params: { name: 'run_action' } })
+    await settle()
+    finish?.()
+    await settle()
+    expect(posted).toContainEqual({ jsonrpc: '2.0', id: 42, result: { content: [] } })
+  })
+
   it('applies size changes and ignores invalid sizes', () => {
     const { bridge, handlers } = harness()
     bridge.receive({ jsonrpc: '2.0', method: 'ui/notifications/size-changed', params: { width: 400, height: 321 } })
@@ -155,15 +199,17 @@ describe('McpAppBridge app requests', () => {
     expect(handlers.sizeChanged.mock.calls).toEqual([[{ width: 400, height: 321 }], [{}]])
   })
 
-  it('keeps the latest model context, answers ping, declines ui/message, and refuses unknown methods', async () => {
-    const { bridge, posted } = harness()
+  it('forwards changed model context, answers ping, declines ui/message, and refuses unknown methods', async () => {
+    const { bridge, posted, handlers } = harness()
     bridge.receive({ jsonrpc: '2.0', id: 13, method: 'ui/update-model-context', params: { content: [{ type: 'text', text: 'step 2' }] } })
+    bridge.receive({ jsonrpc: '2.0', id: 18, method: 'ui/update-model-context', params: { content: [{ type: 'text', text: 'step 2' }] } })
     bridge.receive({ jsonrpc: '2.0', id: 14, method: 'ping' })
     bridge.receive({ jsonrpc: '2.0', id: 15, method: 'ui/message', params: { role: 'user', content: [] } })
     bridge.receive({ jsonrpc: '2.0', id: 16, method: 'sampling/createMessage', params: {} })
     bridge.receive({ jsonrpc: '2.0', id: 17, method: 'ui/request-display-mode', params: { mode: 'fullscreen' } })
     await settle()
     expect(bridge.latestModelContext).toEqual({ content: [{ type: 'text', text: 'step 2' }] })
+    expect(handlers.updateModelContext.mock.calls).toEqual([[{ content: [{ type: 'text', text: 'step 2' }] }]])
     expect(posted).toContainEqual({ jsonrpc: '2.0', id: 13, result: {} })
     expect(posted).toContainEqual({ jsonrpc: '2.0', id: 14, result: {} })
     expect(posted).toContainEqual({ jsonrpc: '2.0', id: 15, result: { isError: true } })

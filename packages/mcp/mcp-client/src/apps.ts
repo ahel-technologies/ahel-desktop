@@ -68,8 +68,6 @@ export type McpAppResultMeta = {
   visibility: McpToolVisibility[]
   /** `structuredContent` of the call result; omitted when absent or over budget. */
   structuredContent?: JsonValue
-  /** Result-level `_meta`; omitted when absent or over budget. */
-  resultMeta?: { [key: string]: JsonValue }
   /** True when the structured fields were dropped because they exceeded the persisted budget. */
   truncated?: true
 }
@@ -106,28 +104,60 @@ export function readToolUi(meta: unknown): McpToolUi {
 }
 
 /**
- * Build the persisted card record for one successful call.
+ * Build the persisted card record for one successful call. Result `_meta`
+ * is never part of it; see {@link rememberResultMeta}.
  * @param descriptor - the tool's server identity and MCP Apps facts.
  * @param structuredContent - the call's `structuredContent`, if any.
- * @param resultMeta - the call's result `_meta`, if any.
  * @returns the record, or `undefined` when the tool declares no resource.
  */
 export function appResultMeta(
   descriptor: McpToolDescriptor,
   structuredContent: JsonValue | undefined,
-  resultMeta: { [key: string]: JsonValue } | undefined,
 ): { mcpApp: McpAppResultMeta } | undefined {
   const { resourceUri, visibility } = descriptor.ui
   if (resourceUri === undefined) return undefined
   const base = { v: 1 as const, server: descriptor.server, tool: descriptor.rawName, resourceUri, visibility: [...visibility] }
-  const structured = {
-    ...structuredContent === undefined ? {} : { structuredContent },
-    ...resultMeta === undefined ? {} : { resultMeta },
-  }
-  if (JSON.stringify(structured).length > MAX_PERSISTED_APP_RESULT_CHARS) {
+  if (structuredContent === undefined) return { mcpApp: base }
+  if (JSON.stringify(structuredContent).length > MAX_PERSISTED_APP_RESULT_CHARS) {
     return { mcpApp: { ...base, truncated: true } }
   }
-  return { mcpApp: { ...base, ...structured } }
+  return { mcpApp: { ...base, structuredContent } }
+}
+
+/** Live result `_meta` entries kept per owner (Agent, or the root Context without one). */
+const LIVE_RESULT_META_LIMIT = 256
+
+const liveResultMetas = new WeakMap<object, Map<string, { [key: string]: JsonValue }>>()
+
+/**
+ * Keep one call's result `_meta` in Host memory for its live card. Result
+ * `_meta` can carry one-use secrets (for example a press token), so it is
+ * never written to the Session log, exports, or telemetry; after a Host
+ * restart the card renders without it. The oldest entries beyond 256 per
+ * owner are dropped.
+ * @param owner - the calling Agent, or the root Context for agentless calls.
+ * @param callId - the tool call id.
+ * @param meta - the result `_meta` object.
+ */
+export function rememberResultMeta(owner: object, callId: string, meta: { [key: string]: JsonValue }): void {
+  const entries = liveResultMetas.get(owner) ?? new Map<string, { [key: string]: JsonValue }>()
+  liveResultMetas.set(owner, entries)
+  entries.delete(callId)
+  entries.set(callId, meta)
+  if (entries.size > LIVE_RESULT_META_LIMIT) {
+    const oldest = entries.keys().next()
+    if (oldest.done !== true) entries.delete(oldest.value)
+  }
+}
+
+/**
+ * Read one call's live result `_meta`.
+ * @param owner - the Agent (or root Context) the call ran for.
+ * @param callId - the tool call id.
+ * @returns the `_meta` object, or `undefined` when unknown or evicted.
+ */
+export function liveResultMeta(owner: object, callId: string): { [key: string]: JsonValue } | undefined {
+  return liveResultMetas.get(owner)?.get(callId)
 }
 
 /**

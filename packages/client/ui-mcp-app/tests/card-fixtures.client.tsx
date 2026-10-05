@@ -31,6 +31,8 @@ export function cardProps(block: ToolResultNode, injected: Partial<McpAppInjecte
     block,
     readResource: async () => ({ contents: [{ uri: CARD_URI, mimeType: 'text/html;profile=mcp-app', text: CARD_HTML }] }),
     callTool: async (): Promise<McpAppCallResult> => ({ content: [] }),
+    resultMeta: async () => null,
+    updateModelContext: () => {},
     openLink: () => {},
     maxHeight: 640,
     platform: 'web',

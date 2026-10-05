@@ -65,6 +65,7 @@ export async function startCardHost({ uri, html, transport }) {
   const agent = undefined
   return {
     execute: (name, args) => ctx.tools.execute({ name, arguments: args, callId: ToolCallId(`call-${name}`), signal: new AbortController().signal }),
+    resultMeta: callId => ctx.mcpApps.resultMeta(agent, callId),
     readResource: (server, resourceUri, signal) => ctx.mcpApps.readResource(agent, server, resourceUri, signal),
     callTool: (server, tool, args, signal) => ctx.mcpApps.callTool(agent, server, tool, args, signal),
     denyAll: (reason) => {

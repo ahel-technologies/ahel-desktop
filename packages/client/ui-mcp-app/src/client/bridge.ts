@@ -63,6 +63,17 @@ export interface McpAppBridgeHandlers {
    */
   openLink(url: string): void
   /**
+   * Whether the user is interacting with the page right now (transient user
+   * activation; a click inside the card frame activates its host page).
+   * @returns true when a link may open.
+   */
+  hasUserActivation(): boolean
+  /**
+   * Report a changed `ui/update-model-context` payload for the next model turn.
+   * @param update - the payload: `content` blocks and optional `structuredContent`.
+   */
+  updateModelContext(update: McpAppJsonObject): void
+  /**
    * Apply the app's preferred content size.
    * @param size - requested width and height in CSS pixels.
    */
@@ -79,7 +90,12 @@ export interface McpAppBridgeOptions {
   hostContext: McpAppHostContext
   /** Host behaviour. */
   handlers: McpAppBridgeHandlers
+  /** Clock for link throttling; defaults to `Date.now`. */
+  now?: () => number
 }
+
+/** Shortest interval between two links one card may open. */
+export const LINK_INTERVAL_MS = 3000
 
 type RequestId = string | number
 
@@ -153,6 +169,8 @@ export class McpAppBridge {
   private nextId = 1
   private readonly pending = new Map<RequestId, (outcome: { ok: boolean }) => void>()
   private modelContext: McpAppJsonObject | undefined
+  private toolCallRunning = false
+  private lastLinkAt = Number.NEGATIVE_INFINITY
 
   /** @param options - frame delivery, host identity, initial context, and handlers. */
   constructor(options: McpAppBridgeOptions) {
@@ -344,7 +362,14 @@ export class McpAppBridge {
         if (typeof name !== 'string' || !isObject(args)) {
           throw new RpcFailure(RPC_ERRORS.invalidParams, 'tools/call needs a name and object arguments')
         }
-        return await handlers.callTool(name, args, this.abort.signal)
+        // One card action at a time: a second press while one runs is refused.
+        if (this.toolCallRunning) throw new RpcFailure(RPC_ERRORS.refused, 'another card action is still running')
+        this.toolCallRunning = true
+        try {
+          return await handlers.callTool(name, args, this.abort.signal)
+        } finally {
+          this.toolCallRunning = false
+        }
       }
       case 'resources/read': {
         const uri = params.uri
@@ -354,10 +379,15 @@ export class McpAppBridge {
       case 'ui/open-link': {
         const url = params.url
         if (typeof url !== 'string' || !isHttpUrl(url)) throw new RpcFailure(RPC_ERRORS.refused, 'only http and https links can be opened')
+        if (!handlers.hasUserActivation()) throw new RpcFailure(RPC_ERRORS.refused, 'links open only from a user action')
+        const now = (this.options.now ?? Date.now)()
+        if (now - this.lastLinkAt < LINK_INTERVAL_MS) throw new RpcFailure(RPC_ERRORS.refused, 'links open at most once every 3 seconds')
+        this.lastLinkAt = now
         handlers.openLink(url)
         return {}
       }
       case 'ui/update-model-context':
+        if (JSON.stringify(params) !== JSON.stringify(this.modelContext)) handlers.updateModelContext(params)
         this.modelContext = params
         return {}
       case 'ui/request-display-mode':

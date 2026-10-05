@@ -141,7 +141,7 @@ serveStdio(() => {
     inputSchema: z.object({ press_token: z.string() }),
     _meta: appMeta,
   }, async args => ({
-    content: [{ type: 'text', text: `Confirmed with ${args.press_token}.` }],
+    content: [{ type: 'text', text: 'Order confirmed.' }],
     structuredContent: {
       view: 'execution', status: 'done', title: 'Order confirmed', subtitle: 'Fixture MCP server',
       facts: { Receipt: args.press_token.replace('press-', 'rcpt-') },

@@ -40,6 +40,11 @@ export function registerMcpAppCard(ctx: Context, config: { maxHeight: number }):
         if (!result.ok) throw result.error
         return result.value
       },
+      resultMeta: async (callId) => {
+        const result = await ctx.remote.mcpApps.resultMeta(sessionId, callId)
+        return result.ok ? result.value : null
+      },
+      updateModelContext: (server, update) => { void ctx.remote.mcpApps.updateModelContext(sessionId, server, update) },
       // In the desktop shell the window-open handler hands http(s) URLs to the
       // system browser; on the Web it opens a new tab without an opener.
       openLink: (url) => { window.open(url, '_blank', 'noopener,noreferrer') },

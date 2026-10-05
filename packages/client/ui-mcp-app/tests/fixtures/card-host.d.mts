@@ -12,6 +12,7 @@ export interface CardHostResult {
 /** Running fixture Host. */
 export interface CardHost {
   execute(name: string, args: McpAppJsonObject): Promise<CardHostResult>
+  resultMeta(callId: string): McpAppJsonObject | null
   readResource(server: string, uri: string, signal: AbortSignal): Promise<JsonValue>
   callTool(server: string, tool: string, args: McpAppJsonObject, signal: AbortSignal): Promise<McpAppCallResult>
   /** Deny every later tool call in pre-execute; returns the names it saw. */

@@ -26,8 +26,9 @@ Web client: ui-tool ToolCallTree ── meta.mcpApp? ──▶ slot tool.call.ap
   - Advertises `extensions["io.modelcontextprotocol/ui"] = { mimeTypes: ["text/html;profile=mcp-app"] }`.
   - Keeps each tool's `_meta` on the registration as `definition.mcp`: server, raw name, `_meta`, and the parsed `ui.resourceUri` and `ui.visibility`. The deprecated flat `ui/resourceUri` is also read.
   - Hides app-only tools from the model.
-  - For card tools, persists `result.meta.mcpApp` (v1): server, tool, resourceUri, visibility, `structuredContent`, and the result `_meta`.
-  - Result `_meta` (for example Ahel's one-use `ai.ahel/pressToken`) never enters the canonical tool value. The model and PTC programs cannot read it, so the model cannot press Confirm by itself.
+  - For card tools, persists `result.meta.mcpApp` (v1): server, tool, resourceUri, visibility, `structuredContent`.
+  - Result `_meta` (for example Ahel's one-use `ai.ahel/pressToken`) is never persisted: not in the canonical value, the Session log, exports or telemetry. It lives in Host memory keyed by call id (256 per Agent) and the live card reads it through `mcpApps.resultMeta`. After a Host restart the card has no token and the person confirms on ahel.ai.
+  - Card `tools/call` and changed `ui/update-model-context` payloads are added as logged `mcp-app` context for the next model turn (arguments omitted). One card action runs at a time; `ui/open-link` needs a user gesture and opens at most one link per 3 s.
   - Structured fields over 256 KiB are dropped, marked `truncated`, and fall back to text.
 - **mcp-resources**: `readAppResource(agent, server, uri, signal)` adds a least-recently-used cache, keyed by server provider, connection generation and URI (16 entries by default, config `appResourceCacheEntries`). The URI carries the server's content version (Ahel: `gateway-app-<hash>.html`). Failed reads are not cached.
 - **ui-tool**: a new single session slot `tool.call.app`, rendered under the row of a successful call that has `meta.mcpApp`. The row itself is unchanged, so it still holds the expandable text output.
@@ -61,12 +62,20 @@ Web client: ui-tool ToolCallTree ── meta.mcpApp? ──▶ slot tool.call.ap
 | `tools/call` from app | implemented | same server only, through `ctx.tools.execute` with the Session Agent |
 | `resources/read` from app | implemented | same server |
 | `ui/open-link` | implemented | http/https only → `window.open(noopener)`; desktop shell hands it to the system browser |
-| `ui/update-model-context` | partial | accepted and kept per card; not yet sent with the next model turn |
+| `ui/update-model-context` | implemented | changed payloads become logged `mcp-app` context for the next model turn |
 | `ui/message` | partial | answered `{ isError: true }` (Ahel treats that as declined) |
 | `ui/request-display-mode` | partial | always returns `inline` |
 | `ui/resource-teardown` | partial | sent on unmount, not awaited (the frame is removed) |
 | `ping`, `notifications/message` | implemented | logging is accepted and ignored |
 | `ui/download-file`, `sampling/createMessage`, app-provided tools | missing | method-not-found |
+
+## Deferred (review 2026-10-05)
+
+- Double-frame sandbox proxy with a separate origin (single opaque-origin frame for now).
+- Caps on resource size and per-card call rate beyond one-in-flight.
+- Loader-booted (real `cordis.yml`) composition test; the fixture flow is the manual equivalent.
+- App-only tools (visibility without `model`): dsh's registry cannot register a tool hidden from the model yet still executable, so they stay unbridged.
+- Remaining `as` cast nits in the card and record parsers.
 
 ## Ahel widget compatibility
 

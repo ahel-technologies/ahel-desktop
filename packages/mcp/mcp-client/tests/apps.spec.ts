@@ -11,7 +11,7 @@ import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import McpResources from '@deepseek-ai/dsh-mcp-resources'
 import { startConnection, resolveReconnectPolicy } from '../src/connection.ts'
-import { appResultMeta, MAX_PERSISTED_APP_RESULT_CHARS, readToolUi } from '../src/apps.ts'
+import { appResultMeta, liveResultMeta, MAX_PERSISTED_APP_RESULT_CHARS, readToolUi } from '../src/apps.ts'
 import type { Config } from '../src/index.ts'
 
 const { mockTransport } = vi.hoisted(() => ({ mockTransport: vi.fn<() => Transport>() }))
@@ -105,7 +105,7 @@ describe('MCP Apps tool metadata', () => {
     expect(ctx.tools.get('mcp__cards__refresh')).toBeUndefined()
   })
 
-  it('persists structuredContent and result _meta for a card tool without exposing _meta in the value', async () => {
+  it('persists structuredContent for a card tool and keeps result _meta only in Host memory', async () => {
     const ctx = await connect(cardServer([]))
     const result = await ctx.tools.execute({
       name: 'mcp__cards__show', arguments: { id: 'a1' },
@@ -116,13 +116,14 @@ describe('MCP Apps tool metadata', () => {
       content: [{ type: 'text', text: 'card a1' }],
       structuredContent: { view: 'question', id: 'a1' },
     })
-    expect(result.meta).toMatchObject({
+    expect(result.meta).toEqual({
       mcpApp: {
         v: 1, server: 'cards', tool: 'show', resourceUri: CARD_URI, visibility: ['model', 'app'],
         structuredContent: { view: 'question', id: 'a1' },
-        resultMeta: { 'ai.ahel/pressToken': 'token-a1' },
       },
     })
+    expect(JSON.stringify(result)).not.toContain('token-a1')
+    expect(liveResultMeta(ctx.root, 'show-a1')).toMatchObject({ 'ai.ahel/pressToken': 'token-a1' })
   })
 
   it('records no presentation metadata for a tool without a UI resource', async () => {
@@ -173,7 +174,7 @@ describe('appResultMeta', () => {
   it('drops structured fields over the persisted budget', () => {
     const descriptor = { server: 's', rawName: 't', ui: { resourceUri: 'ui://s/t.html', visibility: ['model' as const] } }
     const huge = 'x'.repeat(MAX_PERSISTED_APP_RESULT_CHARS)
-    expect(appResultMeta(descriptor, { huge }, undefined)).toEqual({
+    expect(appResultMeta(descriptor, { huge })).toEqual({
       mcpApp: { v: 1, server: 's', tool: 't', resourceUri: 'ui://s/t.html', visibility: ['model'], truncated: true },
     })
   })

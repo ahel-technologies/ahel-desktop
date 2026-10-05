@@ -11,12 +11,12 @@
 import { randomUUID } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
-import { ToolCallId } from '@deepseek-ai/dsh-llm'
-import { publicToolName } from '@deepseek-ai/dsh-mcp-client'
+import { createUserMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
+import { liveResultMeta, publicToolName } from '@deepseek-ai/dsh-mcp-client'
 import type {} from '@deepseek-ai/dsh-mcp-resources'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
-import { callResultOf } from './call-result.ts'
+import { callResultOf, cardActionText, cardContextText } from './call-result.ts'
 import type { McpAppCallResult, McpAppJsonObject } from './types.ts'
 
 export type * from './types.ts'
@@ -25,6 +25,13 @@ declare module '@deepseek-ai/cordis' {
   interface Context {
     /** Remote access for MCP Apps cards to their own MCP server. */
     mcpApps: McpAppsController
+  }
+}
+
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    /** Context reported by an MCP Apps card: a card-initiated tool call or `ui/update-model-context`. */
+    'mcp-app': { kind: 'mcp-app' }
   }
 }
 
@@ -63,7 +70,9 @@ export default class McpAppsController extends TypertRemoteService {
   /**
    * Run one MCP tool for a card, through the same registry pipeline and
    * approval seam as a model call. The tool must belong to `server` and its
-   * MCP Apps visibility must include `app`.
+   * MCP Apps visibility must include `app`. Each call is reported to the
+   * Agent as logged context for its next model request (tool name and
+   * result text; arguments are omitted because they can carry tokens).
    * @param agent - lookup parameter resolved from the Session identity.
    * @param server - the card's MCP server; calls to other servers are refused.
    * @param tool - raw MCP tool name.
@@ -71,6 +80,30 @@ export default class McpAppsController extends TypertRemoteService {
    * @param signal - carrier cancellation.
    * @returns MCP `CallToolResult` fields; failures arrive with `isError: true`.
    */
+  /**
+   * Read a call's live result `_meta` (for example a one-use press token).
+   * It lives only in Host memory, so after a Host restart this returns `null`.
+   * @param agent - lookup parameter resolved from the Session identity.
+   * @param callId - the settled tool call the card renders.
+   * @returns the result `_meta`, or `null`.
+   */
+  @Remote('resultMeta')
+  resultMeta(agent: Agent, callId: string): McpAppJsonObject | null {
+    return liveResultMeta(this.ownerOf(agent), callId) ?? null
+  }
+
+  /**
+   * Record a card's `ui/update-model-context` payload as context for the
+   * Agent's next model request (a logged inbox event).
+   * @param agent - lookup parameter resolved from the Session identity.
+   * @param server - the card's MCP server.
+   * @param update - the payload: `content` blocks and optional `structuredContent`.
+   */
+  @Remote('updateModelContext')
+  updateModelContext(agent: Agent, server: string, update: McpAppJsonObject): void {
+    this.report(agent, cardContextText(server, update))
+  }
+
   @Remote('callTool')
   async callTool(agent: Agent, server: string, tool: string, args: McpAppJsonObject, signal: AbortSignal): Promise<McpAppCallResult> {
     const name = publicToolName(server, tool)
@@ -81,13 +114,20 @@ export default class McpAppsController extends TypertRemoteService {
     if (!definition.mcp.ui.visibility.includes('app')) {
       throw new RemoteError('mcp-app/tool-not-app-visible', `MCP tool "${tool}" is not callable from an app`, { server, tool })
     }
-    const result = await this.ctx.tools.execute({
-      callId: ToolCallId(`mcp-app-${randomUUID()}`),
-      name,
-      arguments: args,
-      agent,
-      signal,
-    })
-    return callResultOf(result)
+    const callId = ToolCallId(`mcp-app-${randomUUID()}`)
+    const result = await this.ctx.tools.execute({ callId, name, arguments: args, agent, signal })
+    const outcome = callResultOf(result, liveResultMeta(this.ownerOf(agent), callId))
+    this.report(agent, cardActionText(server, tool, outcome))
+    return outcome
+  }
+
+  /** The owner mcp-client keyed live result `_meta` by: the Agent, or the root Context for agentless calls. */
+  private ownerOf(agent: Agent | undefined): object {
+    return agent ?? this.ctx.root
+  }
+
+  /** Queue card-reported text as logged context for the Agent's next model request. */
+  private report(agent: Agent | undefined, text: string): void {
+    agent?.inject(createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'mcp-app' } }))
   }
 }

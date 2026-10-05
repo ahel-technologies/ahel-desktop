@@ -29,8 +29,10 @@ describe('MCP Apps card host, fixture server to frame', () => {
     const ctx = await host()
     const result = await ctx.execute('mcp__cards__show', { id: 'a1' })
     expect(result.isError).toBe(false)
+    expect(JSON.stringify(result.meta)).not.toContain('token-a1')
     const node = cardNode(result.meta ?? null)
     const props = cardProps(node, {
+      resultMeta: async callId => ctx.resultMeta(callId === 'call-1' ? 'call-mcp__cards__show' : callId),
       readResource: (server, uri, signal) => ctx.readResource(server, uri, signal),
       callTool: (server, tool, args, signal) => ctx.callTool(server, tool, args, signal),
     })

@@ -25,7 +25,7 @@ import type { OAuthConfig } from './oauth.ts'
 import type {} from '@deepseek-ai/dsh-tools'
 
 export { createMcpToolDefinition, publicToolName } from './tools.ts'
-export { MCP_APP_MIME_TYPE, MCP_APPS_EXTENSION, readToolUi } from './apps.ts'
+export { liveResultMeta, MCP_APP_MIME_TYPE, MCP_APPS_EXTENSION, readToolUi } from './apps.ts'
 export type { McpAppResultMeta, McpToolDescriptor, McpToolUi, McpToolVisibility } from './apps.ts'
 export type { McpResult, McpToolDefinitionOptions } from './tools.ts'
 export type { ReconnectConfig, ResolvedReconnectPolicy } from './connection.ts'

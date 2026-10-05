@@ -23,7 +23,7 @@ import type { ToolDefinition, ToolExecution, ToolExecutionResult } from '@deepse
 import { assertSupportedJsonSchema } from '@deepseek-ai/dsh-tools'
 import type { JsonSchemaNode } from '@deepseek-ai/dsh-tools'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
-import { appResultMeta, readToolUi, resultMetaObject, type McpToolDescriptor } from './apps.ts'
+import { appResultMeta, readToolUi, rememberResultMeta, resultMetaObject, type McpToolDescriptor } from './apps.ts'
 
 /** Resolved options relevant to tool bridging. */
 export interface ToolBridgeOptions {
@@ -245,11 +245,6 @@ export function createMcpToolDefinition(
 ): ToolDefinition {
   const { name, rawName, description, inputSchema, mcp } = options
   const projections = new WeakMap<ToolExecution, PreparedProjection>()
-  // Result `_meta` stays out of the canonical value (programmatic callers and
-  // PTC programs must not read app-only fields such as one-use press tokens),
-  // so execute stages it for the synchronous presentation projection, keyed
-  // by the frozen argument object both callbacks receive.
-  const resultMetas = new WeakMap<object, { [key: string]: JsonValue }>()
   const output = createOutput(rawName, supportedOutputSchema(options.outputSchema))
   return {
     name,
@@ -258,13 +253,11 @@ export function createMcpToolDefinition(
     ...mcp === undefined ? {} : { mcp },
     output: mcp?.ui.resourceUri === undefined ? output : {
       ...output,
-      presentationMeta(args: unknown, value: JsonValue): JsonValue {
-        const resultMeta = typeof args === 'object' && args !== null ? resultMetas.get(args) : undefined
-        if (typeof args === 'object' && args !== null) resultMetas.delete(args)
-        return appResultMeta(mcp, (value as McpResult).structuredContent, resultMeta) ?? null
+      presentationMeta(_args: unknown, value: JsonValue): JsonValue {
+        return appResultMeta(mcp, (value as McpResult).structuredContent) ?? null
       },
     },
-    execute: createExecutor(ctx, options, projections, resultMetas),
+    execute: createExecutor(ctx, options, projections),
     projectContent(exec: Readonly<ToolExecution>, result: Readonly<ToolExecutionResult>) {
       const projection = projections.get(exec)
       if (projection === undefined) return undefined
@@ -304,7 +297,6 @@ function createExecutor(
   ctx: Context,
   options: McpToolDefinitionOptions,
   projections: WeakMap<ToolExecution, PreparedProjection>,
-  resultMetas: WeakMap<object, { [key: string]: JsonValue }>,
 ): ToolDefinition['execute'] {
   const { rawName, taskRequired } = options
   return async (args: unknown, exec: ToolExecution) => {
@@ -336,8 +328,13 @@ function createExecutor(
         ? { structuredContent: result.structuredContent as JsonValue }
         : {},
     }
+    // Result `_meta` stays out of the canonical value and the Session log: the
+    // model, PTC programs, exports, and telemetry must not read app-only fields
+    // such as one-use press tokens. Only the live card reads it from Host memory.
     const resultMeta = resultMetaObject(result._meta)
-    if (resultMeta !== undefined && typeof args === 'object' && args !== null) resultMetas.set(args, resultMeta)
+    if (resultMeta !== undefined && options.mcp !== undefined) {
+      rememberResultMeta(exec.agent ?? ctx.root, exec.callId, resultMeta)
+    }
     if (containsImage(content)) {
       const fallback: ContentBlock[] = [{ type: 'text', text: extractText(content, rawName) }]
       const projected = await prepareImageProjection(ctx, exec, content, rawName)
