@@ -104,7 +104,14 @@ export function createElectronBuilderConfig(
     directories: { output: unsigned ? buildPaths.unsignedArtifacts : buildPaths.artifacts },
     asar: true,
     electronDist: buildPaths.electron,
-    electronFuses: { runAsNode: true },
+    // The Host child runs the Electron binary in Node mode, so runAsNode stays on;
+    // NODE_OPTIONS and --inspect flags are ignored, and only app.asar loads.
+    electronFuses: {
+      runAsNode: true,
+      enableNodeOptionsEnvironmentVariable: false,
+      enableNodeCliInspectArguments: false,
+      onlyLoadAppFromAsar: true,
+    },
     beforeBuild: async () => {
       if (resolvedPlatform !== 'win32') return true
       await promisify(execFile)('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',

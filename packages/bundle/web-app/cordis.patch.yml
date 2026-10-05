@@ -154,7 +154,9 @@
       inject: [webStartup]
       config:
         openBrowser: !!js ctx.webStartup.openBrowser
-        printUrl: true
+        # The URL line carries the launch token; Desktop reads its URL over IPC
+        # and never prints it.
+        printUrl: !!js "ctx.get('profileContext')?.name !== 'desktop'"
         publicUrl: !!js ctx.webStartup.publicUrl
         surfaceContext: true
         trustedHosts: !!js ctx.webStartup.trustedHosts

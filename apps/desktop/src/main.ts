@@ -184,6 +184,9 @@ function chromeFallbackFill(): string {
   return nativeTheme.shouldUseDarkColors ? '#1b1b1c' : '#f9fafb'
 }
 
+/** DevTools open only in development, or in a packaged build launched with AHEL_DESKTOP_DEVTOOLS=1. */
+const devToolsAllowed = !app.isPackaged || process.env.AHEL_DESKTOP_DEVTOOLS === '1'
+
 function createWindow(preload: string, show = false, primary = false): BrowserWindow {
   const window = new BrowserWindow({
     width: 1280,
@@ -215,7 +218,7 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
       webSecurity: true,
       // Ahel Desktop mounts no embedded browser pane, so no window may host a <webview>.
       webviewTag: false,
-      devTools: true,
+      devTools: devToolsAllowed,
     },
   })
   window.webContents.setWindowOpenHandler(({ url }) => {
@@ -785,10 +788,10 @@ async function main(): Promise<void> {
     { role: 'quit', ...(darwin ? { label: currentDesktopLocale().messages.quitApplication }
       : process.platform === 'win32' ? { label: currentDesktopLocale().messages.exitApplication } : {}) },
   ]
-  const devToolsItems: MenuItemConstructorOptions[] = [
+  const devToolsItems: MenuItemConstructorOptions[] = devToolsAllowed ? [
     { role: 'toggleDevTools', visible: false },
     { role: 'toggleDevTools', visible: false, accelerator: 'F12' },
-  ]
+  ] : []
   const refreshApplicationMenu = (): void => {
     Menu.setApplicationMenu(Menu.buildFromTemplate(process.platform === 'win32' ? devToolsItems : [{
       label: darwin ? app.name : currentDesktopLocale().messages.application,
