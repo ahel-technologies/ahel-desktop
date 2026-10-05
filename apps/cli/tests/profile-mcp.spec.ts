@@ -11,7 +11,7 @@ const installAnchor = fileURLToPath(new URL('../package.json', import.meta.url))
 const resourcePackage = '@ahel/dsh-mcp-resources'
 
 describe('shipped MCP resource composition', () => {
-  it.each(Object.keys(PROFILE_TEMPLATES))('%s carries one shared resource consumer without a server', (name) => {
+  it.each(Object.keys(PROFILE_TEMPLATES))('%s carries one shared resource consumer and only the Ahel server', (name) => {
     const home = mkdtempSync(join(tmpdir(), 'dsh-profile-mcp-'))
     try {
       const profile = loadProfile('dsh', name, installAnchor, home)
@@ -24,7 +24,9 @@ describe('shipped MCP resource composition', () => {
       expect(rows.filter(row => row.name === resourcePackage)).toEqual([
         { id: 'mcp-resources', name: resourcePackage },
       ])
-      expect(rows.filter(row => row.name === '@ahel/dsh-mcp-client')).toEqual([])
+      // dsh-web-app ships the Ahel MCP server (mcp-ahel); no other profile row starts a server.
+      const webApp = profile.layers.some(layer => layer.packageName === '@ahel/dsh-web-app')
+      expect(rows.filter(row => row.name === '@ahel/dsh-mcp-client').map(row => row.id)).toEqual(webApp ? ['mcp-ahel'] : [])
       expect(warnings).toEqual([])
 
       const owners = profile.layers.filter((layer) => {
