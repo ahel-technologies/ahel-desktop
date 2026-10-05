@@ -15,9 +15,11 @@ Ahel-metered models for Ahel Desktop. Registers one OpenAI-compatible route, `ah
 | `provider` | `ahel` | Route key |
 | `displayName` | `Ahel` | Name in model pickers |
 | `requestTimeoutMs` | `30000` | Deadline for the model-list request |
-| `fallbackModels` | Claude Sonnet 5.5, GPT-5.6, Gemini 2.5 Flash | Served while `GET /models` is missing or unreadable |
+| `retryIntervalMs` | `30000` | Longest wait between model-list reads while the list is unreadable (backs off from 2 s) |
+| `connectingLabel` | `Ahel (connecting…)` | Disabled menu row until the list is read |
+| `defaultModels` | `anthropic/claude-sonnet`, `anthropic/claude`, `openai/gpt-5`, `google/gemini` | Id prefixes, in order, for the default chosen after sign-in |
 
-The model list comes from `GET <baseURL>/models` and is re-read on every account change. Refusals become coded failures: 402 (balance or daily cap) has code `ACCOUNT_QUOTA`, 403 (feature off, no seat) `AHEL_NOT_ENABLED`, 401 `AHEL_SESSION_ENDED` after one forced token refresh (a refused refresh signs out); the server's own sentence is kept in the message, and `ui-ahel-account` shows its own copy per code. Signed out, a request fails with `MISSING_CREDENTIAL` and asks the person to sign in. Bring-your-own-key routes in `dsh-llm-pi-ai` are unaffected.
+The model list comes from `GET <baseURL>/models`, keeps the server's order, and is re-read on every account change. Signing out removes a saved Ahel default. Refusals become coded failures: 402 (balance or daily cap) has code `ACCOUNT_QUOTA`, 403 (feature off, no seat) `AHEL_NOT_ENABLED`, 401 `AHEL_SESSION_ENDED` after one forced token refresh (a refused refresh signs out); the server's own sentence is kept in the message, and `ui-ahel-account` shows its own copy per code. Signed out, a request fails with `MISSING_CREDENTIAL` and asks the person to sign in. Bring-your-own-key routes in `dsh-llm-pi-ai` are unaffected.
 
 ## Model Experience
 

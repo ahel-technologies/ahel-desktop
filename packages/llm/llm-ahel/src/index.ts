@@ -61,6 +61,11 @@ export interface Config {
   retryIntervalMs: number
   /** Text of the one disabled model-menu row shown until the model list is read. */
   connectingLabel: string
+  /**
+   * Model-id prefixes in order of preference for the default chosen after sign-in;
+   * the first listed model matching the earliest prefix wins, else the first listed model.
+   */
+  defaultModels: string[]
 }
 
 /** Validated configuration. */
@@ -71,6 +76,7 @@ export const Config = Schema.object({
   requestTimeoutMs: Schema.number().min(1).max(120_000).default(30_000),
   retryIntervalMs: Schema.number().min(1_000).max(3_600_000).default(30_000),
   connectingLabel: Schema.string().default('Ahel (connecting…)'),
+  defaultModels: Schema.array(Schema.string()).default(['anthropic/claude-sonnet', 'anthropic/claude', 'openai/gpt-5', 'google/gemini']),
 })
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -229,10 +235,11 @@ const NO_AMBIENT_AUTH: PiAiAdapterOptions['auth'] = {
 /**
  * Register the Ahel route while signed in and keep its model list current.
  * Until `GET <baseURL>/models` answers 200 the route lists no model and the
- * model menu shows one disabled "connecting" row; the read is retried every
- * `retryIntervalMs`. Once models are listed and no default model is saved,
- * the first Ahel model becomes the default unless another provider route
- * (a bring-your-own key) is configured.
+ * model menu shows one disabled "connecting" row; the read backs off up to
+ * `retryIntervalMs`. Models keep the server's order. Once models are listed
+ * and no default model is saved, the first model matching `defaultModels`
+ * becomes the default unless another provider route (a bring-your-own key)
+ * is configured; signing out removes a saved Ahel default.
  * @param ctx - plugin context with `llm` and `ahelAccount`.
  * @param config - resolved configuration.
  */
@@ -286,10 +293,16 @@ export function apply(ctx: Context, config: Config): void {
 
   const chooseDefault = async (list: readonly AhelModel[]): Promise<void> => {
     const defaults = ctx.get('agentDefaultModel')
-    const first = list[0]
-    if (defaults === undefined || first === undefined || defaults.configuredSelection() !== undefined) return
+    const preferred = config.defaultModels.map(prefix => list.find(model => model.id.startsWith(prefix))).find(model => model !== undefined)
+    const chosen = preferred ?? list[0]
+    if (defaults === undefined || chosen === undefined || defaults.configuredSelection() !== undefined) return
     if (ctx.llm.listProviders().some(provider => provider.id !== config.provider)) return
-    await defaults.saveSelection({ provider: config.provider, model: first.id })
+    await defaults.saveSelection({ provider: config.provider, model: chosen.id })
+  }
+  /** A saved Ahel default names a route that no longer exists once signed out. */
+  const dropDefault = async (): Promise<void> => {
+    const defaults = ctx.get('agentDefaultModel')
+    if (defaults?.configuredSelection()?.provider === config.provider) await defaults.clearSelection()
   }
 
   let generation = 0
@@ -305,8 +318,11 @@ export function apply(ctx: Context, config: Config): void {
       models = undefined
       profiles = new Map()
       publish(false)
+      await dropDefault()
       return
     }
+    // The menu and composer show "connecting" while the first read is in flight.
+    if (models === undefined) publish(true)
     const workspace = await ctx.ahelAccount.workspace()
     let listed: AhelModel[] | undefined
     try {

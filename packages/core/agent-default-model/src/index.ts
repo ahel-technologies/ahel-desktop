@@ -156,6 +156,21 @@ export class AgentDefaultModelConfig extends Service {
     this.saves = saved.catch(() => {})
     await saved
   }
+
+  /**
+   * Remove the saved selection, so the default follows the first configured
+   * route again; used when the saved route goes away (an account signs out).
+   * @returns fulfillment after the optional profile write settles.
+   */
+  async clearSelection(): Promise<void> {
+    const entry = this.ownerContext.fiber.entry
+    if (entry === undefined) return
+    const editor = this.ctx.get('configEditor')
+    if (editor === undefined) return
+    const saved = this.saves.then(() => editor.edit(entry, () => ({})))
+    this.saves = saved.catch(() => {})
+    await saved
+  }
 }
 
 export default AgentDefaultModelConfig
