@@ -289,8 +289,18 @@ export abstract class LocalCliAdapter extends LlmAdapter {
     }
   }
 
+  /**
+   * Text searched for sign-in failures after a failed run.
+   * @param resultError - the CLI's failure text, when it reported one.
+   * @param stderr - collected stderr.
+   * @returns the text to test; subclasses drop lines that name other services' sign-ins.
+   */
+  protected signInEvidence(resultError: string | undefined, stderr: string): string {
+    return `${resultError ?? ''}\n${stderr}`
+  }
+
   private classify(resultError: string | undefined, stderr: string, exitCode: number | null): LlmFailure {
-    if (AUTH_TEXT.test(`${resultError ?? ''}\n${stderr}`)) return { message: this.signInMessage, code: LOCAL_CLI_SIGNED_OUT_CODE }
+    if (AUTH_TEXT.test(this.signInEvidence(resultError, stderr))) return { message: this.signInMessage, code: LOCAL_CLI_SIGNED_OUT_CODE }
     const lastLine = stderr.split('\n').map(line => line.trim()).filter(line => line.length > 0).at(-1)
     const detail = resultError ?? lastLine ?? `the CLI exited with code ${exitCode ?? 'unknown'} without an answer`
     return { message: `${this.label}: ${detail}`, code: 'PROVIDER_UNAVAILABLE' }

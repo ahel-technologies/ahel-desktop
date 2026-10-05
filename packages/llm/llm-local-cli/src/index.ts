@@ -9,7 +9,7 @@
  * The Remote namespace `localCli` exposes list, detect, enable, disable and
  * watch. Every change is also emitted as `local-cli/changed`; each CLI that
  * is installed, recent enough and turned on is served as a model route
- * (`claude-code`) that runs the CLI headless, see `./bridge.ts`.
+ * (`claude-code`, `codex-cli`) that runs the CLI headless, see `./bridge.ts`.
  *
  * @module @ahel/dsh-llm-local-cli
  */
@@ -25,6 +25,7 @@ import Schema from '@ahel/schemastery'
 import { Remote, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type { BridgeHost, LocalCliAdapter } from './bridge.ts'
 import { ClaudeCodeAdapter } from './claude.ts'
+import { CodexCliAdapter } from './codex.ts'
 import { CLI_DESCRIPTORS, detectCli, isExecutableFile } from './detect.ts'
 import type { DetectDeps, DetectedCli, ProbeResult } from './detect.ts'
 import { LOCAL_CLI_IDS } from './types.ts'
@@ -36,6 +37,7 @@ export { CLI_DESCRIPTORS, candidatePaths, commandArgv, compareVersions, parseVer
 export { LOCAL_CLI_SIGNED_OUT_CODE, LocalCliAdapter } from './bridge.ts'
 export type { BridgeHost, CliEvent, CliInvocation, InvocationRequest, LocalCliModel } from './bridge.ts'
 export { AHEL_MCP_URL, CLAUDE_MODELS, ClaudeCodeAdapter, ahelMcpConfig, claudeArgs, parseClaudeLine } from './claude.ts'
+export { CODEX_MODELS, CodexCliAdapter, codexArgs, codexPrompt, parseCodexLine } from './codex.ts'
 export { renderTranscript, systemText } from './transcript.ts'
 export type { RenderedPrompt } from './transcript.ts'
 export type { CliDescriptor, DetectEnvironment, ProbeResult, ProbeRunner } from './detect.ts'
@@ -120,7 +122,10 @@ export class LocalCli extends TypertRemoteService {
       },
       platform: process.platform,
     })
-    this.adapters = { 'claude-code': new ClaudeCodeAdapter(host('claude-code'), 'Claude Code (installed)') }
+    this.adapters = {
+      'claude-code': new ClaudeCodeAdapter(host('claude-code'), 'Claude Code (installed)'),
+      'codex-cli': new CodexCliAdapter(host('codex-cli'), 'Codex (installed)'),
+    }
     ctx.on('local-cli/changed', (views) => { this.publishRoutes(views) })
     ctx.on('loader/volatile-update', () => { this.changed() })
     ctx.effect(() => () => {
