@@ -95,6 +95,8 @@ export function createElectronBuilderConfig(
     protocols: [{ name: 'Ahel Desktop', schemes: ['ahel'] }],
     extraMetadata: {
       dshDesktopAppId: appId,
+      // Read by the shell: unsigned macOS builds use Chromium's mock keychain (no login keychain prompt).
+      ...unsigned ? { dshDesktopUnsigned: true } : {},
       ...buildVersion === productVersion ? {} : { version: buildVersion },
       ...packaged === undefined ? {} : { dshBuildCommit: packaged.commit, dshBuildDirty: packaged.dirty },
     },

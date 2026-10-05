@@ -1,5 +1,6 @@
 /** Electron shell: desktop project ownership, custom protocol, windows, and lifecycle. */
 
+import { readFileSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -72,6 +73,12 @@ let backendReady = false
 /** Error-level console output of the primary window, attached to crash reports. */
 const rendererConsole = new RendererConsoleTail()
 
+/** Whether electron-builder stamped this package as an unsigned build (`dshDesktopUnsigned`). */
+function packagedUnsigned(): boolean {
+  const manifest: unknown = JSON.parse(readFileSync(join(app.getAppPath(), 'package.json'), 'utf8'))
+  return typeof manifest === 'object' && manifest !== null && 'dshDesktopUnsigned' in manifest && manifest.dshDesktopUnsigned === true
+}
+
 // Electron derives userData, logs and the single-instance lock from the application name, which
 // otherwise follows the package.json name; set it before any of those paths is read.
 app.setName('Ahel Desktop')
@@ -80,6 +87,10 @@ app.setName('Ahel Desktop')
 if (resolveDshHome() !== defaultDshHome() && !app.commandLine.hasSwitch('user-data-dir')) {
   app.setPath('userData', join(resolveDshHome(), 'desktop-user-data'))
 }
+// Every unsigned macOS build carries a new ad-hoc signature, so Chromium's own os_crypt key
+// ("Ahel Desktop Safe Storage") would ask for the login keychain password on each build.
+// Unsigned builds use Chromium's in-memory mock keychain instead; signed builds keep the real one.
+if (process.platform === 'darwin' && app.isPackaged && packagedUnsigned()) app.commandLine.appendSwitch('use-mock-keychain')
 // Platform-conventional logs directory (macOS ~/Library/Logs/<name>, otherwise under userData);
 // set before ready so the first fatal report already resolves under it.
 app.setAppLogsPath()
