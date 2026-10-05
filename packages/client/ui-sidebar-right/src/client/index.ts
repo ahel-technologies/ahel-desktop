@@ -80,7 +80,7 @@ export type { SidebarRightOpenTab } from './tab-inventory.ts'
 const NS = 'sidebarRight'
 
 /** Required browser services: the slot registry, the frame's panel actions, copy, and the resource model. */
-export const inject = ['slots', 'layout', 'locale', 'resources', 'sessions', 'uiSession', 'shortcuts']
+export const inject = ['slots', 'layout', 'locale', 'resources', 'sessions', 'uiSession', 'shortcuts', 'configForms']
 
 declare module '@ahel/cordis' {
   interface Context {
@@ -201,7 +201,23 @@ export function apply(ctx: ClientContext): void {
     }
 
     const disposeTypes = [tabs.register(guideDefinition(t))]
-    const disposeSeat = ctx.slots.inject('rightbar', function* () {
+    // The panel and its header toggle are developer surfaces: Ahel Desktop
+    // shows them only while Developer tools are on. The navigation service
+    // stays provided, so plugins that open resources keep loading.
+    const developerTools = (ctx.get('configForms') as {
+      developerTools: { enabled: { getSnapshot(): boolean; subscribe(listener: () => void): () => void } }
+    }).developerTools.enabled
+    const whileDeveloperTools = (contribute: () => () => void): (() => void) => {
+      let withdraw: (() => void) | undefined
+      const sync = (): void => {
+        if (developerTools.getSnapshot()) withdraw ??= contribute()
+        else { withdraw?.(); withdraw = undefined }
+      }
+      sync()
+      const stop = developerTools.subscribe(sync)
+      return () => { stop(); withdraw?.() }
+    }
+    const disposeSeat = whileDeveloperTools(() => ctx.slots.inject('rightbar', function* () {
       yield ctx.slots.register({
         name: 'rightbar',
         children: { 'rightbar.session': { kind: 'single', scope: 'session' } },
@@ -230,17 +246,17 @@ export function apply(ctx: ClientContext): void {
           occurrence: tab => controller.tabDomain.occurrence(sessionId, tab),
         }),
       }, RightbarSeat)
-    })
+    }))
     // The expand button shares the panel's store: it only needs to know whether
     // the panel is expanded, and to ask for it to be. The header's corner seat
     // is its own place, past the utilities, so showing and hiding it moves
     // nothing else in the row.
-    const disposeExpand = ctx.slots.inject('conversation.session.header.corner', () => ctx.slots.register({
+    const disposeExpand = whileDeveloperTools(() => ctx.slots.inject('conversation.session.header.corner', () => ctx.slots.register({
       name: 'conversation.session.header.corner',
       locale: NS,
       store,
       inject: () => ({ hooks: { shortcuts: ctx.shortcuts.catalog } }),
-    }, ExpandButton))
+    }, ExpandButton)))
     // Stage two for the guide: it declares the chain child it hosts and reads
     // the registry's entry boxes, which an ordinary type has no reason to do.
     const guideInjected: GuideInjected = {
