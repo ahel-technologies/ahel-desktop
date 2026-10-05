@@ -32,7 +32,7 @@ async function fixture(arch: 'arm64' | 'x64' = 'arm64') {
   await mkdir(join(appPath, 'Contents', 'Resources'), { recursive: true })
   await writeFile(join(appPath, 'payload'), 'signed content')
   await writeMacOSAppUpdateConfig(join(appPath, 'Contents', 'Resources'), {
-    owner: 'ahel-technologies', repo: 'ahel-desktop-releases', releaseType: 'release',
+    owner: 'ahel-technologies', repo: 'ahel-desktop', releaseType: 'release',
   }, 'ahel-desktop-updater')
   const version = '1.2.3-alpha.1'
   const base = `ahel-desktop-${version}-mac-${arch}`
@@ -106,7 +106,7 @@ describe('parallel macOS artifacts', () => {
         .toEqual({ payload: 'signed content', appTicket: false })
       expect(await readFile(join(f.appPath, 'ticket'), 'utf8')).toBe('accepted')
       expect(await readFile(join(f.appPath, 'Contents', 'Resources', 'app-update.yml'), 'utf8'))
-        .toContain('repo: ahel-desktop-releases')
+        .toContain('repo: ahel-desktop')
       expect((await readdir(f.root)).sort()).toEqual(['artifacts'])
       expect(f.apple.verifySignature).toHaveBeenCalledTimes(4)
       expect(f.apple.verifyNotarization).toHaveBeenCalledTimes(1)

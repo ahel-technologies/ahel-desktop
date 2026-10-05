@@ -66,7 +66,7 @@ export class DesktopUpdateCoordinator {
     }
     this.updater.autoDownload = false
     this.updater.autoInstallOnAppQuit = false
-    // The feed is the public ahel-technologies/ahel-desktop-releases repository, named by the app-update.yml
+    // The feed is the GitHub releases of the public ahel-technologies/ahel-desktop repository, named by the app-update.yml
     // that electron-builder seals into the package; its releases carry latest.yml / latest-mac.yml.
     // The channel stays unset so it defaults to `latest`: an explicit channel makes the GitHub provider
     // with prereleases allowed accept only tags whose prerelease id equals the channel name.

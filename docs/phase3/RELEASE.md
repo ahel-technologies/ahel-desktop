@@ -1,24 +1,18 @@
 # Ahel Desktop releases
 
-Releases are unsigned for now. Assets go to the public repo `ahel-technologies/ahel-desktop-releases`, so electron-updater reads the feed without a token. This repo stays private.
+Releases are unsigned for now. Assets go to the GitHub releases of this public repository, `ahel-technologies/ahel-desktop`, so electron-updater reads the feed without a token. The workflow publishes with the default `GITHUB_TOKEN` (`contents: write` on the publish job); no extra secret is needed.
 
 ## Cut a release
 
 1. Pick the version. Master carries `0.1.0`; the tag sets the version CI builds, so master need not be bumped first.
 2. `git tag v0.1.0 && git push origin v0.1.0`. A tag with `-` (for example `v0.2.0-beta.1`) becomes a GitHub prerelease.
 3. `.github/workflows/desktop-release.yml` runs: `macos-14` builds the mac arm64 DMG and zip, `windows-latest` builds the Windows x64 NSIS installer, both unsigned (about 30 to 60 minutes).
-4. The publish job creates release `v0.1.0` in `ahel-desktop-releases` with: `ahel-desktop-<v>-mac-arm64-unsigned.dmg`, `.zip`, `.zip.blockmap`, `latest-mac.yml`, `ahel-desktop-<v>-win-x64-unsigned.exe`, `.exe.blockmap`, `latest.yml`, plus the version-free copies `ahel-desktop-mac-arm64.dmg` and `ahel-desktop-win-x64.exe`.
-5. Rerun a failed tag: delete the release in `ahel-desktop-releases` if one was created, then use "Re-run all jobs" on the workflow run.
-
-## Secret (one time, Karl)
-
-1. Create the token: github.com → avatar → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token. Resource owner: `ahel-technologies`. Repository access: Only select repositories → `ahel-desktop-releases`. Permissions → Repository permissions → Contents: Read and write. Generate and copy it.
-2. Add it: github.com/ahel-technologies/ahel-desktop → Settings → Secrets and variables → Actions → New repository secret. Name `RELEASES_TOKEN`, paste the value, Add secret.
-3. If the org requires approval for fine-grained tokens, approve it at github.com/organizations/ahel-technologies/settings/personal-access-token-requests.
+4. The publish job creates release `v0.1.0` in this repository with: `ahel-desktop-<v>-mac-arm64-unsigned.dmg`, `.zip`, `.zip.blockmap`, `latest-mac.yml`, `ahel-desktop-<v>-win-x64-unsigned.exe`, `.exe.blockmap`, `latest.yml`, plus the version-free copies `ahel-desktop-mac-arm64.dmg` and `ahel-desktop-win-x64.exe`.
+5. Rerun a failed tag: delete the release if one was created, then use "Re-run all jobs" on the workflow run.
 
 ## Landing download links
 
-`https://github.com/ahel-technologies/ahel-desktop-releases/releases/latest/download/<asset>`
+`https://github.com/ahel-technologies/ahel-desktop/releases/latest/download/<asset>`
 
 - macOS: `.../releases/latest/download/ahel-desktop-mac-arm64.dmg`
 - Windows: `.../releases/latest/download/ahel-desktop-win-x64.exe`

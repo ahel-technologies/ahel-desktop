@@ -178,7 +178,7 @@ Welcome 文字使用 Montserrat Light 并回退到系统字体，操作按钮使
 
 ### 发布版本
 
-每次 Desktop 打包前，第一步都要与当前用户确认完整版本号。检查 dsh 基础版本、`ahel-technologies/ahel-desktop-releases` 已发布的 GitHub release 以及本地产物，再提出准确版本供用户确认。用户确认前不得启动打包。
+每次 Desktop 打包前，第一步都要与当前用户确认完整版本号。检查 dsh 基础版本、`ahel-technologies/ahel-desktop` 已发布的 GitHub release 以及本地产物，再提出准确版本供用户确认。用户确认前不得启动打包。
 
 对 CI 而言，推送的 `v*` tag 即为该确认：`.github/workflows/desktop-release.yml` 在打包前运行 `node apps/desktop/scripts/set-release-version.mjs <tag>`，改写根清单以及所有与其版本相同的 workspace 清单。
 
@@ -372,7 +372,7 @@ Windows 下载完成后的更新确认说明应用会在安装期间关闭、完
 
 <a id="upload-updates"></a>
 
-打包应用从打包时封入每个应用的 `app-update.yml` 读取更新源：公开仓库 `ahel-technologies/ahel-desktop-releases` 的 GitHub release，因此无需 token。updater 使用默认的 `latest` 通道（Windows 为 `latest.yml`，macOS 为 `latest-mac.yml`），允许预发布版本并禁用降级。没有 `app-update.yml` 的应用（例如开发启动）没有更新源。打包传入 `--publish never`，从不发布；`.github/workflows/desktop-release.yml` 将每个目标的安装包、blockmap 和通道元数据上传到该仓库的 release（发布步骤见 `docs/phase3/RELEASE.md`）。
+打包应用从打包时封入每个应用的 `app-update.yml` 读取更新源：公开仓库 `ahel-technologies/ahel-desktop` 的 GitHub release，因此无需 token。updater 使用默认的 `latest` 通道（Windows 为 `latest.yml`，macOS 为 `latest-mac.yml`），允许预发布版本并禁用降级。没有 `app-update.yml` 的应用（例如开发启动）没有更新源。打包传入 `--publish never`，从不发布；`.github/workflows/desktop-release.yml` 将每个目标的安装包、blockmap 和通道元数据上传到该仓库的 release（发布步骤见 `docs/phase3/RELEASE.md`）。
 
 打包应用在启动后异步检查更新源。常规轮询以十分钟为基础间隔，每次独立采样 ±20% 的随机抖动。每次检查失败将基础延迟翻倍，上限为一小时；成功后重置。随机延迟不超过该上限，并从全部复用调用结算后开始计时。本地化的“检查更新…”菜单项（Windows 可从顶栏的“应用”菜单进入）立即执行，并复用正在进行的检查。回到前台和系统恢复时遵守相同的单调时钟截止时间。自动检查从不弹窗或下载安装包。手动检查显示正在检查、失败或包含已安装版本号的无更新反馈。常规更新弹窗原位渐入渐出；连续弹窗替换卡片内容并重置其滚动位置，保留黑色半透明蒙层，不模糊父页面。
 

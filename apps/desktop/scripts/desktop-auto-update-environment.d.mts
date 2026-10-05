@@ -1,5 +1,5 @@
 /** Public GitHub repository whose releases carry the Desktop update metadata and installers. */
-export const DESKTOP_UPDATE_REPOSITORY: { readonly owner: 'ahel-technologies', readonly repo: 'ahel-desktop-releases' }
+export const DESKTOP_UPDATE_REPOSITORY: { readonly owner: 'ahel-technologies', readonly repo: 'ahel-desktop' }
 
 /** Directory name of one supported Desktop release target. */
 export type DesktopAutoUpdateTarget = 'mac-arm64' | 'mac-x64' | 'win-x64'
@@ -8,7 +8,7 @@ export type DesktopAutoUpdateTarget = 'mac-arm64' | 'mac-x64' | 'win-x64'
 export interface DesktopUpdatePublishProvider {
   readonly provider: 'github'
   readonly owner: 'ahel-technologies'
-  readonly repo: 'ahel-desktop-releases'
+  readonly repo: 'ahel-desktop'
   readonly releaseType: 'release'
 }
 

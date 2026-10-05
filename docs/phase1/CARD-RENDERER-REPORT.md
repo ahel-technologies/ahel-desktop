@@ -2,7 +2,7 @@
 
 Date: 2026-10-05. Branch: `phase1/card-renderer` (from `spike/phase-0`). Not merged.
 
-Result: MCP Apps cards render in the chat. A fixture MCP server's `ui://` card mounts in a sandboxed frame under its tool call. It receives its tool input and tool result, and its Confirm press runs a second tool on the server through the host. The real Ahel card is wired the same way. Checking it end to end is blocked on Karl's ahel.ai sign-in.
+Result: MCP Apps cards render in the chat. A fixture MCP server's `ui://` card mounts in a sandboxed frame under its tool call. It receives its tool input and tool result, and its Confirm press runs a second tool on the server through the host. The real Ahel card is wired the same way. Checking it end to end is blocked on a manual ahel.ai sign-in.
 
 ![Fixture card](screenshots/card-fixture.png)
 
@@ -143,12 +143,12 @@ Also run:
   - Send any prompt and expand "Called tools". The screenshots above come from this flow.
 - Ahel: `docs/phase1/fixture/run-ahel-signin.sh` mounts `https://mcp.ahel.ai/mcp` with the spike OAuth row plus the card host, and prints the ahel.ai sign-in URL. Reached on 2026-10-05.
   - It reused the spike's stored client registration, so no new registration was created on ahel.ai.
-  - **Nobody signed in.** The real Ahel card check is blocked on Karl's sign-in.
+  - **Nobody signed in.** The real Ahel card check is blocked on a manual sign-in.
 
 ## What the real Ahel card still needs
 
-1. Karl signs in: run `run-ahel-signin.sh`, open the URL, approve. The token lands in that `DSH_HOME/mcp-oauth/ahel.json`.
-2. A model to call Ahel tools. Per Karl, no DeepSeek key; the Phase 2 model path (BYO Claude/OpenAI key or Ahel-metered) is required. Until then, a replay script that calls `mcp__ahel__explore` or `installed` can drive it the same way as the fixture.
+1. A user signs in: run `run-ahel-signin.sh`, open the URL, approve. The token lands in that `DSH_HOME/mcp-oauth/ahel.json`.
+2. A model to call Ahel tools. By product decision, no DeepSeek key; the Phase 2 model path (BYO Claude/OpenAI key or Ahel-metered) is required. Until then, a replay script that calls `mcp__ahel__explore` or `installed` can drive it the same way as the fixture.
 3. Forward `ui/update-model-context` into the next request, as a logged session event. Ahel pushes each card step to the model.
 4. Optional: `safeAreaInsets`, the double-frame sandbox proxy, and `ui/message` follow-up turns.
 

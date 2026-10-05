@@ -178,7 +178,7 @@ The welcome window follows system appearance with the Ahel light and dark inks a
 
 ### Release versions
 
-Before each Desktop packaging run, first confirm the complete version string with the current user. Check the dsh base version, the published GitHub releases of `ahel-technologies/ahel-desktop-releases`, and local artifacts, then propose the exact version for approval. Do not start packaging until the user confirms that version.
+Before each Desktop packaging run, first confirm the complete version string with the current user. Check the dsh base version, the published GitHub releases of `ahel-technologies/ahel-desktop`, and local artifacts, then propose the exact version for approval. Do not start packaging until the user confirms that version.
 
 A pushed `v*` tag is that confirmation for CI: `.github/workflows/desktop-release.yml` runs `node apps/desktop/scripts/set-release-version.mjs <tag>`, which rewrites the root manifest and every workspace manifest that shares its version, before packaging.
 
@@ -372,7 +372,7 @@ Native update overlays wait for a ready document and a visible parent, and reapp
 
 <a id="upload-updates"></a>
 
-Packaged applications read their update feed from the `app-update.yml` that packaging seals into every application: the GitHub releases of the public repository `ahel-technologies/ahel-desktop-releases`, so no token is needed. The updater uses the default `latest` channel (`latest.yml` on Windows, `latest-mac.yml` on macOS), allows prereleases, and disables downgrades. An application without `app-update.yml`, such as a development launch, has no update source. Packaging passes `--publish never` and never publishes; `.github/workflows/desktop-release.yml` uploads the installers, blockmaps, and channel metadata of each target to a release of that repository (release steps: `docs/phase3/RELEASE.md`).
+Packaged applications read their update feed from the `app-update.yml` that packaging seals into every application: the GitHub releases of the public repository `ahel-technologies/ahel-desktop`, so no token is needed. The updater uses the default `latest` channel (`latest.yml` on Windows, `latest-mac.yml` on macOS), allows prereleases, and disables downgrades. An application without `app-update.yml`, such as a development launch, has no update source. Packaging passes `--publish never` and never publishes; `.github/workflows/desktop-release.yml` uploads the installers, blockmaps, and channel metadata of each target to a release of that repository (release steps: `docs/phase3/RELEASE.md`).
 
 Packaged applications check the feed asynchronously at startup. Ordinary polling uses a ten-minute base interval with independently sampled ±20% jitter. Each check failure doubles the base delay up to one hour; success resets it. The randomized delay is bounded by that cap and starts after all joined callers settle. Foreground and system-resume checks respect the same monotonic deadline; the localized Check for Updates menu item, including in the Windows caption's Application menu, runs immediately and joins an in-flight check. Automatic checks never open dialogs or download packages. Manual checks display checking, failure, or no-update feedback with the installed version. Ordinary update dialogs fade in and out in place; consecutive prompts replace the card content and reset its scroll position while retaining the dark translucent backdrop without blurring the parent page.
 

@@ -57,7 +57,7 @@ The app builds (`pnpm run build`), packages unsigned for mac arm64 (`pnpm run pa
 ## Known gaps
 
 - `ui-mcp-app` row and dependency: added in the last commit, after verification. The branch only installs and builds once it is merged with `phase1/card-renderer`.
-- **Doc gates not fixed** (Karl: not a priority):
+- **Doc gates not fixed** (not a priority):
   - doc-graphs, cordis-catalog, client-catalog, export-jsdoc, translation-pairing.
   - persistence-changes: two DeepSeek event types left the schema. They are still in `known-event-types` so old logs load.
 - **Web e2e (`test:web`):** suites for removed surfaces were deleted. The remaining ones (e.g. `shipped-composition`) still assume DeepSeek defaults; not run.

@@ -1,77 +1,37 @@
-# DeepSeek Harness
+# Ahel Desktop
 
 English | [中文](README.zh.md)
 
-DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
+Ahel Desktop is a desktop chat app for [ahel.ai](https://ahel.ai). Sign in with your ahel.ai account and the Ahel MCP connects on its own, so your apps, their cards and their approvals work right in the chat.
 
-It is built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
+Models come from your ahel.ai account, your own API key, or a coding CLI already installed on your computer.
 
-Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
+## Download
 
-## Developer preview
+Get the latest macOS (Apple silicon) or Windows build from [the latest release](https://github.com/ahel-technologies/ahel-desktop/releases/latest).
 
-DeepSeek Harness is in _developer preview_ and iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
+Builds are unsigned for now. macOS: right-click the app and choose Open. Windows: SmartScreen > More info > Run anyway.
 
-Review the [safety notice](SAFETY.md) before running the project.
+## Build from source
 
-## Run
-
-### Run from `npm`
-
-Install `Node.js`, then run:
+Install Node.js and pnpm, then run:
 
 ```sh
-npx @ahel/dsh web
-```
-
-The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it in the default browser for a local launch. An SSH launch only prints the host URL because the SSH client or editor owns the local forwarded address. Pass `--no-open` to run the server without opening a browser. See [Web UI guide](docs/user/guide/index.md).
-
-### Run from source
-
-To run from a repository checkout:
-
-```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
-cd deepseek-harness
 pnpm install
 pnpm run build
-pnpm dsh web
+pnpm run package:desktop:mac:arm64:dev
 ```
 
-`pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
+The unsigned app lands under `apps/desktop/.desktop-build/`. See the [development guide](docs/development.md) and [AGENTS.md](AGENTS.md) for the rest.
 
-## Community and support
+## Contributing and security
 
-- Submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
-- Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
-- Join <a href="https://discord.gg/4MrtZUhpxg">DeepSeek Harness Discord community</a>.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Development
-
-Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md).
-
-`pnpm run dev:web` builds, serves, and rebuilds client bundles on source edits in one terminal, and `make help` lists the matching Make targets for Web and Desktop; the guide's application commands section owns the full table.
-
-For agents, follow [AGENTS.md](AGENTS.md).
-
-## Citation
-
-```bibtex
-@misc{deepseek-harness2026,
-  title={DeepSeek Harness: Everything is a Plugin},
-  author={DeepSeek-AI},
-  year={2026},
-  publisher={GitHub},
-  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
-}
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Third-party dependencies and their licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-Third-party dependencies and their licenses are disclosed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Built on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (MIT) by DeepSeek. DeepSeek Harness is a trademark of DeepSeek; this project is not affiliated with or endorsed by DeepSeek.
+
+Bundled fonts are licensed under the SIL Open Font License. The Ahel tile and wordmark are trademarks of Ahel Technologies OÜ and are not covered by the MIT license.

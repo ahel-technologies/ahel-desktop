@@ -2,7 +2,7 @@
 
 Date: 2026-10-05. Branch: `spike/phase-0`. Base: upstream `deepseek-ai/deepseek-harness` release `dsh-v0.2.1-alpha.1`; the fork marks it with the `upstream-base-*` tag.
 
-Gate: "an Ahel action renders a card in the dsh UI". Result: **not met**, for two reasons. Sign-in is waiting on Karl. dsh also has no MCP Apps (`ui://`) renderer, so an Ahel card cannot render until Phase 1 builds one. Everything up to the sign-in URL works in the packaged app.
+Gate: "an Ahel action renders a card in the dsh UI". Result: **not met**, for two reasons. Sign-in is waiting on a manual step. dsh also has no MCP Apps (`ui://`) renderer, so an Ahel card cannot render until Phase 1 builds one. Everything up to the sign-in URL works in the packaged app.
 
 ## Build
 
@@ -53,8 +53,8 @@ The supervisor's reconnect loop (`maxAttempts: 1000`) picks up the token without
 - `docs/spike/desktop-main-window.jpg`: main window behind the gate.
 - `docs/spike/ahel-signin-page.jpg`: the ahel.ai "Connect your AI to ahel" sign-in page the authorize URL lands on.
 
-**Karl's step (sign-in):**
-1. `cd /Users/karl/dev/ahel-tech/ahel-desktop && docs/spike/run-spike-desktop.sh`
+**Manual sign-in step:**
+1. From the repository root, run `docs/spike/run-spike-desktop.sh`
 2. The script prints `https://ahel.ai/api/auth/mcp/authorize?response_type=code&client_id=…&code_challenge=…&redirect_uri=http%3A%2F%2F127.0.0.1%3A33418%2Fcallback&scope=openid+profile+email+offline_access&prompt=consent&resource=https%3A%2F%2Fmcp.ahel.ai%2F`. Open it.
 3. Sign in on ahel.ai with Google or the email link, then approve. The browser shows "Signed in. You can close this tab".
 4. The token lands in `~/.ahel-desktop-spike/mcp-oauth/ahel.json`, and the app connects within 30 s.
@@ -63,7 +63,7 @@ The app must stay running during sign-in, because the callback listens on port 3
 
 ## Card test
 
-**Blocked on Karl sign-in. Also blocked on a missing renderer** (Phase 1 work, not a sign-in issue).
+**Blocked on a manual sign-in. Also blocked on a missing renderer** (Phase 1 work, not a sign-in issue).
 - Ahel cards are MCP Apps. Tools carry `_meta.ui.resourceUri = ui://ahel/gateway-app-<v>.html` (plus `openai/outputTemplate`) and return `structuredContent` (`ahel/src/lib/mcp/tools.ts:165-251`).
 - dsh has no MCP Apps support. The repo has no `ui://`, `resourceUri` or `mcp-ui` handling.
 - `dsh-mcp-client` keeps `content` and `structuredContent` but drops tool and result `_meta`.
@@ -75,7 +75,7 @@ The app must stay running during sign-in, because the callback listens on port 3
   3. Add a `ui-tool` card that mounts the HTML in a sandboxed iframe and speaks the MCP Apps postMessage bridge (`ui/initialize`, tool-result notification, proxied `tools/call`, open-link, size changes).
 
   Estimate: 3 to 5 days for one agent.
-- Model: none was configured. Per Karl, no DeepSeek key, and no vault keys were used. The UI runs without a model. A placeholder `ANTHROPIC_API_KEY` env does not pass the welcome gate.
+- Model: none was configured. By product decision, no DeepSeek key, and no vault keys were used. The UI runs without a model. A placeholder `ANTHROPIC_API_KEY` env does not pass the welcome gate.
 
 ## Prune
 
@@ -122,7 +122,7 @@ Grep across non-test, non-doc source.
 | Item | What | Paths |
 |---|---|---|
 | Update feed | `electron-updater` generic provider, channel `nightly`, production origin fixed to `https://download.deepseek.com` | `apps/desktop/scripts/desktop-auto-update-environment.mjs:18`, `apps/desktop/src/update-coordinator.ts` (`autoUpdater`), `update-schedule.ts`, `update-http-executor.ts` |
-| Upload hosts | Tencent COS upload, `download-test.deepseek.com`, bucket `bj-toc-download-test-1320056602` | `apps/desktop/scripts/desktop-cos.ts`, `cos-operation.ts`, `desktop-upload-run.ts`, `upload-target.ts`, `installed-update-cos.ts`, `installed-update-qualification.ts` |
+| Upload hosts | Tencent COS upload, `download-test.deepseek.com` and a DeepSeek storage bucket | `apps/desktop/scripts/desktop-cos.ts`, `cos-operation.ts`, `desktop-upload-run.ts`, `upload-target.ts`, `installed-update-cos.ts`, `installed-update-qualification.ts` |
 | Mandatory update policy | Polls a policy origin and can block the app; test auth via Feishu | `apps/desktop/src/mandatory-update-policy.ts`, `mandatory-update-window.ts`, `policy-test-auth.ts`, `scripts/desktop-policy-environment.mjs` |
 | Product telemetry | OTLP logs to `https://dsh-otel-collector.deepseeksvc.com/v1/logs`, enabled whenever the profile is `desktop` | `packages/host/product-telemetry-otel/src/index.ts:47`, `packages/bundle/web-app/cordis.patch.yml` (`desktop-product-telemetry`) |
 | Client analytics | `product-analytics` `enabled` defaults to true | `packages/client/product-analytics/src/index.ts:30`, `apps/desktop/src/main.ts` (`analyticsEnabled`) |
@@ -136,7 +136,7 @@ Grep across non-test, non-doc source.
 
 Spike run note: the first two packaged launches (about 5 minutes) ran with default Desktop telemetry on, so anonymous product telemetry may have reached `deepseeksvc.com`. Later runs use `docs/spike/desktop-no-telemetry.cordis.yml`. Electron also created `~/Library/Application Support/@ahel/dsh-desktop`.
 
-### DeepSeek key, account and model UI to remove in Phase 1 (Karl decision 2)
+### DeepSeek key, account and model UI to remove in Phase 1 (product decision 2)
 
 - **Desktop welcome window.** "Welcome to DeepSeek Harness", with Sign in (DeepSeek account) and Add API Key (DeepSeek key) buttons. Files: `apps/desktop/src/client/WelcomePage.tsx`, `welcome-window.ts`, `welcome-backend.ts` (reads the `llm-deepseek` `apiKeyEnv`), `welcome-api.ts` (`needsWelcome`), `preload-welcome.ts`.
 - **Desktop platform account view.** DeepSeek platform webview and account backend. Files: `apps/desktop/src/platform-view.ts`, `account-backend.ts`, `preload-platform-account.ts`, `client-metadata.ts`, `host-process.ts`.
@@ -153,7 +153,7 @@ Spike run note: the first two packaged launches (about 5 minutes) ran with defau
 - **Brand.** `packages/client/ui-brand-official` (DeepSeek logo and "Into the Unknown" hero); `apps/desktop/resources/*` icons; `productName`, `artifactName` and `protocols` in `apps/desktop/scripts/electron-builder-config.mjs`; the mic-permission copy.
 - **Host plugins behind those screens.** `deepseek-account` (`dsh-deepseek-account-platform`), `account-controller`, `llm-deepseek`, `llm-deepseek-account`, `web-search-deepseek`, `deepseek-llm-api-extensions`, `session-log-deepseek`, `plugin-package-inventory-deepseek`. All are disabled in `prune-chat-mcp.cordis.yml`.
 
-## Phase 2 auth: one ahel.ai login (Karl decision 1)
+## Phase 2 auth: one ahel.ai login (product decision 1)
 
 Goal: the only sign-in is the ahel.ai account, and the Ahel MCP connects automatically with that session.
 
@@ -163,7 +163,7 @@ Goal: the only sign-in is the ahel.ai account, and the Ahel MCP connects automat
 4. **Welcome gate.** `needsWelcome` becomes `!ahelAccount.loggedIn`. The DeepSeek "Add API Key" path is deleted. Model access is either BYO keys (Claude or OpenAI) in Settings → Models through `llm-pi-ai`, or the Ahel-metered gateway as a `llm-pi-ai` provider whose credential is the same `AHEL_ACCOUNT` token.
 5. **One client per install.** Use RFC 7591 DCR with a fixed `client_name` "Ahel Desktop", or pre-register a first-party public client on ahel.ai, so `prompt=consent` can be skipped for the first-party app.
 
-## Brand surfaces (Karl decision 3: Ahel tile everywhere; inventory only)
+## Brand surfaces (product decision 3: Ahel tile everywhere; inventory only)
 
 Source mark for Phase 1: `ahel/design/project/assets/Logos/ahel-tile.svg` (and `ahel-tile-on-card.svg`).
 

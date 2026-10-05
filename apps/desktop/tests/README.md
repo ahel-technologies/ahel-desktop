@@ -52,7 +52,7 @@ Packaging supervision fixtures control their Git metadata and use real file hash
 | Main entry | Installer failure after a clean stop restores the Host before another confirmation |
 | Host task protection | The actual controller with substituted composition detects running agents, queued turns/steps, and global and agent jobs; API reads do not warn. Admission locking returns 503 for new requests, drains existing requests, and rechecks tasks; unlock restores admission |
 | Visible output | Ordinary update presentation expectation passes; account-row component tests cover progress and persistent retry |
-| Packaging configuration | Metadata embeds the configured application ID, and every packaged application embeds the GitHub releases feed of `ahel-technologies/ahel-desktop-releases` |
+| Packaging configuration | Metadata embeds the configured application ID, and every packaged application embeds the GitHub releases feed of `ahel-technologies/ahel-desktop` |
 
 The focused dialog, main-entry, settings, and sidebar run passes 119 regression cases. Five carrier tests cover all statements, branches, functions, and lines of the shared update-status source. The real-Electron command captures ordinary-ready and task-warning dialogs. These isolated checks do not certify the complete workspace or a release. Full-repository gate results and environment limitations remain separate from this focused evidence.
 
