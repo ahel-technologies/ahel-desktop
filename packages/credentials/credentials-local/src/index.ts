@@ -73,7 +73,7 @@ export interface Config {
 }
 
 /** Fully resolved provider parameters; defaulting happens here, never inline. */
-interface ResolvedSpec {
+export interface ResolvedSpec {
   filename: string
   watch: boolean
   debounceMs: number
@@ -518,7 +518,8 @@ export class LocalCredentialProvider extends CredentialProvider {
     debounceMs: z.number().min(0).default(100),
   })
 
-  private readonly spec: ResolvedSpec
+  /** Resolved file location; a subclass may move `filename` in {@link prepareStorage}, before the first read. */
+  protected spec: ResolvedSpec
   /**
    * Raw text of the last read or persisted document; `undefined` while the
    * file is absent. Watcher events whose content equals this cache are no-ops,
@@ -573,6 +574,7 @@ export class LocalCredentialProvider extends CredentialProvider {
       this.closed = true
       await this.operations
     }
+    await this.prepareStorage()
     await this.loadInitial()
     if (!this.spec.watch) return
     const watcher = chokidarWatch(await canonicalizeWatchPath(this.spec.filename), {
@@ -604,6 +606,30 @@ export class LocalCredentialProvider extends CredentialProvider {
       await watcher.close()
       await this.operations
     }
+  }
+
+  /** Runs once at activation before the first read; the plaintext document needs no preparation. */
+  protected prepareStorage(): Promise<void> {
+    return Promise.resolve()
+  }
+
+  /**
+   * Read the document text stored at `filename`.
+   * @param filename - absolute document path.
+   * @returns the document text; rejects with ENOENT while the file is absent.
+   */
+  protected readDocument(filename: string): Promise<string> {
+    return readFile(filename, 'utf8')
+  }
+
+  /**
+   * Durably replace the document at `filename` with owner-only permissions.
+   * @param filename - absolute document path.
+   * @param text - the document text to store.
+   */
+  protected async writeDocument(filename: string, text: string): Promise<void> {
+    // 0600: a document holding secrets is never world-readable.
+    await writeFileAtomic(filename, text, { mode: 0o600, dirMode: 0o700 })
   }
 
   override resolve(ref: CredentialRef): Promise<ResolvedCredential | undefined> {
@@ -687,8 +713,7 @@ export class LocalCredentialProvider extends CredentialProvider {
         if (next.kind === 'grant') assertJsonValue(`record "${key}" payload`, next.payload, new Set())
         else assertStorableApiKey(key, next)
         const nextText = renderRecord(this.text, key, next)
-        // 0600: a document holding secrets is never world-readable.
-        await writeFileAtomic(this.spec.filename, nextText, { mode: 0o600, dirMode: 0o700 })
+        await this.writeDocument(this.spec.filename, nextText)
         this.text = nextText
         this.records.set(key, next)
         // After the commit, on the same terms as a reference write.
@@ -709,7 +734,7 @@ export class LocalCredentialProvider extends CredentialProvider {
         await this.reconcileFromDisk()
         if (!this.records.has(key)) return
         const nextText = renderRecord(this.text, key, undefined)
-        await writeFileAtomic(this.spec.filename, nextText, { mode: 0o600, dirMode: 0o700 })
+        await this.writeDocument(this.spec.filename, nextText)
         this.text = nextText
         this.records.delete(key)
         this.notifyRecordUpdated(key)
@@ -754,8 +779,7 @@ export class LocalCredentialProvider extends CredentialProvider {
         const existing = this.values.get(ref)
         if (value === undefined && existing === undefined) return
         const nextText = renderRef(this.text, ref, value)
-        // 0600: a document holding secrets is never world-readable.
-        await writeFileAtomic(this.spec.filename, nextText, { mode: 0o600, dirMode: 0o700 })
+        await this.writeDocument(this.spec.filename, nextText)
         this.text = nextText
         if (value === undefined) this.values.delete(ref)
         else this.values.set(ref, value)
@@ -792,7 +816,7 @@ export class LocalCredentialProvider extends CredentialProvider {
     await assertOwnerOnly(this.spec.filename)
     let text: string
     try {
-      text = await readFile(this.spec.filename, 'utf8')
+      text = await this.readDocument(this.spec.filename)
     } catch (error) {
       if (!isENOENT(error)) throw error
       return
@@ -816,7 +840,7 @@ export class LocalCredentialProvider extends CredentialProvider {
    */
   private async migrateFlatDocument(): Promise<string> {
     return withFileLock(this.spec.filename, async () => {
-      const current = await readFile(this.spec.filename, 'utf8')
+      const current = await this.readDocument(this.spec.filename)
       const migrated = renderFlatLayoutMigration(current)
       /* v8 ignore next 2 -- the losing side of the cross-process migration race:
          another boot rewrote the document between the unlocked recognize and
@@ -824,8 +848,7 @@ export class LocalCredentialProvider extends CredentialProvider {
          through a whole boot (migration.spec drives it best-effort); the
          decision itself is the recognizer's covered versioned-document decline. */
       if (migrated === undefined) return current
-      // 0600: a document holding secrets is never world-readable.
-      await writeFileAtomic(this.spec.filename, migrated, { mode: 0o600, dirMode: 0o700 })
+      await this.writeDocument(this.spec.filename, migrated)
       this.ctx.logger.info(
         'credentials-local: migrated %s to the version %d layout; values are unchanged',
         this.spec.filename,
@@ -864,7 +887,7 @@ export class LocalCredentialProvider extends CredentialProvider {
     await assertOwnerOnly(this.spec.filename)
     let text: string | undefined
     try {
-      text = await readFile(this.spec.filename, 'utf8')
+      text = await this.readDocument(this.spec.filename)
     } catch (error) {
       if (!isENOENT(error)) throw error
       text = undefined

@@ -2462,6 +2462,9 @@ importers:
       '@ahel/dsh-cordis-host-runner':
         specifier: workspace:*
         version: link:../../extensions/cordis-host-runner
+      '@ahel/dsh-credentials-safe-storage':
+        specifier: workspace:*
+        version: link:../../credentials/credentials-safe-storage
       '@ahel/dsh-file-reference':
         specifier: workspace:*
         version: link:../../context/file-reference
@@ -6845,6 +6848,31 @@ importers:
       '@ahel/dsh-credentials':
         specifier: workspace:*
         version: link:../credentials
+      '@ahel/dsh-home-paths':
+        specifier: workspace:*
+        version: link:../../util/home-paths
+      '@ahel/dsh-launch-environment':
+        specifier: workspace:*
+        version: link:../../util/launch-environment
+
+  packages/credentials/credentials-safe-storage:
+    dependencies:
+      '@ahel/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@ahel/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@ahel/dsh-atomic-write':
+        specifier: workspace:*
+        version: link:../../util/atomic-write
+      '@ahel/dsh-credentials':
+        specifier: workspace:*
+        version: link:../credentials
+      '@ahel/dsh-credentials-local':
+        specifier: workspace:*
+        version: link:../credentials-local
       '@ahel/dsh-home-paths':
         specifier: workspace:*
         version: link:../../util/home-paths

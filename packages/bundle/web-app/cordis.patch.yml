@@ -37,6 +37,17 @@
     # once the web UI owns the choice per session.
     mode: !!js process.env.DSH_TOOLS_MODE
 
+# Ahel Desktop keeps the credentials document encrypted with Electron
+# safeStorage (`$DSH_HOME/.credentials.enc`); the Web profile keeps the
+# plaintext credentials-local document.
+- id: credentials
+  disabled: !!js "ctx.get('profileContext')?.name === 'desktop'"
+
+- insert:
+    - id: credentials-safe-storage
+      name: '@ahel/dsh-credentials-safe-storage'
+      disabled: !!js "ctx.get('profileContext')?.name !== 'desktop'"
+
 # ── web-only host rows, the transport layer, and the browser roster ─────────
 
 # `dsh.client` rows are the browser roster the modules node half scans into

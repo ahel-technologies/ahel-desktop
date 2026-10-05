@@ -124,7 +124,8 @@
     "@ahel/dsh-ahel-account": "workspace:*",
     "@ahel/dsh-llm-ahel": "workspace:*",
     "@ahel/dsh-client-ui-ahel-account": "workspace:*",
-    "@ahel/dsh-mcp-client": "workspace:*"
+    "@ahel/dsh-mcp-client": "workspace:*",
+    "@ahel/dsh-credentials-safe-storage": "workspace:*"
   },
   "peerDependencies": {
     "@ahel/cordis": "workspace:~",
