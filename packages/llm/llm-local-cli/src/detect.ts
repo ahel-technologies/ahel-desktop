@@ -108,7 +108,9 @@ export const CLI_DESCRIPTORS: readonly CliDescriptor[] = [
     label: 'Gemini CLI (installed)',
     command: 'gemini',
     envOverride: 'AHEL_GEMINI_PATH',
-    minVersion: '0.1.0',
+    // `--output-format stream-json` first shipped in 0.11.0. Gemini has no login-status command, so login
+    // stays 'unknown' and the first turn reports a missing sign-in.
+    minVersion: '0.11.0',
     installUrl: 'https://github.com/google-gemini/gemini-cli',
     signInHint: 'Open Terminal, run gemini, and choose Sign in with Google',
     extraCandidates(environment) {

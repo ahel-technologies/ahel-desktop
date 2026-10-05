@@ -70,7 +70,7 @@ describe('detection', () => {
   it('reports signed-out from a non-zero status exit, unknown for Gemini, and absent CLIs as not installed', async () => {
     await expect(detectCli(codex, deps(['/opt/bin/codex'], { '--version': ok('codex-cli 0.101.0'), 'login status': ok('', 1) }), 5_000))
       .resolves.toMatchObject({ versionOk: true, login: 'signed-out' })
-    await expect(detectCli(gemini, deps(['/opt/bin/gemini'], { '--version': ok('0.9.0') }), 5_000)).resolves.toMatchObject({ versionOk: true, login: 'unknown' })
+    await expect(detectCli(gemini, deps(['/opt/bin/gemini'], { '--version': ok('0.62.0') }), 5_000)).resolves.toMatchObject({ versionOk: true, login: 'unknown' })
     await expect(detectCli(gemini, deps([], {}), 5_000)).resolves.toMatchObject({ installed: false, versionOk: false })
   })
 })

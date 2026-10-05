@@ -16,10 +16,10 @@ import css from './LocalCli.module.css'
 const ORDER: readonly LocalCliId[] = ['claude-code', 'codex-cli', 'gemini-cli']
 
 /** Oldest version each bridge supports, as the Host's detection enforces it. */
-const MIN_VERSION: Record<LocalCliId, string> = { 'claude-code': '2.0', 'codex-cli': '0.100', 'gemini-cli': '0.1' }
+const MIN_VERSION: Record<LocalCliId, string> = { 'claude-code': '2.0', 'codex-cli': '0.100', 'gemini-cli': '0.11' }
 
-/** CLIs the Host serves as a model route; Gemini CLI is detected but not served yet. */
-const SERVED: ReadonlySet<LocalCliId> = new Set(['claude-code', 'codex-cli'])
+/** CLIs the Host serves as a model route. */
+const SERVED: ReadonlySet<LocalCliId> = new Set(['claude-code', 'codex-cli', 'gemini-cli'])
 
 /** Vendor install pages for the empty state. */
 const INSTALL_LINKS = [

@@ -1,0 +1,5 @@
+{"type":"init","timestamp":"2026-10-05T19:22:20.795Z","session_id":"90986b9a-d2a7-4588-b518-62eaafa88cca","model":"auto"}
+{"type":"message","timestamp":"2026-10-05T19:22:20.796Z","role":"user","content":"Hi"}
+{"type":"tool_use","timestamp":"2026-10-05T19:22:21.402Z","tool_name":"google_web_search","tool_id":"call_1","parameters":{"query":"ahel"}}
+{"type":"message","timestamp":"2026-10-05T19:22:22.118Z","role":"assistant","content":"pong","delta":true}
+{"type":"result","timestamp":"2026-10-05T19:22:22.301Z","status":"success","stats":{"total_tokens":1530,"input_tokens":1500,"output_tokens":30,"cached":1200,"input":300,"duration_ms":1506,"tool_calls":1,"models":{}}}

@@ -9,7 +9,7 @@
  * The Remote namespace `localCli` exposes list, detect, enable, disable and
  * watch. Every change is also emitted as `local-cli/changed`; each CLI that
  * is installed, recent enough and turned on is served as a model route
- * (`claude-code`, `codex-cli`) that runs the CLI headless, see `./bridge.ts`.
+ * (`claude-code`, `codex-cli`, `gemini-cli`) that runs the CLI headless, see `./bridge.ts`.
  *
  * @module @ahel/dsh-llm-local-cli
  */
@@ -26,6 +26,7 @@ import { Remote, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type { BridgeHost, LocalCliAdapter } from './bridge.ts'
 import { ClaudeCodeAdapter } from './claude.ts'
 import { CodexCliAdapter } from './codex.ts'
+import { GeminiCliAdapter } from './gemini.ts'
 import { CLI_DESCRIPTORS, detectCli, isExecutableFile } from './detect.ts'
 import type { DetectDeps, DetectedCli, ProbeResult } from './detect.ts'
 import { LOCAL_CLI_IDS } from './types.ts'
@@ -38,6 +39,7 @@ export { LOCAL_CLI_SIGNED_OUT_CODE, LocalCliAdapter } from './bridge.ts'
 export type { BridgeHost, CliEvent, CliInvocation, InvocationRequest, LocalCliModel } from './bridge.ts'
 export { AHEL_MCP_URL, CLAUDE_MODELS, ClaudeCodeAdapter, ahelMcpConfig, claudeArgs, parseClaudeLine } from './claude.ts'
 export { CODEX_MODELS, CodexCliAdapter, codexArgs, codexPrompt, parseCodexLine } from './codex.ts'
+export { GEMINI_MODELS, GeminiCliAdapter, geminiArgs, geminiPrompt, parseGeminiLine } from './gemini.ts'
 export { renderTranscript, systemText } from './transcript.ts'
 export type { RenderedPrompt } from './transcript.ts'
 export type { CliDescriptor, DetectEnvironment, ProbeResult, ProbeRunner } from './detect.ts'
@@ -125,6 +127,7 @@ export class LocalCli extends TypertRemoteService {
     this.adapters = {
       'claude-code': new ClaudeCodeAdapter(host('claude-code'), 'Claude Code (installed)'),
       'codex-cli': new CodexCliAdapter(host('codex-cli'), 'Codex (installed)'),
+      'gemini-cli': new GeminiCliAdapter(host('gemini-cli'), 'Gemini CLI (installed)'),
     }
     ctx.on('local-cli/changed', (views) => { this.publishRoutes(views) })
     ctx.on('loader/volatile-update', () => { this.changed() })
