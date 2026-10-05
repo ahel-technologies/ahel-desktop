@@ -24,7 +24,9 @@ import type { OAuthConfig } from './oauth.ts'
 // Side-effect type import: declaration-merges `ctx.tools` onto Context.
 import type {} from '@deepseek-ai/dsh-tools'
 
-export { createMcpToolDefinition } from './tools.ts'
+export { createMcpToolDefinition, publicToolName } from './tools.ts'
+export { MCP_APP_MIME_TYPE, MCP_APPS_EXTENSION, readToolUi } from './apps.ts'
+export type { McpAppResultMeta, McpToolDescriptor, McpToolUi, McpToolVisibility } from './apps.ts'
 export type { McpResult, McpToolDefinitionOptions } from './tools.ts'
 export type { ReconnectConfig, ResolvedReconnectPolicy } from './connection.ts'
 export type { OAuthConfig } from './oauth.ts'

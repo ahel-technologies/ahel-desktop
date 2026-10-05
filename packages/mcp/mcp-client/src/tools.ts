@@ -23,6 +23,7 @@ import type { ToolDefinition, ToolExecution, ToolExecutionResult } from '@deepse
 import { assertSupportedJsonSchema } from '@deepseek-ai/dsh-tools'
 import type { JsonSchemaNode } from '@deepseek-ai/dsh-tools'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import { appResultMeta, readToolUi, resultMetaObject, type McpToolDescriptor } from './apps.ts'
 
 /** Resolved options relevant to tool bridging. */
 export interface ToolBridgeOptions {
@@ -128,6 +129,16 @@ export async function syncTools(
         `mcp-client(${opts.serverName}): server listed tool "${tool.name}" more than once — invalid tool list`,
       )
     }
+    const meta = tool._meta as McpToolDescriptor['meta']
+    const mcp: McpToolDescriptor = {
+      server: opts.serverName,
+      rawName: tool.name,
+      ...meta === undefined ? {} : { meta },
+      ui: readToolUi(meta),
+    }
+    // MCP Apps: a tool whose visibility omits "model" must stay out of the
+    // model's tool list; app-only tools are not bridged.
+    if (!mcp.ui.visibility.includes('model')) continue
     definitions.set(publicName, createMcpToolDefinition(ctx, {
       name: publicName,
       rawName: tool.name,
@@ -135,6 +146,7 @@ export async function syncTools(
       inputSchema: tool.inputSchema,
       outputSchema: tool.outputSchema,
       taskRequired: tool.execution?.taskSupport === 'required',
+      mcp,
       call: (args, execution) => client.callTool(
         { name: tool.name, arguments: args },
         { signal: execution.signal, timeout: opts.toolCallTimeoutMs, toolDefinition: tool },
@@ -207,6 +219,11 @@ export interface McpToolDefinitionOptions {
   /** Whether the upstream tool requires the unsupported task execution extension. */
   taskRequired?: boolean
   /**
+   * Owning server and `tools/list` metadata. When it declares an MCP Apps
+   * resource, successful results persist an `mcpApp` presentation record.
+   */
+  mcp?: McpToolDescriptor
+  /**
    * Obtain one raw MCP result from the provider.
    * @param args - model arguments admitted by the ToolRuntime.
    * @param execution - exact ToolRuntime invocation, including its Agent and cancellation.
@@ -226,14 +243,28 @@ export function createMcpToolDefinition(
   ctx: Context,
   options: McpToolDefinitionOptions,
 ): ToolDefinition {
-  const { name, rawName, description, inputSchema } = options
+  const { name, rawName, description, inputSchema, mcp } = options
   const projections = new WeakMap<ToolExecution, PreparedProjection>()
+  // Result `_meta` stays out of the canonical value (programmatic callers and
+  // PTC programs must not read app-only fields such as one-use press tokens),
+  // so execute stages it for the synchronous presentation projection, keyed
+  // by the frozen argument object both callbacks receive.
+  const resultMetas = new WeakMap<object, { [key: string]: JsonValue }>()
+  const output = createOutput(rawName, supportedOutputSchema(options.outputSchema))
   return {
     name,
     description,
     parameters: inputSchema,
-    output: createOutput(rawName, supportedOutputSchema(options.outputSchema)),
-    execute: createExecutor(ctx, options, projections),
+    ...mcp === undefined ? {} : { mcp },
+    output: mcp?.ui.resourceUri === undefined ? output : {
+      ...output,
+      presentationMeta(args: unknown, value: JsonValue): JsonValue {
+        const resultMeta = typeof args === 'object' && args !== null ? resultMetas.get(args) : undefined
+        if (typeof args === 'object' && args !== null) resultMetas.delete(args)
+        return appResultMeta(mcp, (value as McpResult).structuredContent, resultMeta) ?? null
+      },
+    },
+    execute: createExecutor(ctx, options, projections, resultMetas),
     projectContent(exec: Readonly<ToolExecution>, result: Readonly<ToolExecutionResult>) {
       const projection = projections.get(exec)
       if (projection === undefined) return undefined
@@ -273,6 +304,7 @@ function createExecutor(
   ctx: Context,
   options: McpToolDefinitionOptions,
   projections: WeakMap<ToolExecution, PreparedProjection>,
+  resultMetas: WeakMap<object, { [key: string]: JsonValue }>,
 ): ToolDefinition['execute'] {
   const { rawName, taskRequired } = options
   return async (args: unknown, exec: ToolExecution) => {
@@ -304,6 +336,8 @@ function createExecutor(
         ? { structuredContent: result.structuredContent as JsonValue }
         : {},
     }
+    const resultMeta = resultMetaObject(result._meta)
+    if (resultMeta !== undefined && typeof args === 'object' && args !== null) resultMetas.set(args, resultMeta)
     if (containsImage(content)) {
       const fallback: ContentBlock[] = [{ type: 'text', text: extractText(content, rawName) }]
       const projected = await prepareImageProjection(ctx, exec, content, rawName)

@@ -39,6 +39,10 @@ When system-prompt assembly is mounted, the prompt lists server names visible to
 
 Every operation resolves the server in the calling agent's scope. A missing server argument or unavailable server fails before dispatch. The connection owner handles request cancellation, timeouts, and recovery; a failed request remains a failed tool call.
 
+### MCP Apps resource reads
+
+`ctx.mcpResources.readAppResource(agent, server, uri, signal)` reads a resource for an MCP Apps card host, outside any tool call. `ui://` results are cached per server connection, connection generation, and URI; a reconnect starts a fresh generation, and a failed read is not cached. Other URIs are read uncached. `appResourceCacheEntries` (default 16) bounds each server's cache, evicting the least recently used entry. A caller's cancellation stops its own wait without failing a shared read.
+
 -----
 
 <a id="understand-the-implementation"></a>

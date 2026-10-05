@@ -86,6 +86,10 @@ When the model calls an MCP tool, the call runs against the remote server with a
 
 Images are supported when the current model accepts image input and the harness attachment feature is enabled; they then appear in the conversation like other images. Otherwise — and for audio or embedded resources — the model sees a clear diagnostic message instead of nothing.
 
+### MCP Apps cards
+
+The client advertises the MCP Apps extension (`io.modelcontextprotocol/ui`, `text/html;profile=mcp-app`). A tool's `_meta` from `tools/list` stays on its registration as `definition.mcp` with the owning server, raw name, and parsed `ui.resourceUri` and `ui.visibility`; the deprecated flat `ui/resourceUri` key is also read. A tool whose visibility omits `model` is not registered. When a tool declares a `ui://` resource, each successful top-level call persists `result.meta.mcpApp` (version 1): server, raw tool name, resource URI, visibility, `structuredContent`, and the result `_meta`. Result `_meta` never enters the canonical value, so the model and PTC programs cannot read app-only fields such as one-use press tokens. Structured fields over 256 KiB of JSON are dropped and the record is marked `truncated`; a Client then renders the text result.
+
 ### Startup, updates, and reconnection
 
 The server's tools appear before the harness starts its first turn. When the server changes its tool list, the model's tool set updates automatically; if the update fails, the previous tool set keeps working.
@@ -115,6 +119,7 @@ This section explains the design decisions behind the bridge and points at the c
 | File | Role |
 |---|---|
 | [`src/index.ts`](src/index.ts) | Plugin entry: `Config` schema, `serverName` reservation, activation await |
+| [`src/apps.ts`](src/apps.ts) | MCP Apps tool descriptor, visibility parsing, persisted `mcpApp` card record |
 | [`src/connection.ts`](src/connection.ts) | Connection supervisor: client generations, reconnect policy, attempt budget, disposal |
 | [`src/server-context.ts`](src/server-context.ts) | Resource-provider registration and literal server instructions |
 | [`src/tools.ts`](src/tools.ts) | Tool bridge: discovery, naming, registration swap, execution, image projection |
