@@ -142,7 +142,7 @@ static LRESULT CALLBACK ProgressProc(HWND window, UINT message, WPARAM wparam, L
             Bitmap buffer(MulDiv(600, page->dpi, 96), MulDiv(600, page->dpi, 96), PixelFormat32bppPARGB);
             Graphics graphics(&buffer);
             graphics.ScaleTransform(page->dpi / 96.0f, page->dpi / 96.0f);
-            graphics.Clear(page->dark ? Color(255, 21, 21, 23) : Color(255, 255, 255, 255));
+            graphics.Clear(page->dark ? Color(255, 20, 23, 29) : Color(255, 255, 255, 255));
             graphics.SetSmoothingMode(SmoothingModeAntiAlias);
             graphics.SetInterpolationMode(InterpolationModeHighQualityBicubic);
             graphics.SetPixelOffsetMode(PixelOffsetModeHalf);

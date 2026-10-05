@@ -13,6 +13,7 @@ export const MACOS_TEAM_ID_ENV = 'DSH_DESKTOP_MACOS_TEAM_ID'
 export const NPM_REGISTRY_ENV = 'DSH_DESKTOP_NPM_REGISTRY'
 
 const DEFAULT_NPM_REGISTRY = 'https://registry.npmjs.org/'
+const DEFAULT_DESKTOP_APP_ID = 'ai.ahel.desktop'
 
 const APPLE_API_KEY_ENV = 'APPLE_API_KEY'
 const APPLE_API_KEY_ID_ENV = 'APPLE_API_KEY_ID'
@@ -58,10 +59,10 @@ export function resolveNpmRegistry(env) {
 /**
  * Resolve and validate the application identifier shared by every platform target.
  * @param {NodeJS.ProcessEnv} env - Packaging environment.
- * @returns {string} Reverse-DNS application identifier.
+ * @returns {string} Reverse-DNS application identifier; `ai.ahel.desktop` when the variable is unset or empty.
  */
 export function resolveDesktopAppId(env) {
-  const appId = requireEnvironmentValue(env, DESKTOP_APP_ID_ENV)
+  const appId = env[DESKTOP_APP_ID_ENV]?.trim() || DEFAULT_DESKTOP_APP_ID
   if (!/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/u.test(appId)) {
     throw new Error(`desktop release environment: ${DESKTOP_APP_ID_ENV} must be a reverse-DNS identifier`)
   }

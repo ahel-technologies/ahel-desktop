@@ -42,7 +42,7 @@ Var InstallerBorder
 ; SetCtlColors accepts only compile-time colors; choose between the two native palettes.
 !macro InstallerControlColors HANDLE
     ${If} $InstallerTheme == "dark"
-        SetCtlColors ${HANDLE} FFFFFF 151517
+        SetCtlColors ${HANDLE} FFFFFF 14171D
     ${Else}
         SetCtlColors ${HANDLE} 0F1115 FFFFFF
     ${EndIf}
@@ -62,9 +62,9 @@ Function InstallerResolveTheme
         ${EndIf}
     ${EndIf}
     ${If} $InstallerTheme == "dark"
-        StrCpy $InstallerBgHex "151517"
+        StrCpy $InstallerBgHex "14171D"
         StrCpy $InstallerTextHex "FFFFFF"
-        StrCpy $InstallerBgArgb 0xFF151517
+        StrCpy $InstallerBgArgb 0xFF14171D
         StrCpy $InstallerBgColorref 0x171515
         StrCpy $InstallerTextColorref 0xFFFFFF
         StrCpy $InstallerPrimary 0xFFF9FAFB

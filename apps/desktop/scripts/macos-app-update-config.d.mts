@@ -1,17 +1,20 @@
-/** Resolved fields required to embed a macOS updater feed. */
+/** Resolved GitHub releases feed embedded into a macOS application. */
 export interface MacOSAppUpdateFeed {
-  readonly publicUrl: string
+  readonly owner: string
+  readonly repo: string
+  readonly releaseType: string
 }
 
-/** Packaged electron-updater configuration for macOS. */
+/** Packaged electron-updater configuration for macOS, matching what electron-builder writes for GitHub. */
 export interface MacOSAppUpdateConfig {
-  readonly provider: 'generic'
-  readonly url: string
-  readonly channel: 'nightly'
+  readonly owner: string
+  readonly repo: string
+  readonly provider: 'github'
+  readonly releaseType: string
   readonly updaterCacheDirName: string
 }
 
-/** Resolve the one generic macOS feed from the final electron-builder configuration. */
+/** Resolve the one GitHub releases feed from the final electron-builder configuration. */
 export function resolveMacOSAppUpdateFeed(publish: unknown): MacOSAppUpdateFeed
 
 /** Create the electron-updater configuration embedded before code signing. */

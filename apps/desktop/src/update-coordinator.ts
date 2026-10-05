@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import electronUpdater, { type AppUpdater, type ProgressInfo, type UpdateInfo } from 'electron-updater'
-import { gt, valid } from 'semver'
+import { gt, prerelease, valid } from 'semver'
 import type { DesktopUpdateState } from './ipc.ts'
 import { DesktopUpdateHttpExecutor } from './update-http-executor.ts'
 import { DesktopUpdatePreparationError } from './update-error.ts'
@@ -66,8 +66,13 @@ export class DesktopUpdateCoordinator {
     }
     this.updater.autoDownload = false
     this.updater.autoInstallOnAppQuit = false
-    this.updater.channel = 'nightly'
-    this.updater.allowPrerelease = true
+    // GitHub releases of ahel-technologies/ahel-desktop publish latest.yml / latest-mac.yml; the feed itself
+    // comes from the app-update.yml that electron-builder seals into the package.
+    // TODO(phase3): private-repo update token strategy (GH_TOKEN at build time vs public release mirror)
+    this.updater.channel = 'latest'
+    // The 0.x line ships prerelease versions; a prerelease build accepts newer
+    // prereleases, a stable build accepts only stable releases.
+    this.updater.allowPrerelease = prerelease(currentVersion()) !== null
     // Selecting a channel can enable downgrade in electron-updater.
     this.updater.allowDowngrade = false
     this.updater.on('download-progress', this.onProgress)

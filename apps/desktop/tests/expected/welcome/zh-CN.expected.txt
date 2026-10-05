@@ -1,6 +1,6 @@
-DeepSeek Harness
-DeepSeek Harness
-欢迎使用 DeepSeek Harness
-组装无限可能，共探智能上限
-登录
-添加 API Key
+Ahel Desktop
+Ahel
+欢迎使用 Ahel Desktop
+在“设置 → 模型”中添加 Anthropic 或 OpenAI 密钥即可开始
+继续
+使用 Ahel 登录（即将推出） [disabled]

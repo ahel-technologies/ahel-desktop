@@ -24,7 +24,6 @@ try {
     process.platform === 'win32' ? 'junction' : 'dir')
   await writeFile(join(project, 'cordis.patch.yml'), JSON.stringify([
     { id: 'webserver', config: { host: '127.0.0.1', port: 0 } },
-    { id: 'llm-deepseek', disabled: true },
     { id: 'session-title-llm', disabled: true },
     { id: 'session-telemetry-otel', disabled: true },
     { id: 'agent-instructions', disabled: true },

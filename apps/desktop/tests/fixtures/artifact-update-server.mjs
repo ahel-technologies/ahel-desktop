@@ -20,7 +20,7 @@ export async function artifactDigest(file) {
 }
 
 /**
- * Serve supplied executables through a synthetic Nightly feed on a private port.
+ * Serve supplied executables through a synthetic latest-channel feed on a private port.
  * @param {{ signed: string, unsigned: string, old?: string, signedBlockmap?: string, oldBlockmap?: string }} files Read-only input paths.
  * @returns {Promise<object>} Feed controls, request evidence, input hashes, and awaited close.
  */
@@ -41,7 +41,7 @@ export async function createArtifactUpdateServer(files) {
     const record = { path, artifact: selected, corrupt: damage, range: request.headers.range, bytes: 0 }
     requests.push(record)
     response.setHeader('Cache-Control', 'no-store')
-    if (path === '/nightly.yml') {
+    if (path === '/latest.yml') {
       response.setHeader('Content-Type', 'application/yaml')
       response.end(dump({ version: '1.0.1-nightly.1', files: [{
         url: `${origin}/payload-1.0.1-nightly.1.exe`, size: artifact.size, sha512: artifact.sha512,

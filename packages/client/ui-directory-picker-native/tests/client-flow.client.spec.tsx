@@ -168,7 +168,7 @@ describe('directory-picker-native client half', () => {
   it.each(['win32', 'darwin'] as const)('consumes the actual Desktop preload directory bridge on %s', async (platform) => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue(platform)
     vi.resetModules()
-    vi.stubGlobal('location', new URL('dsh-app://app/'))
+    vi.stubGlobal('location', new URL('ahel-app://app/'))
     // Desktop's preload is typechecked by its own compiler program.
     const preload = '../../../../apps/desktop/src/preload-app.ts'
     await import(/* @vite-ignore */ preload)

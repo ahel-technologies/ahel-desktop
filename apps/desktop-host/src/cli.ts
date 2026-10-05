@@ -2,16 +2,14 @@
 
 import { delimiter, dirname, join, resolve } from 'node:path'
 import { runCli } from '@deepseek-ai/dsh/lib/bin.js'
-import { installOfficeEngineResolution, runtimeArchivePath } from './office-engine.ts'
+import { runtimeArchivePath } from './runtime-archive.ts'
 
 /**
  * Run the ordinary CLI with Desktop's bundled package manager and reserved-profile plugin access.
- * @param runtimeDir - Prepared or ASAR-contained production DSH package tree.
  * @param supportDir - Physical Desktop runtime directory containing pnpm.
  * @returns Completion of the selected CLI command; profile plugins own their process lifetime.
  */
-export async function runDesktopCli(runtimeDir: string, supportDir: string): Promise<void> {
-  installOfficeEngineResolution(runtimeDir)
+export async function runDesktopCli(supportDir: string): Promise<void> {
   await runCli({
     manageDesktopProfile: true,
     packageManager: {
@@ -32,5 +30,5 @@ if (import.meta.main) {
     await installWindowsCliSignals()
   }
   const runtimeDir = resolve(import.meta.dirname, '../../../..')
-  await runDesktopCli(runtimeDir, join(dirname(runtimeArchivePath(runtimeDir) ?? runtimeDir), 'runtime'))
+  await runDesktopCli(join(dirname(runtimeArchivePath(runtimeDir) ?? runtimeDir), 'runtime'))
 }

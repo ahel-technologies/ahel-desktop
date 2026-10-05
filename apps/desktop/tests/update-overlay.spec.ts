@@ -93,7 +93,7 @@ type ParentFixture = EventEmitter & Pick<BrowserWindow, 'getContentBounds' | 'is
   webContents: EventEmitter & Pick<WebContents, 'insertCSS' | 'removeInsertedCSS'>
 }
 
-it('keeps the macOS mandatory overlay stationary and blocks parent keyboard input until close', () => {
+it('keeps a non-native macOS overlay stationary and blocks parent keyboard input until close', () => {
   const platform = vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
   const parent: ParentFixture = Object.assign(new EventEmitter(), {
     getContentBounds: () => ({ x: 0, y: 0, width: 1000, height: 700 }),

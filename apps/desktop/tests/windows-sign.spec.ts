@@ -159,9 +159,7 @@ describe('Windows token signing', () => {
       await writeFile(signTool, 'fixture')
       await writeFile(path, 'fixture')
       validateDesktopPackageEnvironment({
-        DSH_DESKTOP_APP_ID: 'com.example.desktop', DOWNLOAD_TEST_ORIGIN: 'https://updates.example.com', DOWNLOAD_TEST_RELEASE_ID: '0123456789abcdef0123456789abcdef',
-        DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN: 'https://policy.example.com',
-        DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: JSON.stringify({ allowedAuthOrigins: ['https://login.example.com'] }),
+        DSH_DESKTOP_APP_ID: 'com.example.desktop',
         DSH_DESKTOP_WINDOWS_CER_FILE: certificateFile, DSH_DESKTOP_WINDOWS_SIGNTOOL: signTool,
         DSH_DESKTOP_WINDOWS_TOKEN_PIN: 'fixture-pin', DSH_DESKTOP_WINDOWS_KEY_CONTAINER: 'fixture-container',
         DSH_DESKTOP_WINDOWS_SIGNATURE_CACHE_DIR: 'C:\\fixture\\signature-cache',
@@ -203,7 +201,7 @@ describe('Windows token signing', () => {
     }, {
       certificateFile: CERTIFICATE_FILE,
       signTool: 'C:\\tools\\signtool.exe',
-      path: 'C:\\release\\DeepSeek Harness.exe',
+      path: 'C:\\release\\Ahel Desktop.exe',
       isNest: false,
       tokenPin: 'token-secret!',
       keyContainer: 'te-container',
@@ -213,7 +211,7 @@ describe('Windows token signing', () => {
       DSH_DESKTOP_WINDOWS_CER_FILE: CERTIFICATE_FILE,
       DSH_DESKTOP_WINDOWS_TOKEN_PIN: 'token-secret!',
       DSH_DESKTOP_WINDOWS_KEY_CONTAINER: 'te-container',
-      DSH_DESKTOP_WINDOWS_SIGN_TARGET: 'C:\\release\\DeepSeek Harness.exe',
+      DSH_DESKTOP_WINDOWS_SIGN_TARGET: 'C:\\release\\Ahel Desktop.exe',
       DSH_DESKTOP_WINDOWS_SIGN_APPEND: '',
     })
   })

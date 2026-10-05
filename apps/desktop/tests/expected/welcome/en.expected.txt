@@ -1,6 +1,6 @@
-DeepSeek Harness
-DeepSeek Harness
-Welcome to DeepSeek Harness
-Build potential. Explore intelligence.
-Sign in
-Add API Key
+Ahel Desktop
+Ahel
+Welcome to Ahel Desktop
+Add your Anthropic or OpenAI key in Settings → Models to start.
+Continue
+Sign in with Ahel (coming soon) [disabled]

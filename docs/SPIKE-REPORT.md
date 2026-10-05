@@ -1,6 +1,6 @@
 # Ahel Desktop: Phase 0 spike report
 
-Date: 2026-10-05. Branch: `spike/phase-0`. Base: upstream `deepseek-ai/deepseek-harness` master `5badb15` (tag `upstream-base-5badb15`, release `dsh-v0.2.1-alpha.1`).
+Date: 2026-10-05. Branch: `spike/phase-0`. Base: upstream `deepseek-ai/deepseek-harness` release `dsh-v0.2.1-alpha.1`; the fork marks it with the `upstream-base-*` tag.
 
 Gate: "an Ahel action renders a card in the dsh UI". Result: **not met**, for two reasons. Sign-in is waiting on Karl. dsh also has no MCP Apps (`ui://`) renderer, so an Ahel card cannot render until Phase 1 builds one. Everything up to the sign-in URL works in the packaged app.
 

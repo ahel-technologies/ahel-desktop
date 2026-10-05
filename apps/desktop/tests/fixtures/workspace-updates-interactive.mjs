@@ -36,8 +36,7 @@ export async function runInteractiveUpdates({ mainWindow, server, fixture, check
   const check = () => checkMenu.click()
   panel.setMenu(Menu.buildFromTemplate([
     { label: '更新场景', submenu: [
-      action('普通更新（点击下载后保持进度）', () => { server.policy('clear'); select('hold-download'); check() }),
-      action('强制更新（点击下载后保持进度）', () => { server.policy('force'); select('hold-download'); check() }),
+      action('普通更新（点击下载后保持进度）', () => { select('hold-download'); check() }),
       action('放行当前下载 → 校验与安装确认', () => server.release()),
       { type: 'separator' },
       action('下一次下载：校验失败', () => select('corrupt')),
@@ -45,7 +44,6 @@ export async function runInteractiveUpdates({ mainWindow, server, fixture, check
       action('下一次下载：恢复正常', () => select('healthy')),
       action('检查失败', () => { select('feed-404'); check() }),
       action('没有可用更新（未下载前使用）', () => { server.select('healthy', '0.1.5-rc.1'); check() }),
-      action('解除强更阻塞', () => { server.policy('clear'); check() }),
     ] },
     { label: '任务状态', submenu: [
       action('添加排队任务', () => control('queue')),

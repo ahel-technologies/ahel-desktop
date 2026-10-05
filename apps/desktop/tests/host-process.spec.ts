@@ -129,15 +129,14 @@ describe('desktop host process', () => {
     expect(failure).not.toHaveBeenCalled()
   })
 
-  it('passes external dependencies and package-manager paths to the Host', async () => {
+  it('passes package-manager paths to the Host', async () => {
     const runtime = projectWithHost(HTTP_HOST.replace('runtime: process.argv[2]',
-      'pnpm: process.argv[5], nodeBin: process.argv[6], primaryRuntime: process.argv[4], runtime: process.argv[2]'))
-    const primaryRuntime = join(runtime, 'external-primary-runtime')
+      'pnpm: process.argv[4], nodeBin: process.argv[5], runtime: process.argv[2]'))
     const host = new DesktopHostProcess(process.execPath, runtime, runtime, undefined, process.env,
-      undefined, primaryRuntime, { pnpm: join(runtime, 'pnpm.mjs'), nodeBin: join(runtime, 'bin') })
+      undefined, { pnpm: join(runtime, 'pnpm.mjs'), nodeBin: join(runtime, 'bin') })
     hosts.push(host)
     const { url } = await host.start()
-    expect(await (await fetch(url)).json()).toMatchObject({ primaryRuntime, pnpm: join(runtime, 'pnpm.mjs'), nodeBin: join(runtime, 'bin') })
+    expect(await (await fetch(url)).json()).toMatchObject({ pnpm: join(runtime, 'pnpm.mjs'), nodeBin: join(runtime, 'bin') })
   })
 
   it('reports a fatal event after readiness once', async () => {
@@ -216,25 +215,11 @@ describe('desktop host process', () => {
   })
 })
 
-it.each([null, 'stable-account'])('carries Platform identity %s over private IPC and clears credentials on shutdown', async (userId) => {
-  const runtime = projectWithHost(HTTP_HOST.replace("process.send({ type: 'ready'", "process.send({ type: 'platform-session', session: { origin: 'https://platform.deepseek.com', userId: " + JSON.stringify(userId) + ", token: 'fixture-secret', embeddedPageDist: 'feat/test' } }); process.send({ type: 'ready'"))
-  const changed = vi.fn()
-  const host = new DesktopHostProcess(process.execPath, runtime, runtime, undefined, process.env, undefined, undefined, undefined, changed)
-  hosts.push(host)
-  await host.start()
-  expect(changed).toHaveBeenCalledWith({ origin: 'https://platform.deepseek.com', userId, token: 'fixture-secret', embeddedPageDist: 'feat/test' })
-  await host.stop()
-  expect(changed).toHaveBeenLastCalledWith(null)
-})
-
-it.each([undefined, '', 7])('rejects malformed Platform account identity %s on private IPC', async (userId) => {
-  const session = { origin: 'https://platform.deepseek.com', token: 'fixture-secret', userId }
+it('rejects an unknown IPC event type', async () => {
   const runtime = projectWithHost(HTTP_HOST.replace("process.send({ type: 'ready'",
-    `process.send({ type: 'platform-session', session: ${JSON.stringify(session)} }); process.send({ type: 'ready'`))
-  const changed = vi.fn()
-  const host = new DesktopHostProcess(process.execPath, runtime, runtime, undefined, process.env, undefined, undefined, undefined, changed)
+    "process.send({ type: 'platform-session', session: null }); process.send({ type: 'ready'"))
+  const host = new DesktopHostProcess(process.execPath, runtime, runtime, undefined, process.env)
   hosts.push(host)
   await expect(host.start()).rejects.toThrow('invalid IPC event')
-  expect(changed.mock.calls).toEqual([[null]])
   await host.stop()
 })

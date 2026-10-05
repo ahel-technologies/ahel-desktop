@@ -20,8 +20,8 @@ function mount(text: string, streaming = false) {
 it('loads Desktop inline and hover previews through the file route after streaming settles', () => {
   vi.useFakeTimers()
   const path = '/work/测试 图片#100%.png'
-  const src = fileMediaUrl('dsh-app://app/', path)!
-  const images = { resolve: (value: string) => fileMediaUrl('dsh-app://app/', value), labels }
+  const src = fileMediaUrl('ahel-app://app/', path)!
+  const images = { resolve: (value: string) => fileMediaUrl('ahel-app://app/', value), labels }
   const text = `![图片](<${encodeURI(path).replace('#', '%23')}>)\n\n[打开图片](<${encodeURI(path).replace('#', '%23')}>)`
   const openFile = vi.fn()
   const content = (streaming: boolean) => <MarkdownDelegateProvider fileImages={images} openFile={openFile}>

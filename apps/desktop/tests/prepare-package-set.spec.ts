@@ -63,12 +63,12 @@ describe('desktop package-set selection', () => {
     ]))).toThrow(/omit @deepseek-ai\/dsh-desktop-host/u)
   })
 
-  it('leaves independently published Office packages to npm resolution', () => {
+  it('leaves independently published packages to npm resolution', () => {
     const available = new Map<string, PackedDesktopPackage>([
       ['@deepseek-ai/dsh', packed('@deepseek-ai/dsh', {
         dependencies: {
-          '@deepseek-ai/libreoffice-kit': '0.0.1',
-          '@deepseek-ai/libreoffice-kit-wasm': '0.0.1',
+          '@example/published-kit': '0.0.1',
+          '@example/published-kit-wasm': '0.0.1',
         },
       })],
       ['@deepseek-ai/dsh-desktop-host', packed('@deepseek-ai/dsh-desktop-host')],

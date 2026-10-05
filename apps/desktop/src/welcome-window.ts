@@ -1,4 +1,3 @@
-import type { SignInAttemptId } from '@deepseek-ai/dsh-deepseek-account/types'
 /** Native welcome window and its presentation-only renderer. */
 
 import { join } from 'node:path'
@@ -38,7 +37,7 @@ export function welcomeWindowOptions(platform: NodeJS.Platform, locale: DesktopL
     } as const : {}),
     webPreferences: {
       preload: fileURLToPath(new URL('./preload-welcome.cjs', import.meta.url)),
-      additionalArguments: [`--dsh-welcome-locale=${locale.id}`],
+      additionalArguments: [`--ahel-welcome-locale=${locale.id}`],
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -53,7 +52,7 @@ let disposeActiveHandlers: (() => void) | undefined
  * Open the process's sole welcome window with desktop-owned operations.
  * Replaces IPC ownership immediately; the caller closes the previous native window.
  * @param locale - shell-owned localized copy.
- * @param operations - credential write and this-launch-only skip actions.
+ * @param operations - the continue action.
  * @returns the visible window; a failed load destroys it before rejecting.
  */
 export async function openWelcomeWindow(locale: DesktopLocale, operations: WelcomeOperations): Promise<BrowserWindow> {
@@ -64,12 +63,7 @@ export async function openWelcomeWindow(locale: DesktopLocale, operations: Welco
   const disposeHandlers = (): void => {
     if (!active) return
     active = false
-    for (const channel of [
-      WELCOME_IPC.analyticsEnabled, WELCOME_IPC.analytics, WELCOME_IPC.takeNotice, WELCOME_IPC.saveApiKey,
-      WELCOME_IPC.skip, WELCOME_IPC.start, WELCOME_IPC.cancel, WELCOME_IPC.copyLink,
-    ]) {
-      ipcMain.removeHandler(channel)
-    }
+    ipcMain.removeHandler(WELCOME_IPC.continue)
     disposeActiveHandlers = undefined
   }
   disposeActiveHandlers = disposeHandlers
@@ -78,40 +72,9 @@ export async function openWelcomeWindow(locale: DesktopLocale, operations: Welco
       throw new Error('desktop welcome: rejected action from an unowned frame')
     }
   }
-  ipcMain.handle(WELCOME_IPC.analyticsEnabled, (event) => {
+  ipcMain.handle(WELCOME_IPC.continue, async (event) => {
     assertSender(event)
-    return operations.analyticsEnabled()
-  })
-  ipcMain.handle(WELCOME_IPC.analytics, async (event, eventName: unknown, attributes: unknown) => {
-    assertSender(event)
-    if (typeof attributes !== 'object' || attributes === null || Array.isArray(attributes)) throw new Error('desktop welcome: invalid analytics attributes')
-    if (eventName === 'auth_page_click' && 'button_name' in attributes && Object.keys(attributes).length === 1
-      && (attributes.button_name === 'sign_in' || attributes.button_name === 'api-key')) {
-      await operations.analytics?.(eventName, { button_name: attributes.button_name })
-    } else if ((eventName === 'auth_page_view' || eventName === 'api_key_save_click') && Object.keys(attributes).length === 0) {
-      await operations.analytics?.(eventName, {})
-    } else throw new Error('desktop welcome: invalid analytics event')
-  })
-  ipcMain.handle(WELCOME_IPC.takeNotice, async (event) => { assertSender(event); return operations.takeNotice() })
-  ipcMain.handle(WELCOME_IPC.saveApiKey, async (event, value: unknown) => {
-    assertSender(event)
-    if (typeof value !== 'string' || !/^[\x21-\x7e]+$/.test(value)) return { ok: false }
-    return operations.saveApiKey(value)
-  })
-  ipcMain.handle(WELCOME_IPC.skip, async (event) => {
-    assertSender(event)
-    await operations.skip()
-  })
-  ipcMain.handle(WELCOME_IPC.start, async (event) => { assertSender(event); return operations.startSignIn() })
-  ipcMain.handle(WELCOME_IPC.cancel, async (event, id: unknown) => {
-    assertSender(event)
-    if (typeof id !== 'string') throw new Error('desktop welcome: invalid attempt')
-    return operations.cancelSignIn(id as SignInAttemptId)
-  })
-  ipcMain.handle(WELCOME_IPC.copyLink, async (event, id: unknown) => {
-    assertSender(event)
-    if (typeof id !== 'string') throw new Error('desktop welcome: invalid attempt')
-    return operations.copySignInLink(id as SignInAttemptId)
+    await operations.continue()
   })
   window.once('closed', disposeHandlers)
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
@@ -124,9 +87,6 @@ export async function openWelcomeWindow(locale: DesktopLocale, operations: Welco
     throw error
   }
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Another window can replace ownership during loadFile.
-  if (active && !window.isDestroyed()) {
-    window.show()
-    void operations.analytics?.('auth_page_view', {})
-  }
+  if (active && !window.isDestroyed()) window.show()
   return window
 }

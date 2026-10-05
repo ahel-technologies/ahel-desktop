@@ -2,7 +2,7 @@
   "dialogs": [
     {
       "type": "info",
-      "title": "Manage dsh Command",
+      "title": "Ahel Desktop Command Line Tool (dsh)",
       "message": "Add the Desktop command to your terminal.",
       "detail": "Desktop command: /usr/local/bin/dsh",
       "buttons": [
@@ -14,7 +14,7 @@
     },
     {
       "type": "info",
-      "title": "Manage dsh Command",
+      "title": "Ahel Desktop Command Line Tool (dsh)",
       "message": "The Desktop command is installed.",
       "detail": "Desktop command: /usr/local/bin/dsh\n\nCurrent dsh command: /usr/local/bin/dsh",
       "buttons": [
@@ -27,7 +27,7 @@
     },
     {
       "type": "info",
-      "title": "Manage dsh Command",
+      "title": "Ahel Desktop Command Line Tool (dsh)",
       "message": "The Desktop command needs repair.",
       "detail": "Desktop command: /usr/local/bin/dsh",
       "buttons": [
@@ -40,7 +40,7 @@
     },
     {
       "type": "warning",
-      "title": "Manage dsh Command",
+      "title": "Ahel Desktop Command Line Tool (dsh)",
       "message": "The Desktop command is installed.",
       "detail": "Desktop command: /usr/local/bin/dsh\n\nCurrent dsh command: /opt/homebrew/bin/dsh\n\nAnother dsh takes precedence. Remove or reorder that installation to use the Desktop command by default. You can also run the Desktop command by its full path.",
       "buttons": [
@@ -53,7 +53,7 @@
     },
     {
       "type": "info",
-      "title": "Manage dsh Command",
+      "title": "Ahel Desktop Command Line Tool (dsh)",
       "message": "Add the Desktop command to your terminal.",
       "detail": "Desktop command: /usr/local/bin/dsh\n\nYour shell command could not be verified. An alias or another dsh installation may take precedence.",
       "buttons": [

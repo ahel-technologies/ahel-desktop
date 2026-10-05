@@ -64,8 +64,8 @@ describe.skipIf(!existsSync(preload('preload-app')))('built sandboxed Desktop pr
         if (id !== 'electron') throw new Error(`sandbox cannot load ${id}`)
         return electron
       },
-      process: { argv: ['electron', '--dsh-welcome-locale=en'], isMainFrame: true },
-      location: new URL('dsh-app://app/'),
+      process: { argv: ['electron', '--ahel-welcome-locale=en'], isMainFrame: true },
+      location: new URL('ahel-app://app/'),
       exports: {},
     })
     if (name === 'preload-app') {
@@ -83,10 +83,10 @@ describe.skipIf(!existsSync(preload('preload-app')))('built sandboxed Desktop pr
       bridge.onChange('zh')
       expect(send).toHaveBeenCalledWith('dsh-desktop:locale-changed', 'zh')
     } else {
-      expect(exposed.has('dshWelcome')).toBe(true)
-      const bridge = exposed.get('dshWelcome') as { takeNotice(): Promise<unknown> }
-      void bridge.takeNotice()
-      expect(invoke).toHaveBeenCalledWith('dsh-welcome:take-notice')
+      expect(exposed.has('ahelWelcome')).toBe(true)
+      const bridge = exposed.get('ahelWelcome') as { continue(): Promise<unknown> }
+      void bridge.continue()
+      expect(invoke).toHaveBeenCalledWith('ahel-welcome:continue')
     }
   })
 })

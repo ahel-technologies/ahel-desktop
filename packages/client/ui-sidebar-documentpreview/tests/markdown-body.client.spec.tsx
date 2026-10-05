@@ -33,7 +33,7 @@ function props(value: DocumentContent, t: MarkdownBodyProps['t'] = makeTranslate
 }
 
 describe('MarkdownBody', () => {
-  it.each(['http://localhost/', 'dsh-app://app/'])('loads document images and failure text under %s', (base) => {
+  it.each(['http://localhost/', 'ahel-app://app/'])('loads document images and failure text under %s', (base) => {
     vi.spyOn(document, 'baseURI', 'get').mockReturnValue(base)
     const text = '![relative](images/a.png) ![absolute](/tmp/a.png) ![external](https://example.test/a.png)'
     const view = render(<MarkdownBody {...props(content([text], true), undefined, '/work/guide/notes.md')} />)

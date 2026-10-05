@@ -51,7 +51,7 @@ async function main() {
     updater.httpExecutor = new DesktopUpdateHttpExecutor(60_000)
     updater.disableDifferentialDownload = !differential
     updater.disableWebInstaller = true
-    updater.setFeedURL({ provider: 'generic', url: server.url, channel: 'nightly', useMultipleRangeRequest: multipleRanges })
+    updater.setFeedURL({ provider: 'generic', url: server.url, channel: 'latest', useMultipleRangeRequest: multipleRanges })
     updater.on('error', error => errors.push(error.code))
     updater.quitAndInstall = () => { installed++ }
     let authorized = false
@@ -65,7 +65,7 @@ async function main() {
     const count = server.requests.length
     assert.equal((await f.coordinator.check(true)).phase, 'available')
     assert.equal(server.requests.length - count, 1, 'Checking must not download')
-    assert.equal(server.requests.at(-1).path, '/nightly.yml')
+    assert.equal(server.requests.at(-1).path, '/latest.yml')
     return f.coordinator.download('1.0.1-nightly.1')
   }
   async function rejected(f, code) {

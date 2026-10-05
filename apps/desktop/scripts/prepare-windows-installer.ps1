@@ -69,7 +69,7 @@ foreach ($asset in @('brand', 'brand-2x', 'brand-dark', 'brand-dark-2x', 'uninst
         try {
             $graphics = [Drawing.Graphics]::FromImage($bitmap)
             try {
-                $background = if ($asset -like '*dark*') { [Drawing.Color]::FromArgb(21, 21, 23) } else { [Drawing.Color]::White }
+                $background = if ($asset -like '*dark*') { [Drawing.Color]::FromArgb(20, 23, 29) } else { [Drawing.Color]::White }
                 $graphics.Clear($background)
                 $graphics.DrawImage($image, 0, 0, $image.Width, $image.Height)
             } finally { $graphics.Dispose() }

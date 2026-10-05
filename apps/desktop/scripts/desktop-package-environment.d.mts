@@ -1,16 +1,18 @@
 /** Load platform-local release settings without changing the caller's process environment. */
 
 /**
- * Read the target's required UTF-8 dotenv file; release settings never fall back to ambient values.
+ * Read the target's UTF-8 dotenv file; release settings never fall back to ambient values.
  * @param platform Target platform.
  * @param environment Parent environment, retained only for unrelated build tools.
  * @param appRoot Desktop application directory; relative credential paths resolve here.
+ * @param options `optional` treats a missing file as empty, for unsigned builds that need no release settings.
  * @returns Isolated environment with file-owned release settings.
  */
 export function loadDesktopPackageEnvironment(
   platform: 'win32' | 'darwin',
   environment?: NodeJS.ProcessEnv,
   appRoot?: string,
+  options?: { optional?: boolean },
 ): NodeJS.ProcessEnv
 
 /**

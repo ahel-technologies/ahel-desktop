@@ -4,15 +4,12 @@ import type { AfterPackContext, BeforePackContext } from 'app-builder-lib'
 export interface DesktopElectronBuilderConfig {
   readonly appId: string
   readonly artifactName: string
-  readonly protocols: readonly [{ readonly name: 'DeepSeek Harness'; readonly schemes: readonly ['dsh'] }]
+  readonly protocols: readonly [{ readonly name: 'Ahel Desktop'; readonly schemes: readonly ['ahel'] }]
   readonly directories: {
     readonly output: string
   }
   readonly files: readonly [
-    string,
-    string,
-    string,
-    string,
+    ...string[],
     { readonly from: string, readonly to: 'dsh', readonly filter: readonly ['**/*'] },
     { readonly from: string, readonly to: 'dsh/node_modules', readonly filter: readonly ['**/*'] },
   ]
@@ -24,7 +21,7 @@ export interface DesktopElectronBuilderConfig {
     ...{ readonly from: string, readonly to: 'tray.ico' }[],
   ]
   readonly mac: {
-    readonly extendInfo: { readonly NSMicrophoneUsageDescription: string }
+    readonly extendInfo: { readonly CFBundleLocalizations: readonly string[], readonly NSMicrophoneUsageDescription: string }
     readonly entitlements: string
     readonly entitlementsInherit: string
     readonly identity: string | undefined
@@ -57,7 +54,7 @@ export interface DesktopElectronBuilderConfig {
   readonly afterPack: (context: AfterPackContext) => Promise<void>
   readonly afterSign: (context: AfterPackContext) => Promise<void>
   readonly artifactBuildCompleted: (artifact: { readonly file: string }) => Promise<void> | undefined
-  readonly publish: readonly [{ readonly provider: 'generic', readonly url: string }] | null
+  readonly publish: readonly [{ readonly provider: 'github', readonly owner: string, readonly repo: string, readonly releaseType: 'release' }]
 }
 
 /**
@@ -65,16 +62,14 @@ export interface DesktopElectronBuilderConfig {
  * @param env - Packaging environment.
  * @param hostPlatform - Build-host platform used when no explicit target is present.
  * @param hostArch - Build-host architecture used when no explicit target is present.
- * @param preparedRuntime - Verified private qualification runtime; ordinary releases use target-owned resources.
- * @param preparedRuntimeVersion - Version that private runtime declares, which qualification rewrites away from the product version.
+ * @param dshTree - Prepared dsh tree to package instead of the target's own; packaging tests point it at fixtures.
  * @returns electron-builder configuration.
  */
 export function createElectronBuilderConfig(
   env?: NodeJS.ProcessEnv,
   hostPlatform?: NodeJS.Platform,
   hostArch?: string,
-  preparedRuntime?: string,
-  preparedRuntimeVersion?: string,
+  dshTree?: string,
 ): DesktopElectronBuilderConfig
 
 declare const electronBuilderConfig: DesktopElectronBuilderConfig

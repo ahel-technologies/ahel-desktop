@@ -26,7 +26,6 @@ vi.mock('../scripts/windows-runtime-signature.mjs', async importOriginal => ({
 }))
 // Vite's root-relative IDs also resolve mocked build outputs on a clean checkout.
 vi.mock('/apps/desktop/lib/types/runtime-tree.js', () => ({ verifyDesktopRuntime: async () => {} }))
-vi.mock('/apps/desktop/lib/types/mandatory-update-policy.js', async () => import('../src/mandatory-update-policy.ts'))
 vi.mock('node:crypto', async importOriginal => ({
   ...await importOriginal<typeof import('node:crypto')>(),
   X509Certificate: class { fingerprint = 'AA:BB' },
@@ -48,8 +47,7 @@ afterEach(async () => {
 
 function unsignedWindowsConfig(appId: string, source: string) {
   return createElectronBuilderConfig({
-    DSH_DESKTOP_APP_ID: appId, DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN: 'https://policy.example.com',
-    DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: JSON.stringify({ allowedAuthOrigins: ['https://login.example.com'] }),
+    DSH_DESKTOP_APP_ID: appId,
     DSH_DESKTOP_UNSIGNED: '1',
   }, 'win32', 'x64', source)
 }
@@ -74,16 +72,6 @@ async function fixture(external: boolean) {
   }
   await writeFile(join(source, 'node_modules', 'foo', 'companion.json'), '{}')
   await writeFile(join(source, 'node_modules', 'foo', '$xarchy.binary'), 'neighbor')
-  for (const [name, manifest] of [
-    ['@deepseek-ai/libreoffice-kit', { name: '@deepseek-ai/libreoffice-kit', optionalDependencies: { '@deepseek-ai/libreoffice-kit-win32-x64': '0.0.4' }, dependencies: { 'office-codec': '1' } }],
-    ['@deepseek-ai/libreoffice-kit-win32-x64', { name: '@deepseek-ai/libreoffice-kit-win32-x64' }],
-    ['office-codec', { name: 'office-codec' }],
-  ] as const) {
-    const directory = join(source, 'node_modules', name)
-    await mkdir(directory, { recursive: true })
-    await writeFile(join(directory, 'package.json'), JSON.stringify(manifest))
-    await writeFile(join(directory, 'cli.js'), 'export {}')
-  }
   const config = {
     files: [{ from: source, to: 'dsh', filter: ['**/*'] },
       { from: join(source, 'node_modules'), to: 'dsh/node_modules', filter: ['**/*'] }],
@@ -186,12 +174,11 @@ it.each([true, false])('validates the real builder hook for unsigned=%s', async 
   const certificate = join(input.root, 'certificate.cer')
   await writeFile(certificate, 'fixture public certificate')
   const config = createElectronBuilderConfig({
-    DSH_DESKTOP_APP_ID: 'com.example.unpack', DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN: 'https://policy.example.com',
-    DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: JSON.stringify({ allowedAuthOrigins: ['https://login.example.com'] }),
+    DSH_DESKTOP_APP_ID: 'com.example.unpack',
     DSH_DESKTOP_TARGET_PLATFORM: 'win32', DSH_DESKTOP_TARGET_ARCH: 'x64', DSH_DESKTOP_UNSIGNED: unsigned ? '1' : '0',
-    DSH_DESKTOP_WINDOWS_CER_FILE: certificate, DOWNLOAD_TEST_ORIGIN: 'https://updates.example.com', DOWNLOAD_TEST_RELEASE_ID: '0123456789abcdef0123456789abcdef',
+    DSH_DESKTOP_WINDOWS_CER_FILE: certificate,
   }, 'win32', 'x64', input.source)
-  // Qualification replaces files after creating the base configuration; builder owns a separate config object.
+  // electron-builder hooks read the packager's own configuration object, not the factory result.
   input.config.asarUnpack = [...config.asarUnpack]
   await config.beforePack(input.context)
   await packageFixture(input)
@@ -224,33 +211,6 @@ it.each([false, true])('unpacks platform ripgrep executables with external sourc
     const path = join('dsh', 'node_modules', '@vscode', file)
     expect(archive.getFile(path, false).unpacked).toBe(true)
     expect(await readFile(join(input.resources, 'app.asar.unpacked', path), 'utf8')).toBe('ripgrep fixture')
-  }
-})
-
-it.each([false, true])('keeps the complete Office engine outside ASAR with external source=%s', async (external) => {
-  const input = await fixture(external)
-  const engine = join('node_modules', '@deepseek-ai', 'libreoffice-kit-win32-x64')
-  const files = ['package.json', 'prebuilds.json', 'bin/libreoffice-kit', 'program/registry/main.xcd']
-  for (const file of files) {
-    const path = join(input.source, engine, file)
-    await mkdir(dirname(path), { recursive: true })
-    await writeFile(path, '{}')
-  }
-  const wasm = join(input.source, 'node_modules/@deepseek-ai/libreoffice-kit-wasm/package.json')
-  await mkdir(dirname(wasm), { recursive: true })
-  await writeFile(wasm, '{}')
-  const config = unsignedWindowsConfig('com.example.office', input.source)
-  input.config.asarUnpack = [...config.asarUnpack]
-  await config.beforePack(input.context)
-  await packageFixture(input)
-  const archive = await readAsar(join(input.resources, 'app.asar'))
-  expect(archive.getFile(join('dsh', 'node_modules', '@deepseek-ai', 'libreoffice-kit-wasm', 'package.json')).unpacked).not.toBe(true)
-  for (const name of ['@deepseek-ai/libreoffice-kit', 'office-codec']) {
-    expect(archive.getFile(join('dsh', 'node_modules', name, 'cli.js')).unpacked).toBe(true)
-  }
-  for (const file of files) {
-    expect(archive.getFile(join('dsh', engine, file), false).unpacked).toBe(true)
-    expect(await readFile(join(input.resources, 'app.asar.unpacked', 'dsh', engine, file), 'utf8')).toBe('{}')
   }
 })
 

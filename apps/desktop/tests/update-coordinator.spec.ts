@@ -73,6 +73,16 @@ function fixture() {
 }
 
 describe('desktop update coordinator', () => {
+  it('offers prereleases only to a prerelease build', () => {
+    for (const [version, allowed] of [['1.1.0-alpha.1', true], ['1.1.0', false]] as const) {
+      const methods = { checkForUpdates: vi.fn(), downloadUpdate: vi.fn(), quitAndInstall: vi.fn() }
+      const updater = Object.assign(new EventEmitter(), methods) as AppUpdater
+      const coordinator = new DesktopUpdateCoordinator(state => state, async () => true, updater, () => true, () => version)
+      coordinators.push(coordinator)
+      expect(updater.allowPrerelease, version).toBe(allowed)
+    }
+  })
+
   it('keeps safe preparation diagnostics separate and clears them on an explicit retry', async () => {
     const f = fixture()
     await f.coordinator.check()
@@ -145,7 +155,7 @@ describe('desktop update coordinator', () => {
       'available', 'downloading', 'downloading', 'verifying', 'ready', 'installing',
     ])
     expect(f.updater).toMatchObject({
-      autoDownload: false, autoInstallOnAppQuit: false, channel: 'nightly',
+      autoDownload: false, autoInstallOnAppQuit: false, channel: 'latest',
       allowPrerelease: true, allowDowngrade: false,
     })
   })

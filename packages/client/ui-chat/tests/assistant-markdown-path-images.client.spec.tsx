@@ -26,8 +26,8 @@ describe('localPathMediaUrl', () => {
       [BASE, BASE],
       ['https://127.0.0.1:3080/', 'https://127.0.0.1:3080/'],
       [MOUNTED_BASE, MOUNTED_BASE],
-      ['dsh-app://app/', 'dsh-app://app/'],
-      ['dsh-app://app/index.html', 'dsh-app://app/'],
+      ['ahel-app://app/', 'ahel-app://app/'],
+      ['ahel-app://app/index.html', 'ahel-app://app/'],
       ['http://127.0.0.1:3080/tools/dsh/index.html', MOUNTED_BASE],
     ]) {
       expect(localPathMediaUrl(base!, '/tmp/graph.png')).toBe(`${root!}api/file?path=${path}`)
@@ -36,7 +36,7 @@ describe('localPathMediaUrl', () => {
 
   it('keeps unsupported application transports inert', () => {
     expect(localPathMediaUrl('about:blank', '/tmp/graph.png')).toBeUndefined()
-    expect(localPathMediaUrl('dsh-app://shell/', '/tmp/graph.png')).toBeUndefined()
+    expect(localPathMediaUrl('ahel-app://shell/', '/tmp/graph.png')).toBeUndefined()
     expect(localPathMediaUrl('file:///app', '/tmp/graph.png')).toBeUndefined()
     expect(localPathMediaUrl('ws://127.0.0.1:3080/', '/tmp/graph.png')).toBeUndefined()
   })
@@ -55,7 +55,7 @@ describe('localPathMediaUrl', () => {
 })
 
 describe('AssistantMarkdown local-path images', () => {
-  it.each([BASE, 'dsh-app://app/'])('renders a local image in closing prose through %s', (base) => {
+  it.each([BASE, 'ahel-app://app/'])('renders a local image in closing prose through %s', (base) => {
     vi.spyOn(document, 'baseURI', 'get').mockReturnValue(base)
     const { container } = render(
       <AssistantMarkdown useDisclosure={useDisclosure}
