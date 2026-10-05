@@ -599,6 +599,13 @@ async function main(): Promise<void> {
     reportFatal(new Error(message), 'web-boot')
   })
 
+  // The renderer only hints; the Host's own account state decides.
+  ipcMain.handle(DESKTOP_IPC.accountChanged, async (event) => {
+    assertProductSender(event)
+    if (!enteredWorkspace || await readSignedIn()) return
+    await leaveWorkspace()
+  })
+
   ipcMain.handle(DESKTOP_IPC.browserAcquire, (event, workspace: unknown) => {
     assertProductSender(event)
     return browserGuests.acquire(event.sender, workspace)
@@ -1003,6 +1010,14 @@ async function main(): Promise<void> {
       else mainWindow?.hide()
     })().finally(() => { openingWelcome = undefined })
     return openingWelcome
+  }
+  /** Close the workspace after sign-out and show the welcome; the page and the Host keep running. */
+  const leaveWorkspace = async (): Promise<void> => {
+    if (quitting || recovery.active || !enteredWorkspace) return
+    enteredWorkspace = false
+    const window = mainWindow
+    if (window !== undefined && !window.isDestroyed()) hideMainWindow(window)
+    await showWelcome()
   }
   const openInitialWindow = async (): Promise<void> => {
     if (quitting || recovery.active) return

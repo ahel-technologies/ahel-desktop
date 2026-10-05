@@ -22,6 +22,11 @@ export type { AhelAccountKey } from './locales.ts'
 /** Required services: the Remote mount, slots and dictionaries. */
 export const inject = ['remote', 'slots', 'locale']
 
+/** The desktop shell's account hook; absent in a plain browser. */
+function desktopAccount(): { changed(): Promise<void> } | undefined {
+  return (globalThis as typeof globalThis & { dshDesktop?: { account?: { changed(): Promise<void> } } }).dshDesktop?.account
+}
+
 /** Open an absolute https URL outside the app; the desktop shell hands it to the system browser. */
 function openLink(url: string): void {
   window.open(url, '_blank', 'noopener,noreferrer')
@@ -39,7 +44,13 @@ function register(ctx: Context): void {
     getSnapshot: () => view,
     subscribe: (listener) => { listeners.add(listener); return () => { listeners.delete(listener) } },
   }
-  const publish = (next: AhelAccountView): void => { view = next; for (const listener of listeners) listener() }
+  const publish = (next: AhelAccountView): void => {
+    const signedOut = view?.status === 'signed-in' && next.status === 'signed-out'
+    view = next
+    for (const listener of listeners) listener()
+    // Desktop closes the workspace and shows its welcome after a sign-out.
+    if (signedOut) void desktopAccount()?.changed().catch(() => undefined)
+  }
   const stream = ctx.remote.$stream<AhelAccountView>({
     name: 'ahel account', open: signal => ctx.remote.ahelAccount.watch(signal), ended: () => new Error('ahel account stream ended'),
   })

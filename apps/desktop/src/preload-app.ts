@@ -13,6 +13,9 @@ function createProductApi(): DshDesktopProductApi {
     protocolVersion: 1,
     browser: createDesktopBrowserBridge(),
     deviceInfo: () => ipcRenderer.invoke(DESKTOP_IPC.deviceInfo) as Promise<string>,
+    account: {
+      changed: () => ipcRenderer.invoke(DESKTOP_IPC.accountChanged) as Promise<void>,
+    },
     keyboard: {
       closeWindow: revision => ipcRenderer.invoke(DESKTOP_IPC.shortcutsCloseWindow, revision) as Promise<void>,
       subscribe: (listener) => {

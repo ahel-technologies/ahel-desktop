@@ -29,6 +29,7 @@ export const DESKTOP_IPC = {
   windowFullscreen: 'dsh-desktop:window-fullscreen',
   windowsAppearance: 'dsh-desktop:windows-appearance',
   windowsMenu: 'dsh-desktop:windows-menu',
+  accountChanged: 'dsh-desktop:account-changed',
 } as const
 
 /** Desktop release update state rendered by desktop-owned UI. */
@@ -77,6 +78,13 @@ export interface DshDesktopProductApi {
    * @returns `name=value` fields separated by `; `, with no hostname, user name, or serial number.
    */
   deviceInfo(): Promise<string>
+  readonly account: {
+    /**
+     * Ask the shell to re-read the ahel.ai account; a signed-out account closes the workspace and shows the welcome.
+     * @returns once the shell has acted on the Host's account state.
+     */
+    changed(): Promise<void>
+  }
   readonly updates: {
     status(): Promise<DesktopUpdatePresentation>
     open(): Promise<void>
