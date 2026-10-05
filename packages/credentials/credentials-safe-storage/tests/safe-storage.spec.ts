@@ -15,10 +15,11 @@ afterEach(async () => {
 /** Reversible stand-in for the Keychain: base64 of the byte-flipped UTF-8 text. */
 class FakeKeychainProvider extends SafeStorageCredentialProvider {
   protected override connectBridge(): SafeStorageBridge {
+    const flip = (bytes: Uint8Array): Buffer => Buffer.from(bytes.map(byte => byte ^ 0xff))
     return {
       isEncryptionAvailable: () => Promise.resolve(true),
-      encrypt: text => Promise.resolve(Buffer.from(text).map(byte => byte ^ 0xff).toString('base64')),
-      decrypt: data => Promise.resolve(Buffer.from(data, 'base64').map(byte => byte ^ 0xff).toString()),
+      encrypt: text => Promise.resolve(flip(Buffer.from(text)).toString('base64')),
+      decrypt: data => Promise.resolve(flip(Buffer.from(data, 'base64')).toString()),
       close: () => {},
     }
   }
