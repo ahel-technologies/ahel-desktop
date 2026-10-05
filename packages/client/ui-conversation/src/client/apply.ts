@@ -306,6 +306,11 @@ export function apply(ctx: Context, config: Config = Config({})): void {
     },
   }, ConversationRoot)
 
+  // The hero shows its Workspace chip only while a picker fills the hero hole.
+  const workspacePicker = {
+    getSnapshot: () => slots.entries('conversation.hero.workspace').length > 0,
+    subscribe: (listener: () => void) => slots.subscribe('conversation.hero.workspace', listener),
+  }
   const registerConversationContent = () => slots.registerFactory({
     name: 'conversation.content',
     scope: 'session-maybe',
@@ -326,6 +331,7 @@ export function apply(ctx: Context, config: Config = Config({})): void {
     inject: (sessionId: SessionId | undefined): ConversationInjected => ({
       hooks: {
         composerBlock: sessionId === undefined ? ABSENT_BLOCK : composerBlocks.storeFor(sessionId),
+        workspacePicker,
       },
       selectWorkspace: workspaceId => workspaceNavigation.openWorkspace(workspaceId, (nextId) => {
         if (sessionId !== undefined && nextId !== sessionId) {
