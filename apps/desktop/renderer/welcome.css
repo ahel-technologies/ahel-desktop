@@ -304,10 +304,7 @@ body {
 }
 
 .tagline .status {
-  position: absolute;
-  top: 100%;
-  width: 100%;
-  margin: 8px 0 0;
+  margin: 12px 0 0;
   color: var(--dsw-alias-label-secondary);
   font-size: 14px;
   line-height: 22px;
