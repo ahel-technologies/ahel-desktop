@@ -359,7 +359,6 @@
       "@ahel/dsh-config-editor": ["./packages/boot/config-editor/src"],
       "@ahel/dsh-credentials": ["./packages/credentials/credentials/src"],
       "@ahel/dsh-credentials-local": ["./packages/credentials/credentials-local/src"],
-      "@ahel/dsh-credentials-safe-storage": ["./packages/credentials/credentials-safe-storage/src"],
       "@ahel/dsh-deque": ["./packages/util/deque/src"],
       "@ahel/dsh-file-reference": ["./packages/context/file-reference/src"],
       "@ahel/dsh-file-reference-local": ["./packages/context/file-reference-local/src"],

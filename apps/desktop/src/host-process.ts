@@ -3,7 +3,6 @@
 import { spawn, type ChildProcess } from 'node:child_process'
 import { join } from 'node:path'
 import { desktopNodeEnvironment } from './node-environment.ts'
-import type { DesktopSafeStorageRequest, DesktopSafeStorageResponse } from './safe-storage.ts'
 
 interface ReadyEvent {
   readonly type: 'ready'
@@ -18,7 +17,7 @@ interface FatalEvent {
   readonly diagnostic?: string
 }
 
-type DesktopHostEvent = ReadyEvent | FatalEvent | DesktopSafeStorageRequest | { readonly type: 'shutdown-complete' } | {
+type DesktopHostEvent = ReadyEvent | FatalEvent | { readonly type: 'shutdown-complete' } | {
   readonly type: 'update-tasks'
   readonly requestId: number
   readonly active: boolean
@@ -32,7 +31,7 @@ type DesktopHostEvent = ReadyEvent | FatalEvent | DesktopSafeStorageRequest | { 
 }
 
 /** Correlated answer to one shell control request. */
-type DesktopHostControlResponse = Extract<DesktopHostEvent, { readonly type: 'update-tasks' | 'quit-inspection' }>
+type DesktopHostControlResponse = Extract<DesktopHostEvent, { readonly requestId: number }>
 
 /** What quitting now would affect, as reported by the Host. */
 export interface DesktopQuitInspection {
@@ -61,10 +60,6 @@ function isDesktopHostEvent(message: unknown): message is DesktopHostEvent {
     case 'quit-inspection':
       return Number.isSafeInteger(candidate.requestId) && typeof candidate.activeTasks === 'boolean'
         && typeof candidate.scheduledTasks === 'boolean' && (candidate.error === undefined || typeof candidate.error === 'string')
-    case 'safe-storage-request':
-      return Number.isSafeInteger(candidate.requestId)
-        && (candidate.operation === 'available' || candidate.operation === 'encrypt' || candidate.operation === 'decrypt')
-        && (candidate.data === undefined || typeof candidate.data === 'string')
     default:
       return false
   }
@@ -142,7 +137,6 @@ export class DesktopHostProcess {
    * @param environment - Environment inherited by the Host and its plugin subprocesses.
    * @param onFailure - Receives the first unexpected child failure, including after readiness.
    * @param packageManager - Bundled pnpm entry and Node launcher directory, scoped to package operations.
-   * @param safeStorage - Answers the Host's credential encryption requests; absent answers each with an error.
    */
   constructor(
     private readonly node: string,
@@ -152,7 +146,6 @@ export class DesktopHostProcess {
     private readonly environment: NodeJS.ProcessEnv = process.env,
     private readonly onFailure?: (error: Error) => void,
     private readonly packageManager?: { readonly pnpm: string; readonly nodeBin: string },
-    private readonly safeStorage?: (request: DesktopSafeStorageRequest) => DesktopSafeStorageResponse,
   ) {}
 
   /**
@@ -184,12 +177,7 @@ export class DesktopHostProcess {
         child.kill('SIGTERM')
         return
       }
-      if (message.type === 'safe-storage-request') {
-        const response = this.safeStorage?.(message)
-          ?? { type: 'safe-storage-response', requestId: message.requestId, error: 'unavailable in this shell' }
-        if (child.connected) child.send(response, (error) => { if (error !== null) console.error('desktop host: safeStorage answer failed', error) })
-      }
-      else if (message.type === 'ready') this.readyResolve({ url: message.url, injections: message.injections })
+      if (message.type === 'ready') this.readyResolve({ url: message.url, injections: message.injections })
       else if (message.type === 'shutdown-complete') {
         if (this.stopping) this.shutdownCompleted = true
         else this.fail(new Error('dsh desktop host acknowledged an unrequested shutdown'))
