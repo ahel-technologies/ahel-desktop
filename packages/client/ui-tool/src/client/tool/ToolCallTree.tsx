@@ -1,7 +1,7 @@
 /** Root/subcall Tool composition with one keyed atomic dispatch path. */
 import { memo, useMemo, type ReactNode } from 'react'
 import type { ToolCallBlock } from '@deepseek-ai/dsh-client-ui-chat/client'
-import type { ToolCallOwnerProps, ToolCallPhaseProps, ToolTreeProps } from '../contract/slots.ts'
+import type { ToolAppOwnerProps, ToolCallOwnerProps, ToolCallPhaseProps, ToolTreeProps } from '../contract/slots.ts'
 import { toolRowModel } from './models/tool-call-model.ts'
 import { GenericToolCard } from './toolviews/GenericToolCard.tsx'
 import css from './ToolCallTree.module.css'
@@ -14,6 +14,13 @@ function toolCallPhase(block: ToolCallBlock): ToolCallPhaseProps {
 /** Resolve a Tool call's wire name from its current stage. */
 function callName(call: ToolCallPhaseProps): string {
   return call.phase === 'result' ? call.block.call?.name ?? '' : call.block.name
+}
+
+/** Whether a settled call persisted an MCP Apps card record for the card slot. */
+function hasAppRecord(call: ToolCallPhaseProps): boolean {
+  if (call.phase !== 'result' || call.block.isError) return false
+  const meta = call.block.meta
+  return typeof meta === 'object' && meta !== null && 'mcpApp' in meta
 }
 
 /** One atomic call dispatched through the Tool-owned keyed slot. */
@@ -41,6 +48,10 @@ const ToolCall = memo(function ToolCall({
     () => call.phase === 'result' && toolRowModel(toolName, call.block).autoReviewDenial !== null,
     [toolName, call],
   )
+  const app: ToolAppOwnerProps | null = useMemo(
+    () => call.phase === 'result' && hasAppRecord(call) ? { callId, toolName, block: call.block } : null,
+    [callId, toolName, call],
+  )
   return (
     <div
       className={css.callRow}
@@ -53,6 +64,7 @@ const ToolCall = memo(function ToolCall({
           entryKey: toolName,
           fallback: <GenericToolCard {...owner} t={t} />,
         })}
+      {app === null ? null : renderSlot('tool.call.app', app)}
       {children}
     </div>
   )

@@ -126,6 +126,26 @@ describe('keyed toolview hole through the real machinery', () => {
     await b.runtime.dispose()
   })
 
+  it('renders the tool.call.app occupant under a successful call that persisted an mcpApp record', async () => {
+    const card = { mcpApp: { v: 1, server: 'cards', tool: 'show', resourceUri: 'ui://cards/c.html', visibility: ['model'] } }
+    const b = await bench([
+      toolResult(3, 'app-1', 'mcp__cards__show', '{}', { meta: card }),
+      toolResult(4, 'plain-1', 'mcp__cards__plain', '{}'),
+      toolResult(5, 'failed-1', 'mcp__cards__show', '{}', { meta: card, isError: true }),
+    ])
+    b.slots.register(
+      { name: 'tool.call.app' },
+      ({ callId }) => <div data-testid={`app-${callId}`} />,
+    )
+    const view = b.runtime.renderRoot()
+    expect(view.getByTestId('app-app-1')).toBeTruthy()
+    expect(view.queryByTestId('app-plain-1')).toBeNull()
+    expect(view.queryByTestId('app-failed-1')).toBeNull()
+    // The call's own row still renders above the card.
+    expect(view.container.querySelector('[data-chat-call-id="app-1"]')?.textContent).toContain('Tool call')
+    await b.runtime.dispose()
+  })
+
   it('renders Auto denial copy through the real machinery', async () => {
     const b = await bench([
       toolResult(

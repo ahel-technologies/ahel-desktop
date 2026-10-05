@@ -22,6 +22,7 @@ import type { ServerContext } from './server-context.ts'
 import { MAX_TIMER_DELAY_MS } from '@deepseek-ai/dsh-timeout'
 import { createTransport } from './transport.ts'
 import { syncTools } from './tools.ts'
+import { MCP_APP_MIME_TYPE, MCP_APPS_EXTENSION } from './apps.ts'
 import type { ToolBridgeOptions, ToolDisposers } from './tools.ts'
 import type { Config } from './index.ts'
 
@@ -155,6 +156,8 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
   let connectedAt: number | undefined
   /** The real error from the first connection attempt, for startup-await diagnostics. */
   let firstAttemptError: unknown
+  /** Count of established generations; resource caches key on it. */
+  let establishedGenerations = 0
 
   /** A generation may act only while it is the current one on a live plugin. */
   const isCurrent = (generation: Client): boolean => !disposed && client === generation
@@ -258,7 +261,8 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
     const generation = new Client(
       { name: 'dsh-mcp-client', version: '0.0.1' },
       {
-        capabilities: {},
+        // MCP Apps: this host renders `ui://` resources for tool results.
+        capabilities: { extensions: { [MCP_APPS_EXTENSION]: { mimeTypes: [MCP_APP_MIME_TYPE] } } },
         versionNegotiation: { mode: 'auto' },
         listChanged: {
           tools: {
@@ -339,6 +343,7 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
     if (!isCurrent(generation)) return
     serverInstructions = instructions
     connectedAt = Date.now()
+    establishedGenerations += 1
     if (failedAttempts > 0) ctx.logger.info(`${label}: reconnected and re-synced tools (attempt ${failedAttempts}/${policy.maxAttempts})`)
   }
 
@@ -364,10 +369,11 @@ export function startConnection(ctx: Context, config: Config, policy: ResolvedRe
     ready,
     instructions: () => serverInstructions,
     resources: {
-      async request(request, exec): Promise<JsonValue> {
+      generation: () => establishedGenerations,
+      async request(request, { signal }): Promise<JsonValue> {
         const generation = client
         if (!generation || connectedAt === undefined) throw new Error(`${label}: server is disconnected`)
-        const options = { signal: exec.signal, timeout: config.toolCallTimeoutMs }
+        const options = { signal, timeout: config.toolCallTimeoutMs }
         switch (request.method) {
           case 'resources/list':
             return await generation.listResources(

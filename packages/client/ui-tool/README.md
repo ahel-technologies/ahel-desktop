@@ -45,6 +45,10 @@ ctx.slots.inject('tool.call.toolview', () =>
 
 The owner payload is `ToolCallOwnerProps`: `callId`, `toolName`, the `phase` discriminant and its stage-specific `block`, optional `cwd` and `home`, the session-authorized `loadImage` loader (for a view whose result carries durable images), and plain `openFile`/`inspect` callbacks. A PTC dispatch block retains its event's `parentCallId`; a root Session call has no such field, so descendants route through the same keyed dispatch — a registered view such as `read_image` renders its card there, and unregistered descendants keep the generic flattened form. Path summaries relativize to the Session cwd first, then replace a leftover POSIX Host home with `~`; `filePath` and Host open keep the authored filesystem path. The registration receives the normal Session slot runtime share but no React node or Runtime service.
 
+### MCP Apps card slot
+
+A settled, successful call whose persisted result metadata carries an `mcpApp` record also renders the single `tool.call.app` slot directly below the call's own row. The owner payload is `ToolAppOwnerProps`: `callId`, `toolName`, and the settled `block`. The occupant validates the record; with no occupant the row renders alone. [`@deepseek-ai/dsh-client-ui-mcp-app`](../ui-mcp-app/README.md) fills it.
+
 ### Built-in views
 
 Every registered view receives the explicit `preparing`, `start`, and `result` props declared in [the Tool slot types](src/client/contract/slots.ts). All blocks expose `name` and a lazy `args` reader; legacy `argsRaw` and result `call` fields remain available. The row model selects the title and combines any generic tool-name prefix with the available argument summary independently of lifecycle state. Tool-owned titles omit the English name. Write/edit and Bash share their component across stages. Custom renderers may retain separate preparation branches; argument-dependent components accept `StartedToolCallViewProps`.

@@ -1,0 +1,33 @@
+{
+  "extends": "../../../tsconfig.base.client.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "tsBuildInfoFile": "lib/tsconfig.client.tsbuildinfo"
+  },
+  "files": [
+    "src/css-modules.d.ts",
+    "src/client/McpAppCard.tsx",
+    "src/client/bridge.ts",
+    "src/client/contract.ts",
+    "src/client/document.ts",
+    "src/client/index.ts",
+    "src/client/locales.ts",
+    "src/client/record.ts",
+    "src/client/register.ts",
+    "src/types.ts"
+  ],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../../vendor/schemastery" },
+    { "path": "../../api/remotes/tsconfig.client.json" },
+    { "path": "../../typert/protocol" },
+    { "path": "../../util/values" },
+    { "path": "../locale/tsconfig.client.json" },
+    { "path": "../ui-primitives" },
+    { "path": "../ui-renderer" },
+    { "path": "../ui-slots" },
+    { "path": "../ui-theme/tsconfig.client.json" },
+    { "path": "../ui-tool" }
+  ]
+}

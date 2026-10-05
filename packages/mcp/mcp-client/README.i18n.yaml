@@ -26,6 +26,9 @@
 /deepseek-ai-dsh-mcp-client/use-this-package/calling-tools-and-reading-results:
   en: cad16c6102b0e316
   zh: 03841eea6ead54cd
+/deepseek-ai-dsh-mcp-client/use-this-package/mcp-apps-cards:
+  en: 852c299f415b90b5
+  zh: e08e799185c8c008
 /deepseek-ai-dsh-mcp-client/use-this-package/startup-updates-and-reconnection:
   en: d7b393106cf6b8fc
   zh: a95bdc34e914b0da
@@ -36,8 +39,8 @@
   en: 4e213d68082b07f0
   zh: 7617949ba46a3b63
 /deepseek-ai-dsh-mcp-client/understand-the-implementation/source-map:
-  en: f134d7502d573290
-  zh: 5dd8ad502f8db776
+  en: 61eb03d8dbf2b6c8
+  zh: a9c4df53324133b6
 /deepseek-ai-dsh-mcp-client/understand-the-implementation/lifecycle-and-sync:
   en: ae9029b48b2a2e4e
   zh: 048f08361b799667
