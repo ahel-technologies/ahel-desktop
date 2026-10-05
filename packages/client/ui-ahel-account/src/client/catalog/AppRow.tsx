@@ -5,10 +5,14 @@
  */
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import type { CatalogCapability, CatalogFactPart, CatalogInstalled, CatalogRow } from '@ahel/dsh-ahel-account/types'
+import type {
+  CatalogCapability, CatalogFactPart, CatalogInstallResult, CatalogInstalled, CatalogRow,
+} from '@ahel/dsh-ahel-account/types'
 import type { AhelAccountKey } from '../locales.ts'
 import type { CatalogFaceProps, OpenRow } from './contract.ts'
 import { AppTile } from './AppTile.tsx'
+import { ConnectSheet, targetOf, useConnectFace } from './ConnectSheet.tsx'
+import type { ConnectTarget } from './ConnectSheet.tsx'
 import css from './Catalog.module.css'
 
 /** What the state button does when pressed. */
@@ -97,6 +101,45 @@ export function setupUrl(origin: string, capability: CatalogCapability): string 
 }
 
 /**
+ * The Connect sheet's target for a row's setup press.
+ * @param row - listing row.
+ * @param origin - the ahel.ai origin the row came from.
+ * @param capability - the installed capability, when the installs read has it.
+ * @param pending - what an install that answered needs_setup gave, otherwise null.
+ * @returns the target.
+ */
+export function setupTarget(
+  row: CatalogRow, origin: string, capability: CatalogCapability | undefined, pending: PendingSetup | null,
+): ConnectTarget {
+  if (capability !== undefined) return targetOf(capability, setupUrl(origin, capability))
+  return {
+    app: row.id, name: row.name, key: pending?.key ?? null, signInUrl: pending?.signInUrl ?? null,
+    fallbackUrl: pending?.url ?? new URL('/app/vault', origin).href,
+  }
+}
+
+/** What an install that answered needs_setup left for the setup press. */
+export interface PendingSetup {
+  /** The ahel.ai page that finishes the setup in the browser. */
+  readonly url: string
+  readonly key: string | null
+  readonly signInUrl: string | null
+}
+
+/**
+ * What an install's needs_setup answer leaves for the setup press.
+ * @param result - the install answer.
+ * @param origin - the ahel.ai origin the row came from.
+ * @returns the pending setup.
+ */
+export function pendingOf(result: CatalogInstallResult, origin: string): PendingSetup {
+  return {
+    url: result.signInUrl ?? result.connectUrl ?? new URL('/app/vault', origin).href,
+    key: result.key, signInUrl: result.signInUrl ?? null,
+  }
+}
+
+/**
  * Read a Remote failure's code and message from a rejection.
  * @param error - the rejection value.
  * @returns its code, if any, and message.
@@ -181,7 +224,9 @@ export function AppRow(props: AppRowProps) {
   const { install, setEnabled, signIn, openLink, t } = props
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<{ text: string; error: boolean } | null>(null)
-  const [pendingSetup, setPendingSetup] = useState<string | null>(null)
+  const [pendingSetup, setPendingSetup] = useState<PendingSetup | null>(null)
+  const [connecting, setConnecting] = useState<ConnectTarget | null>(null)
+  const connectFace = useConnectFace()
   const origin = new URL(row.href).origin
   const listed = rowAction(row, installed, signedIn)
   // An install that answered needs_setup stays "Needs setup" until the installs read says otherwise.
@@ -189,21 +234,23 @@ export function AppRow(props: AppRowProps) {
     ? { key: 'stateNeedsSetup', kind: 'setup', look: 'setup' }
     : listed
 
+  // Setup opens the in-app Connect sheet; outside a catalog panel it falls back to ahel.ai.
+  const setup = (target: ConnectTarget): void => {
+    if (connectFace !== null) setConnecting(target)
+    else openLink(target.fallbackUrl)
+  }
   const run = async (): Promise<void> => {
     if (action === null || action.kind === 'none') return
     if (action.kind === 'signIn') { await signIn(); return }
-    if (action.kind === 'setup') {
-      openLink(action.capability !== undefined ? setupUrl(origin, action.capability) : pendingSetup ?? new URL('/app/vault', origin).href)
-      return
-    }
+    if (action.kind === 'setup') { setup(setupTarget(row, origin, action.capability, pendingSetup)); return }
     if (action.kind === 'enable' && action.capability !== undefined) { await setEnabled(action.capability.key, true); return }
     const result = await install(row.id)
     if (result.state === 'on') {
       setNote({ text: result.try === null ? t('stateAdded') : t('addedTry', { prompt: result.try }), error: false })
     } else if (result.state === 'needs_setup') {
-      const url = result.signInUrl ?? result.connectUrl ?? new URL('/app/vault', origin).href
-      setPendingSetup(url)
-      openLink(url)
+      const pending = pendingOf(result, origin)
+      setPendingSetup(pending)
+      setup(setupTarget(row, origin, undefined, pending))
     }
   }
   const press = (): void => {
@@ -239,6 +286,10 @@ export function AppRow(props: AppRowProps) {
       </div>
       {note !== null && <p className={note.error ? `${css.rowNote} ${css.rowNoteError}` : css.rowNote} role="status">{note.text}</p>}
       {children}
+      {connecting !== null && connectFace !== null && (
+        <ConnectSheet key={connecting.app} target={connecting} installed={installed} onClose={() => { setConnecting(null) }}
+          {...connectFace} t={t} />
+      )}
     </li>
   )
 }

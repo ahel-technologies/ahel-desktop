@@ -5,9 +5,11 @@ import {
 } from '@ahel/dsh-client-ui-primitives'
 import type { CatalogBrowseQuery, CatalogGroup, CatalogInstalled, CatalogRow } from '@ahel/dsh-ahel-account/types'
 import type { CatalogFaceProps } from './contract.ts'
-import { AppRow, Check, FactLine, failureOf, LOOK_CLASS, rowAction, setupUrl } from './AppRow.tsx'
-import type { RowAction } from './AppRow.tsx'
+import { AppRow, Check, FactLine, failureOf, LOOK_CLASS, pendingOf, rowAction, setupTarget } from './AppRow.tsx'
+import type { PendingSetup, RowAction } from './AppRow.tsx'
 import { AppTile } from './AppTile.tsx'
+import { ConnectSheet, useConnectFace } from './ConnectSheet.tsx'
+import type { ConnectTarget } from './ConnectSheet.tsx'
 import catalogCss from './Catalog.module.css'
 import css from './DetailDrawer.module.css'
 
@@ -46,7 +48,9 @@ export function DetailDrawer(props: DetailDrawerProps) {
   const origin = new URL(row.href).origin
   const [busy, setBusy] = useState(false)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
-  const [pendingSetup, setPendingSetup] = useState<string | null>(null)
+  const [pendingSetup, setPendingSetup] = useState<PendingSetup | null>(null)
+  const [connecting, setConnecting] = useState<ConnectTarget | null>(null)
+  const connectFace = useConnectFace()
   const [copied, setCopied] = useState(false)
   const [nest, setNest] = useState<readonly CatalogRow[]>(skills?.rows ?? [])
   const [held, setHeld] = useState<readonly CatalogRow[]>([])
@@ -60,21 +64,23 @@ export function DetailDrawer(props: DetailDrawerProps) {
     ? { key: 'stateNeedsSetup', kind: 'setup', look: 'setup' }
     : listed
 
+  // Setup opens the in-app Connect sheet; outside a catalog panel it falls back to ahel.ai.
+  const setup = (target: ConnectTarget): void => {
+    if (connectFace !== null) setConnecting(target)
+    else openLink(target.fallbackUrl)
+  }
   const run = async (): Promise<void> => {
     if (action === null || action.kind === 'none') return
     if (action.kind === 'signIn') { await signIn(); return }
-    if (action.kind === 'setup') {
-      openLink(action.capability !== undefined ? setupUrl(origin, action.capability) : pendingSetup ?? new URL('/app/vault', origin).href)
-      return
-    }
+    if (action.kind === 'setup') { setup(setupTarget(row, origin, action.capability, pendingSetup)); return }
     if (action.kind === 'enable' && action.capability !== undefined) { await setEnabled(action.capability.key, true); return }
     const result = await install(row.id)
     if (result.state === 'on') {
       setOutcome({ kind: 'added', prompt: result.try })
     } else if (result.state === 'needs_setup') {
-      const url = result.signInUrl ?? result.connectUrl ?? new URL('/app/vault', origin).href
-      setPendingSetup(url)
-      openLink(url)
+      const pending = pendingOf(result, origin)
+      setPendingSetup(pending)
+      setup(setupTarget(row, origin, undefined, pending))
     }
   }
   const press = (): void => {
@@ -178,6 +184,10 @@ export function DetailDrawer(props: DetailDrawerProps) {
           </section>
         )}
       </div>
+      {connecting !== null && connectFace !== null && (
+        <ConnectSheet key={connecting.app} target={connecting} installed={installed} onClose={() => { setConnecting(null) }}
+          {...connectFace} t={t} />
+      )}
     </Modal>
   )
 }

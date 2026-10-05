@@ -2,7 +2,7 @@
 import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@ahel/dsh-client-ui-slots'
 import type {
   AhelAccountView, CatalogBrowsePage, CatalogBrowseQuery, CatalogInstalled, CatalogInstallResult, CatalogPart, CatalogRow,
-  CatalogSwitchResult, KnowledgeProduct,
+  CatalogSwitchResult, KeyConnectAnswer, KeyConnectSaved, KnowledgeProduct, VaultDisconnected, VaultSignInList,
 } from '@ahel/dsh-ahel-account/types'
 import type {} from '@ahel/dsh-client-ui-layout/client'
 import type {} from '@ahel/dsh-client-ui-sidebar/client'
@@ -32,6 +32,27 @@ export interface DiscoverInjected {
   setEnabled(key: string, on: boolean): Promise<CatalogSwitchResult>
   /** Re-read what the signed-in person has installed. */
   refreshInstalled(): Promise<void>
+  /**
+   * One app's Connect state from the workspace vault. Rejects with an `ahel-team/*` failure;
+   * `ahel-team/outdated` means ahel.ai has no desktop vault route yet.
+   * @param app - a catalog item id, stack key or `app:<service>`.
+   */
+  connectPanel(app: string): Promise<KeyConnectAnswer>
+  /**
+   * Seal a key app's values in the vault, install and switch it on, then re-read `installed`.
+   * The values go to the Host only and are never kept.
+   * @param app - `KeyConnectView.app`.
+   * @param values - field id to typed value.
+   */
+  connect(app: string, values: Record<string, string>): Promise<KeyConnectSaved>
+  /**
+   * Forget an app's sign-in or saved key, then re-read `installed`. Rejects with `ahel-team/refused`
+   * carrying `webUrl` when the app has several accounts.
+   * @param app - the name `connectPanel` takes.
+   */
+  disconnect(app: string): Promise<VaultDisconnected>
+  /** The workspace's sign-ins and whether this seat may connect and disconnect. */
+  signIns(): Promise<VaultSignInList>
   /** Start the ahel.ai sign-in. */
   signIn(): Promise<void>
   /** Open an absolute https URL outside the app. */

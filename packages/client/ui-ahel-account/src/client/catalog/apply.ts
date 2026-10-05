@@ -1,6 +1,7 @@
 /**
  * Catalog panel assembly: one shared `installed` observable read from the
- * Host's `ahelCatalog` namespace, the face the catalog panels receive, the
+ * Host's `ahelCatalog` namespace, the face the catalog panels receive (with
+ * the vault's Connect calls over `ahelTeam`), the
  * `ahel-discover` and `ahel-apps` main panels, and their sidebar rows.
  */
 import type { Context } from '@ahel/cordis'
@@ -15,6 +16,7 @@ import type {} from '@ahel/dsh-client-ui-renderer/client'
 import type { AhelAccountInjected } from '../contract.ts'
 import { NS } from '../locales.ts'
 import type { DiscoverInjected } from './contract.ts'
+import { withConnect } from './ConnectSheet.tsx'
 import { DiscoverPage } from './DiscoverPage.tsx'
 import { AppsPanelIcon, DiscoverPanelIcon } from './PanelIcons.tsx'
 import { YourAppsPage } from './YourAppsPage.tsx'
@@ -24,6 +26,12 @@ const DISCOVER_ID = 'ahel-discover' as MainPanelId
 
 /** Main panel and sidebar row id of the Your apps page. */
 const APPS_ID = 'ahel-apps' as MainPanelId
+
+/** Discover with the Connect sheet's face in context, so its rows and detail sheet open the vault form. */
+const DiscoverWithConnect = withConnect(DiscoverPage)
+
+/** Your apps with the same context. */
+const AppsWithConnect = withConnect(YourAppsPage)
 
 /** Window focus re-reads at most this often. */
 const FOCUS_REFRESH_MS = 5_000
@@ -127,6 +135,28 @@ export function registerCatalog(ctx: Context, account: AhelAccountInjected): Dis
       return result.value
     },
     refreshInstalled,
+    connectPanel: async (app) => {
+      const result = await ctx.remote.ahelTeam.connectPanel(app)
+      if (!result.ok) throw result.error
+      return result.value
+    },
+    connect: async (app, values) => {
+      const result = await ctx.remote.ahelTeam.connect(app, values)
+      if (!result.ok) throw result.error
+      await refreshInstalled().catch(() => undefined)
+      return result.value
+    },
+    disconnect: async (app) => {
+      const result = await ctx.remote.ahelTeam.disconnect(app)
+      if (!result.ok) throw result.error
+      await refreshInstalled().catch(() => undefined)
+      return result.value
+    },
+    signIns: async () => {
+      const result = await ctx.remote.ahelTeam.signIns()
+      if (!result.ok) throw result.error
+      return result.value
+    },
     signIn: () => account.signIn(),
     openLink: (url) => { account.openLink(url) },
     openPanel: (id) => { ctx.layout.selectPanel(id as MainPanelId) },
@@ -135,13 +165,13 @@ export function registerCatalog(ctx: Context, account: AhelAccountInjected): Dis
 
   ctx.slots.inject('main', () => ctx.slots.register({
     name: 'main', key: DISCOVER_ID, locale: NS, inject: () => face,
-  }, DiscoverPage))
+  }, DiscoverWithConnect))
   ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
     name: 'sidebar.panellist', id: DISCOVER_ID, order: -20, locale: NS, label: () => t('discover'),
   }, DiscoverPanelIcon))
   ctx.slots.inject('main', () => ctx.slots.register({
     name: 'main', key: APPS_ID, locale: NS, inject: () => face,
-  }, YourAppsPage))
+  }, AppsWithConnect))
   ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
     name: 'sidebar.panellist', id: APPS_ID, order: -10, locale: NS, label: () => t('appsTitle'),
   }, AppsPanelIcon))
