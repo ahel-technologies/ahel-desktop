@@ -153,3 +153,14 @@ export interface SettingsLauncherOwnerProps {
   /** @param id - registered onboarding editor to open explicitly. */
   openOnboarding: (id: string) => void
 }
+
+declare module '@ahel/cordis' {
+  interface Events {
+    /**
+     * Open the settings panel on one registered section, from a surface outside settings.
+     * @mode emit
+     * @param id - registered `settings.section` entry id, such as `models`.
+     */
+    'settings/open-section'(id: string): void
+  }
+}

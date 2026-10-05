@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { PendingSubmission } from '@ahel/dsh-api-session-controller/client'
 import type { MessageImageSource } from '@ahel/dsh-client-ui-conversation/client'
 import { fileExtension, FileTypeIcon, fileSizeText, JsonBlock, projectUserText, StateDot, TextShimmer } from '@ahel/dsh-client-ui-primitives'
+import type { PropsRenderSlots } from '@ahel/dsh-client-ui-slots'
 import type { ChatNodeOwnerProps, ChatNodeViewProps, ChatViewSlotProps } from '../contract/slots.ts'
 import type { ModelRetryNode, TurnErrorNode, UserMessageNode } from '../contract/snapshot.ts'
 import { CompactionItem } from './CompactionItem.tsx'
@@ -365,9 +366,13 @@ export const RetryNodeView = memo(function RetryNodeView({ node, t }: ChatNodeVi
   return <ModelRetryItem node={data.current} active={data.current.retryState === 'scheduled'} t={t} />
 })
 
-/** Terminal turn-error keyed Chat renderer. */
-export const TurnErrorNodeView = memo(function TurnErrorNodeView({ node, t }: ChatNodeViewProps<'turn-error'>) {
-  return <TurnErrorItem node={node.data} t={t} />
+type TurnErrorNodeViewProps = ChatNodeViewProps<'turn-error'> & PropsRenderSlots<'conversation.chat.turnError'>
+
+/** Terminal turn-error keyed Chat renderer; a claiming `conversation.chat.turnError` entry replaces the generic row. */
+export const TurnErrorNodeView = memo(function TurnErrorNodeView({ node, t, renderSlotChain }: TurnErrorNodeViewProps) {
+  return renderSlotChain('conversation.chat.turnError', { code: node.data.code, message: node.data.message }, {
+    fallback: <TurnErrorItem node={node.data} t={t} />,
+  })
 })
 
 /** Max-tokens turn-end notice keyed Chat renderer. */

@@ -13,6 +13,8 @@
     { "path": "../../typert/protocol" },
     { "path": "../../credentials/ahel-account" },
     { "path": "../locale/tsconfig.client.json" },
+    { "path": "../ui-chat/tsconfig.client.json" },
+    { "path": "../ui-conversation/tsconfig.client.json" },
     { "path": "../ui-primitives" },
     { "path": "../ui-renderer" },
     { "path": "../ui-sidebar" },

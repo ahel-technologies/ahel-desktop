@@ -39,6 +39,7 @@ import {
 } from '@ahel/dsh-client-ui-primitives'
 import type { PropsLocale } from '@ahel/dsh-client-ui-slots'
 import type { ModelSelectInjected } from './slots.ts'
+import { connectingProvider } from './directory.ts'
 import css from './ModelSelect.module.css'
 
 /** Which pane the dropdown shows: the two-row root or one drilled-in list. */
@@ -411,24 +412,30 @@ export function ModelSelect(
   }
 
   const waiting = state.current === null && state.status === 'loading'
+  // A provider whose catalog read failed while none offers a model is still connecting.
+  const connecting = connectingProvider(state) !== undefined
   // Nothing to pick and nothing selected: no provider offers a model yet.
   const noModels = state.current === null && state.status === 'ready' && choices.length === 0
   const modelLabel = waiting
     ? t('trigger.loading')
-    : noModels
-      ? t('trigger.empty')
-      : (currentChoice?.model.name
-        ?? (state.current === null ? t('trigger.fallback') : `${state.current.provider}/${state.current.model}`))
+    : connecting
+      ? t('trigger.connecting')
+      : noModels
+        ? t('trigger.empty')
+        : (currentChoice?.model.name
+          ?? (state.current === null ? t('trigger.fallback') : `${state.current.provider}/${state.current.model}`))
   const triggerLabel = effortLabel === undefined ? modelLabel : `${modelLabel} · ${effortLabel}`
   const triggerAria = waiting
     ? t('trigger.loading')
-    : noModels
-      ? t('trigger.empty')
-      : state.current === null
-        ? t('trigger.selectAria')
-        : effortLabel === undefined
-          ? t('trigger.aria', { model: modelLabel })
-          : t('trigger.ariaEffort', { model: modelLabel, effort: effortLabel })
+    : connecting
+      ? t('trigger.connecting')
+      : noModels
+        ? t('trigger.empty')
+        : state.current === null
+          ? t('trigger.selectAria')
+          : effortLabel === undefined
+            ? t('trigger.aria', { model: modelLabel })
+            : t('trigger.ariaEffort', { model: modelLabel, effort: effortLabel })
   itemRefs.current = []
   let itemIndex = 0
   let modelIndex = 0

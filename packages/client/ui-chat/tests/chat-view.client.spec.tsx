@@ -359,7 +359,10 @@ function makeHarness(
       case 'model-retry':
         return <RetryNodeView {...nodeProps} node={nodeOwner.node} />
       case 'turn-error':
-        return <TurnErrorNodeView {...nodeProps} node={nodeOwner.node} />
+        return (
+          <TurnErrorNodeView {...nodeProps} node={nodeOwner.node}
+            renderSlotChain={(_key, _owner, options) => options?.fallback ?? null} />
+        )
       case 'turn-max-tokens':
         return <TurnMaxTokensNodeView {...nodeProps} node={nodeOwner.node} />
       case 'turn-process':

@@ -85,6 +85,14 @@ export interface QuotaNoticeOwnerProps {
   keepOpen: () => () => void
 }
 
+/** Owner currency of one terminal turn failure offered to the in-place row chain. */
+export interface TurnErrorOwnerProps {
+  /** Stable failure code retained in the Session log, when the failure has one. */
+  code: string | undefined
+  /** Failure text retained for display; empty for credential failures. */
+  message: string
+}
+
 /** Quota notice host share: the notice on display and its dismissal. */
 export interface QuotaNoticeInjected {
   hooks: {
@@ -327,5 +335,11 @@ declare module '@ahel/dsh-client-ui-slots' {
      * survives switching or closing the panel that reported it.
      */
     'shell.quota-notice': { kind: 'chain'; scope: 'root'; owner: QuotaNoticeOwnerProps }
+    /**
+     * In-place row for one terminal turn failure. The first entry whose selector
+     * claims the failure code replaces the generic row, so a provider package can
+     * show its own copy and actions; the all-decline case renders the generic row.
+     */
+    'conversation.chat.turnError': { kind: 'chain'; scope: 'session'; owner: TurnErrorOwnerProps }
   }
 }

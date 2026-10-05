@@ -50,6 +50,8 @@
     "@ahel/dsh-ahel-account": "workspace:*",
     "@ahel/dsh-api-remotes": "workspace:*",
     "@ahel/dsh-client-locale": "workspace:*",
+    "@ahel/dsh-client-ui-chat": "workspace:*",
+    "@ahel/dsh-client-ui-conversation": "workspace:*",
     "@ahel/dsh-client-ui-primitives": "workspace:*",
     "@ahel/dsh-client-ui-renderer": "workspace:*",
     "@ahel/dsh-client-ui-settings-models": "workspace:*",

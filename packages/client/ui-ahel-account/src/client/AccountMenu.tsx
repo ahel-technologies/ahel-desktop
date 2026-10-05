@@ -58,6 +58,13 @@ export function AccountMenu({ wide, signIn, signOut, selectWorkspace, openLink, 
 
   return (
     <div ref={root} className={css.entry}>
+      {view?.reachable === false && (
+        // Clears itself: the Host re-reads ahel.ai every few seconds and the view follows.
+        <div className={css.offline} role="status" title={t('offline')}>
+          <span className={css.offlineDot} aria-hidden="true" />
+          {wide && <span className={css.offlineText}>{t('offline')}</span>}
+        </div>
+      )}
       <button type="button" className={`${css.trigger} ${wide ? '' : css.rail}`} aria-haspopup="menu" aria-expanded={open}
         title={label} onClick={() => { setOpen(value => !value) }}>
         {signedIn

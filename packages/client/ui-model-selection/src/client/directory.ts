@@ -196,6 +196,17 @@ export class ModelDirectory {
   }
 }
 
+/**
+ * The provider still connecting while no provider offers a model: its catalog
+ * read failed, so the composer waits for it instead of asking for a model.
+ * @param state - one Session's directory snapshot.
+ * @returns the connecting provider's name, or undefined.
+ */
+export function connectingProvider(state: ModelDirectoryState): string | undefined {
+  if (state.status !== 'ready' || state.groups.some(group => group.models.length > 0)) return undefined
+  return state.failures[0]?.name
+}
+
 function modelSelectionProjection(value: unknown): ModelSelectionProjection | undefined {
   return value === undefined ? undefined : value as ModelSelectionProjection
 }

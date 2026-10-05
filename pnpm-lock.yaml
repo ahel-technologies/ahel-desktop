@@ -2925,6 +2925,12 @@ importers:
       '@ahel/dsh-client-locale':
         specifier: workspace:*
         version: link:../locale
+      '@ahel/dsh-client-ui-chat':
+        specifier: workspace:*
+        version: link:../ui-chat
+      '@ahel/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
       '@ahel/dsh-client-ui-primitives':
         specifier: workspace:*
         version: link:../ui-primitives

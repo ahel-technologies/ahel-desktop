@@ -19,7 +19,7 @@ import type { SessionBinding } from '@ahel/dsh-api-session-controller/client'
 import type { SessionId } from '@ahel/dsh-session/types'
 import { WeakMapWithValues } from '@ahel/dsh-util-values'
 import { ModelCatalogDirectory } from './catalog.ts'
-import { ModelDirectory } from './directory.ts'
+import { connectingProvider, ModelDirectory } from './directory.ts'
 
 declare module '@ahel/cordis' {
   interface Context {
@@ -86,6 +86,34 @@ export class ModelDirectoryResolver extends Service {
       directory.dispose()
       live.directories.delete(binding)
     }, 'ui-model-selection: session directory')
+    const conversation = this.ctx.get('conversation')
+    const locale = this.ctx.get('locale')
+    if (conversation !== undefined && locale !== undefined) {
+      // While a provider is still connecting and none offers a model, the composer waits with its reason instead of failing on send.
+      const t = locale.bind('model')
+      actx.effect(() => {
+        let raised: string | undefined
+        const sync = (): void => {
+          const name = connectingProvider(directory.store.getSnapshot())
+          const reason = name === undefined ? undefined : t('composer.connecting', { name })
+          if (reason === raised) return
+          if (reason === undefined && conversation.blocks.storeFor(sessionId).getSnapshot()?.reason !== raised) {
+            raised = undefined
+            return
+          }
+          raised = reason
+          conversation.blocks.set(sessionId, reason === undefined ? undefined : { reason })
+        }
+        const stop = directory.store.subscribe(sync)
+        sync()
+        return () => {
+          stop()
+          if (raised !== undefined && conversation.blocks.storeFor(sessionId).getSnapshot()?.reason === raised) {
+            conversation.blocks.set(sessionId, undefined)
+          }
+        }
+      }, 'ui-model-selection: connecting composer block')
+    }
     return directory
   }
 }
