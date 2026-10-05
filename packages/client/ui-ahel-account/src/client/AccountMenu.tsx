@@ -1,4 +1,4 @@
-/** Sidebar footer entry for the ahel.ai account: identity, workspace choice, ahel.ai pages, sign-in and sign-out. */
+/** Sidebar footer entry for the ahel.ai account: identity, balance, workspace choice, ahel.ai pages, sign-in and sign-out. */
 import { useEffect, useRef, useState } from 'react'
 import { AhelTile } from '@ahel/dsh-client-ui-primitives'
 import type { AccountMenuProps } from './contract.ts'
@@ -29,12 +29,27 @@ function pageUrl(url: string, workspace: string | null): string {
 }
 
 /**
+ * Format USD cents for the balance line: `$12.40`, `$3`, `-$0.50`.
+ * @param cents - amount in cents.
+ * @returns the dollar amount.
+ */
+function formatCents(cents: number): string {
+  const whole = cents % 100 === 0
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2,
+  }).format(cents / 100)
+}
+
+/**
  * Render the account entry above Settings and its menu.
  * @param props - composed slot props.
  * @returns the entry.
  */
-export function AccountMenu({ wide, signIn, signOut, selectWorkspace, openLink, openPanel, useAccount, t }: AccountMenuProps) {
+export function AccountMenu({
+  wide, signIn, signOut, selectWorkspace, openLink, openPanel, openBilling, useAccount, useSummary, t,
+}: AccountMenuProps) {
   const view = useAccount(value => value)
+  const team = useSummary(value => value)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -52,6 +67,7 @@ export function AccountMenu({ wide, signIn, signOut, selectWorkspace, openLink, 
   const signedIn = view?.status === 'signed-in'
   const workspace = view?.workspace ?? null
   const label = profile?.name ?? profile?.email ?? (signedIn ? t('account') : t('signIn'))
+  const credits = signedIn ? team.summary?.credits ?? null : null
   const waiting = view?.attempt?.phase === 'waiting-browser' || view?.attempt?.phase === 'exchanging'
   const run = (action: () => Promise<void>, close = true): void => {
     setBusy(true)
@@ -80,6 +96,18 @@ export function AccountMenu({ wide, signIn, signOut, selectWorkspace, openLink, 
             <div className={css.name}>{signedIn ? (profile?.name ?? profile?.email ?? t('account')) : t('signedOut')}</div>
             {profile !== null && profile.name !== null && <div className={css.caption}>{profile.email}</div>}
             {view?.attempt?.phase === 'failed' && <div className={css.caption}>{t('failed')}</div>}
+            {signedIn && team.outdated && <div className={css.caption}>{t('updateAhel')}</div>}
+            {credits?.visible === true && (
+              <div className={css.balance}>
+                <div className={css.balanceText}>
+                  {t('balanceRow', { balance: formatCents(credits.balanceCents) })} · {t('today', { spent: formatCents(credits.spentTodayCents) })}
+                </div>
+                {credits.low && <div className={css.low}>{t('balanceLow')}</div>}
+                {credits.canTopUp
+                  ? <button type="button" role="menuitem" className={css.topUp} onClick={() => { openBilling(); setOpen(false) }}>{t('topUp')}</button>
+                  : <div className={css.caption}>{t('askOwnerTopUp')}</div>}
+              </div>
+            )}
           </div>
           {profile !== null && profile.workspaces.length > 0 && (
             <div className={css.section} role="group" aria-label={t('workspace')}>

@@ -7,6 +7,7 @@ import type {} from '@ahel/dsh-client-ui-conversation/client'
 import type {} from '@ahel/dsh-client-ui-chat/client'
 import type {} from './locales.ts'
 import type { CatalogPanelId } from './catalog/contract.ts'
+import type { TeamSummaryState } from './team/contract.ts'
 
 /** Account operations and the live view; tokens never reach the browser. */
 export interface AhelAccountInjected {
@@ -22,9 +23,13 @@ export interface AhelAccountInjected {
   openModels(): void
   /** Select one of this package's in-app panels. @param id - Discover or Your apps. */
   openPanel(id: CatalogPanelId): void
+  /** Open the workspace's ahel.ai billing page in the browser; does nothing until the summary shows credits. */
+  openBilling(): void
   hooks: {
     /** The latest account view, or null before the first frame. */
     account: HostObservable<AhelAccountView | null>
+    /** The shared team summary poll: balance, approvals and unread handoffs. */
+    summary: HostObservable<TeamSummaryState>
   }
 }
 

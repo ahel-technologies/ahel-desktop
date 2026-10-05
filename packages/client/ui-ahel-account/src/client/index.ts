@@ -4,8 +4,8 @@
  * the sidebar footer (account menu, offline banner), the Settings > Models
  * footer (the Ahel row beside bring-your-own-key providers), the starter
  * prompts below the blank-session composer, the rows for Ahel model
- * refusals in the transcript, and the Discover panel over the Host's
- * `ahelCatalog` namespace.
+ * refusals in the transcript, the Discover panel over the Host's
+ * `ahelCatalog` namespace, and the balance line over `ahelTeam`'s summary.
  */
 import type { Context } from '@ahel/cordis'
 import type { HostObservable } from '@ahel/dsh-client-ui-slots'
@@ -21,6 +21,7 @@ import { AhelQuotaNotice, AhelTurnError, claimAhelFailure } from './AhelNotices.
 import { ModelsRow } from './ModelsRow.tsx'
 import { StarterPrompts } from './StarterPrompts.tsx'
 import { registerCatalog } from './catalog/apply.ts'
+import { registerTeamSummary } from './team/summary.ts'
 import { en, NS, zh } from './locales.ts'
 
 export type {
@@ -28,6 +29,7 @@ export type {
 } from './contract.ts'
 export type { AhelAccountKey } from './locales.ts'
 export type { CatalogPanelId, DiscoverInjected, DiscoverPageProps } from './catalog/contract.ts'
+export type { TeamSummary, TeamSummaryState } from './team/contract.ts'
 
 /** Required services: the Remote mount, slots, dictionaries and the main-panel layout. */
 export const inject = ['remote', 'slots', 'locale', 'layout']
@@ -46,6 +48,24 @@ function desktopAccount(): DesktopAccount | undefined {
 /** Open an absolute https URL outside the app; the desktop shell hands it to the system browser. */
 function openLink(url: string): void {
   window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+/**
+ * Carry the workspace to ahel.ai's billing page.
+ * @param topUpUrl - `DesktopCredits.topUpUrl` from ahel.ai.
+ * @param workspace - the workspace the balance belongs to.
+ * @returns the URL to open, or null when ahel.ai sent something that is not a web page.
+ */
+function billingUrl(topUpUrl: string, workspace: string): string | null {
+  let url: URL
+  try {
+    url = new URL(topUpUrl)
+  } catch (_invalid) {
+    return null
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return null
+  url.searchParams.set('workspace', workspace)
+  return url.href
 }
 
 /**
@@ -76,6 +96,7 @@ function register(ctx: Context): void {
   void (async () => {
     for await (const frame of stream) { publish(frame.value); frame.accept() }
   })().catch(() => undefined)
+  const team = registerTeamSummary(ctx, account)
 
   const injected: AhelAccountInjected = {
     signIn: async () => {
@@ -101,7 +122,13 @@ function register(ctx: Context): void {
     openLink,
     openModels: () => { ctx.emit('settings/open-section', 'models') },
     openPanel: (id) => { ctx.layout.selectPanel(id as MainPanelId) },
-    hooks: { account },
+    openBilling: () => {
+      const summary = team.state.getSnapshot().summary
+      if (summary?.credits?.visible !== true) return
+      const url = billingUrl(summary.credits.topUpUrl, view?.workspace ?? summary.workspace.id)
+      if (url !== null) openLink(url)
+    },
+    hooks: { account, summary: team.state },
   }
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'ahel-account', order: 0, locale: NS, inject: () => injected,
@@ -128,7 +155,7 @@ function register(ctx: Context): void {
  */
 export async function apply(ctx: Context): Promise<() => Promise<void>> {
   const disposeRemote = await ctx.remote.$mount(ahelAccountRemote)
-  const ui = ctx.inject(['remote.ahelAccount', 'remote.ahelCatalog', 'slots', 'locale', 'layout'], (inner) => { register(inner) })
+  const ui = ctx.inject(['remote.ahelAccount', 'remote.ahelCatalog', 'remote.ahelTeam', 'slots', 'locale', 'layout'], (inner) => { register(inner) })
   try {
     await ui
   } catch (error) {
