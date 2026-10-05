@@ -61,6 +61,261 @@ interface CredentialInfo {
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.zh.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
+<a id="ctxahelaccount--ahelaccount"></a>
+
+### `ctx.ahelAccount` — `AhelAccount`
+
+Account service; the default export loads it as a plugin.
+
+```ts cordis-catalog
+/**
+ * Read the stored-account presence, its profile and the latest attempt.
+ * @returns a snapshot without tokens.
+ */
+@Remote async state(): Promise<AhelAccountView>
+
+/**
+ * Choose the ahel.ai workspace the MCP server and Ahel models act in, and
+ * save it in settings.
+ * @param id - one of the profile's workspace ids, or null for the account default.
+ * @returns the view after the choice is applied.
+ */
+@Remote async selectWorkspace(id: string | null): Promise<AhelAccountView>
+
+/**
+ * Host-only: the selected workspace id while it is one of the signed-in person's workspaces.
+ * @returns the id, or undefined for the account default.
+ */
+async workspace(): Promise<string | undefined>
+
+/**
+ * Join the running attempt or start a browser sign-in. Resolves once the
+ * authorize URL exists (or the attempt failed), without waiting for the
+ * person to approve; the opener, when set, has been asked to open it.
+ * @returns the view with `attempt.authorizeUrl` for a shell that opens the browser itself.
+ */
+@Remote async signIn(): Promise<AhelAccountView>
+
+/**
+ * Cancel only the named attempt.
+ * @param id - attempt to cancel.
+ * @returns the view after the attempt settled.
+ */
+@Remote async cancelSignIn(id: AhelSignInAttemptId): Promise<AhelAccountView>
+
+/**
+ * Revoke the grant on ahel.ai, then delete the stored credential. A failed
+ * revoke is logged and never keeps the local grant.
+ * @returns the signed-out view.
+ */
+@Remote async signOut(): Promise<AhelAccountView>
+
+/**
+ * Read name, email and workspaces live from ahel.ai.
+ * @returns the profile, or null while signed out.
+ */
+@Remote async profile(): Promise<AhelProfile | null>
+
+/**
+ * Subscribe to complete views, starting with the current one.
+ * @param signal - subscription lifetime; ending it never cancels a sign-in.
+ * @returns views as account state changes.
+ */
+@Remote({ mode: 'stream' }) async *watch(signal: AbortSignal): AsyncIterable<AhelAccountView>
+
+/**
+ * Host-only: a bearer valid for at least `refreshSkewMs`, refreshed and
+ * written back first when needed. A refresh ahel.ai rejects signs the
+ * account out.
+ * @returns the access token, or undefined while signed out.
+ */
+async accessToken(): Promise<string | undefined>
+
+/**
+ * Host-only: after ahel.ai refused the current bearer, refresh it once. A
+ * refresh ahel.ai rejects signs the account out, like `accessToken()`.
+ */
+async revalidate(): Promise<void>
+
+/**
+ * Host-only: set the browser opener used by later sign-ins. Without one,
+ * the authorize URL is logged and returned in the view.
+ * @param opener - the shell's external opener.
+ * @returns a disposer that restores the previous opener.
+ */
+setOpener(opener: ExternalOpener): () => void
+```
+
+Source: [`packages/credentials/ahel-account/src/index.ts`](../../packages/credentials/ahel-account/src/index.ts)
+
+<a id="ctxahelcatalog--ahelcatalog"></a>
+
+### `ctx.ahelCatalog` — `AhelCatalog`
+
+Child service of `AhelAccount`; the Remote namespace `ahelCatalog`.
+
+```ts cordis-catalog
+/**
+ * One page of the Discover listing; works signed out.
+ * @param query - search words, kind, category and page.
+ * @returns the page with every link and mark made absolute on ahel.ai.
+ * @throws RemoteError `ahel-catalog/busy` or `ahel-catalog/unreachable`.
+ */
+@Remote async browse(query: CatalogBrowseQuery): Promise<CatalogBrowsePage>
+
+/**
+ * A further slice of one group's nested skills.
+ * @param query - the query the group was listed under.
+ * @param groupKey - `CatalogGroup.key`.
+ * @param offset - rows of the nest already shown.
+ * @returns the slice and how many rows remain.
+ * @throws RemoteError `ahel-catalog/busy` or `ahel-catalog/unreachable`.
+ */
+@Remote async browsePart(query: CatalogBrowseQuery, groupKey: string, offset: number): Promise<CatalogPart>
+
+/**
+ * The signed-in person's capabilities in the selected workspace.
+ * @returns the rows, or `signedIn: false` with none while signed out.
+ * @throws RemoteError `ahel-catalog/signed-out`, `ahel-catalog/refused` or `ahel-catalog/unreachable`.
+ */
+@Remote async installed(): Promise<CatalogInstalled>
+
+/**
+ * Install one catalog item, or answer how to connect an "app:<service>" row.
+ * Named `add` because the client's Remote namespace service keeps `install` for itself.
+ * @param id - `CatalogRow.id`.
+ * @returns the install outcome; `needs_setup` carries the URL to open in the browser.
+ * @throws RemoteError `ahel-catalog/signed-out`, `ahel-catalog/refused` or `ahel-catalog/unreachable`.
+ */
+@Remote async add(id: string): Promise<CatalogInstallResult>
+
+/**
+ * Turn one installed capability on or off.
+ * @param key - `CatalogCapability.key`.
+ * @param on - the wanted state.
+ * @returns the state ahel.ai stored.
+ * @throws RemoteError `ahel-catalog/signed-out`, `ahel-catalog/refused` or `ahel-catalog/unreachable`.
+ */
+@Remote async setEnabled(key: string, on: boolean): Promise<CatalogSwitchResult>
+
+/**
+ * ahel.ai's four Knowledge products, as its /knowledge page draws them; works signed out.
+ * @returns the products, or null while ahel.ai has no `/api/public/knowledge-products`.
+ * @throws RemoteError `ahel-catalog/busy` or `ahel-catalog/unreachable`.
+ */
+@Remote async knowledgeProducts(): Promise<KnowledgeProduct[] | null>
+```
+
+Source: [`packages/credentials/ahel-account/src/catalog.ts`](../../packages/credentials/ahel-account/src/catalog.ts)
+
+<a id="ctxahelteam--ahelteam"></a>
+
+### `ctx.ahelTeam` — `AhelTeam`
+
+Child service of `AhelAccount`; the Remote namespace `ahelTeam`.
+
+```ts cordis-catalog
+/**
+ * The sidebar and account-menu poll: pending approvals, unread handoffs and the balance.
+ * @returns the summary; a part ahel.ai could not read is null.
+ * @throws RemoteError `ahel-team/*`.
+ */
+@Remote async summary(): Promise<DesktopSummary>
+
+/**
+ * Approve or decline one held call. Nothing runs here: approve opens a one-hour
+ * window in which the requester's AI repeats the exact call.
+ * @param id - `ApprovalRow.id`.
+ * @param decision - the answer.
+ * @param note - an optional note for the requester, up to 500 characters.
+ * @returns the stored decision.
+ * @throws RemoteError `ahel-team/forbidden` for a Member, `ahel-team/refused` when it expired or was answered.
+ */
+@Remote async decideApproval(id: string, decision: 'approved' | 'declined', note: string | null): Promise<ApprovalDecision>
+
+/**
+ * The workspace's managed sign-ins and whether this seat may change them.
+ * @returns status only, never a token.
+ * @throws RemoteError `ahel-team/*`.
+ */
+@Remote async signIns(): Promise<VaultSignInList>
+
+/**
+ * One app's Connect state: the key form for a key app, its sign-in for a sign-in app.
+ * @param app - a catalog item id, stack key, vendor slug or `app:<service>`.
+ * @returns the panel, the sign-in and the app's ahel.ai vault page.
+ * @throws RemoteError `ahel-team/*`.
+ */
+@Remote async connectPanel(app: string): Promise<KeyConnectAnswer>
+
+/**
+ * Seal a key app's values in the workspace vault, install it and switch it on.
+ * The values go to `POST /api/desktop/connect` only and are never logged or put in an error.
+ * @param app - `KeyConnectView.app`.
+ * @param values - `KeyConnectField.id` to the typed value.
+ * @returns the panel after the save.
+ * @throws RemoteError `ahel-team/forbidden` for a Member, `ahel-team/refused` for invalid fields.
+ */
+@Remote async connect(app: string, values: Record<string, string>): Promise<KeyConnectSaved>
+
+/**
+ * Forget an app's sign-in or stored key; the installed row stays.
+ * @param app - the name `connectPanel` took.
+ * @returns whether anything was removed.
+ * @throws RemoteError `ahel-team/refused` with `webUrl` when the app has several accounts.
+ */
+@Remote async disconnect(app: string): Promise<VaultDisconnected>
+
+/**
+ * Handoffs received and sent.
+ * @returns the Inbox.
+ * @throws RemoteError `ahel-team/*`.
+ */
+@Remote async inbox(): Promise<HandoffList>
+
+/**
+ * Read one handoff and mark it read.
+ * @param id - a handoff id from the Inbox.
+ * @returns the handoff with its reader-safe text.
+ * @throws RemoteError `ahel-team/refused` when it is not available to this person.
+ */
+@Remote async openHandoff(id: string): Promise<HandoffRead>
+
+/**
+ * The editable preview of a handoff with the teammate list; stores nothing.
+ * @param draft - title and sections.
+ * @returns the preview with the `requestKey` Share needs.
+ * @throws RemoteError `ahel-team/refused` for invalid text or a plan without handoffs.
+ */
+@Remote async prepareHandoff(draft: HandoffDraft): Promise<HandoffReview>
+
+/**
+ * Deliver a reviewed handoff. Only the dialog's Share button calls this; that press is the person's confirmation.
+ * @param share - the reviewed draft, the chosen teammates and the preview's `requestKey`.
+ * @returns the delivery; a retry with the same `requestKey` answers `repeated: true`.
+ * @throws RemoteError `ahel-team/refused` for an unknown teammate or invalid text.
+ */
+@Remote async shareHandoff(share: HandoffShare): Promise<HandoffSent>
+
+/**
+ * Mark a handoff done; it stays readable.
+ * @param id - a handoff id.
+ * @returns the handoff with `status: 'done'`.
+ * @throws RemoteError `ahel-team/refused` when it is not available to this person.
+ */
+@Remote async markHandoffDone(id: string): Promise<HandoffSent>
+
+/**
+ * Prefill for "Share with teammate" from one local chat; no network.
+ * @param sessionId - the chat's session id.
+ * @returns its title, the first message the person typed and the last assistant reply;
+ * empty strings for what the session store could not give.
+ */
+@Remote async sessionDraft(sessionId: string): Promise<HandoffSessionDraft>
+```
+
+Source: [`packages/credentials/ahel-account/src/team.ts`](../../packages/credentials/ahel-account/src/team.ts)
+
 <a id="ctxauthorization--authorizationservice"></a>
 
 ### `ctx.authorization` — `AuthorizationService`
@@ -252,6 +507,27 @@ Host service backing the generated `ctx.remote.credentials` namespace. It carrie
 ```
 
 Source: [`packages/api/settings-controller/src/credentials.ts`](../../packages/api/settings-controller/src/credentials.ts)
+
+<a id="ahel-account-events"></a>
+
+### `ahel-account/*` events
+
+<a id="ahel-accountchanged--emit"></a>
+
+#### `ahel-account/changed` — emit
+
+The account view changed: a sign-in step, a completed sign-in or sign-out, or an external edit of the stored grant.
+
+```ts cordis-catalog
+/**
+ * The account view changed: a sign-in step, a completed sign-in or sign-out, or an external edit of the stored grant.
+ * @param view - the new complete view.
+ * @mode emit
+ */
+'ahel-account/changed'(view: AhelAccountView): void
+```
+
+Source: [`packages/credentials/ahel-account/src/types.ts`](../../packages/credentials/ahel-account/src/types.ts)
 
 <a id="authorization-events"></a>
 

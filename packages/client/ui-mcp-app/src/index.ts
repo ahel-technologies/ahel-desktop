@@ -68,19 +68,6 @@ export default class McpAppsController extends TypertRemoteService {
   }
 
   /**
-   * Run one MCP tool for a card, through the same registry pipeline and
-   * approval seam as a model call. The tool must belong to `server` and its
-   * MCP Apps visibility must include `app`. Each call is reported to the
-   * Agent as logged context for its next model request (tool name and
-   * result text; arguments are omitted because they can carry tokens).
-   * @param agent - lookup parameter resolved from the Session identity.
-   * @param server - the card's MCP server; calls to other servers are refused.
-   * @param tool - raw MCP tool name.
-   * @param args - tool arguments from the card.
-   * @param signal - carrier cancellation.
-   * @returns MCP `CallToolResult` fields; failures arrive with `isError: true`.
-   */
-  /**
    * Read a call's live result `_meta` (for example a one-use press token).
    * It lives only in Host memory, so after a Host restart this returns `null`.
    * @param agent - lookup parameter resolved from the Session identity.
@@ -104,6 +91,19 @@ export default class McpAppsController extends TypertRemoteService {
     this.report(agent, cardContextText(server, update))
   }
 
+  /**
+   * Run one MCP tool for a card, through the same registry pipeline and
+   * approval seam as a model call. The tool must belong to `server` and its
+   * MCP Apps visibility must include `app`. Each call is reported to the
+   * Agent as logged context for its next model request (tool name and
+   * result text; arguments are omitted because they can carry tokens).
+   * @param agent - lookup parameter resolved from the Session identity.
+   * @param server - the card's MCP server; calls to other servers are refused.
+   * @param tool - raw MCP tool name.
+   * @param args - tool arguments from the card.
+   * @param signal - carrier cancellation.
+   * @returns MCP `CallToolResult` fields; failures arrive with `isError: true`.
+   */
   @Remote('callTool')
   async callTool(agent: Agent, server: string, tool: string, args: McpAppJsonObject, signal: AbortSignal): Promise<McpAppCallResult> {
     const name = publicToolName(server, tool)
