@@ -1,7 +1,7 @@
 /**
- * Discover panel assembly: one shared `installed` observable read from the
+ * Catalog panel assembly: one shared `installed` observable read from the
  * Host's `ahelCatalog` namespace, the face the catalog panels receive, the
- * `ahel-discover` main panel, and its sidebar row.
+ * `ahel-discover` and `ahel-apps` main panels, and their sidebar rows.
  */
 import type { Context } from '@ahel/cordis'
 import type { HostObservable } from '@ahel/dsh-client-ui-slots'
@@ -16,16 +16,20 @@ import type { AhelAccountInjected } from '../contract.ts'
 import { NS } from '../locales.ts'
 import type { DiscoverInjected } from './contract.ts'
 import { DiscoverPage } from './DiscoverPage.tsx'
-import { DiscoverPanelIcon } from './PanelIcons.tsx'
+import { AppsPanelIcon, DiscoverPanelIcon } from './PanelIcons.tsx'
+import { YourAppsPage } from './YourAppsPage.tsx'
 
 /** Main panel and sidebar row id of the Discover page. */
 const DISCOVER_ID = 'ahel-discover' as MainPanelId
+
+/** Main panel and sidebar row id of the Your apps page. */
+const APPS_ID = 'ahel-apps' as MainPanelId
 
 /** Window focus re-reads at most this often. */
 const FOCUS_REFRESH_MS = 5_000
 
 /**
- * Register the Discover panel and the shared installs read.
+ * Register the Discover and Your apps panels and the shared installs read.
  * @param ctx - Client context with `remote.ahelCatalog`, `slots`, `locale` and `layout`.
  * @param account - the account face built by the package's `register`.
  * @returns the catalog face, for the panels registered later.
@@ -85,6 +89,14 @@ export function registerCatalog(ctx: Context, account: AhelAccountInjected): Dis
     document.addEventListener('visibilitychange', onVisible)
     return () => { document.removeEventListener('visibilitychange', onVisible) }
   }, 'ui-ahel-account: installs on visibility')
+  ctx.effect(() => {
+    let previous = ctx.layout.panelInfo.getSnapshot().activePanelId
+    return ctx.layout.panelInfo.subscribe(() => {
+      const next = ctx.layout.panelInfo.getSnapshot().activePanelId
+      if (next === APPS_ID && previous !== APPS_ID) refresh()
+      previous = next
+    })
+  }, 'ui-ahel-account: installs when Your apps opens')
 
   const face: DiscoverInjected = {
     browse: async (query) => {
@@ -122,5 +134,11 @@ export function registerCatalog(ctx: Context, account: AhelAccountInjected): Dis
   ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
     name: 'sidebar.panellist', id: DISCOVER_ID, order: -20, locale: NS, label: () => t('discover'),
   }, DiscoverPanelIcon))
+  ctx.slots.inject('main', () => ctx.slots.register({
+    name: 'main', key: APPS_ID, locale: NS, inject: () => face,
+  }, YourAppsPage))
+  ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
+    name: 'sidebar.panellist', id: APPS_ID, order: -10, locale: NS, label: () => t('appsTitle'),
+  }, AppsPanelIcon))
   return face
 }

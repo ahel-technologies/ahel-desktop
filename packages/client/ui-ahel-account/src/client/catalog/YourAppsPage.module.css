@@ -1,0 +1,37 @@
+/* Your apps: header with a refresh button, and installed rows ending in links and an On/Off switch. */
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.headText {
+  min-width: 0;
+}
+
+.iconButton {
+  flex: none;
+  width: 28px;
+  padding: 0;
+}
+
+.rowBody {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.lineSetup {
+  color: var(--dsw-alias-state-warn-primary);
+}
+
+.remove {
+  color: var(--dsw-alias-label-secondary);
+}
+
+@media (max-width: 640px) {
+  .remove {
+    display: none;
+  }
+}
