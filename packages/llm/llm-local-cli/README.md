@@ -1,6 +1,21 @@
+---
+description: "Detects the Claude Code, Codex and Gemini CLIs the person already uses and serves the ones they turn on as model routes."
+kind: "package-reference"
+---
+
 # @ahel/dsh-llm-local-cli
 
+## Summary
+
 "Use what you already have" for Ahel Desktop. Finds the Claude Code (`claude`), Codex (`codex`) and Gemini CLI (`gemini`) binaries the person installed and signed into themselves, and stores which of them they turned on. Remote namespace `localCli`: `list`, `detect`, `enable`, `disable`, `watch`; every change is emitted as `local-cli/changed`.
+
+## Table of Contents
+
+- [Use this package](#use-this-package)
+- [Model routes](#model-routes)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 ## Use this package
 
@@ -39,3 +54,7 @@ The harness system prompt is sent as the CLI's system prompt (for Codex, as an `
 - A signed-out Codex retries the connection for about a minute before the turn fails.
 - Resume ids live in memory, so the first turn after a restart sends the full transcript again.
 - Windows paths (`%USERPROFILE%\.local\bin\claude.exe`, `%APPDATA%\npm\*.cmd` through `cmd.exe /c`) are untested.
+
+### Dev Note
+
+Each CLI has its own source file (`claude.ts`, `codex.ts`, `gemini.ts`); detection is in `detect.ts`, the shared route bridge in `bridge.ts`, and the Remote namespace with the enable state in `index.ts`.

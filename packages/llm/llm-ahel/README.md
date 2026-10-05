@@ -1,6 +1,20 @@
+---
+description: "Ahel-metered model route for Ahel Desktop, served through the pi-ai adapter with the signed-in ahel.ai account's bearer."
+kind: "package-reference"
+---
+
 # @ahel/dsh-llm-ahel
 
+## Summary
+
 Ahel-metered models for Ahel Desktop. Registers one OpenAI-compatible route, `ahel` ("Ahel"), served by the `dsh-llm-pi-ai` adapter against `https://ahel.ai/api/llm/v1`. The bearer is the signed-in ahel.ai account's access token from `ctx.ahelAccount` (`dsh-ahel-account`), read and refreshed per request; no API key is stored for this route.
+
+## Table of Contents
+
+- [Use this package](#use-this-package)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 ## Use this package
 
@@ -29,3 +43,7 @@ None beyond the chosen model itself: requests are the ordinary pi-ai chat-comple
 
 - The route is registered directly with the LLM runtime, so it is not in the configurable-provider directory: Settings > Models lists its models but offers no key field for it.
 - The fallback model ids are guesses until the ahel.ai proxy (`desktop-metered-models`) ships.
+
+### Dev Note
+
+The route's profiles are resolved through `resolveProfiles` from `dsh-llm-pi-ai`; the model list comes from `GET <baseURL>/models` with the account bearer after sign-in.
