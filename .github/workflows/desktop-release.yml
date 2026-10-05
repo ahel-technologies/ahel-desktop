@@ -97,7 +97,7 @@ jobs:
             "release-assets/ahel-desktop-${{ matrix.target }}.${{ matrix.installer }}"
           ls -la release-assets
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-${{ matrix.target }}
           path: release-assets/
