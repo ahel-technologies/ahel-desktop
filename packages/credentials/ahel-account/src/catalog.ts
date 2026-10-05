@@ -11,7 +11,7 @@ import type { Context } from '@ahel/cordis'
 import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type {
   CatalogBrowsePage, CatalogBrowseQuery, CatalogCapability, CatalogGroup, CatalogInstalled, CatalogInstallResult, CatalogPart, CatalogRow,
-  CatalogConcept, CatalogSwitchResult,
+  CatalogConcept, CatalogSwitchResult, KnowledgeProduct,
 } from './types.ts'
 
 declare module '@ahel/cordis' {
@@ -45,7 +45,7 @@ const TIMEOUT_MS = 15_000
 
 /** ahel.ai's concept key per section slug (`CONCEPTS` in src/lib/catalog/concepts.ts). */
 const CONCEPT_KEY: Record<CatalogConcept, string> = {
-  'apps': 'app', 'mcp-servers': 'server', 'skills': 'skill', 'packs': 'pack',
+  'apps': 'app', 'mcp-servers': 'server', 'skills': 'skill', 'knowledge': 'knowledge', 'packs': 'pack',
 }
 
 
@@ -214,6 +214,42 @@ export class AhelCatalog extends TypertRemoteService {
   async setEnabled(key: string, on: boolean): Promise<CatalogSwitchResult> {
     const answer = await this.mcpCall('switch', { key, state: on ? 'on' : 'off' })
     return { key: text(answer.key) ?? key, state: text(answer.state) ?? (on ? 'on' : 'off') }
+  }
+
+  /**
+   * ahel.ai's four Knowledge products, as its /knowledge page draws them; works signed out.
+   * @returns the products, or null while ahel.ai has no `/api/public/knowledge-products`.
+   * @throws RemoteError `ahel-catalog/busy` or `ahel-catalog/unreachable`.
+   */
+  @Remote
+  async knowledgeProducts(): Promise<KnowledgeProduct[] | null> {
+    const url = new URL('/api/public/knowledge-products', this.appOrigin)
+    let answer: Record<string, unknown>
+    try {
+      answer = record(await this.listing(url))
+    } catch (error) {
+      if (error instanceof RemoteError && error.code === 'ahel-catalog/unreachable' && (error.details as { status: number | null }).status === 404) return null
+      throw error
+    }
+    const products = Array.isArray(answer.products) ? answer.products.map(record) : []
+    return products.map(product => ({
+      id: text(product.id) ?? '',
+      installId: text(product.installId) ?? '',
+      name: text(product.name) ?? '',
+      promise: text(product.promise) ?? '',
+      includes: text(product.includes) ?? '',
+      cents: Number(product.cents ?? 0),
+      price: text(product.price) ?? '',
+      ask: text(product.ask) ?? '',
+      glyph: text(product.glyph) ?? 'building',
+      sources: (Array.isArray(product.sources) ? product.sources.map(record) : []).map(source => ({
+        id: text(source.id) ?? '',
+        name: text(source.name) ?? '',
+        description: text(source.description) ?? '',
+        servable: source.servable !== false,
+        href: this.absolute(text(source.path) ?? '/knowledge'),
+      })),
+    }))
   }
 
   /**

@@ -68,7 +68,7 @@ export interface CatalogBrowseQuery {
 }
 
 /** ahel.ai's Discover sections, by public slug, in its strip order (`CONCEPTS` in src/lib/catalog/concepts.ts). */
-export type CatalogConcept = 'apps' | 'mcp-servers' | 'skills' | 'packs'
+export type CatalogConcept = 'apps' | 'mcp-servers' | 'skills' | 'knowledge' | 'packs'
 
 /** The sort control's choices. */
 export type CatalogSort = 'best' | 'added' | 'name' | 'newest'
@@ -189,6 +189,34 @@ export interface CatalogInstallResult {
 export interface CatalogSwitchResult {
   readonly key: string
   readonly state: string
+}
+
+/** One source a Knowledge product sells; from `GET /api/public/knowledge-products`. */
+export interface KnowledgeSource {
+  /** The catalog id, such as `ahel.datasets/companies-ee`. */
+  readonly id: string
+  readonly name: string
+  readonly description: string
+  readonly servable: boolean
+  /** Absolute https URL of its ahel.ai page. */
+  readonly href: string
+}
+
+/** One Knowledge product as ahel.ai/knowledge draws it; from `GET /api/public/knowledge-products`. */
+export interface KnowledgeProduct {
+  readonly id: string
+  /** What `add` takes to install every source in one call, such as `knowledge:screening`. */
+  readonly installId: string
+  readonly name: string
+  readonly promise: string
+  readonly includes: string
+  readonly cents: number
+  /** "3¢ per query", as ahel.ai prints it. */
+  readonly price: string
+  readonly ask: string
+  /** ahel.ai's glyph name: `building`, `shield-alert`, `gavel` or `bug`. */
+  readonly glyph: string
+  readonly sources: readonly KnowledgeSource[]
 }
 
 /** A catalog icon as ahel.ai sends it; a logo `src` may be a site path on ahel.ai. */

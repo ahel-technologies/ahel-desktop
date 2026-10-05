@@ -2,7 +2,7 @@
 import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@ahel/dsh-client-ui-slots'
 import type {
   AhelAccountView, CatalogBrowsePage, CatalogBrowseQuery, CatalogInstalled, CatalogInstallResult, CatalogPart, CatalogRow,
-  CatalogSwitchResult, KeyConnectAnswer, KeyConnectSaved, VaultDisconnected, VaultSignInList,
+  CatalogSwitchResult, KeyConnectAnswer, KeyConnectSaved, KnowledgeProduct, VaultDisconnected, VaultSignInList,
 } from '@ahel/dsh-ahel-account/types'
 import type {} from '@ahel/dsh-client-ui-layout/client'
 import type {} from '@ahel/dsh-client-ui-sidebar/client'
@@ -21,9 +21,11 @@ export interface DiscoverInjected {
   browse(query: CatalogBrowseQuery): Promise<CatalogBrowsePage>
   /** A further slice of one group's nested skills. */
   browsePart(query: CatalogBrowseQuery, groupKey: string, offset: number): Promise<CatalogPart>
+  /** ahel.ai's Knowledge products, or null while ahel.ai has no products route; works signed out. */
+  knowledgeProducts(): Promise<readonly KnowledgeProduct[] | null>
   /**
-   * Install one catalog item, then re-read `installed`.
-   * @param id - `CatalogRow.id`.
+   * Install one catalog item or a whole Knowledge product, then re-read `installed`.
+   * @param id - `CatalogRow.id` or `KnowledgeProduct.installId`.
    */
   install(id: string): Promise<CatalogInstallResult>
   /** Turn one installed capability on or off, then re-read `installed`. */

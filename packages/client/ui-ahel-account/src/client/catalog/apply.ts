@@ -117,6 +117,11 @@ export function registerCatalog(ctx: Context, account: AhelAccountInjected): Dis
       if (!result.ok) throw result.error
       return result.value
     },
+    knowledgeProducts: async () => {
+      const result = await ctx.remote.ahelCatalog.knowledgeProducts()
+      if (!result.ok) throw result.error
+      return result.value
+    },
     install: async (id) => {
       const result = await ctx.remote.ahelCatalog.add(id)
       refresh()

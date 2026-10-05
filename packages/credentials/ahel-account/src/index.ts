@@ -41,7 +41,8 @@ export { AhelTeam } from './team.ts'
 export type { TeamConfig } from './team.ts'
 export type {
   CatalogBrowsePage, CatalogBrowseQuery, CatalogCapability, CatalogFactPart, CatalogGroup, CatalogInstalled, CatalogInstallResult,
-  CatalogConcept, CatalogPart, CatalogRow, CatalogRowState, CatalogRowTile, CatalogSort, CatalogSwitchResult,
+  CatalogConcept, CatalogPart, CatalogRow, CatalogRowState, CatalogRowTile, CatalogSort, CatalogSwitchResult, KnowledgeProduct,
+  KnowledgeSource,
 } from './types.ts'
 export type {
   AhelIcon, AhelJson, ApprovalDecision, ApprovalRow, DesktopCredits, DesktopSummary, HandoffDraft, HandoffEvidence, HandoffList,

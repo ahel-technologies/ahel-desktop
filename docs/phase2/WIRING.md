@@ -34,4 +34,4 @@ Status on `master` (Phase 2b). Packages: `@ahel/dsh-ahel-account` (service `ctx.
 5. With no workspace chosen, the Approvals row takes the role from the summary; on an outdated ahel.ai, which sends none, it shows when any signed-in workspace is Owner or Admin.
 6. Screens: `screens/team-{signed-out,outdated,signed-in}-*.png`, taken from the web profile in headless Playwright with a scratch `DSH_HOME`, a loopback stand-in for ahel.ai (PR #297 shapes) and a test grant; no real account.
 7. Credits read PR #297's `workspaceSpentTodayCents` (the whole workspace's spend today).
-8. Discover has no Knowledge section: its strip is Apps, MCP servers, Skills and Packs (`screens/discover-sections.png`).
+8. Discover's strip is ahel.ai's: Discover, Apps, MCP servers, Skills, Knowledge and Packs (`screens/discover-sections.png`).
