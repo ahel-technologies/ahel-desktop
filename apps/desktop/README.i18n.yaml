@@ -3,8 +3,8 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write apps/desktop/README.md
 /ahel-desktop:
-  en: 94c8d47a7925ba4c
-  zh: d01a751148346081
+  en: 9212197d5f286658
+  zh: a2da13706ee93902
 /ahel-desktop/terminal-command:
   en: 89cc83405d01bd96
   zh: ad0276a2275c1830

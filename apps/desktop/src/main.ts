@@ -20,6 +20,7 @@ import {
   type MenuItemConstructorOptions,
 } from 'electron'
 import { WINDOWS_TITLEBAR_HEIGHT } from './windows-layout.ts'
+import { defaultDshHome, resolveDshHome } from '@ahel/dsh-home-paths'
 import { resolveDesktopPaths } from './paths.ts'
 import { DesktopProjectManager } from './project-manager.ts'
 import { DesktopHostFatalError, DesktopHostProcess, DesktopHostUncleanExitError } from './host-process.ts'
@@ -76,6 +77,11 @@ const rendererConsole = new RendererConsoleTail()
 // Electron derives userData, logs and the single-instance lock from the application name, which
 // otherwise follows the package.json name; set it before any of those paths is read.
 app.setName('Ahel Desktop')
+// An explicit DSH_HOME is a separate installation: its own browser data and single-instance lock,
+// so a second launch with another home runs instead of focusing the first one's windows and store.
+if (resolveDshHome() !== defaultDshHome() && !app.commandLine.hasSwitch('user-data-dir')) {
+  app.setPath('userData', join(resolveDshHome(), 'desktop-user-data'))
+}
 // Platform-conventional logs directory (macOS ~/Library/Logs/<name>, otherwise under userData);
 // set before ready so the first fatal report already resolves under it.
 app.setAppLogsPath()
@@ -1003,6 +1009,11 @@ async function main(): Promise<void> {
       const window = welcomeWindow
       window.once('closed', () => {
         if (welcomeWindow === window) welcomeWindow = undefined
+        // A sign-in finishes only through its own browser callback while its welcome is open.
+        if (signInAttempt !== undefined) {
+          signInAttempt = undefined
+          void cancelSignIn().catch((error: unknown) => { console.warn('desktop account: sign-in cancel failed', error) })
+        }
         if (enteredWorkspace || recovery.active || isQuitting()) return
         // The welcome never gates the application: closing it opens the workspace, where own keys go in Settings → Models.
         void enterWorkspace().catch((error: unknown) => { reportFatal(error, 'main') })

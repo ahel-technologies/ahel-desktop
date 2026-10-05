@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-Ahel Desktop 是支持 MCP 工具的桌面聊天应用，基于 MIT 许可的 DeepSeek Harness 构建。其 Host 提供聊天和 MCP 工具。用户在“设置 → 模型”中添加 Anthropic 或 OpenAI API Key。默认应用 ID 为 `ai.ahel.desktop`，URL 协议为 `ahel://`，Electron 将数据保存在 `Ahel Desktop` userData 目录中。命令行工具为 `dsh`，其数据目录 `DSH_HOME` 默认为 `~/.dsh`。
+Ahel Desktop 是支持 MCP 工具的桌面聊天应用，基于 MIT 许可的 DeepSeek Harness 构建。其 Host 提供聊天和 MCP 工具。用户在“设置 → 模型”中添加 Anthropic 或 OpenAI API Key。默认应用 ID 为 `ai.ahel.desktop`，URL 协议为 `ahel://`，Electron 将数据保存在 `Ahel Desktop` userData 目录中。命令行工具为 `dsh`，其数据目录 `DSH_HOME` 默认为 `~/.dsh`。打包应用在显式设置 `DSH_HOME` 时，会把 Electron 数据和单实例锁放在 `$DSH_HOME/desktop-user-data`，因此它与默认安装并行运行并使用自己的凭据，而不是唤起默认安装。
 
 桌面应用是完整 dsh Web 应用外的一层 Electron 壳。Electron RunAsNode 子进程启动共享 profile runner，Electron 立即从 `ahel-app://app/` 加载打包内的 Web 入口。共享加载页等待 Host 启动注入，然后在同一文档中启动客户端。Electron 将应用 HTTP 请求转发给已认证的 Web Host，转发时丢弃描述 Node fetch 连接而非资源本身的响应头（`transfer-encoding`、`connection`、`keep-alive`），并把插件 bundle 响应标记为 `no-store`，因为其每次启动都变化的 revision 只会在 Chromium 磁盘缓存中累积；WebSocket 流连接到该 Host，仅为归属的应用窗口附加凭据。Node IPC 承载启动注入、就绪与关闭。Desktop 默认监听系统分配的端口，因此不会与 Web 的 `3080` 或系统保留端口冲突；可通过 `webserver.config.port` patch 覆盖。
 
