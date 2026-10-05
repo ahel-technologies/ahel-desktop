@@ -34,6 +34,9 @@ import { CloseLabel, HeaderContent, TriggerContent } from './chrome.tsx'
 import { GeneralSection } from './GeneralSection.tsx'
 import { CurrentVersionRow } from './CurrentVersionRow.tsx'
 import { DeveloperToolsRow, type DeveloperToolsRowInjected } from './DeveloperToolsRow.tsx'
+
+/** Ahel Desktop ships without the coding view, so its Settings toggle stays hidden. */
+const SHOW_CODING_VIEW_TOGGLE = false
 import { SettingsDocumentAction } from './SettingsDocumentAction.tsx'
 import type { SettingsDocumentActionInjected } from './SettingsDocumentAction.tsx'
 import { SettingsDocumentStore } from './settings-document-store.ts'
@@ -73,13 +76,16 @@ export const inject = ['slots', 'locale', 'connection', 'remote', 'remote.settin
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
-  ctx.slots.inject('settings.general.item', () => ctx.slots.register({
-    name: 'settings.general.item', id: 'developer-tools', order: 15, locale: NS,
-    inject: (): DeveloperToolsRowInjected => ({
-      hooks: { developerTools: ctx.configForms.developerTools.enabled },
-      setEnabled: enabled => ctx.configForms.developerTools.setEnabled(enabled),
-    }),
-  }, DeveloperToolsRow))
+  // Ahel Desktop hides the coding-view toggle: the product is chat + apps only.
+  if (SHOW_CODING_VIEW_TOGGLE) {
+    ctx.slots.inject('settings.general.item', () => ctx.slots.register({
+      name: 'settings.general.item', id: 'developer-tools', order: 15, locale: NS,
+      inject: (): DeveloperToolsRowInjected => ({
+        hooks: { developerTools: ctx.configForms.developerTools.enabled },
+        setEnabled: enabled => ctx.configForms.developerTools.setEnabled(enabled),
+      }),
+    }, DeveloperToolsRow))
+  }
   // Version information follows the core preferences.
   ctx.slots.inject('settings.general.item', () => ctx.slots.register({
     name: 'settings.general.item', id: 'current-version', order: 100, locale: NS,
