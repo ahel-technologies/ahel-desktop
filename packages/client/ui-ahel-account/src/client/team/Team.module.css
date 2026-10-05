@@ -1,5 +1,5 @@
 /*
- * The Approvals panel in ahel.ai's design, over Catalog.module.css's
+ * The Approvals and Inbox panels in ahel.ai's design, over Catalog.module.css's
  * --ahel-* tokens, page frame and buttons, plus the sidebar row's
  * pending-count badge in the shell's own tokens.
  */
@@ -142,3 +142,55 @@
 }
 
 .link:focus-visible { outline: var(--ahel-focus); outline-offset: 2px; }
+
+/* Inbox rows; the received list sits close above "You sent". */
+.listTight { margin-bottom: 28px; }
+
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--ahel-ink);
+  overflow-wrap: anywhere;
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ahel-red);
+}
+
+.tag {
+  padding: 1px 8px;
+  border-radius: var(--ahel-radius-chip);
+  background: var(--ahel-teal-soft);
+  color: var(--ahel-teal-ink);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.next {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ahel-body);
+  overflow-wrap: anywhere;
+}
+
+.sent { margin: 8px 0 72px; }
+
+.sent > summary {
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ahel-body);
+}
+
+.sent > summary:focus-visible { outline: var(--ahel-focus); outline-offset: 2px; }

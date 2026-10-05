@@ -1,6 +1,6 @@
-/** The team summary poll shared by the account menu and the team panels, and the Approvals panel face. */
+/** The team summary poll shared by the account menu and the team panels, and the Approvals and Inbox panel faces. */
 import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@ahel/dsh-client-ui-slots'
-import type { AhelAccountView, DesktopSummary } from '@ahel/dsh-ahel-account/types'
+import type { AhelAccountView, DesktopSummary, HandoffList, HandoffReceivedRow } from '@ahel/dsh-ahel-account/types'
 import type {} from '@ahel/dsh-client-ui-layout/client'
 import type {} from '@ahel/dsh-client-ui-sidebar/client'
 import type {} from '../locales.ts'
@@ -57,3 +57,50 @@ export type ApprovalsPageProps = PropsRuntime<'main'> & InjectFace<ApprovalsInje
 
 /** Props of the Approvals sidebar glyph with its pending-count badge. */
 export type ApprovalsPanelIconProps = PropsRuntime<'sidebar.panellist'> & InjectFace<ApprovalsInjected>
+
+/** What one Inbox read left. */
+export type InboxLoad =
+  | { readonly ok: true; readonly list: HandoffList }
+  /**
+   * `refused` carries ahel.ai's own sentence, for example a plan without handoffs;
+   * `failed` is a transport failure worth a retry; `message` is null without a sentence.
+   */
+  | { readonly ok: false; readonly reason: 'outdated' | 'signed-out' | 'refused' | 'failed'; readonly message: string | null }
+
+/** What opening or finishing one handoff left. */
+export type InboxAnswer =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly outdated: boolean; readonly message: string | null }
+
+/** Face of the Inbox panel and its sidebar row. */
+export interface InboxInjected {
+  /** Read received and sent handoffs for the selected workspace. */
+  load(): Promise<InboxLoad>
+  /**
+   * Read one handoff (which marks it read) and start a new session whose composer
+   * holds the handoff text; nothing is sent.
+   * @param row - the received handoff.
+   */
+  open(row: HandoffReceivedRow): Promise<InboxAnswer>
+  /**
+   * Mark one received handoff done.
+   * @param id - `HandoffReceivedRow.id`.
+   */
+  markDone(id: string): Promise<InboxAnswer>
+  /** Open one handoff's ahel.ai page in the browser; ignores anything that is not a web page. */
+  openUrl(url: string): void
+  /** Open ahel.ai's handoffs page in the browser. */
+  openWebInbox(): void
+  /** Start the ahel.ai sign-in. */
+  signIn(): Promise<void>
+  hooks: {
+    account: HostObservable<AhelAccountView | null>
+    summary: HostObservable<TeamSummaryState>
+  }
+}
+
+/** Props of the Inbox main panel. */
+export type InboxPageProps = PropsRuntime<'main'> & InjectFace<InboxInjected> & PropsLocale<'ahel-account'>
+
+/** Props of the Inbox sidebar glyph with its unread badge. */
+export type InboxPanelIconProps = PropsRuntime<'sidebar.panellist'> & InjectFace<InboxInjected>

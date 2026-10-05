@@ -1,13 +1,14 @@
 /**
  * Sidebar row glyphs for this package's panels: a four-tile grid for Discover,
- * a stack of tiles for Your apps and a checked shield for Approvals. All are drawn on the library's 16px grid at
+ * a stack of tiles for Your apps, a checked shield for Approvals and a tray for
+ * the Inbox. All are drawn on the library's 16px grid at
  * its one-pixel Regular stroke and ride currentColor, so the sidebar's row
  * states color them like every other panel glyph.
  */
 import type { ReactNode } from 'react'
 import type { PropsRuntime } from '@ahel/dsh-client-ui-slots'
 import type {} from '@ahel/dsh-client-ui-sidebar/client'
-import type { ApprovalsPanelIconProps } from '../team/contract.ts'
+import type { ApprovalsPanelIconProps, InboxPanelIconProps } from '../team/contract.ts'
 import team from '../team/Team.module.css'
 
 /**
@@ -57,6 +58,26 @@ export function ApprovalsPanelIcon({ size, useSummary }: ApprovalsPanelIconProps
         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M8 2.2 13 4v4c0 2.9-2.1 5-5 5.8C5.1 13 3 10.9 3 8V4z" />
         <path d="m5.8 8 1.5 1.5 3-3" />
+      </svg>
+      {count > 0 && <span className={team.badge}>{count > 9 ? '9+' : count}</span>}
+    </span>
+  )
+}
+
+/**
+ * Render the Inbox tray glyph with the count of unread handoffs; the badge
+ * hides at zero and caps at 9+.
+ * @param props - the sidebar's icon share and the Inbox face.
+ * @returns the decorative glyph and badge.
+ */
+export function InboxPanelIcon({ size, useSummary }: InboxPanelIconProps): ReactNode {
+  const count = useSummary(value => value.summary?.inbox?.unread ?? 0)
+  return (
+    <span className={team.glyph}>
+      <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1}
+        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M2.5 9.5 4.2 4a1.4 1.4 0 0 1 1.3-1h5a1.4 1.4 0 0 1 1.3 1l1.7 5.5V12a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 12z" />
+        <path d="M2.5 9.5h3l1 1.5h3l1-1.5h3" />
       </svg>
       {count > 0 && <span className={team.badge}>{count > 9 ? '9+' : count}</span>}
     </span>
