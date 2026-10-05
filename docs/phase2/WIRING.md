@@ -24,3 +24,13 @@ Status on `master` (Phase 2b). Packages: `@ahel/dsh-ahel-account` (service `ctx.
 1. Tokens live in `$DSH_HOME/.credentials.yaml` (mode 600). A Keychain provider is Phase 3.
 2. The metered proxy (`/api/llm/v1`) is on ahel branch `desktop-metered-models`, not live; until it is, the menu shows "Ahel (connecting…)" and the composer has no Ahel model.
 3. The workspace list is the one captured at sign-in; a workspace joined later shows after the next sign-in.
+
+## Team features
+
+1. Host: `ahel-account` Remote namespace `ahelTeam` calls ahel.ai `/api/desktop/*` (ahel PR #297) with the account bearer and `?workspace=`: `GET summary` (approvals, inbox unread, credits), `PATCH approvals/{id}`, `GET|POST|DELETE connect`, `GET|POST handoffs` (prepare, share, done). Redirects are refused; Connect values travel only in the POST body.
+2. UI (`ui-ahel-account`): balance line and Top up in the account menu; Approvals row (Owner/Admin only) with count badge and notifications; Inbox row with unread badge; Connect sheet from Your apps and Discover; "Share with teammate" in the session menu.
+3. Polling: summary every 30 s while the window has focus, at once on focus (at most every 5 s), on sign-in and workspace change, and after each team write. Signed out it makes no calls.
+4. Degrades: a bare 404, or a 401 without `WWW-Authenticate` (an ahel.ai without PR #297), is `ahel-team/outdated`: the menu says "Update ahel.ai to see your balance here", Approvals, Inbox and Share say "Update ahel.ai to … here", Connect falls back to "Finish on ahel.ai". It stops polling until the next focus.
+5. With no workspace chosen, the Approvals row takes the role from the summary, so on an outdated ahel.ai it shows only once a workspace is picked.
+6. Screens: `screens/team-{signed-out,outdated,signed-in}-*.png`, taken from the web profile in headless Playwright with a scratch `DSH_HOME`, a loopback stand-in for ahel.ai (PR #297 shapes) and a test grant; no real account.
+7. Open: PR #297 renamed `spentTodayCents` to `workspaceSpentTodayCents`; until the desktop follows, the menu reads "Today $NaN" (see `team-signed-in-account-menu.png`).
