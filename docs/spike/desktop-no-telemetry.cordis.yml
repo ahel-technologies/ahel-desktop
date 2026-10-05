@@ -1,0 +1,11 @@
+# Ahel Desktop spike: stop Desktop product telemetry and analytics.
+# product-telemetry-otel defaults to https://dsh-otel-collector.deepseeksvc.com/v1/logs
+# and is enabled whenever the profile is `desktop`.
+- id: desktop-product-telemetry
+  disabled: true
+- id: product-analytics
+  disabled: true
+- id: otel
+  disabled: true
+- id: session-telemetry-otel
+  disabled: true

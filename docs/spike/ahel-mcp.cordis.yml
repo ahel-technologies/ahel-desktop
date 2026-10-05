@@ -1,0 +1,24 @@
+# Ahel Desktop spike: mount the Ahel MCP gateway over Streamable HTTP.
+# URL is mcp.ahel.ai/mcp, not ahel.ai/mcp: ahel.ai/mcp advertises resource
+# https://mcp.ahel.ai, which the MCP SDK rejects as an RFC 9728 mismatch.
+# Copy into $DSH_HOME/cordis.patch.yml (every profile) or pass with --patch.
+# OAuth: on 401 the client registers itself (RFC 7591), logs the ahel.ai
+# sign-in URL, writes it to $DSH_HOME/mcp-oauth/ahel.authorize-url.txt, and
+# waits on http://127.0.0.1:33418/callback. Tokens land in
+# $DSH_HOME/mcp-oauth/ahel.json (mode 600).
+- insert:
+    - id: mcp-ahel
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: ahel
+        transport: streamable-http
+        url: https://mcp.ahel.ai/mcp
+        oauth:
+          enabled: true
+          callbackPort: 33418
+          clientName: Ahel Desktop (spike)
+        reconnect:
+          enabled: true
+          initialDelayMs: 2000
+          maxDelayMs: 30000
+          maxAttempts: 1000
