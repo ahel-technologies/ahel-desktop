@@ -30,7 +30,7 @@ Sign-in copies the `ahel` CLI flow: discovery, a loopback listener on `127.0.0.1
 
 A child service, `ctx.ahelCatalog`, gives the desktop the ahel.ai Discover catalog and the person's installs. Its Remote namespace `ahelCatalog` exposes five methods.
 - `browse(query)` and `browsePart(query, groupKey, offset)` read the anonymous `GET /api/public/catalog-search?view=listing` that ahel.ai/discover reads. They work signed out. Row links and marks come back as absolute ahel.ai URLs.
-- `installed()`, `install(id)` and `setEnabled(key, on)` call the Ahel MCP gateway tools `installed`, `install` and `switch`. They use this account's bearer and the selected `?workspace=`, and refresh once after a 401. The desktop and ahel.ai therefore share one server state.
+- `installed()`, `add(id)` and `setEnabled(key, on)` call the Ahel MCP gateway tools `installed`, `install` and `switch`. They use this account's bearer and the selected `?workspace=`, and refresh once after a 401. The desktop and ahel.ai therefore share one server state.
 - Failures are `RemoteError` codes: `ahel-catalog/busy` (HTTP 429), `ahel-catalog/unreachable`, `ahel-catalog/signed-out`, and `ahel-catalog/refused`, whose message is ahel.ai's own sentence.
 - The gateway has no uninstall tool, so removing an app is done on ahel.ai at `/app/apps`.
 

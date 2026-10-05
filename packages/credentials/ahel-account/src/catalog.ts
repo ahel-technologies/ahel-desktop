@@ -165,12 +165,13 @@ export class AhelCatalog extends TypertRemoteService {
 
   /**
    * Install one catalog item, or answer how to connect an "app:<service>" row.
+   * Named `add` because the client's Remote namespace service keeps `install` for itself.
    * @param id - `CatalogRow.id`.
    * @returns the install outcome; `needs_setup` carries the URL to open in the browser.
    * @throws RemoteError `ahel-catalog/signed-out`, `ahel-catalog/refused` or `ahel-catalog/unreachable`.
    */
   @Remote
-  async install(id: string): Promise<CatalogInstallResult> {
+  async add(id: string): Promise<CatalogInstallResult> {
     const result = record((await this.mcpCall('install', { id })).install)
     return {
       key: text(result.key),
