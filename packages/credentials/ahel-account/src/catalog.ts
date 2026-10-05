@@ -11,7 +11,7 @@ import type { Context } from '@ahel/cordis'
 import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type {
   CatalogBrowsePage, CatalogBrowseQuery, CatalogCapability, CatalogGroup, CatalogInstalled, CatalogInstallResult, CatalogPart, CatalogRow,
-  CatalogSwitchResult, KnowledgeProduct,
+  CatalogConcept, CatalogSwitchResult, KnowledgeProduct,
 } from './types.ts'
 
 declare module '@ahel/cordis' {
@@ -42,6 +42,11 @@ export interface CatalogConfig {
 }
 
 const TIMEOUT_MS = 15_000
+
+/** ahel.ai's concept key per section slug (`CONCEPTS` in src/lib/catalog/concepts.ts). */
+const CONCEPT_KEY: Record<CatalogConcept, string> = {
+  'apps': 'app', 'mcp-servers': 'server', 'skills': 'skill', 'knowledge': 'knowledge', 'packs': 'pack',
+}
 
 
 interface JsonRpcAnswer {
@@ -251,9 +256,11 @@ export class AhelCatalog extends TypertRemoteService {
    * One section's page from catalog search, for an ahel.ai whose listing has no `concept` filter yet.
    * The rows carry no price: only the listing knows it.
    */
-  private async conceptSearch(query: CatalogBrowseQuery, concept: string): Promise<CatalogBrowsePage> {
+  private async conceptSearch(query: CatalogBrowseQuery, concept: CatalogConcept): Promise<CatalogBrowsePage> {
     const url = new URL('/api/public/catalog-search', this.appOrigin)
-    url.searchParams.set('concept', concept)
+    // Catalog search names a section by its key, and `hosted=1` keeps the rows ahel.ai can serve, as the listing does.
+    url.searchParams.set('concept', CONCEPT_KEY[concept])
+    url.searchParams.set('hosted', '1')
     if (query.q !== '') url.searchParams.set('q', query.q)
     if (query.category !== null && query.category !== '') url.searchParams.set('category', query.category)
     if (query.page > 0) url.searchParams.set('page', String(Math.floor(query.page)))

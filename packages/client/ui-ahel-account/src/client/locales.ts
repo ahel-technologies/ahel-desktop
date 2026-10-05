@@ -186,6 +186,9 @@ export const en = {
   knowledgeNoSubscription: 'No subscription',
   knowledgeInside: 'Inside',
   knowledgeAddAll: 'Add all {count}',
+  conceptEmpty: '{label} arrive with the next catalog update.',
+  conceptEmptyUntil: 'Until then,',
+  conceptEmptyBrowse: 'browse the Discover',
 }
 
 /** Dictionary keys. */
@@ -373,6 +376,9 @@ export const zh: Record<AhelAccountKey, string> = {
   knowledgeNoSubscription: '无需订阅',
   knowledgeInside: '包含',
   knowledgeAddAll: '全部添加 {count} 个',
+  conceptEmpty: '{label}将在下次目录更新时上线。',
+  conceptEmptyUntil: '在此之前，',
+  conceptEmptyBrowse: '浏览 Discover',
 }
 
 declare module '@ahel/dsh-client-ui-slots' {

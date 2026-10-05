@@ -554,6 +554,9 @@
 
 /* ── Empty, error and loading ─────────────────────────────────────────── */
 
+/* An empty section's sentence (ConceptPage's .pcat-count). */
+.emptyConcept { margin-block: 0; font-size: 12px; color: var(--ahel-muted); }
+
 .empty {
   display: flex;
   flex-direction: column;

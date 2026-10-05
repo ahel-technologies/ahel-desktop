@@ -172,6 +172,8 @@ export function DiscoverPage(props: DiscoverPageProps) {
   const hasDataset = groups.some(group => group.row.facts.some(part => part.key === 'price' && part.source === 'ahel'))
   const productsShown = concept === 'knowledge' && !searching && products !== null && products.length > 0
   const sorts: CatalogSort[] = searching ? ['best', 'added', 'newest'] : ['added', 'name', 'newest']
+  // A section with no rows under no filter is empty on ahel.ai too (Packs today): its header and one sentence.
+  const emptyConcept = concept !== null && status === 'ready' && total === 0 && !searching && category === null && !official && !free
   const everything = page === undefined ? null : kindLine(page.kinds)
 
   const searchForm = (hero: boolean) => (
@@ -239,148 +241,159 @@ export function DiscoverPage(props: DiscoverPageProps) {
                 <p>{t(`intro2.${concept}`)}</p>
               </div>
             )}
-            <div style={{ marginTop: 22 }}>{searchForm(false)}</div>
+            {!emptyConcept && <div style={{ marginTop: 22 }}>{searchForm(false)}</div>}
           </section>
         )}
 
-      <section className={css.results} data-searching={searching ? 'true' : undefined} aria-busy={status === 'loading'}>
-        <div className={`${css.wrap} ${css.layout}`}>
-          <aside className={css.rail} aria-label={t('railShow')}>
-            <div className={css.railGroup}>
-              <h2 className={css.railHead}>{t('railShow')}</h2>
-              <label className={css.railOption}>
-                <input type="checkbox" checked={official} onChange={(event) => { setOfficial(event.target.checked) }} />
-                {t('officialOnly')}
-              </label>
-              <label className={css.railOption}>
-                <input type="checkbox" checked={free} onChange={(event) => { setFree(event.target.checked) }} />
-                {t('freeToUse')}
-              </label>
-            </div>
-            <div className={css.railGroup} role="radiogroup" aria-label={t('railCategory')}>
-              <h2 className={css.railHead}>{t('railCategory')}</h2>
-              <label className={css.railOption} data-on={category === null ? 'true' : undefined}>
-                <input type="radio" name="ahel-discover-category" checked={category === null} onChange={() => { setCategory(null) }} />
-                {t('allCategories')}
-              </label>
-              {CATEGORIES.map((key) => {
-                const count = compactCount(page?.categories[key])
-                return (
-                  <label key={key} className={css.railOption} data-on={category === key ? 'true' : undefined}>
-                    <input type="radio" name="ahel-discover-category" checked={category === key} onChange={() => { setCategory(key) }} />
-                    {t(`category.${key}`)}
-                    {count !== null && <span className={css.n}>{count}</span>}
-                  </label>
-                )
-              })}
-            </div>
-            <p className={css.note}>{t('railNote')}</p>
-          </aside>
+      {emptyConcept && (
+        <section className={css.results}>
+          <p className={`${css.wrap} ${css.emptyConcept}`} role="status">
+            {t('conceptEmpty', { label: t(`concept.${concept}`) })}{' '}
+            {t('conceptEmptyUntil')}{' '}
+            <button type="button" className={css.crumb} onClick={() => { go(null) }}>{t('conceptEmptyBrowse')}</button>.
+          </p>
+        </section>
+      )}
+      {!emptyConcept && (
+        <section className={css.results} data-searching={searching ? 'true' : undefined} aria-busy={status === 'loading'}>
+          <div className={`${css.wrap} ${css.layout}`}>
+            <aside className={css.rail} aria-label={t('railShow')}>
+              <div className={css.railGroup}>
+                <h2 className={css.railHead}>{t('railShow')}</h2>
+                <label className={css.railOption}>
+                  <input type="checkbox" checked={official} onChange={(event) => { setOfficial(event.target.checked) }} />
+                  {t('officialOnly')}
+                </label>
+                <label className={css.railOption}>
+                  <input type="checkbox" checked={free} onChange={(event) => { setFree(event.target.checked) }} />
+                  {t('freeToUse')}
+                </label>
+              </div>
+              <div className={css.railGroup} role="radiogroup" aria-label={t('railCategory')}>
+                <h2 className={css.railHead}>{t('railCategory')}</h2>
+                <label className={css.railOption} data-on={category === null ? 'true' : undefined}>
+                  <input type="radio" name="ahel-discover-category" checked={category === null} onChange={() => { setCategory(null) }} />
+                  {t('allCategories')}
+                </label>
+                {CATEGORIES.map((key) => {
+                  const count = compactCount(page?.categories[key])
+                  return (
+                    <label key={key} className={css.railOption} data-on={category === key ? 'true' : undefined}>
+                      <input type="radio" name="ahel-discover-category" checked={category === key} onChange={() => { setCategory(key) }} />
+                      {t(`category.${key}`)}
+                      {count !== null && <span className={css.n}>{count}</span>}
+                    </label>
+                  )
+                })}
+              </div>
+              <p className={css.note}>{t('railNote')}</p>
+            </aside>
 
-          <div className={css.main}>
-            <div className={css.controls}>
-              {concept === null
-                ? (
-                  <div className={css.seg} role="group" aria-label={t('kindLabel')}>
-                    <button type="button" aria-pressed={kind === 'all'} onClick={() => { setKind('all') }}>
-                      {t('kindEverything')}
-                      {everything !== null && <span className={css.segCount}>{everything}</span>}
-                    </button>
-                    <button type="button" aria-pressed={kind === 'app'} onClick={() => { setKind('app') }}>
-                      <span className={css.kind}>{t('tagApp')}</span>{t('kindApps')}
-                    </button>
-                    <button type="button" aria-pressed={kind === 'skill'} onClick={() => { setKind('skill') }}>
-                      <span className={`${css.kind} ${css.kindSkill}`}>{t('tagSkill')}</span>{t('kindSkills')}
-                    </button>
+            <div className={css.main}>
+              <div className={css.controls}>
+                {concept === null
+                  ? (
+                    <div className={css.seg} role="group" aria-label={t('kindLabel')}>
+                      <button type="button" aria-pressed={kind === 'all'} onClick={() => { setKind('all') }}>
+                        {t('kindEverything')}
+                        {everything !== null && <span className={css.segCount}>{everything}</span>}
+                      </button>
+                      <button type="button" aria-pressed={kind === 'app'} onClick={() => { setKind('app') }}>
+                        <span className={css.kind}>{t('tagApp')}</span>{t('kindApps')}
+                      </button>
+                      <button type="button" aria-pressed={kind === 'skill'} onClick={() => { setKind('skill') }}>
+                        <span className={`${css.kind} ${css.kindSkill}`}>{t('tagSkill')}</span>{t('kindSkills')}
+                      </button>
+                    </div>
+                  )
+                  : <span />}
+                <div className={css.sortWrap}>
+                  <span className={css.sortLabel}>{t('sortLabel')}</span>
+                  <div className={css.sort} role="group" aria-label={t('sortLabel')}>
+                    {sorts.map(key => (
+                      <button key={key} type="button" aria-pressed={effectiveSort === key} onClick={() => { setSort(key) }}>
+                        {t(`sort.${key}`)}
+                      </button>
+                    ))}
                   </div>
-                )
-                : <span />}
-              <div className={css.sortWrap}>
-                <span className={css.sortLabel}>{t('sortLabel')}</span>
-                <div className={css.sort} role="group" aria-label={t('sortLabel')}>
-                  {sorts.map(key => (
-                    <button key={key} type="button" aria-pressed={effectiveSort === key} onClick={() => { setSort(key) }}>
-                      {t(`sort.${key}`)}
-                    </button>
-                  ))}
                 </div>
               </div>
-            </div>
 
-            {productsShown && (
-              <KnowledgeProducts products={products} installed={installed} signedIn={signedIn}
-                onOpen={(row) => { setSelected({ key: row.id, row, skills: null, copies: 0 }) }}
-                install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t} />
-            )}
+              {productsShown && (
+                <KnowledgeProducts products={products} installed={installed} signedIn={signedIn}
+                  onOpen={(row) => { setSelected({ key: row.id, row, skills: null, copies: 0 }) }}
+                  install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t} />
+              )}
 
-            {!productsShown && (
-              <>
-                <p className={css.status} role="status" aria-live="polite">{statusLine}</p>
-                {status === 'loading' && (
-                  <ul className={css.list} aria-hidden="true">
-                    {Array.from({ length: SKELETON_ROWS }, (_, index) => (
-                      <li key={index} className={css.row}>
-                        <div className={css.vrow}>
-                          <span className={`${css.tile} ${css.skeletonFill}`} />
-                          <span>
-                            <span className={`${css.skeletonBar} ${css.skeletonName} ${css.skeletonFill}`} />
-                            <span className={`${css.skeletonBar} ${css.skeletonLine} ${css.skeletonFill}`} />
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {status === 'error' && (
-                  <div className={css.empty} role="alert">
-                    <button type="button" className={`${css.btn} ${css.btnSecondary}`} onClick={() => { setAttempt(value => value + 1) }}>{t('retry')}</button>
-                  </div>
-                )}
-                {groups.length > 0 && (
-                  <ul className={css.list}>
-                    {groups.map(group => (
-                      <AppRow key={group.key} row={group.row} installed={installed} signedIn={signedIn} showDescription={searching}
-                        onOpen={() => { setSelected(group) }}
-                        install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t}>
-                        {group.skills !== null && group.skills.rows.length > 0 && (
-                          <>
-                            <p className={css.nestLabel}>{t('nestLabel', { vendor: group.skills.vendorName, count: group.skills.count.toLocaleString('en-US') })}</p>
-                            <ul className={css.subRows}>
-                              {group.skills.rows.map(skill => (
-                                <AppRow key={skill.id} row={skill} nested installed={installed} signedIn={signedIn}
-                                  onOpen={(item) => { setSelected({ key: item.id, row: item, skills: null, copies: 0 }) }}
-                                  install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t} />
-                              ))}
-                            </ul>
-                          </>
-                        )}
-                      </AppRow>
-                    ))}
-                  </ul>
-                )}
-                {searching && groups.length > 0 && <p className={css.note}>{t(hasDataset ? 'datasetNote' : 'officialNote')}</p>}
-                {more === 'error' && <p className={`${css.note} ${css.error}`} role="alert">{t('browseFailed')}</p>}
-                {status === 'ready' && remaining > 0 && (
-                  <div className={css.more}>
-                    <span>{t('shownOf', { shown: shown.toLocaleString('en-US'), total: total.toLocaleString('en-US') })}</span>
-                    <button type="button" className={`${css.btn} ${css.btnSecondary}`} disabled={more === 'loading'} onClick={showMore}>
-                      {t('showMoreCount', { count: Math.min(remaining, page?.pageSize ?? 24) })}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-            <div className={css.ask}>
-              <span>
-                {searching && status === 'ready' && remaining === 0
-                  ? <><b>{t('askEnd')}</b> {t('askEndText')}</>
-                  : <><b>{t('askNotHere')}</b> {t('askNotHereText')}</>}
-              </span>
-              <button type="button" className={`${css.btn} ${css.btnSecondary}`} onClick={() => { openLink(ASK_URL) }}>{t('askForApp')}</button>
+              {!productsShown && (
+                <>
+                  <p className={css.status} role="status" aria-live="polite">{statusLine}</p>
+                  {status === 'loading' && (
+                    <ul className={css.list} aria-hidden="true">
+                      {Array.from({ length: SKELETON_ROWS }, (_, index) => (
+                        <li key={index} className={css.row}>
+                          <div className={css.vrow}>
+                            <span className={`${css.tile} ${css.skeletonFill}`} />
+                            <span>
+                              <span className={`${css.skeletonBar} ${css.skeletonName} ${css.skeletonFill}`} />
+                              <span className={`${css.skeletonBar} ${css.skeletonLine} ${css.skeletonFill}`} />
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {status === 'error' && (
+                    <div className={css.empty} role="alert">
+                      <button type="button" className={`${css.btn} ${css.btnSecondary}`} onClick={() => { setAttempt(value => value + 1) }}>{t('retry')}</button>
+                    </div>
+                  )}
+                  {groups.length > 0 && (
+                    <ul className={css.list}>
+                      {groups.map(group => (
+                        <AppRow key={group.key} row={group.row} installed={installed} signedIn={signedIn} showDescription={searching}
+                          onOpen={() => { setSelected(group) }}
+                          install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t}>
+                          {group.skills !== null && group.skills.rows.length > 0 && (
+                            <>
+                              <p className={css.nestLabel}>{t('nestLabel', { vendor: group.skills.vendorName, count: group.skills.count.toLocaleString('en-US') })}</p>
+                              <ul className={css.subRows}>
+                                {group.skills.rows.map(skill => (
+                                  <AppRow key={skill.id} row={skill} nested installed={installed} signedIn={signedIn}
+                                    onOpen={(item) => { setSelected({ key: item.id, row: item, skills: null, copies: 0 }) }}
+                                    install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t} />
+                                ))}
+                              </ul>
+                            </>
+                          )}
+                        </AppRow>
+                      ))}
+                    </ul>
+                  )}
+                  {searching && groups.length > 0 && <p className={css.note}>{t(hasDataset ? 'datasetNote' : 'officialNote')}</p>}
+                  {more === 'error' && <p className={`${css.note} ${css.error}`} role="alert">{t('browseFailed')}</p>}
+                  {status === 'ready' && remaining > 0 && (
+                    <div className={css.more}>
+                      <span>{t('shownOf', { shown: shown.toLocaleString('en-US'), total: total.toLocaleString('en-US') })}</span>
+                      <button type="button" className={`${css.btn} ${css.btnSecondary}`} disabled={more === 'loading'} onClick={showMore}>
+                        {t('showMoreCount', { count: Math.min(remaining, page?.pageSize ?? 24) })}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+              <div className={css.ask}>
+                <span>
+                  {searching && status === 'ready' && remaining === 0
+                    ? <><b>{t('askEnd')}</b> {t('askEndText')}</>
+                    : <><b>{t('askNotHere')}</b> {t('askNotHereText')}</>}
+                </span>
+                <button type="button" className={`${css.btn} ${css.btnSecondary}`} onClick={() => { openLink(ASK_URL) }}>{t('askForApp')}</button>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
       {selected !== null && listing !== null && (
         <DetailDrawer key={selected.row.id} group={selected} query={listing.query} installed={installed} signedIn={signedIn}
           onSelect={setSelected} onClose={() => { setSelected(null) }} browsePart={props.browsePart} install={props.install}
