@@ -13,14 +13,16 @@
  * @module @deepseek-ai/dsh-mcp-client
  */
 
-import type { Context } from '@deepseek-ai/cordis'
+import type { Context, Fiber } from '@deepseek-ai/cordis'
+import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import z from '@deepseek-ai/schemastery'
 import { scopeOf } from '@deepseek-ai/dsh-scope'
 import { MAX_TIMER_DELAY_MS } from '@deepseek-ai/dsh-timeout'
 import { DEFAULT_MAX_INSTRUCTION_BYTES, RECONNECT_DEFAULTS, resolveReconnectPolicy, startConnection } from './connection.ts'
-import type { ReconnectConfig } from './connection.ts'
+import type { ReconnectConfig, ResolvedReconnectPolicy } from './connection.ts'
 import { registerServerContext } from './server-context.ts'
-import type { OAuthConfig } from './oauth.ts'
+import { oauthGrantAuthProvider, readOAuthGrant } from './oauth.ts'
+import type { AuthProvider } from '@modelcontextprotocol/client'
 // Side-effect type import: declaration-merges `ctx.tools` onto Context.
 import type {} from '@deepseek-ai/dsh-tools'
 
@@ -29,7 +31,10 @@ export { liveResultMeta, MCP_APP_MIME_TYPE, MCP_APPS_EXTENSION, readToolUi } fro
 export type { McpAppResultMeta, McpToolDescriptor, McpToolUi, McpToolVisibility } from './apps.ts'
 export type { McpResult, McpToolDefinitionOptions } from './tools.ts'
 export type { ReconnectConfig, ResolvedReconnectPolicy } from './connection.ts'
-export type { OAuthConfig } from './oauth.ts'
+export {
+  currentOAuthGrant, oauthGrantAuthProvider, OAuthGrantError, parseOAuthGrant, readOAuthGrant, refreshOAuthGrant, writeOAuthGrant,
+} from './oauth.ts'
+export type { OAuthGrantOptions, StoredOAuthGrant } from './oauth.ts'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'mcp-client'
@@ -94,8 +99,13 @@ export interface StreamableHttpConfig {
   url: string
   /** Additional headers attached to MCP requests. */
   headers: Record<string, string>
-  /** Ahel spike: browser OAuth (PKCE + dynamic registration) when the server answers 401. */
-  oauth?: OAuthConfig
+  /**
+   * Bearer authentication from an OAuth grant stored under a credential
+   * reference (see {@link StoredOAuthGrant}). The server connects only while
+   * the reference holds a grant, and disconnects (unregistering its tools)
+   * when the reference is removed.
+   */
+  auth?: GrantAuthConfig
   /** Timeout per tool call or resource request in milliseconds. */
   toolCallTimeoutMs: number
   /** Fail plugin activation when the initial connection or tool synchronization fails. */
@@ -106,13 +116,24 @@ export interface StreamableHttpConfig {
   reconnect?: ReconnectConfig
 }
 
+/** Grant-backed bearer authentication for one Streamable HTTP server. */
+export interface GrantAuthConfig {
+  /** Credential reference whose value is the grant document, e.g. `AHEL_ACCOUNT`. */
+  credentialRef: string
+  /** Refresh the access token when it expires within this many milliseconds. */
+  refreshSkewMs: number
+  /** Deadline for one token-refresh request in milliseconds. */
+  refreshTimeoutMs: number
+}
+
 /** Configuration for one stdio or Streamable HTTP MCP server. */
 export type Config = StdioConfig | StreamableHttpConfig
 
 type StdioConfigInput = Omit<StdioConfig, 'args' | 'env' | 'cwd' | 'toolCallTimeoutMs' | 'failOnStartupError'>
   & Partial<Pick<StdioConfig, 'args' | 'env' | 'cwd' | 'toolCallTimeoutMs' | 'failOnStartupError'>>
-type StreamableHttpConfigInput = Omit<StreamableHttpConfig, 'headers' | 'toolCallTimeoutMs' | 'failOnStartupError'>
+type StreamableHttpConfigInput = Omit<StreamableHttpConfig, 'headers' | 'auth' | 'toolCallTimeoutMs' | 'failOnStartupError'>
   & Partial<Pick<StreamableHttpConfig, 'headers' | 'toolCallTimeoutMs' | 'failOnStartupError'>>
+  & { auth?: Pick<GrantAuthConfig, 'credentialRef'> & Partial<GrantAuthConfig> }
 type ConfigInput = StdioConfigInput | StreamableHttpConfigInput
 
 const Reconnect: z<ReconnectConfig> = z.object({
@@ -140,11 +161,14 @@ export const Config = z.union([
     serverName: z.string().required().pattern(SERVER_NAME_PATTERN),
     url: z.string().required(),
     headers: z.dict(String).default({}),
-    oauth: z.object({
-      enabled: z.boolean().default(false),
-      callbackPort: z.number().step(1).min(1024).max(65535).default(33418),
-      clientName: z.string().default('Ahel Desktop'),
-    }),
+    auth: z.union([
+      z.object({
+        credentialRef: z.string().required().pattern(/^[A-Za-z_][A-Za-z0-9_]*$/),
+        refreshSkewMs: z.number().min(0).max(MAX_TIMER_DELAY_MS).default(60_000),
+        refreshTimeoutMs: z.number().min(1).max(MAX_TIMER_DELAY_MS).default(30_000),
+      }),
+      z.const(undefined),
+    ]),
     toolCallTimeoutMs: z.number().default(DEFAULT_TOOL_CALL_TIMEOUT_MS),
     failOnStartupError: z.boolean().default(false),
     maxInstructionBytes: z.number().step(1).min(1).default(DEFAULT_MAX_INSTRUCTION_BYTES),
@@ -167,7 +191,55 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   // construction that bypassed Schemastery) rejects THIS instance before any
   // effect registers.
   const reconnect = resolveReconnectPolicy(config.reconnect, `mcp-client(${config.serverName}): reconnect`)
+  if (config.transport === 'streamable-http' && config.auth !== undefined) {
+    applyGrantGate(ctx, config, config.auth, reconnect)
+    return
+  }
+  await connect(ctx, config, reconnect)
+}
 
+/**
+ * Hold one connection session while the configured reference stores a grant.
+ * Presence is re-read on every committed change to that reference, so a
+ * sign-in connects and a sign-out disposes the session and its tools.
+ */
+function applyGrantGate(ctx: Context, config: StreamableHttpConfig, auth: GrantAuthConfig, reconnect: ResolvedReconnectPolicy): void {
+  const ref = credentialRef(auth.credentialRef)
+  ctx.inject(['credentials'], (authCtx) => {
+    const authProvider = oauthGrantAuthProvider(authCtx.credentials, ref, {
+      refreshSkewMs: auth.refreshSkewMs,
+      requestTimeoutMs: auth.refreshTimeoutMs,
+    })
+    let session: Fiber | undefined
+    let queue = Promise.resolve()
+    const sync = (): void => {
+      queue = queue.then(async () => {
+        const present = await readOAuthGrant(authCtx.credentials, ref) !== undefined
+        if (present && session === undefined) {
+          session = authCtx.plugin({ name: 'mcp-client-session', apply: (sessionCtx: Context) => connect(sessionCtx, config, reconnect, authProvider) })
+        } else if (!present && session !== undefined) {
+          const stopping = session
+          session = undefined
+          await stopping.dispose()
+        }
+      }).catch((error: unknown) => {
+        authCtx.logger.warn(`mcp-client(${config.serverName}): ${auth.credentialRef} could not be read: ${String(error)}`)
+      })
+    }
+    authCtx.on('credentials/reference-updated', (updated) => { if (updated === ref) sync() })
+    sync()
+  })
+}
+
+/**
+ * Connect one MCP server and publish its initial tool generation.
+ * @param ctx - context owning the connection and its tool registrations.
+ * @param config - resolved transport and server namespace configuration.
+ * @param reconnect - resolved reconnect policy.
+ * @param authProvider - bearer source for a grant-authenticated server.
+ * @returns startup readiness after connection and initial tool discovery settle.
+ */
+async function connect(ctx: Context, config: Config, reconnect: ResolvedReconnectPolicy, authProvider?: AuthProvider): Promise<void> {
   // Reserve the namespace next: a duplicate `serverName` fails THIS instance
   // at load with an actionable error and leaves the earlier instance intact.
   ctx.effect(() => {
@@ -189,7 +261,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   // The supervisor owns the client/transport generations, the reconnect
   // loop, and the live tool registrations; disposal stops reconnection,
   // quiesces in-flight work, and unregisters the current generation.
-  const connection = startConnection(ctx, config, reconnect)
+  const connection = startConnection(ctx, config, reconnect, authProvider)
   registerServerContext(ctx, config.serverName, connection)
   let stopping: Promise<void> | undefined
   const dispose = (): Promise<void> => stopping ??= connection.dispose()

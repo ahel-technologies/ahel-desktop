@@ -1,177 +1,267 @@
 /**
- * Ahel spike: OAuth 2.1 (PKCE + dynamic client registration) for Streamable
- * HTTP MCP servers such as `https://ahel.ai/mcp`.
+ * Bearer authentication from an OAuth grant held in the credentials seam.
  *
- * The provider keeps one pending authorization URL per server so reconnect
- * attempts do not churn the PKCE verifier, logs that URL for the person to
- * open, and runs a loopback callback server on 127.0.0.1 that exchanges the
- * returned code. Tokens and the registered client live in a private JSON file
- * under `$DSH_HOME/mcp-oauth/` (mode 600). Phase 2 should move this into the
- * credentials seam and open the browser from the Desktop shell.
+ * A grant is one JSON document stored as the value of a credential reference
+ * (for Ahel Desktop, `AHEL_ACCOUNT`). The account plugin writes it after a
+ * browser sign-in; this module reads it per request, refreshes it within
+ * `refreshSkewMs` of expiry or after a 401, and writes the refreshed grant back
+ * through the same reference. Refreshes of one reference are single-flight
+ * within the process. A refresh the token endpoint rejects with
+ * `invalid_grant` removes the reference while it still holds the rejected
+ * grant, so every consumer sees one signed-out state.
  *
  * @module
  */
 
-import { createServer, type Server } from 'node:http'
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { join } from 'node:path'
-import {
-  auth,
-  type OAuthClientMetadata,
-  type OAuthClientProvider,
-  type StoredOAuthClientInformation,
-  type StoredOAuthTokens,
-} from '@modelcontextprotocol/client'
+import type { AuthProvider } from '@modelcontextprotocol/client'
+import type { CredentialProvider, CredentialRef } from '@deepseek-ai/dsh-credentials'
 
-/** OAuth settings for one Streamable HTTP server. */
-export interface OAuthConfig {
-  /** Run the browser sign-in flow when the server answers 401. */
-  enabled: boolean
-  /** Loopback port for the redirect URI (`http://127.0.0.1:<port>/callback`). */
-  callbackPort: number
-  /** Client name sent during dynamic client registration. */
-  clientName: string
+/** OAuth grant document stored as one credential reference's value. Field names follow the OAuth wire names. */
+export interface StoredOAuthGrant {
+  /** Document version. */
+  version: 1
+  /** Authorization server origin that issued the grant. */
+  issuer: string
+  /** Token endpoint used for refresh. */
+  token_endpoint: string
+  /** Client id registered for this grant. */
+  client_id: string
+  /** Current bearer token. */
+  access_token: string
+  /** Refresh token; absent grants cannot be refreshed. */
+  refresh_token?: string
+  /** Access-token expiry, epoch milliseconds. */
+  expires_at: number
+  /** RFC 8707 resource the grant is bound to, sent again on refresh. */
+  resource?: string
+  /** Owner-defined display data (the account plugin keeps the profile here); never read by this module. */
+  profile?: unknown
 }
 
-interface PersistedState {
-  client?: StoredOAuthClientInformation
-  tokens?: StoredOAuthTokens
-  verifier?: string
-  pendingUrl?: string
-  pendingAt?: number
+/** Options shared by grant reads that may refresh. */
+export interface OAuthGrantOptions {
+  /** Refresh when the access token expires within this many milliseconds. */
+  refreshSkewMs: number
+  /** Deadline for one token-endpoint request in milliseconds. */
+  requestTimeoutMs?: number
+  /** Fetch implementation; defaults to the global fetch. */
+  fetchImpl?: typeof fetch
+  /** Clock in epoch milliseconds; defaults to `Date.now`. */
+  now?: () => number
 }
 
-interface Logger {
-  info(message: string): void
-  warn(message: string): void
+/** Failure of a grant refresh; `rejected` means the server refused the refresh token. */
+export class OAuthGrantError extends Error {
+  /**
+   * @param message - safe description; never carries a token or a response body.
+   * @param rejected - true when the token endpoint answered `invalid_grant`.
+   */
+  constructor(message: string, readonly rejected: boolean) {
+    super(message)
+    this.name = 'OAuthGrantError'
+  }
 }
 
-/** A pending authorization URL stays valid for this long before a fresh one replaces it. */
-const PENDING_TTL_MS = 10 * 60_000
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000
+const MAX_RESPONSE_BYTES = 256 * 1024
 
-const providers = new Map<string, OAuthClientProvider>()
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
 
-function stateDirectory(): string {
-  const home = process.env.DSH_HOME?.trim() || join(homedir(), '.dsh')
-  return join(home, 'mcp-oauth')
+const nonEmpty = (value: unknown): value is string => typeof value === 'string' && value.length > 0
+
+/**
+ * Parse a stored grant document.
+ * @param text - credential value.
+ * @returns the grant, or `undefined` when the value is not a version-1 grant.
+ */
+export function parseOAuthGrant(text: string): StoredOAuthGrant | undefined {
+  let value: unknown
+  try {
+    value = JSON.parse(text)
+  } catch (_notJson) {
+    // A non-JSON value is not a grant; callers treat it as absent.
+    return undefined
+  }
+  if (!isRecord(value) || value.version !== 1 || !nonEmpty(value.issuer) || !nonEmpty(value.token_endpoint)
+    || !nonEmpty(value.client_id) || !nonEmpty(value.access_token)
+    || typeof value.expires_at !== 'number' || !Number.isFinite(value.expires_at)
+    || (value.refresh_token !== undefined && !nonEmpty(value.refresh_token))
+    || (value.resource !== undefined && !nonEmpty(value.resource))) {
+    return undefined
+  }
+  return {
+    version: 1,
+    issuer: value.issuer,
+    token_endpoint: value.token_endpoint,
+    client_id: value.client_id,
+    access_token: value.access_token,
+    expires_at: value.expires_at,
+    ...value.refresh_token === undefined ? {} : { refresh_token: value.refresh_token },
+    ...value.resource === undefined ? {} : { resource: value.resource },
+    ...value.profile === undefined ? {} : { profile: value.profile },
+  }
 }
 
 /**
- * Return the shared OAuth provider for one server, creating it on first use.
- * @param serverName - Local MCP server namespace, used as the state file name.
- * @param serverUrl - MCP endpoint URL (the protected resource).
- * @param config - OAuth settings from the plugin config.
- * @param logger - Plugin logger used to surface the sign-in URL.
- * @returns Provider passed to the Streamable HTTP transport as `authProvider`.
+ * Read the grant behind one reference without refreshing it.
+ * @param credentials - credentials seam.
+ * @param ref - reference holding the grant document.
+ * @returns the grant, or `undefined` while none is stored.
  */
-export function oauthProviderFor(serverName: string, serverUrl: string, config: OAuthConfig, logger: Logger): OAuthClientProvider {
-  const key = `${serverName}\u0000${serverUrl}`
-  const existing = providers.get(key)
-  if (existing !== undefined) return existing
+export async function readOAuthGrant(credentials: CredentialProvider, ref: CredentialRef): Promise<StoredOAuthGrant | undefined> {
+  const resolved = await credentials.resolve(ref)
+  return resolved === undefined ? undefined : parseOAuthGrant(resolved.value)
+}
 
-  const directory = stateDirectory()
-  const file = join(directory, `${serverName}.json`)
-  const urlFile = join(directory, `${serverName}.authorize-url.txt`)
-  const redirectUrl = `http://127.0.0.1:${String(config.callbackPort)}/callback`
-  let callbackServer: Server | undefined
+/**
+ * Store one grant document under a reference.
+ * @param credentials - credentials seam.
+ * @param ref - reference to write.
+ * @param grant - grant to store.
+ */
+export async function writeOAuthGrant(credentials: CredentialProvider, ref: CredentialRef, grant: StoredOAuthGrant): Promise<void> {
+  await credentials.set(ref, JSON.stringify(grant))
+}
 
-  const read = (): PersistedState => {
-    if (!existsSync(file)) return {}
-    try { return JSON.parse(readFileSync(file, 'utf8')) as PersistedState } catch { return {} }
+async function readBoundedText(response: Response): Promise<string> {
+  const body = response.body
+  if (body === null) return ''
+  const reader = body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > MAX_RESPONSE_BYTES) {
+      await reader.cancel()
+      throw new OAuthGrantError('token refresh: response too large', false)
+    }
+    chunks.push(value)
   }
-  const write = (state: PersistedState): void => {
-    mkdirSync(directory, { recursive: true, mode: 0o700 })
-    writeFileSync(file, JSON.stringify(state, null, 2), { mode: 0o600 })
-    chmodSync(file, 0o600)
-  }
-  const pendingFresh = (state: PersistedState): boolean =>
-    state.pendingUrl !== undefined && state.pendingAt !== undefined && Date.now() - state.pendingAt < PENDING_TTL_MS
+  return Buffer.concat(chunks).toString('utf8')
+}
 
-  const startCallbackServer = (): void => {
-    if (callbackServer !== undefined) return
-    callbackServer = createServer((request, response) => {
-      const url = new URL(request.url ?? '/', redirectUrl)
-      if (url.pathname !== '/callback') {
-        response.writeHead(404).end()
-        return
-      }
-      const code = url.searchParams.get('code')
-      if (code === null) {
-        response.writeHead(400, { 'content-type': 'text/plain' }).end(`Sign-in failed: ${url.searchParams.get('error') ?? 'no code'}`)
-        return
-      }
-      const iss = url.searchParams.get('iss')
-      auth(provider, { serverUrl, authorizationCode: code, ...(iss === null ? {} : { iss }) })
-        .then(() => {
-          const state = read()
-          delete state.pendingUrl
-          delete state.pendingAt
-          delete state.verifier
-          write(state)
-          logger.info(`mcp-client(${serverName}): OAuth sign-in complete; the next reconnect attempt uses the new token`)
-          response.writeHead(200, { 'content-type': 'text/plain' }).end('Signed in. You can close this tab and return to Ahel Desktop.')
-          callbackServer?.close()
-          callbackServer = undefined
-        })
-        .catch((error: unknown) => {
-          logger.warn(`mcp-client(${serverName}): OAuth code exchange failed: ${String(error)}`)
-          response.writeHead(500, { 'content-type': 'text/plain' }).end('Sign-in failed while exchanging the code. Check the Ahel Desktop log.')
-        })
+/**
+ * Exchange a grant's refresh token for a new access token. The response body
+ * is never echoed into an error.
+ * @param grant - grant holding the refresh token.
+ * @param options - fetch, deadline and clock.
+ * @returns the refreshed grant; the previous refresh token is kept when the server omits a new one.
+ */
+export async function refreshOAuthGrant(grant: StoredOAuthGrant, options: Omit<OAuthGrantOptions, 'refreshSkewMs'> = {}): Promise<StoredOAuthGrant> {
+  if (grant.refresh_token === undefined) throw new OAuthGrantError('the sign-in has expired and holds no refresh token', true)
+  const fetchImpl = options.fetchImpl ?? fetch
+  const now = options.now ?? Date.now
+  const form = new URLSearchParams({ grant_type: 'refresh_token', client_id: grant.client_id, refresh_token: grant.refresh_token })
+  if (grant.resource !== undefined) form.set('resource', grant.resource)
+  let response: Response
+  let text: string
+  try {
+    response = await fetchImpl(grant.token_endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+      body: form.toString(),
+      redirect: 'error',
+      signal: AbortSignal.timeout(options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS),
     })
-    callbackServer.on('error', (error) => {
-      logger.warn(`mcp-client(${serverName}): OAuth callback server error: ${String(error)}`)
-      callbackServer = undefined
-    })
-    callbackServer.listen(config.callbackPort, '127.0.0.1')
+    text = await readBoundedText(response)
+  } catch (error) {
+    if (error instanceof OAuthGrantError) throw error
+    throw new OAuthGrantError(`token refresh: could not reach ${new URL(grant.token_endpoint).origin}`, false)
   }
-
-  const clientMetadata: OAuthClientMetadata = {
-    client_name: config.clientName,
-    redirect_uris: [redirectUrl],
-    grant_types: ['authorization_code', 'refresh_token'],
-    response_types: ['code'],
-    token_endpoint_auth_method: 'none',
-    scope: 'openid profile email offline_access',
+  let body: unknown
+  try {
+    body = text.length === 0 ? null : JSON.parse(text)
+  } catch (_notJson) {
+    // Reported below as an unreadable response without echoing the text.
+    body = null
   }
+  if (!response.ok) {
+    const code = isRecord(body) && (body.error === 'invalid_grant' || body.error === 'invalid_client') ? body.error : undefined
+    throw new OAuthGrantError(`token refresh failed (HTTP ${String(response.status)}${code === undefined ? '' : `, ${code}`})`, code !== undefined)
+  }
+  if (!isRecord(body) || !nonEmpty(body.access_token)) throw new OAuthGrantError('token refresh: response carried no access_token', false)
+  const expiresIn = typeof body.expires_in === 'number' && body.expires_in > 0 ? body.expires_in : 3600
+  return {
+    ...grant,
+    access_token: body.access_token,
+    expires_at: now() + expiresIn * 1000,
+    refresh_token: nonEmpty(body.refresh_token) ? body.refresh_token : grant.refresh_token,
+  }
+}
 
-  const provider: OAuthClientProvider = {
-    get redirectUrl() { return redirectUrl },
-    get clientMetadata() { return clientMetadata },
-    clientInformation: () => read().client,
-    saveClientInformation: (client) => { write({ ...read(), client }) },
-    tokens: () => read().tokens,
-    saveTokens: (tokens) => { write({ ...read(), tokens }) },
-    saveCodeVerifier: (verifier) => {
-      const state = read()
-      // Keep the verifier that matches the URL already shown to the person.
-      if (pendingFresh(state)) return
-      write({ ...state, verifier })
-    },
-    codeVerifier: () => {
-      const verifier = read().verifier
-      if (verifier === undefined) throw new Error('mcp-client: no PKCE verifier is pending')
-      return verifier
-    },
-    redirectToAuthorization: (authorizationUrl) => {
-      startCallbackServer()
-      let state = read()
-      if (!pendingFresh(state)) {
-        state = { ...state, pendingUrl: authorizationUrl.href, pendingAt: Date.now() }
-        write(state)
+/** Process-wide in-flight refreshes keyed by reference, shared by every package that bundles this module. */
+const REFRESHES = Symbol.for('@deepseek-ai/dsh-mcp-client/oauth-grant-refreshes')
+type RefreshRegistry = Map<string, Promise<StoredOAuthGrant | undefined>>
+function refreshRegistry(): RefreshRegistry {
+  const holder = globalThis as typeof globalThis & { [REFRESHES]?: RefreshRegistry }
+  const registry = holder[REFRESHES] ?? new Map<string, Promise<StoredOAuthGrant | undefined>>()
+  holder[REFRESHES] = registry
+  return registry
+}
+
+/**
+ * Read a grant whose access token is valid for at least `refreshSkewMs`,
+ * refreshing and writing it back first when needed. Concurrent callers for one
+ * reference share one refresh.
+ * @param credentials - credentials seam.
+ * @param ref - reference holding the grant document.
+ * @param options - skew, fetch, deadline and clock.
+ * @param force - refresh even when the stored token is not near expiry (after a 401).
+ * @returns the usable grant, or `undefined` while signed out.
+ */
+export async function currentOAuthGrant(
+  credentials: CredentialProvider,
+  ref: CredentialRef,
+  options: OAuthGrantOptions,
+  force = false,
+): Promise<StoredOAuthGrant | undefined> {
+  const now = options.now ?? Date.now
+  const stored = await readOAuthGrant(credentials, ref)
+  if (stored === undefined) return undefined
+  if (!force && stored.expires_at - now() >= options.refreshSkewMs) return stored
+  const registry = refreshRegistry()
+  const inflight = registry.get(ref)
+  if (inflight !== undefined) return inflight
+  const task = (async (): Promise<StoredOAuthGrant | undefined> => {
+    // Re-read inside the flight: another process may have refreshed already.
+    const current = await readOAuthGrant(credentials, ref)
+    if (current === undefined) return undefined
+    if (current.access_token !== stored.access_token && current.expires_at - now() >= options.refreshSkewMs) return current
+    try {
+      const next = await refreshOAuthGrant(current, options)
+      await writeOAuthGrant(credentials, ref, next)
+      return next
+    } catch (error) {
+      const latest = await readOAuthGrant(credentials, ref)
+      const rotatedElsewhere = latest !== undefined && latest.access_token !== current.access_token
+      if (rotatedElsewhere && latest.expires_at - now() >= options.refreshSkewMs) return latest
+      if (error instanceof OAuthGrantError && error.rejected && latest?.refresh_token === current.refresh_token) {
+        await credentials.unset(ref)
       }
-      mkdirSync(directory, { recursive: true, mode: 0o700 })
-      writeFileSync(urlFile, `${state.pendingUrl ?? authorizationUrl.href}\n`, { mode: 0o600 })
-      logger.warn(`mcp-client(${serverName}): sign-in required. Open this URL in a browser: ${state.pendingUrl ?? authorizationUrl.href}`)
-    },
-    invalidateCredentials: (scope) => {
-      const state = read()
-      if (scope === 'all' || scope === 'client') delete state.client
-      if (scope === 'all' || scope === 'tokens') delete state.tokens
-      if (scope === 'all' || scope === 'verifier') delete state.verifier
-      write(state)
-    },
+      throw error
+    }
+  })()
+  registry.set(ref, task)
+  try {
+    return await task
+  } finally {
+    registry.delete(ref)
   }
-  providers.set(key, provider)
-  return provider
+}
+
+/**
+ * MCP transport auth backed by a grant in the credentials seam.
+ * @param credentials - credentials seam.
+ * @param ref - reference holding the grant document.
+ * @param options - skew, fetch, deadline and clock.
+ * @returns provider whose `token()` reads per request and whose `onUnauthorized()` forces one refresh.
+ */
+export function oauthGrantAuthProvider(credentials: CredentialProvider, ref: CredentialRef, options: OAuthGrantOptions): AuthProvider {
+  return {
+    token: async () => (await currentOAuthGrant(credentials, ref, options))?.access_token,
+    onUnauthorized: async () => { await currentOAuthGrant(credentials, ref, options, true) },
+  }
 }

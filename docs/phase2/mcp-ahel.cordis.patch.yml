@@ -1,0 +1,23 @@
+# Ahel Desktop: the ahel.ai account and the Ahel MCP server, always on.
+# Insert after the `credentials` row of packages/bundle/base/cordis.patch.yml
+# (or pass with --patch / copy to $DSH_HOME/cordis.patch.yml).
+# `ahel-account` stores the sign-in under the credential reference
+# AHEL_ACCOUNT; `mcp-ahel` connects only while that reference holds a grant
+# and drops its tools on sign-out. URL is mcp.ahel.ai/mcp: ahel.ai/mcp
+# advertises resource https://mcp.ahel.ai, which strict clients refuse.
+- insert:
+    - id: ahel-account
+      name: '@deepseek-ai/dsh-ahel-account'
+    - id: mcp-ahel
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: ahel
+        transport: streamable-http
+        url: https://mcp.ahel.ai/mcp
+        auth:
+          credentialRef: AHEL_ACCOUNT
+        reconnect:
+          enabled: true
+          initialDelayMs: 2000
+          maxDelayMs: 30000
+          maxAttempts: 1000

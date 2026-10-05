@@ -6,12 +6,11 @@
  * @module
  */
 
-import type { Transport } from '@modelcontextprotocol/client'
+import type { AuthProvider, Transport } from '@modelcontextprotocol/client'
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
 import type { Config } from './index.ts'
-import { oauthProviderFor } from './oauth.ts'
 
 /**
  * The subprocess seam's scrubbed parent env (credential-shaped and stale
@@ -27,12 +26,10 @@ function buildChildEnv(extra: Record<string, string>): Record<string, string> {
  * Create an MCP transport from the resolved plugin config.
  *
  * @param config - Resolved plugin config discriminated on `transport`.
+ * @param authProvider - bearer source for Streamable HTTP servers configured with `auth`.
  * @returns A connected-ready MCP Transport (stdio or Streamable HTTP).
  */
-export function createTransport(
-  config: Config,
-  logger: { info(message: string): void; warn(message: string): void } = { info: console.info, warn: console.warn },
-): Transport {
+export function createTransport(config: Config, authProvider?: AuthProvider): Transport {
   switch (config.transport) {
     case 'stdio':
       return new StdioClientTransport({
@@ -46,7 +43,7 @@ export function createTransport(
         new URL(config.url),
         {
           requestInit: { headers: config.headers },
-          ...(config.oauth?.enabled ? { authProvider: oauthProviderFor(config.serverName, config.url, config.oauth, logger) } : {}),
+          ...authProvider === undefined ? {} : { authProvider },
         },
       )
   }

@@ -1,0 +1,33 @@
+# @deepseek-ai/dsh-ahel-account
+
+The ahel.ai account for Ahel Desktop. One browser sign-in stores one OAuth grant under the credential reference `AHEL_ACCOUNT`; the Ahel MCP server (`dsh-mcp-client` with `auth.credentialRef: AHEL_ACCOUNT`) and Ahel models (`dsh-llm-ahel`) both use it.
+
+## Use this package
+
+```yaml
+- id: ahel-account
+  name: '@deepseek-ai/dsh-ahel-account'
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `appOrigin` | `https://ahel.ai` | Authorization server and API origin |
+| `resource` | `https://mcp.ahel.ai/mcp` | RFC 8707 resource the token is bound to |
+| `credentialRef` | `AHEL_ACCOUNT` | Credential reference holding the grant |
+| `clientName` | `Ahel Desktop` | Registered client name; ` on <host name>` is appended |
+| `signInTimeoutMs` | `300000` | Wait for the browser callback |
+| `requestTimeoutMs` | `30000` | Deadline per ahel.ai request |
+| `refreshSkewMs` | `60000` | Refresh when the token expires within this window |
+
+The service is `ctx.ahelAccount`; the Remote namespace `ahelAccount` exposes `state()`, `signIn()`, `cancelSignIn(id)`, `signOut()`, `profile()` and the `watch` stream. Host code also has `accessToken()` (refreshes on demand) and `setOpener(fn)`.
+
+Sign-in copies the `ahel` CLI flow: discovery, a loopback listener on `127.0.0.1:<random port>/callback`, a fresh dynamic client registration per sign-in (a fixed client id would stay revoked forever), PKCE S256, scopes `openid profile email offline_access`, then `GET /api/mcp/profile`. `signIn()` resolves once the authorize URL exists and returns it in `attempt.authorizeUrl`; the opener set with `setOpener` opens it, otherwise it is logged. Sign-out calls `POST /api/mcp/revoke`, then deletes the credential even if the revoke failed.
+
+## Model Experience
+
+None. The package adds no tools, prompt text or session events.
+
+## Known Limitations and Deferred Work
+
+- The grant is stored by the credentials provider in use (`credentials-local`: `$DSH_HOME/.credentials.yaml`, mode 600). A Keychain-backed provider is Phase 3.
+- No workspace picker: ahel.ai pins the token to the person's single seat or oldest membership.

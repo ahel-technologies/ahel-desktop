@@ -1,0 +1,9 @@
+# Ahel Desktop: Ahel-metered models (route `ahel`, shown as "Ahel").
+# Needs the `ahel-account` row from mcp-ahel.cordis.patch.yml and the base
+# bundle's `llm` runtime. Insert after the `llm-pi-ai` row of
+# packages/bundle/base/cordis.patch.yml. BYO-key routes stay on `llm-pi-ai`.
+- insert:
+    - id: llm-ahel
+      name: '@deepseek-ai/dsh-llm-ahel'
+      config:
+        baseURL: https://ahel.ai/api/llm/v1
