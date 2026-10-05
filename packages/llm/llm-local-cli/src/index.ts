@@ -7,19 +7,24 @@
  * version text only.
  *
  * The Remote namespace `localCli` exposes list, detect, enable, disable and
- * watch. Every change is also emitted as `local-cli/changed` for the Host
- * plugins that register the CLI model routes.
+ * watch. Every change is also emitted as `local-cli/changed`; each CLI that
+ * is installed, recent enough and turned on is served as a model route
+ * (`claude-code`) that runs the CLI headless, see `./bridge.ts`.
  *
  * @module @ahel/dsh-llm-local-cli
  */
 
 import { homedir, tmpdir } from 'node:os'
 import type { Context, Volatile } from '@ahel/cordis'
+import type {} from '@ahel/dsh-agent-default-model'
+import type {} from '@ahel/dsh-ahel-account'
 import type {} from '@ahel/dsh-config-editor'
-import type {} from '@ahel/dsh-llm'
+import type { AdapterRegistrationHandle } from '@ahel/dsh-llm'
 import type {} from '@ahel/dsh-subprocess'
 import Schema from '@ahel/schemastery'
 import { Remote, TypertRemoteService } from '@ahel/dsh-typert-protocol'
+import type { BridgeHost, LocalCliAdapter } from './bridge.ts'
+import { ClaudeCodeAdapter } from './claude.ts'
 import { CLI_DESCRIPTORS, detectCli, isExecutableFile } from './detect.ts'
 import type { DetectDeps, DetectedCli, ProbeResult } from './detect.ts'
 import { LOCAL_CLI_IDS } from './types.ts'
@@ -28,6 +33,11 @@ import type { LocalCliId, LocalCliView } from './types.ts'
 export type { LocalCliId, LocalCliLabel, LocalCliView } from './types.ts'
 export { LOCAL_CLI_IDS } from './types.ts'
 export { CLI_DESCRIPTORS, candidatePaths, commandArgv, compareVersions, parseVersion } from './detect.ts'
+export { LOCAL_CLI_SIGNED_OUT_CODE, LocalCliAdapter } from './bridge.ts'
+export type { BridgeHost, CliEvent, CliInvocation, InvocationRequest, LocalCliModel } from './bridge.ts'
+export { AHEL_MCP_URL, CLAUDE_MODELS, ClaudeCodeAdapter, ahelMcpConfig, claudeArgs, parseClaudeLine } from './claude.ts'
+export { renderTranscript, systemText } from './transcript.ts'
+export type { RenderedPrompt } from './transcript.ts'
 export type { CliDescriptor, DetectEnvironment, ProbeResult, ProbeRunner } from './detect.ts'
 
 declare module '@ahel/cordis' {
@@ -78,6 +88,9 @@ export class LocalCli extends TypertRemoteService {
   private detected: readonly DetectedCli[] | undefined
   private running: Promise<readonly DetectedCli[]> | undefined
   private lastDetectAt = 0
+  /** Model routes by CLI; a CLI without an entry is detected but not yet served. */
+  private readonly adapters: Partial<Record<LocalCliId, LocalCliAdapter>>
+  private readonly routes = new Map<LocalCliId, { handle: AdapterRegistrationHandle; active: boolean }>()
 
   /**
    * @param ctx - Host context with the subprocess service.
@@ -91,6 +104,24 @@ export class LocalCli extends TypertRemoteService {
     this.enabledRef = enabled ?? resolved.enabled
     this.owner = ctx
     this.probeTimeoutMs = resolved.probeTimeoutMs
+    const host = (id: LocalCliId): BridgeHost => ({
+      spawn: spec => this.ctx.subprocess.spawn(spec),
+      executable: () => {
+        const cli = this.detected?.find(entry => entry.id === id)
+        return cli?.installed === true && cli.versionOk ? cli.path : undefined
+      },
+      ahelToken: async () => {
+        try {
+          return await this.owner.get('ahelAccount')?.accessToken()
+        } catch (_refreshFailed) {
+          // A failed refresh leaves the turn without Ahel tools rather than failing it.
+          return undefined
+        }
+      },
+      platform: process.platform,
+    })
+    this.adapters = { 'claude-code': new ClaudeCodeAdapter(host('claude-code'), 'Claude Code (installed)') }
+    ctx.on('local-cli/changed', (views) => { this.publishRoutes(views) })
     ctx.on('loader/volatile-update', () => { this.changed() })
     ctx.effect(() => () => {
       this.lifetime.abort()
@@ -129,7 +160,13 @@ export class LocalCli extends TypertRemoteService {
    */
   @Remote
   async enable(id: LocalCliId): Promise<LocalCliView[]> {
-    return this.setEnabled(id, true)
+    const views = await this.setEnabled(id, true)
+    const view = views.find(entry => entry.id === id)
+    // The CLI just turned on becomes the default model while its route is served.
+    if (this.adapters[id] !== undefined && view?.installed === true && view.versionOk) {
+      await this.owner.get('agentDefaultModel')?.saveSelection({ provider: id, model: 'default' })
+    }
+    return views
   }
 
   /**
@@ -139,7 +176,11 @@ export class LocalCli extends TypertRemoteService {
    */
   @Remote
   async disable(id: LocalCliId): Promise<LocalCliView[]> {
-    return this.setEnabled(id, false)
+    const views = await this.setEnabled(id, false)
+    // A saved default naming the route just removed would leave new chats without a model.
+    const defaults = this.owner.get('agentDefaultModel')
+    if (defaults?.configuredSelection()?.provider === id) await defaults.clearSelection()
+    return views
   }
 
   /**
@@ -180,6 +221,26 @@ export class LocalCli extends TypertRemoteService {
     })
     this.changed()
     return this.list()
+  }
+
+  /** Serve each installed, recent enough and enabled CLI as a model route; withdraw the others. */
+  private publishRoutes(views: readonly LocalCliView[]): void {
+    for (const view of views) {
+      const adapter = this.adapters[view.id]
+      if (adapter === undefined) continue
+      const active = view.installed && view.versionOk && view.enabled
+      const route = this.routes.get(view.id)
+      try {
+        if (route === undefined) {
+          if (active) this.routes.set(view.id, { handle: this.owner.llm.registerAdapter([view.id], adapter), active })
+        } else if (route.active !== active) {
+          route.handle.replace(active ? [view.id] : [])
+          route.active = active
+        }
+      } catch (error) {
+        this.ctx.logger.warn(`local-cli: the ${view.label} route could not be ${active ? 'added' : 'removed'}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
   }
 
   private views(detected: readonly DetectedCli[]): LocalCliView[] {

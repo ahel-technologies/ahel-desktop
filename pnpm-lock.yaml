@@ -9391,6 +9391,9 @@ importers:
 
   packages/llm/llm-local-cli:
     dependencies:
+      '@ahel/dsh-home-paths':
+        specifier: workspace:*
+        version: link:../../util/home-paths
       '@ahel/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -9398,6 +9401,12 @@ importers:
       '@ahel/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@ahel/dsh-agent-default-model':
+        specifier: workspace:*
+        version: link:../../core/agent-default-model
+      '@ahel/dsh-ahel-account':
+        specifier: workspace:*
+        version: link:../../credentials/ahel-account
       '@ahel/dsh-config-editor':
         specifier: workspace:*
         version: link:../../boot/config-editor

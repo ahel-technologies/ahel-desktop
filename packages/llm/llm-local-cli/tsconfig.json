@@ -28,6 +28,15 @@
     },
     {
       "path": "../../boot/config-editor"
+    },
+    {
+      "path": "../../util/home-paths"
+    },
+    {
+      "path": "../../credentials/ahel-account"
+    },
+    {
+      "path": "../../core/agent-default-model"
     }
   ]
 }

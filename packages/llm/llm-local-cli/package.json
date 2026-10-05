@@ -50,10 +50,13 @@
     "@ahel/dsh-typert-protocol": "workspace:*"
   },
   "dependencies": {
+    "@ahel/dsh-home-paths": "workspace:*",
     "@ahel/schemastery": "workspace:~"
   },
   "devDependencies": {
     "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-agent-default-model": "workspace:*",
+    "@ahel/dsh-ahel-account": "workspace:*",
     "@ahel/dsh-config-editor": "workspace:*",
     "@ahel/dsh-llm": "workspace:*",
     "@ahel/dsh-subprocess": "workspace:*",
