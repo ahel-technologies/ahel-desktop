@@ -1,8 +1,8 @@
-/** A Knowledge product's tile: ahel.ai's named glyph on the dark ahel tile, as on ahel.ai/knowledge. */
+/** A Knowledge product's tile: ahel.ai's store tile with the product's named glyph, as on ahel.ai/knowledge. */
 import type { ReactNode } from 'react'
-import css from './Knowledge.module.css'
+import css from './Catalog.module.css'
 
-/** ahel.ai's product glyphs, drawn on a 24px grid at a 1.5px stroke. */
+/** ahel.ai's product glyphs, drawn on a 24px grid at its 2px stroke. */
 const GLYPHS: Record<string, ReactNode> = {
   'building': (
     <>
@@ -33,16 +33,14 @@ const GLYPHS: Record<string, ReactNode> = {
 }
 
 /**
- * Render a product tile.
+ * Render a product tile, 48px with a 24px glyph.
  * @param props.glyph - ahel.ai's glyph name; an unknown name draws the building.
- * @param props.size - edge in pixels: 48 on cards, 56 in the detail sheet.
  * @returns the decorative tile; the card names the product.
  */
-export function KnowledgeTile({ glyph, size }: { glyph: string; size: 48 | 56 }) {
-  const edge = Math.round(size / 2)
+export function KnowledgeTile({ glyph }: { glyph: string }) {
   return (
-    <span className={css.tile} style={{ width: size, height: size }} aria-hidden="true">
-      <svg width={edge} height={edge} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}
+    <span className={css.cardTile} aria-hidden="true">
+      <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
         strokeLinecap="round" strokeLinejoin="round">
         {GLYPHS[glyph] ?? GLYPHS.building}
       </svg>

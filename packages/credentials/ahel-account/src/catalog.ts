@@ -11,9 +11,8 @@ import type { Context } from '@ahel/cordis'
 import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type {
   CatalogBrowsePage, CatalogBrowseQuery, CatalogCapability, CatalogGroup, CatalogInstalled, CatalogInstallResult, CatalogPart, CatalogRow,
-  CatalogSwitchResult, KnowledgeListing, KnowledgeSource,
+  CatalogSwitchResult, KnowledgeProduct,
 } from './types.ts'
-import { KNOWLEDGE_ID_PREFIX, knowledgeProducts } from './knowledge.ts'
 
 declare module '@ahel/cordis' {
   interface Context {
@@ -44,11 +43,6 @@ export interface CatalogConfig {
 
 const TIMEOUT_MS = 15_000
 
-/** The full Knowledge source list is read again after this long. */
-const KNOWLEDGE_TTL_MS = 5 * 60_000
-
-/** Pages read per Knowledge search; ahel.ai answers 30 rows a page and lists under 40 sources. */
-const KNOWLEDGE_MAX_PAGES = 5
 
 interface JsonRpcAnswer {
   result?: { isError?: boolean; content?: readonly { type?: string; text?: string }[]; structuredContent?: Record<string, unknown> }
@@ -104,7 +98,6 @@ export class AhelCatalog extends TypertRemoteService {
   private readonly appOrigin: string
   private readonly resource: string
   private rpcId = 0
-  private knowledgeCache: { readonly at: number; readonly sources: readonly KnowledgeSource[] } | null = null
 
   /**
    * @param ctx - Host context carrying `ahelAccount`.
@@ -125,8 +118,12 @@ export class AhelCatalog extends TypertRemoteService {
   @Remote
   async browse(query: CatalogBrowseQuery): Promise<CatalogBrowsePage> {
     const page = record(await this.listing(this.listingUrl(query)))
+    const concept = query.concept ?? null
+    // An ahel.ai without the listing's `concept` filter answers the whole list; ask catalog search instead.
+    if (concept !== null && concept !== 'apps' && record(page.query).concept === undefined) return this.conceptSearch(query, concept)
     const groups = Array.isArray(page.groups) ? page.groups.map(group => this.group(group)) : []
     const kinds = record(page.kinds)
+    const summary = record(page.summary)
     return {
       total: Number(page.total ?? 0),
       page: Number(page.page ?? 0),
@@ -134,6 +131,13 @@ export class AhelCatalog extends TypertRemoteService {
       groups,
       kinds: { app: Number(kinds.app ?? 0), skill: Number(kinds.skill ?? 0) },
       categories: record(page.categories) as Record<string, number>,
+      summary: {
+        rows: Number(summary.rows ?? 0),
+        apps: Number(summary.apps ?? 0),
+        officialApps: Number(summary.officialApps ?? 0),
+        skills: Number(summary.skills ?? 0),
+        copies: Number(summary.copies ?? 0),
+      },
     }
   }
 
@@ -208,55 +212,104 @@ export class AhelCatalog extends TypertRemoteService {
   }
 
   /**
-   * The Knowledge products with their live sources; works signed out.
-   * @param q - search words; "" browses.
-   * @returns the four products, and with search words the ids of the sources they found.
+   * ahel.ai's four Knowledge products, as its /knowledge page draws them; works signed out.
+   * @returns the products, or null while ahel.ai has no `/api/public/knowledge-products`.
    * @throws RemoteError `ahel-catalog/busy` or `ahel-catalog/unreachable`.
    */
   @Remote
-  async knowledge(q: string): Promise<KnowledgeListing> {
-    const words = q.trim().slice(0, 200)
-    if (this.knowledgeCache === null || Date.now() - this.knowledgeCache.at > KNOWLEDGE_TTL_MS) {
-      this.knowledgeCache = { at: Date.now(), sources: await this.knowledgeSources('') }
+  async knowledgeProducts(): Promise<KnowledgeProduct[] | null> {
+    const url = new URL('/api/public/knowledge-products', this.appOrigin)
+    let answer: Record<string, unknown>
+    try {
+      answer = record(await this.listing(url))
+    } catch (error) {
+      if (error instanceof RemoteError && error.code === 'ahel-catalog/unreachable' && (error.details as { status: number | null }).status === 404) return null
+      throw error
     }
-    const products = knowledgeProducts(this.knowledgeCache.sources)
-    if (words === '') return { products, matches: null }
-    return { products, matches: (await this.knowledgeSources(words)).map(source => source.id) }
+    const products = Array.isArray(answer.products) ? answer.products.map(record) : []
+    return products.map(product => ({
+      id: text(product.id) ?? '',
+      installId: text(product.installId) ?? '',
+      name: text(product.name) ?? '',
+      promise: text(product.promise) ?? '',
+      includes: text(product.includes) ?? '',
+      cents: Number(product.cents ?? 0),
+      price: text(product.price) ?? '',
+      ask: text(product.ask) ?? '',
+      glyph: text(product.glyph) ?? 'building',
+      sources: (Array.isArray(product.sources) ? product.sources.map(record) : []).map(source => ({
+        id: text(source.id) ?? '',
+        name: text(source.name) ?? '',
+        description: text(source.description) ?? '',
+        servable: source.servable !== false,
+        href: this.absolute(text(source.path) ?? '/knowledge'),
+      })),
+    }))
   }
 
-  /** Every dataset row the public catalog search answers for `q`, across its pages. */
-  private async knowledgeSources(q: string): Promise<KnowledgeSource[]> {
-    const sources: KnowledgeSource[] = []
-    for (let page = 0; page < KNOWLEDGE_MAX_PAGES; page++) {
-      const url = new URL('/api/public/catalog-search', this.appOrigin)
-      url.searchParams.set('concept', 'knowledge')
-      if (q !== '') url.searchParams.set('q', q)
-      if (page > 0) url.searchParams.set('page', String(page))
-      const answer = record(await this.listing(url))
-      const items = Array.isArray(answer.items) ? answer.items.map(record) : []
-      for (const item of items) {
-        const id = text(item.id)
-        if (id === null || !id.startsWith(KNOWLEDGE_ID_PREFIX)) continue
-        sources.push({
-          id,
-          name: text(item.name) ?? id,
-          description: text(item.description) ?? '',
-          servable: item.servable !== false,
-          href: this.absolute(`/catalog/item/${id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`),
-        })
+  /**
+   * One section's page from catalog search, for an ahel.ai whose listing has no `concept` filter yet.
+   * The rows carry no price: only the listing knows it.
+   */
+  private async conceptSearch(query: CatalogBrowseQuery, concept: string): Promise<CatalogBrowsePage> {
+    const url = new URL('/api/public/catalog-search', this.appOrigin)
+    url.searchParams.set('concept', concept)
+    if (query.q !== '') url.searchParams.set('q', query.q)
+    if (query.category !== null && query.category !== '') url.searchParams.set('category', query.category)
+    if (query.page > 0) url.searchParams.set('page', String(Math.floor(query.page)))
+    const answer = record(await this.listing(url))
+    const items = Array.isArray(answer.items) ? answer.items.map(record) : []
+    const groups = items.map((item): CatalogGroup => {
+      const id = text(item.id) ?? ''
+      const name = text(item.name) ?? id
+      const official = item.firstParty === true || item.verified === true
+      const skill = text(item.kind) === 'skill'
+      const icon = record(item.icon)
+      const mark = text(icon.type) === 'logo' ? text(icon.src) : null
+      const row: CatalogRow = {
+        id,
+        name,
+        kind: skill ? 'skill' : 'app',
+        kindLabel: skill ? 'Skill' : 'App',
+        tile: { text: name.slice(0, 1).toUpperCase(), tone: item.firstParty === true ? 'ahel' : skill ? 'skill' : 'plain', mark: mark === null ? null : this.absolute(mark) },
+        facts: [
+          { key: 'provenance', text: official ? 'Official' : 'Community', official },
+          ...item.firstParty === true ? [{ key: 'by' as const, text: 'by ahel' }, { key: 'runs' as const, text: 'Hosted by ahel' }] : [],
+        ],
+        chips: [],
+        description: text(item.description),
+        href: this.absolute(`/catalog/item/${id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`),
+        state: item.servable === false ? 'unavailable' : skill ? 'install' : 'add',
+        vendor: null,
+        official,
       }
-      const pageSize = Number(answer.pageSize ?? items.length)
-      if (items.length === 0 || (page + 1) * pageSize >= Number(answer.total ?? 0)) break
+      return { key: id, row, skills: null, copies: 0 }
+    })
+    const total = Number(answer.total ?? groups.length)
+    return {
+      total,
+      page: Number(answer.page ?? query.page),
+      pageSize: Number(answer.pageSize ?? groups.length),
+      groups,
+      kinds: { app: groups.filter(group => group.row.kind === 'app').length, skill: groups.filter(group => group.row.kind === 'skill').length },
+      categories: {},
+      summary: { rows: total, apps: 0, officialApps: 0, skills: 0, copies: 0 },
     }
-    return sources
   }
 
   private listingUrl(query: CatalogBrowseQuery): URL {
     const url = new URL('/api/public/catalog-search', this.appOrigin)
     url.searchParams.set('view', 'listing')
     url.searchParams.set('q', query.q)
-    if (query.kind !== 'all') url.searchParams.set('kind', query.kind)
+    const concept = query.concept ?? null
+    // Apps is every App row, as ahel.ai/apps lists them; the other sections ask the listing's concept filter.
+    if (concept === 'apps') url.searchParams.set('kind', 'app')
+    else if (concept !== null) url.searchParams.set('concept', concept)
+    else if (query.kind !== 'all') url.searchParams.set('kind', query.kind)
     if (query.category !== null && query.category !== '') url.searchParams.set('category', query.category)
+    if (query.official === true) url.searchParams.set('official', '1')
+    if (query.free === true) url.searchParams.set('free', '1')
+    if (query.sort !== undefined) url.searchParams.set('sort', query.sort)
     if (query.page > 0) url.searchParams.set('page', String(Math.floor(query.page)))
     return url
   }

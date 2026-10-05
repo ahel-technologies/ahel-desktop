@@ -1,6 +1,6 @@
 /**
- * Sidebar row glyphs for the catalog panels: a four-tile grid for Discover, a
- * stack of records for Knowledge and a stack of tiles for Your apps. All are drawn on the library's 16px grid at
+ * Sidebar row glyphs for the catalog panels: a four-tile grid for Discover and
+ * a stack of tiles for Your apps. Both are drawn on the library's 16px grid at
  * its one-pixel Regular stroke and ride currentColor, so the sidebar's row
  * states color them like every other panel glyph.
  */
@@ -37,22 +37,6 @@ export function AppsPanelIcon({ size }: PropsRuntime<'sidebar.panellist'>): Reac
       <rect x="2.5" y="6.5" width="11" height="7" rx="1.6" />
       <path d="M4 4.5h8" />
       <path d="M5.5 2.5h5" />
-    </svg>
-  )
-}
-
-/**
- * Render the Knowledge stacked-records glyph at the size the sidebar asks for.
- * @param props - the sidebar's icon share.
- * @returns the decorative glyph.
- */
-export function KnowledgePanelIcon({ size }: PropsRuntime<'sidebar.panellist'>): ReactNode {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1}
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <ellipse cx="8" cy="4" rx="5" ry="1.8" />
-      <path d="M3 4v8c0 1 2.2 1.8 5 1.8s5-.8 5-1.8V4" />
-      <path d="M3 8c0 1 2.2 1.8 5 1.8s5-.8 5-1.8" />
     </svg>
   )
 }

@@ -58,7 +58,20 @@ export interface CatalogBrowseQuery {
   readonly category: string | null
   /** Zero-based page of `pageSize` groups. */
   readonly page: number
+  /** One Discover section, as ahel.ai's section strip names it; absent or null lists everything. */
+  readonly concept?: CatalogConcept | null
+  /** The rail's Show checkboxes. */
+  readonly official?: boolean
+  readonly free?: boolean
+  /** Absent: Best match with words, Most added without. */
+  readonly sort?: CatalogSort
 }
+
+/** ahel.ai's Discover sections, by public slug, in its strip order (`CONCEPTS` in src/lib/catalog/concepts.ts). */
+export type CatalogConcept = 'apps' | 'mcp-servers' | 'skills' | 'knowledge' | 'packs'
+
+/** The sort control's choices. */
+export type CatalogSort = 'best' | 'added' | 'name' | 'newest'
 
 /** One part of a row's fact line, in display order; mirrors ahel's `FactPart`. */
 export type CatalogFactPart =
@@ -119,6 +132,14 @@ export interface CatalogBrowsePage {
   readonly kinds: { readonly app: number; readonly skill: number }
   /** Records per category key under the other filters; a category with none is absent. */
   readonly categories: Readonly<Record<string, number>>
+  /** What the status line counts over the whole list; mirrors ahel's `ListingSummary`. */
+  readonly summary: {
+    readonly rows: number
+    readonly apps: number
+    readonly officialApps: number
+    readonly skills: number
+    readonly copies: number
+  }
 }
 
 /** A further slice of one group's nested skills. */
@@ -170,39 +191,32 @@ export interface CatalogSwitchResult {
   readonly state: string
 }
 
-/** One Knowledge source: a dataset row of ahel.ai's catalog (`kind: dataset`). */
+/** One source a Knowledge product sells; from `GET /api/public/knowledge-products`. */
 export interface KnowledgeSource {
-  /** The catalog id, such as `ahel.datasets/companies-ee`; `add` takes it. */
+  /** The catalog id, such as `ahel.datasets/companies-ee`. */
   readonly id: string
   readonly name: string
   readonly description: string
-  /** Whether ahel.ai can serve it today; an unservable source has no Add. */
   readonly servable: boolean
   /** Absolute https URL of its ahel.ai page. */
   readonly href: string
 }
 
-/** One Knowledge product as ahel.ai/knowledge sells it: a job, one price per query, its sources. */
+/** One Knowledge product as ahel.ai/knowledge draws it; from `GET /api/public/knowledge-products`. */
 export interface KnowledgeProduct {
   readonly id: string
+  /** What `add` takes to install every source in one call, such as `knowledge:screening`. */
+  readonly installId: string
   readonly name: string
-  /** Whole cents per query, paid from the workspace balance. */
-  readonly cents: number
-  /** The one line under the name. */
   readonly promise: string
   readonly includes: string
-  /** An example question to ask once it is added. */
+  readonly cents: number
+  /** "3¢ per query", as ahel.ai prints it. */
+  readonly price: string
   readonly ask: string
   /** ahel.ai's glyph name: `building`, `shield-alert`, `gavel` or `bug`. */
   readonly glyph: string
   readonly sources: readonly KnowledgeSource[]
-}
-
-/** The Knowledge listing; with search words, `matches` holds the ids of the sources they found. */
-export interface KnowledgeListing {
-  readonly products: readonly KnowledgeProduct[]
-  /** Null when browsing without search words. */
-  readonly matches: readonly string[] | null
 }
 
 /** A catalog icon as ahel.ai sends it; a logo `src` may be a site path on ahel.ai. */

@@ -1,12 +1,11 @@
-/** The Your apps main panel: what the person's ahel.ai workspace has installed, each with an On/Off switch. */
+/** The Your apps main panel in ahel.ai's design: what the person's workspace has installed, each with an On/Off switch. */
 import { useState } from 'react'
-import { Button, IconRefreshOutlineRegular, Switch, Tag } from '@ahel/dsh-client-ui-primitives'
+import { Button, IconRefreshOutlineRegular, Switch } from '@ahel/dsh-client-ui-primitives'
 import type { CatalogCapability, CatalogRowTile } from '@ahel/dsh-ahel-account/types'
 import type { CatalogFaceProps, DiscoverPageProps } from './contract.ts'
-import { failureOf, setupUrl } from './AppRow.tsx'
+import { failureOf, LOOK_CLASS, setupUrl } from './AppRow.tsx'
 import { AppTile } from './AppTile.tsx'
-import shared from './Catalog.module.css'
-import css from './YourAppsPage.module.css'
+import css from './Catalog.module.css'
 
 /** ahel.ai, where setup and removal happen. */
 const APP_ORIGIN = 'https://ahel.ai'
@@ -41,53 +40,56 @@ export function YourAppsPage(props: DiscoverPageProps) {
   }
 
   return (
-    <div className={shared.page}>
-      <header className={`${shared.head} ${css.head}`} data-window-drag>
-        <div className={css.headText}>
-          <h1 className={shared.title}>{t('appsTitle')}</h1>
-          <p className={shared.lead}>{t('appsLead')}</p>
+    <div className={`${css.tokens} ${css.page}`}>
+      <div className={css.top} data-window-drag />
+      <div className={css.wrap}>
+        <header className={css.appsHead}>
+          <div>
+            <h1 className={css.h1}>{t('appsTitle')}<span className={css.stop}>.</span></h1>
+            <p className={css.lead} style={{ marginTop: 14 }}>{t('appsLead')}</p>
+          </div>
+          {installed?.signedIn === true && (
+            <Button variant="ghost" size="sm" icon={<IconRefreshOutlineRegular size={16} />}
+              aria-label={t('refresh')} title={t('refresh')} disabled={refreshing} onClick={refresh} />
+          )}
+        </header>
+        <div className={css.appsList} aria-busy={installed === null || refreshing}>
+          {installed === null && (
+            <ul className={css.list} aria-hidden="true">
+              {Array.from({ length: SKELETON_ROWS }, (_, index) => (
+                <li key={index} className={css.row}>
+                  <div className={css.vrow}>
+                    <span className={`${css.tile} ${css.skeletonFill}`} />
+                    <span>
+                      <span className={`${css.skeletonBar} ${css.skeletonName} ${css.skeletonFill}`} />
+                      <span className={`${css.skeletonBar} ${css.skeletonLine} ${css.skeletonFill}`} />
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {installed?.signedIn === false && (
+            <div className={css.empty}>
+              <b>{t('appsSignedOut')}</b>
+              <button type="button" className={`${css.btn} ${css.btnPrimary}`} onClick={() => { void signIn().catch(() => undefined) }}>{t('signIn')}</button>
+            </div>
+          )}
+          {installed?.signedIn === true && installed.rows.length === 0 && (
+            <div className={css.empty}>
+              <b>{t('appsEmpty')}</b>
+              <button type="button" className={`${css.btn} ${css.btnDark}`} onClick={() => { openPanel('ahel-discover') }}>{t('openDiscover')}</button>
+            </div>
+          )}
+          {installed?.signedIn === true && installed.rows.length > 0 && (
+            <ul className={css.list}>
+              {installed.rows.map(capability => (
+                <YourAppRow key={capability.key} capability={capability} setEnabled={props.setEnabled}
+                  refreshInstalled={refreshInstalled} openLink={props.openLink} t={t} />
+              ))}
+            </ul>
+          )}
         </div>
-        {installed?.signedIn === true && (
-          <Button variant="ghost" size="sm" className={css.iconButton} icon={<IconRefreshOutlineRegular size={16} />}
-            aria-label={t('refresh')} title={t('refresh')} disabled={refreshing} onClick={refresh} />
-        )}
-      </header>
-      <div aria-busy={installed === null || refreshing}>
-        {installed === null && (
-          <ul className={shared.list} aria-hidden="true">
-            {Array.from({ length: SKELETON_ROWS }, (_, index) => (
-              <li key={index} className={shared.row}>
-                <div className={shared.rowBody}>
-                  <span className={`${shared.tile} ${shared['tile-md']} ${shared.skeletonFill}`} />
-                  <span className={shared.rowText}>
-                    <span className={`${shared.skeletonBar} ${shared.skeletonName} ${shared.skeletonFill}`} />
-                    <span className={`${shared.skeletonBar} ${shared.skeletonLine} ${shared.skeletonFill}`} />
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-        {installed?.signedIn === false && (
-          <div className={shared.state}>
-            <p className={shared.stateTitle}>{t('appsSignedOut')}</p>
-            <Button variant="outline" size="sm" onClick={() => { void signIn().catch(() => undefined) }}>{t('signIn')}</Button>
-          </div>
-        )}
-        {installed?.signedIn === true && installed.rows.length === 0 && (
-          <div className={shared.state}>
-            <p className={shared.stateTitle}>{t('appsEmpty')}</p>
-            <Button variant="outline" size="sm" onClick={() => { openPanel('ahel-discover') }}>{t('openDiscover')}</Button>
-          </div>
-        )}
-        {installed?.signedIn === true && installed.rows.length > 0 && (
-          <ul className={shared.list}>
-            {installed.rows.map(capability => (
-              <YourAppRow key={capability.key} capability={capability} setEnabled={props.setEnabled}
-                refreshInstalled={refreshInstalled} openLink={props.openLink} t={t} />
-            ))}
-          </ul>
-        )}
       </div>
     </div>
   )
@@ -132,35 +134,32 @@ function YourAppRow({ capability, setEnabled, refreshInstalled, openLink, t }: Y
   }
 
   return (
-    <li className={shared.row}>
-      <div className={`${shared.rowBody} ${css.rowBody}`}>
+    <li className={css.row}>
+      <div className={css.vrow}>
         <AppTile tile={tile} />
-        <span className={shared.rowText}>
-          <span className={shared.rowHead}>
-            <span className={shared.rowName}>{capability.name}</span>
-            <Tag tone="outline">{t(skill ? 'tagSkill' : 'tagApp')}</Tag>
-          </span>
-          <span className={capability.state === 'needs_setup' ? `${shared.rowLine} ${css.lineSetup}` : shared.rowLine}
-            title={line}>
-            {line}
-          </span>
-        </span>
-        <div className={shared.rowEnd}>
+        <div className={css.body}>
+          <div className={css.name}>
+            <span>{capability.name}</span>
+            <span className={skill ? `${css.kind} ${css.kindSkill}` : css.kind}>{t(skill ? 'tagSkill' : 'tagApp')}</span>
+          </div>
+          <p className={capability.state === 'needs_setup' ? `${css.line} ${css.lineSetup}` : css.line} title={line}>{line}</p>
+        </div>
+        <div className={css.rowControls}>
           {capability.state === 'needs_setup' && (
-            <Button variant="outline" size="sm" onClick={() => { openLink(setupUrl(APP_ORIGIN, capability)) }}>
+            <button type="button" className={LOOK_CLASS.setup} onClick={() => { openLink(setupUrl(APP_ORIGIN, capability)) }}>
               {t('finishSetup')}
-            </Button>
+            </button>
           )}
-          <Button variant="ghost" size="sm" className={css.remove}
+          <button type="button" className={`${css.btn} ${css.btnGhost}`}
             onClick={() => { openLink(new URL('/app/apps', APP_ORIGIN).href) }}>
             {t('removeOnAhel')}
-          </Button>
+          </button>
           <Switch checked={pending ?? capability.state === 'on'} disabled={pending !== null || locked}
             label={capability.name}
             onChange={toggle} />
         </div>
       </div>
-      {error !== null && <p className={`${shared.rowNote} ${shared.rowNoteError}`} role="status">{error}</p>}
+      {error !== null && <p className={`${css.rowNote} ${css.rowNoteError}`} role="status">{error}</p>}
     </li>
   )
 }

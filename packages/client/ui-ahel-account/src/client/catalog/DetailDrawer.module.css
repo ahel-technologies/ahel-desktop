@@ -1,4 +1,4 @@
-/* The app detail sheet: a right-side panel over the Modal mask, full width on narrow windows. */
+/* The app detail sheet in ahel.ai's tokens (Catalog.module.css .tokens): a right-side panel over the Modal mask, full width on narrow windows. */
 
 /* Doubled selector beats the Modal card's own centred layout whatever the bundle order. */
 .sheet.sheet {
@@ -9,14 +9,15 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  width: 420px;
+  width: 460px;
+  font-family: var(--font-sans);
   max-width: 100%;
   padding: 0;
-  border-left: 1px solid var(--dsw-alias-border-l2);
+  border-left: 1px solid var(--ahel-line);
   border-radius: 0;
-  background: var(--dsw-alias-bg-layer-2);
+  background: var(--ahel-card);
   box-shadow: var(--dsw-elevation-prominent);
-  color: var(--dsw-alias-label-primary);
+  color: var(--ahel-ink);
   animation: ahel-detail-enter var(--ds-transition-duration) var(--ds-ease-in-out);
 }
 
@@ -50,14 +51,14 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: var(--dsw-radius-sm);
+  border-radius: 6px;
   background: transparent;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--ahel-body);
   cursor: pointer;
 }
 
 .close:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
+  background: var(--ahel-page);
 }
 
 .close:focus-visible,
@@ -93,9 +94,8 @@
 .name {
   margin: 0;
   overflow-wrap: anywhere;
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 26px;
+  font: 500 24px/1.15 var(--font-heading);
+  letter-spacing: -0.02em;
 }
 
 .tags {
@@ -111,24 +111,24 @@
   list-style: none;
   font-size: 13px;
   line-height: 20px;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--ahel-body);
 }
 
 .fact + .fact::before {
   content: '·';
   padding: 0 6px;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--ahel-muted);
 }
 
 .fact[data-fact='provenance'] {
-  color: var(--dsw-alias-label-primary);
+  color: var(--ahel-ink);
 }
 
 .description {
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
-  color: var(--dsw-alias-label-primary);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ahel-body);
   overflow-wrap: anywhere;
 }
 
@@ -144,12 +144,12 @@
   gap: 8px;
   margin: 0;
   padding: 10px 12px;
-  border: 1px solid var(--dsw-alias-settings-card-stroke);
-  border-radius: var(--dsw-radius-md);
-  background: var(--dsw-alias-settings-card-fill);
+  border: 1px solid var(--ahel-line);
+  border-radius: var(--ahel-radius-row);
+  background: var(--ahel-soft);
   font-size: 13px;
   line-height: 20px;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--ahel-body);
 }
 
 .outcomeText {
@@ -159,7 +159,7 @@
 }
 
 .outcomeError {
-  color: var(--dsw-alias-state-error-primary);
+  color: var(--ahel-red-text);
 }
 
 .copy {
@@ -171,14 +171,14 @@
   height: 24px;
   margin: -2px -4px -2px 0;
   border: none;
-  border-radius: var(--dsw-radius-sm);
+  border-radius: 6px;
   background: transparent;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--ahel-body);
   cursor: pointer;
 }
 
 .copy:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
+  background: var(--ahel-page);
 }
 
 .nest {
@@ -186,7 +186,7 @@
   flex-direction: column;
   gap: 10px;
   padding-top: 16px;
-  border-top: 1px solid var(--dsw-alias-border-l2);
+  border-top: 1px solid var(--ahel-line);
 }
 
 .nestTitle {
@@ -216,5 +216,5 @@
   gap: 10px;
   font-size: 13px;
   line-height: 20px;
-  color: var(--dsw-alias-state-error-primary);
+  color: var(--ahel-red-text);
 }

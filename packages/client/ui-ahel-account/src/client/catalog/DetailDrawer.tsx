@@ -1,13 +1,14 @@
 /** The app detail sheet: tile, facts, description, the install button and a vendor's nested skills. */
 import { useRef, useState } from 'react'
 import {
-  Button, IconCheckOutlineRegular, IconCloseOutlineRegular, IconCopyOutlineRegular, Modal, Tag, writeClipboard,
+  IconCheckOutlineRegular, IconCloseOutlineRegular, IconCopyOutlineRegular, Modal, writeClipboard,
 } from '@ahel/dsh-client-ui-primitives'
 import type { CatalogBrowseQuery, CatalogGroup, CatalogInstalled, CatalogRow } from '@ahel/dsh-ahel-account/types'
 import type { CatalogFaceProps } from './contract.ts'
-import { AppRow, failureOf, rowAction, setupUrl } from './AppRow.tsx'
+import { AppRow, Check, FactLine, failureOf, LOOK_CLASS, rowAction, setupUrl } from './AppRow.tsx'
 import type { RowAction } from './AppRow.tsx'
 import { AppTile } from './AppTile.tsx'
+import catalogCss from './Catalog.module.css'
 import css from './DetailDrawer.module.css'
 
 /** Nested skills revealed per "Show 24 more" press; ahel.ai serves larger slices, held until shown. */
@@ -56,7 +57,7 @@ export function DetailDrawer(props: DetailDrawerProps) {
   const listed = rowAction(row, installed, signedIn)
   // An install that answered needs_setup stays "Needs setup" until the installs read says otherwise.
   const action: RowAction | null = pendingSetup !== null && listed?.kind === 'install'
-    ? { key: 'stateNeedsSetup', kind: 'setup' }
+    ? { key: 'stateNeedsSetup', kind: 'setup', look: 'setup' }
     : listed
 
   const run = async (): Promise<void> => {
@@ -112,7 +113,7 @@ export function DetailDrawer(props: DetailDrawerProps) {
   const nestHasMore = held.length > 0 || unfetched > 0
 
   return (
-    <Modal open headless title={row.name} onClose={onClose} className={css.sheet ?? ''}>
+    <Modal open headless title={row.name} onClose={onClose} className={`${css.sheet ?? ''} ${catalogCss.tokens ?? ''}`}>
       <div className={css.bar}>
         <button type="button" className={css.close} aria-label={t('close')} onClick={onClose}>
           <IconCloseOutlineRegular size={16} />
@@ -124,27 +125,22 @@ export function DetailDrawer(props: DetailDrawerProps) {
           <div className={css.heroText}>
             <h2 className={css.name}>{row.name}</h2>
             <span className={css.tags}>
-              <Tag tone="outline">{t(row.kind === 'app' ? 'tagApp' : 'tagSkill')}</Tag>
+              <span className={row.kind === 'skill' ? `${catalogCss.kind} ${catalogCss.kindSkill}` : catalogCss.kind}>
+                {t(row.kind === 'app' ? 'tagApp' : 'tagSkill')}
+              </span>
             </span>
           </div>
         </div>
-        {row.facts.length > 0 && (
-          <ul className={css.facts}>
-            {row.facts.map(fact => (
-              <li key={fact.key} className={css.fact} data-fact={fact.key}>
-                {fact.key === 'provenance' ? t(fact.official ? 'official' : 'community') : fact.text}
-              </li>
-            ))}
-          </ul>
-        )}
+        <FactLine parts={row.facts} unavailable={action === null} t={t} />
         {row.description !== null && row.description !== '' && <p className={css.description}>{row.description}</p>}
         <div className={css.actions}>
           {action !== null && (
-            <Button variant="primary" disabled={busy || action.kind === 'none'} onClick={press} data-modal-autofocus>
+            <button type="button" className={LOOK_CLASS[action.look]} disabled={busy || action.kind === 'none'} onClick={press} data-modal-autofocus>
+              {(action.look === 'added' || action.look === 'on') && <Check />}
               {t(action.key)}
-            </Button>
+            </button>
           )}
-          <Button variant="outline" onClick={() => { openLink(row.href) }}>{t('openOnAhel')}</Button>
+          <button type="button" className={`${catalogCss.btn} ${catalogCss.btnSecondary}`} onClick={() => { openLink(row.href) }}>{t('openOnAhel')}</button>
         </div>
         {outcome?.kind === 'added' && (
           <div className={css.outcome} role="status">
@@ -161,9 +157,9 @@ export function DetailDrawer(props: DetailDrawerProps) {
         {skills !== null && nest.length > 0 && (
           <section className={css.nest} aria-labelledby="ahel-detail-nest">
             <h3 id="ahel-detail-nest" className={css.nestTitle}>{t('skillsFor', { vendor: skills.vendorName })}</h3>
-            <ul className={css.nestList}>
+            <ul className={catalogCss.list}>
               {nest.map(skill => (
-                <AppRow key={skill.id} row={skill} installed={installed} signedIn={signedIn}
+                <AppRow key={skill.id} row={skill} nested installed={installed} signedIn={signedIn}
                   onOpen={(item) => { onSelect({ key: item.id, row: item, skills: null, copies: 0 }) }}
                   install={install} setEnabled={setEnabled} signIn={signIn} openLink={openLink} t={t} />
               ))}
@@ -171,13 +167,13 @@ export function DetailDrawer(props: DetailDrawerProps) {
             {nestStatus === 'error' && (
               <div className={css.nestNotice} role="alert">
                 <span>{t('browseFailed')}</span>
-                <Button variant="ghost" size="sm" onClick={showMoreSkills}>{t('retry')}</Button>
+                <button type="button" className={`${catalogCss.btn} ${catalogCss.btnGhost}`} onClick={showMoreSkills}>{t('retry')}</button>
               </div>
             )}
             {nestHasMore && nestStatus !== 'error' && (
-              <Button variant="outline" size="sm" className={css.nestMore} disabled={nestStatus === 'loading'} onClick={showMoreSkills}>
+              <button type="button" className={`${catalogCss.btn} ${catalogCss.btnSecondary} ${css.nestMore}`} disabled={nestStatus === 'loading'} onClick={showMoreSkills}>
                 {t('showMore')}
-              </Button>
+              </button>
             )}
           </section>
         )}
