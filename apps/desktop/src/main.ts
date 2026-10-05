@@ -1,6 +1,5 @@
 /** Electron shell: desktop project ownership, custom protocol, windows, and lifecycle. */
 
-import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -37,7 +36,8 @@ import { serveWebDocument, authenticateWebHost, forwardWebRequest } from './web-
 import { DesktopFatalRecovery } from './fatal-recovery.ts'
 import { pruneCrashReports, RendererConsoleTail, writeCrashReport, type CrashReportSource } from './crash-report.ts'
 import { openWelcomeWindow } from './welcome-window.ts'
-import { WELCOME_SEEN_MARKER, needsWelcome } from './welcome-api.ts'
+import { needsWelcome, WELCOME_IPC, type WelcomeSignInState } from './welcome-api.ts'
+import { browserDestination, connectDesktopAhelAccount, type DesktopAhelAccount } from './ahel-account-backend.ts'
 import { connectDesktopHostSettings, type DesktopHostSettings } from './host-settings.ts'
 import { DesktopUpdateJournal } from './update-journal.ts'
 import { DesktopUpdatePreparationError } from './update-error.ts'
@@ -370,6 +370,7 @@ async function main(): Promise<void> {
   const browserGuests = new DesktopBrowserGuests(() => hostUrl)
   let injections: readonly unknown[] = []
   let hostSettings: DesktopHostSettings | undefined
+  let ahelAccount: DesktopAhelAccount | undefined
   const assertProductSender = (event: IpcMainInvokeEvent): void => {
     assertDesktopSender(event, ['app'])
     if (mainWindow === undefined || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents
@@ -405,6 +406,11 @@ async function main(): Promise<void> {
         if (ready.injections === undefined) throw new Error('Desktop Host did not provide boot injections')
         injections = ready.injections
         hostSettings = await connectDesktopHostSettings(ready.url, (input, init) => net.fetch(input, init))
+        ahelAccount = await connectDesktopAhelAccount(ready.url, (input, init) => net.fetch(input, init)).catch((error: unknown) => {
+          // Without the account namespace the welcome offers only bring-your-own-key use.
+          console.warn('desktop account: Host account service unavailable', error)
+          return undefined
+        })
       },
       stop: async () => {
         try { await host.stop(requireCleanStop) }
@@ -466,13 +472,11 @@ async function main(): Promise<void> {
     return state
   }
 
-  const welcomeMarker = join(app.getPath('userData'), WELCOME_SEEN_MARKER)
-  // A synchronous stat keeps the first-window decision in the same turn as the Host settings read.
-  const readWelcomeSeen = (): boolean => existsSync(welcomeMarker)
-  const markWelcomeSeen = (): Promise<void> => writeFile(welcomeMarker, '').catch((error: unknown) => {
-    // A missing marker only shows the welcome again on the next launch.
-    console.warn('desktop welcome: could not record the welcome as seen', error)
-  })
+  /** Whether the ahel.ai account is signed in; an unreadable Host account reads as signed out. */
+  const readSignedIn = async (): Promise<boolean> => {
+    try { return (await ahelAccount?.state())?.status === 'signed-in' }
+    catch (error) { console.warn('desktop account: state unavailable', error); return false }
+  }
   stopForRecovery = () => backend.close()
 
   const reconcileBackend = (): Promise<void> => {
@@ -916,7 +920,6 @@ async function main(): Promise<void> {
     else window.showInactive()
     enteredWorkspace = true
     if (welcomeWindow !== undefined) {
-      await markWelcomeSeen()
       welcomeWindow.close()
       window.webContents.send(DESKTOP_IPC.enterWorkspace)
     }
@@ -930,6 +933,55 @@ async function main(): Promise<void> {
       window.webContents.openDevTools({ mode: 'detach' })
     }
   }
+  let signInAttempt: string | undefined
+  const publishSignIn = (state: WelcomeSignInState): void => {
+    if (welcomeWindow !== undefined && !welcomeWindow.isDestroyed()) welcomeWindow.webContents.send(WELCOME_IPC.signInState, state)
+  }
+  /** Start the ahel.ai sign-in, open the consent page in the system browser, and follow the attempt to its end. */
+  const startSignIn = async (): Promise<void> => {
+    if (ahelAccount === undefined) throw new Error('desktop account: Host account service unavailable')
+    const account = ahelAccount
+    const view = await account.signIn()
+    const attempt = view.attempt
+    if (attempt === null) throw new Error('desktop account: sign-in did not start')
+    if (attempt.phase === 'failed' || attempt.phase === 'cancelled') {
+      publishSignIn({ phase: attempt.phase, ...attempt.errorCode === undefined ? {} : { errorCode: attempt.errorCode } })
+      return
+    }
+    if (signInAttempt !== attempt.id && attempt.authorizeUrl !== undefined) {
+      await shell.openExternal(browserDestination(attempt.authorizeUrl))
+    }
+    if (signInAttempt === attempt.id) return
+    signInAttempt = attempt.id
+    publishSignIn({ phase: 'waiting-browser' })
+    void (async () => {
+      for (;;) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        if (quitting || signInAttempt !== attempt.id) return
+        const current = await account.state()
+        const phase = current.attempt?.id === attempt.id ? current.attempt.phase : 'cancelled'
+        if (phase === 'starting') continue
+        const errorCode = current.attempt?.errorCode
+        publishSignIn({ phase, ...errorCode === undefined ? {} : { errorCode } })
+        if (phase === 'waiting-browser' || phase === 'exchanging') continue
+        signInAttempt = undefined
+        if (phase === 'succeeded') {
+          app.focus({ steal: true })
+          await enterWorkspace()
+        }
+        return
+      }
+    })().catch((error: unknown) => {
+      signInAttempt = undefined
+      console.warn('desktop account: sign-in progress unavailable', error)
+      publishSignIn({ phase: 'failed', errorCode: 'network' })
+    })
+  }
+  const cancelSignIn = async (): Promise<void> => {
+    const view = await ahelAccount?.state()
+    const attempt = view?.attempt
+    if (attempt !== null && attempt !== undefined) await ahelAccount?.cancelSignIn(attempt.id)
+  }
   let openingWelcome: Promise<void> | undefined
   const showWelcome = (): Promise<void> => {
     if (quitting) return Promise.resolve()
@@ -939,13 +991,13 @@ async function main(): Promise<void> {
       return Promise.resolve()
     }
     openingWelcome ??= (async () => {
-      welcomeWindow = await openWelcomeWindow(locale, { continue: () => enterWorkspace() })
+      welcomeWindow = await openWelcomeWindow(locale, { continue: () => enterWorkspace(), signIn: startSignIn, cancelSignIn })
       const window = welcomeWindow
       window.once('closed', () => {
         if (welcomeWindow === window) welcomeWindow = undefined
         if (enteredWorkspace || recovery.active || isQuitting()) return
         // The welcome never gates the application: closing it opens the workspace like Continue.
-        void markWelcomeSeen().then(() => enterWorkspace()).catch((error: unknown) => { reportFatal(error, 'main') })
+        void enterWorkspace().catch((error: unknown) => { reportFatal(error, 'main') })
       })
       if (isQuitting() || recovery.active || enteredWorkspace) window.close()
       else mainWindow?.hide()
@@ -956,12 +1008,12 @@ async function main(): Promise<void> {
     if (quitting || recovery.active) return
     if (hostSettings === undefined) throw new Error('desktop locale: Host settings are unavailable')
     const preference = await hostSettings.readLocalePreference()
-    const seen = readWelcomeSeen()
+    const signedIn = await readSignedIn()
     if (isQuitting() || backend.state.phase !== 'ready') return
     locale = resolveDesktopStartupLocale(preference, systemLanguages)
     windowsLanguage = locale.id
     refreshApplicationMenu()
-    if (!enteredWorkspace && needsWelcome(seen)) {
+    if (!enteredWorkspace && needsWelcome(signedIn)) {
       // Leaving the welcome keeps its own activation policy instead of replaying startup focus.
       raiseAfterUpdate = false
       await showWelcome()

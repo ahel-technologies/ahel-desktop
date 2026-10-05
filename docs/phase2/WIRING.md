@@ -1,34 +1,20 @@
 # Phase 2 wiring: Ahel login in the desktop shell
 
-Apply after `phase1/strip-rebrand` merges. New packages: `@deepseek-ai/dsh-ahel-account` (service `ctx.ahelAccount`, Remote namespace `ahelAccount`) and `@deepseek-ai/dsh-llm-ahel` (route `ahel`).
+Status on `phase2/ahel-login` (rebased on `master` a73af0eb64). Packages: `@deepseek-ai/dsh-ahel-account` (service `ctx.ahelAccount`, Remote namespace `ahelAccount`), `@deepseek-ai/dsh-llm-ahel` (route `ahel`), `@deepseek-ai/dsh-client-ui-ahel-account` (browser UI).
 
-## 1. Bundle rows (`packages/bundle/base`)
+## Done
 
-1. Insert the rows of [mcp-ahel.cordis.patch.yml](mcp-ahel.cordis.patch.yml) after the `credentials` row, and the row of [llm-ahel.cordis.patch.yml](llm-ahel.cordis.patch.yml) after `llm-pi-ai`.
-2. Add `@deepseek-ai/dsh-ahel-account` and `@deepseek-ai/dsh-llm-ahel` (`workspace:*`) to `packages/bundle/base/package.json` dependencies (`verify-cordis-config` requires it).
+1. Bundle: `packages/bundle/web-app/cordis.patch.yml` mounts `ahel-account`, `mcp-ahel` (`https://mcp.ahel.ai/mcp`, `auth.credentialRef: AHEL_ACCOUNT`), `llm-ahel` and `ui-ahel-account`; the packages are web-app dependencies. The standalone rows stay in [mcp-ahel.cordis.patch.yml](mcp-ahel.cordis.patch.yml) and [llm-ahel.cordis.patch.yml](llm-ahel.cordis.patch.yml) for other profiles.
+2. Host RPC: `apps/desktop/src/host-settings.ts` exposes `connectHostRpc`; `ahel-account-backend.ts` calls `ahelAccount/state|signIn|cancelSignIn|signOut` and validates the view.
+3. Welcome: `needsWelcome(signedIn)` returns `!signedIn`, read from `ahelAccount.state()` after the Host starts (an unreadable Host reads as signed out). The welcome-seen marker is gone.
+4. Welcome window: "Sign in with Ahel" is primary. Main calls `signIn()`, opens `attempt.authorizeUrl` with `shell.openExternal` (https or loopback only), polls `state()` every second, pushes the phase to the renderer, and enters the workspace on `succeeded`. Cancel calls `cancelSignIn(id)`. Errors map `denied`, `timeout`, `network` to locale strings. "Use my own key" keeps keyless (BYO) entry.
+5. Sidebar: `ui-ahel-account` fills `sidebar.footer.action` with the account entry (avatar, name or email, workspaces, Open ahel.ai, Sign out; signed out: Sign in with Ahel through `window.open`, which the shell hands to the system browser).
+6. Settings > Models: `ui-ahel-account` fills `settings.models.footer` with the Ahel row (state, sign-in). BYO routes (`anthropic`, `openai`) stay on `llm-pi-ai` with keys from the same page; the `ahel` route comes from `llm-ahel` and appears in the model menu once signed in.
 
-## 2. Host RPC client (`apps/desktop/src`)
+## Left
 
-1. Restore `account-backend.ts` from `spike/phase-0` as `ahel-account-backend.ts`: namespace `ahelAccount`, methods `state`, `signIn`, `cancelSignIn(attemptId)`, `signOut`, `profile`; stream endpoint `ahelAccount/watch`. Drop `links`, `watchExpiry`, analytics and `AccountClientMetadata`; validate `AhelAccountView` from `@deepseek-ai/dsh-ahel-account/types`.
-2. Connect it in the backend `start()` the way `spike/phase-0` `main.ts:455-498` did (`connectDesktopWelcome` + `watch`).
-3. In the watch callback: when `attempt.phase === 'waiting-browser'` and `attempt.authorizeUrl` is new, call `shell.openExternal(attempt.authorizeUrl)` (allow only `https:`). The Host never opens a browser itself; without a shell it logs the URL.
-4. On `status === 'signed-in'` with `attempt.phase === 'succeeded'` while the welcome is open, call `enterWorkspace()`. On a change from `signed-in` to `signed-out`, show the welcome again.
-
-## 3. Welcome window
-
-1. `welcome-api.ts`: `needsWelcome(signedIn: boolean)` returns `!signedIn`; the caller passes `(await ahelAccount.state()).status === 'signed-in'` instead of the welcome-seen marker. Delete `WELCOME_SEEN_MARKER`.
-2. `WELCOME_IPC`: add `signIn` and `cancel` channels; `WelcomeOperations` gains `signIn(): Promise<AhelAccountView>` and `cancel(id)`, backed by `ahelAccount.signIn()` / `cancelSignIn(id)`. Forward each watched view to the renderer.
-3. `WelcomePage.tsx`: enable `#sign-in` (copy `welcomeSignIn: 'Sign in with Ahel'`), show "Waiting for your browser" with Cancel while `waiting-browser`/`exchanging`, and map `errorCode` (`denied`, `timeout`, `network`, `protocol`, `storage`) to locale strings. Keep **Continue** as "use my own key" (BYO), not a bypass of sign-in, if Karl wants keyless use.
-4. Update `apps/desktop/tests/expected/welcome/*.expected.txt` and `welcome-window.spec.ts`.
-
-## 4. Sidebar account menu (client)
-
-1. Read `ahelAccount.state()`/`watch` through the typert remote client (`@deepseek-ai/dsh-ahel-account/remote`); show `profile.name ?? profile.email` and the workspace names.
-2. Menu items: "Account on ahel.ai" (open `https://ahel.ai/app/settings` externally), "Sign out" → `ahelAccount.signOut()` (revokes, deletes `AHEL_ACCOUNT`, MCP tools disappear, welcome returns). Use `profile()` for a live refresh when the menu opens.
-
-## 5. Models: Ahel next to bring-your-own keys
-
-1. The `ahel` route is registered by `llm-ahel` directly; BYO routes (`anthropic`, `openai`) stay in `llm-pi-ai` with `apiKeyEnv` keys written by Settings → Models. Both appear in the model picker; route keys never collide.
-2. Settings → Models lists configurable providers only, so Ahel has no key field there. Add one read-only row: "Ahel (your ahel.ai account)" with the sign-in state and the 402/403 hint.
-3. Default model after sign-in: `ahel/<first listed model>` when no BYO route is configured; otherwise keep the user's choice.
-4. Signed out, Ahel requests fail with `MISSING_CREDENTIAL` ("Sign in to Ahel…"); 402 gives code `QUOTA`, 403 code `AUTH`, both with the ahel.ai sentence.
+1. Sign-out from the sidebar keeps the workspace open; the welcome returns on the next launch. Showing it at once needs main to watch `ahelAccount/watch`.
+2. The model picker does not pick an Ahel model by default after sign-in.
+3. Workspace picker (`X-Ahel-Workspace`) is not exposed; ahel.ai pins the token to the person's seat.
+4. Tokens live in `$DSH_HOME/.credentials.yaml` (mode 600). A Keychain provider is Phase 3.
+5. The metered proxy (`/api/llm/v1`) lands with ahel `desktop-metered-models`; until then the fallback model list shows and requests fail with a readable error.

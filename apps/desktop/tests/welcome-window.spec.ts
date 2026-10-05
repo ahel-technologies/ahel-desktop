@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveDesktopLocale } from '../src/locale.ts'
 import { needsWelcome, WELCOME_IPC } from '../src/welcome-api.ts'
 
+const signInOperations = { signIn: async () => {}, cancelSignIn: async () => {} }
+
 const electron = vi.hoisted(() => ({
   create: vi.fn<(options: unknown) => ReturnType<typeof createWindow>>(),
   root: '/desktop-app',
@@ -40,6 +42,7 @@ function createWindow() {
 beforeEach(() => { electron.create.mockReset(); electron.handlers.clear() })
 
 const operations = {
+  ...signInOperations,
   continue: () => Promise.resolve(),
 }
 
@@ -109,7 +112,7 @@ describe('desktop welcome window', () => {
     const window = createWindow()
     electron.create.mockReturnValue(window)
     const enter = vi.fn(operations.continue)
-    await openWelcomeWindow(resolveDesktopLocale('en'), { continue: enter })
+    await openWelcomeWindow(resolveDesktopLocale('en'), { ...signInOperations, continue: enter })
     const own = { sender: window.webContents, senderFrame: window.webContents.mainFrame }
     const handler = electron.handlers.get(WELCOME_IPC.continue)!
     await expect(handler({ sender: {}, senderFrame: {} })).rejects.toThrow('unowned frame')
@@ -143,10 +146,10 @@ describe('desktop welcome window', () => {
     electron.create.mockReturnValueOnce(previous).mockReturnValueOnce(current)
     const previousContinue = vi.fn(operations.continue)
     const currentContinue = vi.fn(operations.continue)
-    await openWelcomeWindow(resolveDesktopLocale('en'), { continue: previousContinue })
+    await openWelcomeWindow(resolveDesktopLocale('en'), { ...signInOperations, continue: previousContinue })
     const previousHandler = electron.handlers.get(WELCOME_IPC.continue)!
     const previousSender = { sender: previous.webContents, senderFrame: previous.webContents.mainFrame }
-    await openWelcomeWindow(resolveDesktopLocale('en'), { continue: currentContinue })
+    await openWelcomeWindow(resolveDesktopLocale('en'), { ...signInOperations, continue: currentContinue })
     const currentHandler = electron.handlers.get(WELCOME_IPC.continue)!
     await expect(previousHandler(previousSender)).rejects.toThrow('unowned frame')
     await expect(currentHandler(previousSender)).rejects.toThrow('unowned frame')
@@ -159,7 +162,7 @@ describe('desktop welcome window', () => {
     expect(electron.handlers.size).toBe(0)
   })
 
-  it('shows the welcome only until it has been seen', () => {
+  it('shows the welcome until the ahel.ai account is signed in', () => {
     expect(needsWelcome(false)).toBe(true)
     expect(needsWelcome(true)).toBe(false)
   })

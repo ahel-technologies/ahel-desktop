@@ -1,5 +1,5 @@
 vi.mock('../src/web-document.ts', () => ({ authenticateWebHost: async () => 'test-cookie', serveWebDocument: vi.fn(), forwardWebRequest: vi.fn() }))
-/** First-launch welcome startup uses the Host before transitioning to the workspace; it never gates it. */
+/** Welcome startup reads the ahel.ai account from the Host before transitioning to the workspace; it never gates it. */
 
 import { afterEach, expect, it, vi } from 'vitest'
 import type { BrowserWindowConstructorOptions } from 'electron'
@@ -119,9 +119,11 @@ vi.mock('../src/host-settings.ts', () => ({
     },
   }),
 }))
-vi.mock('node:fs', async importOriginal => ({
-  ...await importOriginal<typeof import('node:fs')>(),
-  existsSync: vi.fn((path: string) => state.seen && path.endsWith('welcome-seen')),
+vi.mock('../src/ahel-account-backend.ts', () => ({
+  browserDestination: (url: string) => url,
+  connectDesktopAhelAccount: async () => ({
+    state: async () => ({ status: state.seen ? 'signed-in' : 'signed-out', profile: null, attempt: null }),
+  }),
 }))
 vi.mock('node:fs/promises', async importOriginal => ({
   ...await importOriginal<typeof import('node:fs/promises')>(),
@@ -210,7 +212,7 @@ it.each([false, true])('shows the first-launch welcome without carrying update f
   expect(state.welcomeLocale).toMatchObject({ id: 'zh-CN' })
   expect(state.dialogLocale!().id).toBe('zh-CN')
   await state.operations!.continue()
-  expect(state.markers).toEqual(['/desktop-user-data/welcome-seen'])
+  expect(state.markers).toEqual([])
   expect(state.loadWorkspace).not.toHaveBeenCalled()
   expect(state.showWorkspace).toHaveBeenCalledOnce()
   expect(state.moveTopWorkspace).not.toHaveBeenCalled()
@@ -251,11 +253,11 @@ it('opens the workspace when the welcome is closed instead of quitting', async (
   expect(state.showWorkspace).not.toHaveBeenCalled()
   state.closedWelcome!()
   await vi.waitFor(() => { expect(state.showWorkspace).toHaveBeenCalledOnce() })
-  expect(state.markers).toEqual(['/desktop-user-data/welcome-seen'])
+  expect(state.markers).toEqual([])
   expect(state.quit).not.toHaveBeenCalled()
 })
 
-it('opens the workspace directly once the welcome has been seen', async () => {
+it('opens the workspace directly when the ahel.ai account is signed in', async () => {
   reset(true)
   stubDevelopmentEnvironment()
   await import('../src/main.ts')

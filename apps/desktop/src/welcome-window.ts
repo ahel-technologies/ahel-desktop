@@ -52,7 +52,7 @@ let disposeActiveHandlers: (() => void) | undefined
  * Open the process's sole welcome window with desktop-owned operations.
  * Replaces IPC ownership immediately; the caller closes the previous native window.
  * @param locale - shell-owned localized copy.
- * @param operations - the continue action.
+ * @param operations - the continue, sign-in and cancel actions.
  * @returns the visible window; a failed load destroys it before rejecting.
  */
 export async function openWelcomeWindow(locale: DesktopLocale, operations: WelcomeOperations): Promise<BrowserWindow> {
@@ -64,6 +64,8 @@ export async function openWelcomeWindow(locale: DesktopLocale, operations: Welco
     if (!active) return
     active = false
     ipcMain.removeHandler(WELCOME_IPC.continue)
+    ipcMain.removeHandler(WELCOME_IPC.signIn)
+    ipcMain.removeHandler(WELCOME_IPC.cancelSignIn)
     disposeActiveHandlers = undefined
   }
   disposeActiveHandlers = disposeHandlers
@@ -75,6 +77,14 @@ export async function openWelcomeWindow(locale: DesktopLocale, operations: Welco
   ipcMain.handle(WELCOME_IPC.continue, async (event) => {
     assertSender(event)
     await operations.continue()
+  })
+  ipcMain.handle(WELCOME_IPC.signIn, async (event) => {
+    assertSender(event)
+    await operations.signIn()
+  })
+  ipcMain.handle(WELCOME_IPC.cancelSignIn, async (event) => {
+    assertSender(event)
+    await operations.cancelSignIn()
   })
   window.once('closed', disposeHandlers)
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))

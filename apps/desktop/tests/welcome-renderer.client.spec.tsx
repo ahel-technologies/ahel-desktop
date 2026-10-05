@@ -11,6 +11,9 @@ function mount(language = 'zh-CN') {
   const api = {
     ...resolveDesktopLocale(language),
     continue: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    signIn: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    cancelSignIn: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    onSignInState: vi.fn(() => () => {}),
   }
   const mounted = render(<Welcome api={api} />)
   const button = (id: string) => document.querySelector<HTMLButtonElement>(id)!
@@ -26,12 +29,12 @@ function mount(language = 'zh-CN') {
 }
 
 describe('desktop welcome presentation', () => {
-  it.each(['zh-CN', 'en'])('renders the %s entry with Continue focused and sign-in unavailable', async (language) => {
+  it.each(['zh-CN', 'en'])('renders the %s entry with Sign in with Ahel focused', async (language) => {
     const view = mount(language)
     expect(document.documentElement.lang).toBe(language)
     expect(document.querySelector('img')!.getAttribute('src')).toBe('assets/welcome-brand.svg')
-    expect(document.activeElement).toBe(view.button('#continue'))
-    expect(view.button('#sign-in').disabled).toBe(true)
+    expect(document.activeElement).toBe(view.button('#sign-in'))
+    expect(view.button('#sign-in').disabled).toBe(false)
     await expect(view.copy()).toMatchFileSnapshot(`./expected/welcome/${language}.expected.txt`)
   })
 
@@ -45,6 +48,15 @@ describe('desktop welcome presentation', () => {
     expect(view.button('#continue').disabled).toBe(true)
     await act(async () => { opened.resolve(undefined) })
     expect(view.button('#continue').disabled).toBe(false)
+  })
+
+  it('starts the ahel.ai sign-in and offers Cancel while the browser is open', async () => {
+    const view = mount('en')
+    await act(async () => { fireEvent.click(view.button('#sign-in')) })
+    expect(view.api.signIn).toHaveBeenCalledOnce()
+    expect(document.querySelector('#sign-in-status')!.textContent).toBe(view.api.messages.welcomeSignInWaiting)
+    await act(async () => { fireEvent.click(view.button('#sign-in-cancel')) })
+    expect(view.api.cancelSignIn).toHaveBeenCalledOnce()
   })
 
   it('shows a retryable failure when the workspace cannot open', async () => {

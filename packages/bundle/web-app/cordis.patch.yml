@@ -254,6 +254,35 @@
     - id: ui-mcp-app
       name: '@deepseek-ai/dsh-client-ui-mcp-app'
 
+    # Ahel account: one ahel.ai sign-in (credential AHEL_ACCOUNT) shared by
+    # the Ahel MCP server and Ahel-metered models. mcp-ahel connects only while
+    # signed in and drops its tools on sign-out. URL is mcp.ahel.ai/mcp because
+    # ahel.ai/mcp advertises resource https://mcp.ahel.ai.
+    - id: ahel-account
+      name: '@deepseek-ai/dsh-ahel-account'
+
+    - id: mcp-ahel
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: ahel
+        transport: streamable-http
+        url: https://mcp.ahel.ai/mcp
+        auth:
+          credentialRef: AHEL_ACCOUNT
+        reconnect:
+          enabled: true
+          initialDelayMs: 2000
+          maxDelayMs: 30000
+          maxAttempts: 1000
+
+    # Ahel-metered models (route `ahel`), next to the BYO-key llm-pi-ai routes.
+    - id: llm-ahel
+      name: '@deepseek-ai/dsh-llm-ahel'
+
+    # Sidebar account menu and the Ahel row in Settings > Models.
+    - id: ui-ahel-account
+      name: '@deepseek-ai/dsh-client-ui-ahel-account'
+
     - id: ui-workspace
       name: '@deepseek-ai/dsh-client-ui-workspace'
 

@@ -2,7 +2,7 @@ import { WINDOWS_TITLEBAR_HEIGHT } from '../src/windows-layout.ts'
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import type { IpcMainInvokeEvent } from 'electron'
 import { join } from 'node:path'
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import type { MenuItemConstructorOptions, MessageBoxOptions } from 'electron'
 import { DESKTOP_IPC, type DesktopUpdateState } from '../src/ipc.ts'
@@ -290,6 +290,11 @@ vi.mock('../src/update-coordinator.ts', () => ({ DesktopUpdateCoordinator: class
   readonly install = harness.updateInstall
   readonly dispose = vi.fn()
 } }))
+// These launches are signed in, so the workspace opens directly; the welcome has its own spec.
+vi.mock('../src/ahel-account-backend.ts', () => ({
+  browserDestination: (url: string) => url,
+  connectDesktopAhelAccount: async () => ({ state: async () => ({ status: 'signed-in', profile: null, attempt: null }) }),
+}))
 vi.mock('../src/host-settings.ts', () => ({
   connectDesktopHostSettings: async () => ({
     readLocalePreference: async (): Promise<string | null> =>
@@ -325,8 +330,6 @@ beforeEach(() => {
   const userData = mkdtempSync(join(tmpdir(), 'dsh-main-user-data-'))
   onTestFinished(() => { rmSync(userData, { recursive: true, force: true }) })
   harness.app.getPath.mockImplementation(name => name === 'userData' ? userData : `desktop-test-${name}`)
-  // The first-launch welcome has its own spec; these launches open the workspace directly.
-  writeFileSync(join(userData, 'welcome-seen'), '')
   harness.dialog.showMessageBox.mockImplementation((options: { title?: string }) => {
     if (options.title !== en.startupFailed) return Promise.resolve({ response: 1 })
     harness.dialogShown.resolve()
