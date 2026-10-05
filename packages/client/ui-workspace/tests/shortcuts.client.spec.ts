@@ -55,7 +55,7 @@ async function bench(runtime: 'web' | 'desktop' = 'desktop', platform: ShortcutP
   }
   const controls = createWorkspaceShortcutControls()
   const fiber = ctx.plugin((scoped) => {
-    installWorkspaceShortcuts(scoped, navigation, controls, (id) => { void navigation.archiveSession(id) })
+    installWorkspaceShortcuts(scoped, navigation, controls, (id) => { void navigation.archiveSession(id) }, () => true)
   })
   await fiber.await()
   const select = (id: string) => { list.set({ ...list.getSnapshot(), byId: {

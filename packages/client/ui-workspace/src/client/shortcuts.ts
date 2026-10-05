@@ -62,12 +62,14 @@ export function createWorkspaceShortcutControls(): WorkspaceShortcutControls {
  * @param navigation - session creation and forking from the pointer controls' navigation service.
  * @param controls - browser-owned opening requests.
  * @param archiveSession - shared archive action, including running-work confirmation and notices.
+ * @param folders - whether folder Workspaces are shown; hidden, the add-workspace shortcut passes through.
  */
 export function installWorkspaceShortcuts(
   ctx: Context,
   navigation: Pick<UiWorkspace, 'startSession' | 'forkSession'>,
   controls: ReturnType<typeof createWorkspaceShortcutControls>,
   archiveSession: (sessionId: SessionId) => void,
+  folders: () => boolean,
 ): void {
   const t = ctx.locale.bind('workspace')
   const current = () => Object.values(ctx.sessions.list.getSnapshot().byId)
@@ -91,6 +93,7 @@ export function installWorkspaceShortcuts(
     () => ({ status: 'handled', run: controls.search }))
   register('workspace.add', () => t('workspace.add'), ['add workspace', 'open folder'], 'KeyO', ['primary'], ['primary', 'alt'],
     () => {
+      if (!folders()) return { status: 'pass' }
       const reason = addReason()
       return reason === null ? { status: 'handled', run: controls.add } : { status: 'blocked', reason }
     })

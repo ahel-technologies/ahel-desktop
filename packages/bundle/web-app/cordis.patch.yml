@@ -106,8 +106,12 @@
       name: '@ahel/dsh-api-settings-controller'
 
     # Workspace commands and reconnect-safe projection over Typert Remote.
+    # Ahel Desktop keeps its first-use Workspace in the harness home, so first
+    # launch never touches the Documents folder.
     - id: workspace-controller
       name: '@ahel/dsh-api-workspace-controller'
+      config:
+        workspacesDirectory: !!js "ctx.get('profileContext')?.name === 'desktop' ? dshHomePath('workspaces') : undefined"
 
     - id: cordis-host-runner
       name: '@ahel/dsh-cordis-host-runner'

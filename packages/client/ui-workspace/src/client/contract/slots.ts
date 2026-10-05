@@ -223,6 +223,8 @@ export type WorkspaceBrowserInjected = {
     hostInfo: HostObservable<RemoteHostFacts>
     workspaceShortcuts: HostObservable<WorkspaceShortcutState>
     shortcuts: HostObservable<readonly ShortcutCatalogEntry[]>
+    /** Whether folder Workspaces show: grouping choices and Add workspace; hidden, the list is flat. */
+    folders: HostObservable<boolean>
   }
   /** Open the browser search and focus its input. */
   requestSearch: () => void

@@ -94,7 +94,7 @@ const NS = 'workspace'
  * declaration through `slots.inject()` instead of assuming order.
  */
 export const inject = [
-  'slots', 'sessions', 'workspaces', 'locale', 'remote', 'remote.directoryPicker', 'layout', 'shortcuts',
+  'slots', 'sessions', 'workspaces', 'locale', 'remote', 'remote.directoryPicker', 'layout', 'shortcuts', 'configForms',
 ]
 
 /**
@@ -121,6 +121,9 @@ export function apply(ctx: Context): void {
   ctx.slots.provideRoot({ hooks: { workspaces: workspaces.list } })
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-workspace: dictionaries')
   const shortcutControls = createWorkspaceShortcutControls()
+  // Folder Workspaces (grouping, Add workspace, the hero picker) are a developer
+  // surface; product users see one flat Session list.
+  const folders = (ctx.get('configForms') as { developerTools: { enabled: HostObservable<boolean> } }).developerTools.enabled
 
   const searchSessions: WorkspaceBrowserInjected['searchSessions'] = async (query, signal) => {
     const result = await sessions.search(query, signal)
@@ -198,7 +201,7 @@ export function apply(ctx: Context): void {
     },
     unarchiveSession,
   })
-  installWorkspaceShortcuts(ctx, uiWorkspace, shortcutControls, archiveInjected().archiveSession)
+  installWorkspaceShortcuts(ctx, uiWorkspace, shortcutControls, archiveInjected().archiveSession, () => folders.getSnapshot())
   const archiveConfirmInjected = (): SessionArchiveConfirmInjected => ({
     hooks: { archiveRequest },
     settleSessionArchive: () => { archiveRequest.set(null) },
@@ -249,7 +252,9 @@ export function apply(ctx: Context): void {
     closeAddWorkspace: shortcutControls.closeAdd,
     setDirectoryBusy: shortcutControls.directoryBusy,
     dismissForkError: shortcutControls.dismissForkError,
-    hooks: { directoryFlow: browserFlowSource, hostInfo, workspaceShortcuts: shortcutControls.state, shortcuts: ctx.shortcuts.catalog },
+    hooks: {
+      directoryFlow: browserFlowSource, hostInfo, workspaceShortcuts: shortcutControls.state, shortcuts: ctx.shortcuts.catalog, folders,
+    },
   })
   const pickerInjected = (): WorkspacePickerInjected => ({
     createWorkspace: input => workspaces.create(input),
@@ -307,15 +312,31 @@ export function apply(ctx: Context): void {
       name: 'shell.overlay', id: 'workspace.row-toast', locale: NS, store: viewStore, inject: rowToastInjected,
     }, RowActionToast)
   })
-  ctx.slots.inject('conversation.hero.workspace', () => ctx.slots.register(
-    {
-      name: 'conversation.hero.workspace',
-      children: { 'conversation.hero.workspace.directoryFlow': { kind: 'single', scope: 'root' } },
-      inject: pickerInjected,
-      locale: NS,
-    },
-    WorkspacePicker,
-  ))
+  ctx.slots.inject('conversation.hero.workspace', () => {
+    let unregister: (() => void) | undefined
+    const sync = (): void => {
+      if (!folders.getSnapshot()) {
+        unregister?.()
+        unregister = undefined
+        return
+      }
+      unregister ??= ctx.slots.register(
+        {
+          name: 'conversation.hero.workspace',
+          children: { 'conversation.hero.workspace.directoryFlow': { kind: 'single', scope: 'root' } },
+          inject: pickerInjected,
+          locale: NS,
+        },
+        WorkspacePicker,
+      )
+    }
+    sync()
+    const stop = folders.subscribe(sync)
+    return () => {
+      stop()
+      unregister?.()
+    }
+  })
 }
 
 /**

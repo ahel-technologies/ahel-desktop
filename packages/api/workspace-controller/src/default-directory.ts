@@ -1,4 +1,4 @@
-/** Resolve the Host account's Documents directory for first-use Workspace creation. */
+/** Resolve the first-use Workspace directory: under a configured data directory, else under the Host account's Documents. */
 
 import { homedir } from 'node:os'
 import { posix, win32 } from 'node:path'
@@ -27,21 +27,29 @@ export function validateDocumentsDirectory(directory: string, platform: NodeJS.P
   return paths.normalize(directory)
 }
 
+/** Folder created under the Documents directory to hold the first-use Workspace. */
+export const DOCUMENTS_APPLICATION_DIRECTORY = 'Ahel Desktop'
+
 /**
  * Resolve the first-use directory on the Host without creating files.
  * @param documentsDirectory - explicit deployment override for the system Documents directory.
  * @param signal - caller lifetime and lookup deadline.
  * @param internals - platform facts and native command runner.
+ * @param workspacesDirectory - fully qualified directory that holds the first-use Workspace directly; set, no Documents lookup runs.
  * @returns the absolute candidate path.
  */
 export async function defaultWorkspaceDirectory(
   documentsDirectory: string | undefined,
   signal: AbortSignal,
   internals: DocumentsDirectoryInternals = {},
+  workspacesDirectory?: string,
 ): Promise<string> {
   const platform = internals.platform ?? process.platform
   const paths = platform === 'win32' ? win32 : posix
   signal.throwIfAborted()
+  if (workspacesDirectory !== undefined) {
+    return paths.join(validateDocumentsDirectory(workspacesDirectory, platform), DEFAULT_WORKSPACE_DIRECTORY)
+  }
   let directory = documentsDirectory
   if (directory === undefined) {
     const run = internals.run ?? runNativeCommand
@@ -74,5 +82,5 @@ export async function defaultWorkspaceDirectory(
   }
   directory = validateDocumentsDirectory(directory, platform)
   signal.throwIfAborted()
-  return paths.join(directory, 'deepseek-harness', DEFAULT_WORKSPACE_DIRECTORY)
+  return paths.join(directory, DOCUMENTS_APPLICATION_DIRECTORY, DEFAULT_WORKSPACE_DIRECTORY)
 }

@@ -35,6 +35,8 @@ export interface Config {
   documentsDirectory?: string
   /** Maximum duration of the operating system's Documents lookup. */
   documentsLookupTimeoutMs?: number
+  /** Fully qualified directory that holds the first-use Workspace directly, replacing the Documents location. */
+  workspacesDirectory?: string
 }
 
 /** Directory policy after schema defaults have been applied. */
@@ -54,6 +56,7 @@ export class WorkspaceController extends TypertRemoteService {
   static Config: z<Config, ResolvedConfig> = z.object({
     documentsDirectory: z.string(),
     documentsLookupTimeoutMs: z.natural().min(1).default(10_000),
+    workspacesDirectory: z.string(),
   })
 
   private readonly config: ResolvedConfig
@@ -68,6 +71,7 @@ export class WorkspaceController extends TypertRemoteService {
     super(ctx, 'workspaceController', { namespace: 'workspace' })
     this.config = WorkspaceController.Config(config)
     if (this.config.documentsDirectory !== undefined) validateDocumentsDirectory(this.config.documentsDirectory)
+    if (this.config.workspacesDirectory !== undefined) validateDocumentsDirectory(this.config.workspacesDirectory)
     this.commands = new WorkspaceCommands(ctx)
     this.feed = new WorkspaceFeed(ctx)
     // This package is the Loader entry for both Remote owners it hosts: the
@@ -100,7 +104,7 @@ export class WorkspaceController extends TypertRemoteService {
     const workspace = await this.ctx.workspaceRegistry.initializeDefault(async () => {
       const timeout = AbortSignal.timeout(this.config.documentsLookupTimeoutMs)
       return await defaultWorkspaceDirectory(
-        this.config.documentsDirectory, AbortSignal.any([signal, timeout]),
+        this.config.documentsDirectory, AbortSignal.any([signal, timeout]), {}, this.config.workspacesDirectory,
       )
     })
     return workspace === undefined ? undefined : { workspace: workspaceView(workspace) }
