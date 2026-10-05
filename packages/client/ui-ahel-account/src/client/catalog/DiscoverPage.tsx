@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, IconSearchOutlineRegular, Input, Pill, SegmentedControl } from '@ahel/dsh-client-ui-primitives'
 import type { CatalogBrowsePage, CatalogBrowseQuery, CatalogGroup } from '@ahel/dsh-ahel-account/types'
-import type { DiscoverPageProps, OpenRow } from './contract.ts'
+import type { DiscoverPageProps } from './contract.ts'
 import { AppRow } from './AppRow.tsx'
+import { DetailDrawer } from './DetailDrawer.tsx'
 import css from './Catalog.module.css'
 
 /** ahel.ai's 15 Discover categories, in its rail order. */
@@ -25,6 +26,8 @@ type Kind = CatalogBrowseQuery['kind']
 
 /** The listing as loaded so far for one query. */
 interface Listing {
+  /** The first page's query; nested-skill slices are fetched under it. */
+  readonly query: CatalogBrowseQuery
   readonly groups: readonly CatalogGroup[]
   readonly last: CatalogBrowsePage
 }
@@ -32,11 +35,10 @@ interface Listing {
 /**
  * Render the Discover panel.
  * @param props - composed slot props: the catalog face, its hooks and `t`.
- * @param props.onOpen - opens a row; defaults to its ahel.ai page.
- * @returns the page.
+ * @returns the page; a result opens in the detail sheet.
  */
-export function DiscoverPage(props: DiscoverPageProps & { onOpen?: OpenRow }) {
-  const { browse, openLink, useAccount, useInstalled, t, onOpen } = props
+export function DiscoverPage(props: DiscoverPageProps) {
+  const { browse, openLink, useAccount, useInstalled, t } = props
   const signedIn = useAccount(view => view?.status === 'signed-in')
   const installed = useInstalled(value => value)
   const [input, setInput] = useState('')
@@ -47,6 +49,7 @@ export function DiscoverPage(props: DiscoverPageProps & { onOpen?: OpenRow }) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [more, setMore] = useState<'idle' | 'loading' | 'error'>('idle')
   const [attempt, setAttempt] = useState(0)
+  const [selected, setSelected] = useState<CatalogGroup | null>(null)
   // Each request takes a ticket; only the newest one may publish.
   const ticket = useRef(0)
 
@@ -59,9 +62,10 @@ export function DiscoverPage(props: DiscoverPageProps & { onOpen?: OpenRow }) {
     const mine = ++ticket.current
     setStatus('loading')
     setMore('idle')
-    browse({ q, kind, category, page: 0 }).then((page) => {
+    const query: CatalogBrowseQuery = { q, kind, category, page: 0 }
+    browse(query).then((page) => {
       if (mine !== ticket.current) return
-      setListing({ groups: page.groups, last: page })
+      setListing({ query, groups: page.groups, last: page })
       setStatus('ready')
     }, () => {
       if (mine === ticket.current) setStatus('error')
@@ -74,7 +78,7 @@ export function DiscoverPage(props: DiscoverPageProps & { onOpen?: OpenRow }) {
     setMore('loading')
     browse({ q, kind, category, page: listing.last.page + 1 }).then((page) => {
       if (mine !== ticket.current) return
-      setListing({ groups: [...listing.groups, ...page.groups], last: page })
+      setListing({ query: listing.query, groups: [...listing.groups, ...page.groups], last: page })
       setMore('idle')
     }, () => {
       if (mine === ticket.current) setMore('error')
@@ -155,7 +159,8 @@ export function DiscoverPage(props: DiscoverPageProps & { onOpen?: OpenRow }) {
         {groups.length > 0 && (
           <ul className={css.list}>
             {groups.map(group => (
-              <AppRow key={group.key} row={group.row} installed={installed} signedIn={signedIn} onOpen={onOpen}
+              <AppRow key={group.key} row={group.row} installed={installed} signedIn={signedIn}
+                onOpen={() => { setSelected(group) }}
                 install={props.install} setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t} />
             ))}
           </ul>
@@ -172,6 +177,11 @@ export function DiscoverPage(props: DiscoverPageProps & { onOpen?: OpenRow }) {
           </div>
         )}
       </div>
+      {selected !== null && listing !== null && (
+        <DetailDrawer key={selected.row.id} group={selected} query={listing.query} installed={installed} signedIn={signedIn}
+          onSelect={setSelected} onClose={() => { setSelected(null) }} browsePart={props.browsePart} install={props.install}
+          setEnabled={props.setEnabled} signIn={props.signIn} openLink={openLink} t={t} />
+      )}
     </div>
   )
 }
