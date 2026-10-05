@@ -228,8 +228,11 @@
       name: '@ahel/dsh-client-ui-sidebar'
 
     # The right Sidebar: one docking surface per session over ui-dockkit.
+    # Ahel Desktop mounts no tab type for it, so the desktop profile leaves
+    # it (and its empty Start pane) out.
     - id: ui-sidebar-right
       name: '@ahel/dsh-client-ui-sidebar-right'
+      disabled: !!js "ctx.get('profileContext')?.name === 'desktop'"
 
     - id: ui-settings
       name: '@ahel/dsh-client-ui-settings'

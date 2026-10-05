@@ -49,7 +49,6 @@ import { desktopErrorState } from './startup-error.ts'
 import { readDesktopLoginShellEnvironment, resolveDesktopLoginShellConfig } from './login-shell-environment.ts'
 import { desktopClientVersion } from './client-version.ts'
 import { DesktopUpdateDialog, type UpdateDialogOptions } from './update-dialog.ts'
-import { DesktopBrowserGuests } from './browser-guests.ts'
 import { installDesktopShortcuts } from './keyboard.ts'
 import { DesktopUpdateOverlays } from './update-overlay.ts'
 import { DesktopQuitConfirmation } from './quit-confirmation.ts'
@@ -214,7 +213,8 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
       contextIsolation: true,
       sandbox: true,
       webSecurity: true,
-      webviewTag: primary,
+      // Ahel Desktop mounts no embedded browser pane, so no window may host a <webview>.
+      webviewTag: false,
       devTools: true,
     },
   })
@@ -383,7 +383,6 @@ async function main(): Promise<void> {
   const applicationUrl = `${SCHEME}://app/`
   let hostUrl: string | undefined
   let hostCookie: string | undefined
-  const browserGuests = new DesktopBrowserGuests(() => hostUrl)
   let injections: readonly unknown[] = []
   let hostSettings: DesktopHostSettings | undefined
   let ahelAccount: DesktopAhelAccount | undefined
@@ -620,15 +619,6 @@ async function main(): Promise<void> {
     assertProductSender(event)
     if (!enteredWorkspace || await readSignedIn()) return
     await leaveWorkspace(reason === 'ended' ? 'session-ended' : null)
-  })
-
-  ipcMain.handle(DESKTOP_IPC.browserAcquire, (event, workspace: unknown) => {
-    assertProductSender(event)
-    return browserGuests.acquire(event.sender, workspace)
-  })
-  ipcMain.handle(DESKTOP_IPC.browserRelease, (event, lease: unknown) => {
-    assertProductSender(event)
-    return browserGuests.release(event.sender, lease)
   })
 
   session.defaultSession.webRequest.onBeforeSendHeaders({ urls: ['ws://127.0.0.1/*'] }, (details, callback) => {
@@ -891,7 +881,6 @@ async function main(): Promise<void> {
   const createMainWindow = (): BrowserWindow => {
     const window = createWindow(appPreload, false, true)
     mainWindow = window
-    browserGuests.bind(window, (guest, name) => shortcuts.attachGuest(window, guest, name))
     shortcuts.attach(window)
     window.on('focus', automaticCheck)
     // Closing hides: the page and the Host keep running, and the next show resumes the same document.
