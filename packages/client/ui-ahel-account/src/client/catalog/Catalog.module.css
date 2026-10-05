@@ -6,8 +6,8 @@
  * the row (dr-* in discover-row.css), the concept header (pcat-* in
  * discovery-surface.css) and the Knowledge cards (store.css,
  * knowledge-packs.css). Values are ported as they are; only the class
- * names are this module's. The fonts fall back to the system sans while
- * DM Sans, Outfit and DM Mono are not bundled.
+ * names are this module's. DM Sans, Outfit and DM Mono come from
+ * @ahel/dsh-client-ui-theme/ahel-font.css, which the Web entry loads.
  */
 
 .tokens {
@@ -56,9 +56,9 @@
   --ahel-tile-teal-ground: #ddf3ef;
   --ahel-tile-teal-line: #c5e8e1;
   --ahel-tile-teal-ink: #0b5f59;
-  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-heading: 'Outfit', 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Outfit', 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
   font-family: var(--font-sans);
   color: var(--ahel-ink);
 }

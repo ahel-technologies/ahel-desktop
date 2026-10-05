@@ -1,5 +1,6 @@
 /** Browser entry for the Web client. */
 import '@ahel/dsh-client-ui-theme/brand-font.css'
+import '@ahel/dsh-client-ui-theme/ahel-font.css'
 import { AppWebEntry, applyIndexInjections } from '@ahel/dsh-client-web'
 
 interface DesktopBootGlobal {

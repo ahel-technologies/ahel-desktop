@@ -1,0 +1,33 @@
+/* ahel.ai's fonts, latin subset, the weights ahel.ai loads: DM Sans and Outfit variable, DM Mono 400 and 500.
+   SIL Open Font License in DMSans-OFL.txt, Outfit-OFL.txt and DMMono-OFL.txt. */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 100 1000;
+  font-display: swap;
+  src: url(./dm-sans-latin-wght.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(./outfit-latin-wght.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(./dm-mono-latin-400.woff2) format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(./dm-mono-latin-500.woff2) format('woff2');
+}
