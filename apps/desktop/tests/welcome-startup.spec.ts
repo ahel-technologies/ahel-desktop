@@ -178,7 +178,7 @@ function reset(seen: boolean): void {
   state.closedWelcome = undefined
 }
 
-it.each([false, true])('shows the first-launch welcome without carrying update focus into Continue (Windows update=%s)', async (updated) => {
+it.each([false, true])('shows the first-launch welcome without carrying update focus into the workspace (Windows update=%s)', async (updated) => {
   reset(false)
   if (updated) vi.stubGlobal('process', { ...process, platform: 'win32', argv: ['desktop', '--updated'] })
   vi.useFakeTimers()
@@ -211,7 +211,9 @@ it.each([false, true])('shows the first-launch welcome without carrying update f
   state.loadWorkspace.mockClear()
   expect(state.welcomeLocale).toMatchObject({ id: 'zh-CN' })
   expect(state.dialogLocale!().id).toBe('zh-CN')
-  await state.operations!.continue()
+  await vi.waitFor(() => { expect(state.closedWelcome).toBeDefined() })
+  state.closedWelcome!()
+  await vi.waitFor(() => { expect(state.showWorkspace).toHaveBeenCalledOnce() })
   expect(state.markers).toEqual([])
   expect(state.loadWorkspace).not.toHaveBeenCalled()
   expect(state.showWorkspace).toHaveBeenCalledOnce()
@@ -221,7 +223,7 @@ it.each([false, true])('shows the first-launch welcome without carrying update f
     ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 16, y: 18 }, vibrancy: 'sidebar' } : {}),
     webPreferences: { contextIsolation: true, sandbox: true },
   })
-  expect(state.closeWelcome).toHaveBeenCalledOnce()
+  expect(state.closeWelcome).not.toHaveBeenCalled()
   state.closedWelcome!()
   expect(state.showWorkspace).toHaveBeenCalledOnce()
   activate()
@@ -229,7 +231,7 @@ it.each([false, true])('shows the first-launch welcome without carrying update f
   expect(state.quit).not.toHaveBeenCalled()
   expect(state.stopHost).not.toHaveBeenCalled()
   const contents = state.contents as { mainFrame: { url: string }; send: ReturnType<typeof vi.fn> }
-  expect(contents.send).toHaveBeenCalledWith(DESKTOP_IPC.enterWorkspace)
+  expect(contents.send).not.toHaveBeenCalledWith(DESKTOP_IPC.enterWorkspace)
   const event = { sender: contents, senderFrame: contents.mainFrame }
   const bootstrap = state.handlers.get(DESKTOP_IPC.localeBootstrap)!
   expect(await bootstrap(event)).toEqual({ languages: ['en-US'], preference: 'zh' })
