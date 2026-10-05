@@ -1,6 +1,5 @@
 Ahel Desktop
 Ahel
 Welcome to Ahel Desktop
-Sign in with your ahel.ai account to use your Ahel apps and Ahel models. Or add your own Anthropic or OpenAI key in Settings → Models.
+Sign in with your ahel.ai account to use your apps and models.
 Sign in with Ahel
-Use my own key

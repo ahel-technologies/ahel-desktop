@@ -23,6 +23,7 @@ import { WINDOWS_TITLEBAR_HEIGHT } from './windows-layout.ts'
 import { resolveDesktopPaths } from './paths.ts'
 import { DesktopProjectManager } from './project-manager.ts'
 import { DesktopHostFatalError, DesktopHostProcess, DesktopHostUncleanExitError } from './host-process.ts'
+import { answerSafeStorageRequest } from './safe-storage.ts'
 import { installDesktopDirectoryPicker } from './directory-picker.ts'
 import { installMicrophonePermissions } from './microphone-permissions.ts'
 import { DesktopBackendController } from './backend-controller.ts'
@@ -36,7 +37,7 @@ import { serveWebDocument, authenticateWebHost, forwardWebRequest } from './web-
 import { DesktopFatalRecovery } from './fatal-recovery.ts'
 import { pruneCrashReports, RendererConsoleTail, writeCrashReport, type CrashReportSource } from './crash-report.ts'
 import { openWelcomeWindow } from './welcome-window.ts'
-import { needsWelcome, WELCOME_IPC, type WelcomeSignInState } from './welcome-api.ts'
+import { needsWelcome, WELCOME_IPC, type WelcomeNotice, type WelcomeSignInState } from './welcome-api.ts'
 import { browserDestination, connectDesktopAhelAccount, type DesktopAhelAccount } from './ahel-account-backend.ts'
 import { connectDesktopHostSettings, type DesktopHostSettings } from './host-settings.ts'
 import { DesktopUpdateJournal } from './update-journal.ts'
@@ -397,7 +398,7 @@ async function main(): Promise<void> {
     const hostInspectPort = developmentHostInspectPort(development)
     const host = new DesktopHostProcess(resources.node, resources.dsh, activeProject,
       hostInspectPort, { ...hostEnvironment, DSH_CLIENT_VERSION: desktopClientVersion() }, onFailure,
-      resources)
+      resources, answerSafeStorageRequest)
     return {
       start: async () => {
         const ready = await host.start()
@@ -600,10 +601,10 @@ async function main(): Promise<void> {
   })
 
   // The renderer only hints; the Host's own account state decides.
-  ipcMain.handle(DESKTOP_IPC.accountChanged, async (event) => {
+  ipcMain.handle(DESKTOP_IPC.accountChanged, async (event, reason: unknown) => {
     assertProductSender(event)
     if (!enteredWorkspace || await readSignedIn()) return
-    await leaveWorkspace()
+    await leaveWorkspace(reason === 'ended' ? 'session-ended' : null)
   })
 
   ipcMain.handle(DESKTOP_IPC.browserAcquire, (event, workspace: unknown) => {
@@ -990,7 +991,7 @@ async function main(): Promise<void> {
     if (attempt !== null && attempt !== undefined) await ahelAccount?.cancelSignIn(attempt.id)
   }
   let openingWelcome: Promise<void> | undefined
-  const showWelcome = (): Promise<void> => {
+  const showWelcome = (notice: WelcomeNotice | null = null): Promise<void> => {
     if (quitting) return Promise.resolve()
     if (welcomeWindow !== undefined && !welcomeWindow.isDestroyed()) {
       welcomeWindow.show()
@@ -998,12 +999,12 @@ async function main(): Promise<void> {
       return Promise.resolve()
     }
     openingWelcome ??= (async () => {
-      welcomeWindow = await openWelcomeWindow(locale, { continue: () => enterWorkspace(), signIn: startSignIn, cancelSignIn })
+      welcomeWindow = await openWelcomeWindow(locale, { signIn: startSignIn, cancelSignIn }, notice)
       const window = welcomeWindow
       window.once('closed', () => {
         if (welcomeWindow === window) welcomeWindow = undefined
         if (enteredWorkspace || recovery.active || isQuitting()) return
-        // The welcome never gates the application: closing it opens the workspace like Continue.
+        // The welcome never gates the application: closing it opens the workspace, where own keys go in Settings → Models.
         void enterWorkspace().catch((error: unknown) => { reportFatal(error, 'main') })
       })
       if (isQuitting() || recovery.active || enteredWorkspace) window.close()
@@ -1011,13 +1012,16 @@ async function main(): Promise<void> {
     })().finally(() => { openingWelcome = undefined })
     return openingWelcome
   }
-  /** Close the workspace after sign-out and show the welcome; the page and the Host keep running. */
-  const leaveWorkspace = async (): Promise<void> => {
+  /**
+   * Close the workspace after sign-out and show the welcome; the page and the Host keep running.
+   * @param notice - why the welcome opens, or null after the person signed out.
+   */
+  const leaveWorkspace = async (notice: WelcomeNotice | null): Promise<void> => {
     if (quitting || recovery.active || !enteredWorkspace) return
     enteredWorkspace = false
     const window = mainWindow
     if (window !== undefined && !window.isDestroyed()) hideMainWindow(window)
-    await showWelcome()
+    await showWelcome(notice)
   }
   const openInitialWindow = async (): Promise<void> => {
     if (quitting || recovery.active) return

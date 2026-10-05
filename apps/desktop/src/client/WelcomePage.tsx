@@ -10,25 +10,19 @@ function signInStatus(m: Messages, state: WelcomeSignInState): string | null {
     case 'waiting-browser': return m.welcomeSignInWaiting
     case 'exchanging':
     case 'succeeded': return m.welcomeSignInExchanging
-    case 'failed':
-      if (state.errorCode === 'denied') return m.welcomeSignInDenied
-      if (state.errorCode === 'timeout') return m.welcomeSignInTimeout
-      if (state.errorCode === 'network') return m.welcomeSignInNetwork
-      return m.welcomeSignInFailed
-    case 'idle':
-    case 'cancelled': return null
+    case 'failed': return state.errorCode === 'network' ? m.welcomeSignInNetwork : m.welcomeSignInFailed
+    case 'cancelled': return m.welcomeSignInFailed
+    case 'idle': return null
   }
 }
 
 /**
- * Render the welcome: sign in with the ahel.ai account, or continue with an own key.
+ * Render the welcome: one way in, the ahel.ai sign-in. Own keys are added later in Settings → Models.
  * @param props.api - isolated preload API; no credentials reach the renderer.
- * @returns the welcome page with fixed bottom actions.
+ * @returns the welcome page with its fixed bottom action.
  */
 export function Welcome({ api }: { api: WelcomeApi }) {
   const { messages: m } = api
-  const [busy, setBusy] = useState(false)
-  const [failed, setFailed] = useState(false)
   const [signIn, setSignIn] = useState<WelcomeSignInState>({ phase: 'idle' })
   const mounted = useRef(true)
   const signInButton = useRef<HTMLButtonElement>(null)
@@ -42,19 +36,6 @@ export function Welcome({ api }: { api: WelcomeApi }) {
     return () => { mounted.current = false; stop() }
   }, [api, m.welcomeTitle])
 
-  async function enter() {
-    if (busy) return
-    setBusy(true)
-    setFailed(false)
-    try {
-      await api.continue()
-    } catch {
-      if (mounted.current) setFailed(true)
-    } finally {
-      if (mounted.current) setBusy(false)
-    }
-  }
-
   async function startSignIn() {
     setSignIn({ phase: 'waiting-browser' })
     try {
@@ -65,7 +46,9 @@ export function Welcome({ api }: { api: WelcomeApi }) {
   }
 
   const pending = signIn.phase === 'waiting-browser' || signIn.phase === 'exchanging' || signIn.phase === 'succeeded'
-  const status = signInStatus(m, signIn)
+  // The opening notice stands until the person starts another sign-in.
+  const status = signIn.phase === 'idle' && api.notice === 'session-ended' ? m.welcomeSessionEnded : signInStatus(m, signIn)
+  const failed = signIn.phase === 'failed' || signIn.phase === 'cancelled' || (signIn.phase === 'idle' && api.notice !== null)
 
   return <>
     <div className="titlebar" aria-hidden="true" />
@@ -74,17 +57,14 @@ export function Welcome({ api }: { api: WelcomeApi }) {
       <div id="tagline" className="tagline">
         <h1 id="welcome-heading"><span>{m.welcomeTaglineBefore}</span><em>{m.welcomeTaglineBrand}</em><span>{m.welcomeTaglineAfter}</span></h1>
         <p id="welcome-description">{m.welcomeDescription}</p>
-        <p id="sign-in-status" className={signIn.phase === 'failed' ? 'key-error' : 'status'} role="status" hidden={status === null}>{status}</p>
-        <p id="continue-error" className="key-error" role="alert" hidden={!failed}>{m.welcomeContinueFailed}</p>
+        <p id="sign-in-status" className={failed ? 'key-error' : 'status'} role="status" hidden={status === null}>{status}</p>
       </div>
       <div id="entry-actions" className="actions">
         {pending
           ? <button id="sign-in-cancel" className="primary" type="button" disabled={signIn.phase !== 'waiting-browser'}
             onClick={() => { void api.cancelSignIn() }}>{m.welcomeSignInCancel}</button>
-          : <button ref={signInButton} id="sign-in" className="primary" type="button" disabled={busy} aria-describedby="welcome-description"
+          : <button ref={signInButton} id="sign-in" className="primary" type="button" aria-describedby="welcome-description"
             onClick={() => { void startSignIn() }}>{m.welcomeSignIn}</button>}
-        <button id="continue" className="secondary" type="button" disabled={busy || pending}
-          onClick={() => { void enter() }}>{m.welcomeContinue}</button>
       </div>
     </main>
   </>

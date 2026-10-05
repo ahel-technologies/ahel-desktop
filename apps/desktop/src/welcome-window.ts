@@ -4,15 +4,18 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow, ipcMain, type BrowserWindowConstructorOptions, type IpcMainInvokeEvent } from 'electron'
 import type { DesktopLocale } from './locale.ts'
-import { WELCOME_IPC, type WelcomeOperations } from './welcome-api.ts'
+import { WELCOME_IPC, type WelcomeNotice, type WelcomeOperations } from './welcome-api.ts'
 
 /**
  * Resolve the fixed-size welcome window's native material and controls.
  * @param platform - operating system hosting Electron.
  * @param locale - shell-owned localized copy.
- * @returns sandboxed window options with a locale-only preload.
+ * @param notice - why the welcome opened, shown above the sign-in button.
+ * @returns sandboxed window options with a locale-and-notice-only preload.
  */
-export function welcomeWindowOptions(platform: NodeJS.Platform, locale: DesktopLocale): BrowserWindowConstructorOptions {
+export function welcomeWindowOptions(
+  platform: NodeJS.Platform, locale: DesktopLocale, notice: WelcomeNotice | null = null,
+): BrowserWindowConstructorOptions {
   return {
     width: 600,
     height: 700,
@@ -37,7 +40,7 @@ export function welcomeWindowOptions(platform: NodeJS.Platform, locale: DesktopL
     } as const : {}),
     webPreferences: {
       preload: fileURLToPath(new URL('./preload-welcome.cjs', import.meta.url)),
-      additionalArguments: [`--ahel-welcome-locale=${locale.id}`],
+      additionalArguments: [`--ahel-welcome-locale=${locale.id}`, ...notice === null ? [] : [`--ahel-welcome-notice=${notice}`]],
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -52,18 +55,20 @@ let disposeActiveHandlers: (() => void) | undefined
  * Open the process's sole welcome window with desktop-owned operations.
  * Replaces IPC ownership immediately; the caller closes the previous native window.
  * @param locale - shell-owned localized copy.
- * @param operations - the continue, sign-in and cancel actions.
+ * @param operations - the sign-in and cancel actions.
+ * @param notice - why the welcome opened, or null.
  * @returns the visible window; a failed load destroys it before rejecting.
  */
-export async function openWelcomeWindow(locale: DesktopLocale, operations: WelcomeOperations): Promise<BrowserWindow> {
-  const options = welcomeWindowOptions(process.platform, locale)
+export async function openWelcomeWindow(
+  locale: DesktopLocale, operations: WelcomeOperations, notice: WelcomeNotice | null = null,
+): Promise<BrowserWindow> {
+  const options = welcomeWindowOptions(process.platform, locale, notice)
   const window = new BrowserWindow(options)
   disposeActiveHandlers?.()
   let active = true
   const disposeHandlers = (): void => {
     if (!active) return
     active = false
-    ipcMain.removeHandler(WELCOME_IPC.continue)
     ipcMain.removeHandler(WELCOME_IPC.signIn)
     ipcMain.removeHandler(WELCOME_IPC.cancelSignIn)
     disposeActiveHandlers = undefined
@@ -74,10 +79,6 @@ export async function openWelcomeWindow(locale: DesktopLocale, operations: Welco
       throw new Error('desktop welcome: rejected action from an unowned frame')
     }
   }
-  ipcMain.handle(WELCOME_IPC.continue, async (event) => {
-    assertSender(event)
-    await operations.continue()
-  })
   ipcMain.handle(WELCOME_IPC.signIn, async (event) => {
     assertSender(event)
     await operations.signIn()

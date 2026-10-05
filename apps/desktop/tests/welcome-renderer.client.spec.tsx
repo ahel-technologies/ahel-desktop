@@ -6,11 +6,11 @@ import { resolveDesktopLocale } from '../src/locale.ts'
 
 afterEach(cleanup)
 
-function mount(language = 'zh-CN') {
+function mount(language = 'zh-CN', notice: 'session-ended' | null = null) {
   cleanup()
   const api = {
     ...resolveDesktopLocale(language),
-    continue: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    notice,
     signIn: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     cancelSignIn: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     onSignInState: vi.fn(() => () => {}),
@@ -38,18 +38,6 @@ describe('desktop welcome presentation', () => {
     await expect(view.copy()).toMatchFileSnapshot(`./expected/welcome/${language}.expected.txt`)
   })
 
-  it('continues once while the workspace opens', async () => {
-    const view = mount('en')
-    const opened = Promise.withResolvers<undefined>()
-    view.api.continue.mockReturnValue(opened.promise)
-    fireEvent.click(view.button('#continue'))
-    fireEvent.click(view.button('#continue'))
-    expect(view.api.continue).toHaveBeenCalledOnce()
-    expect(view.button('#continue').disabled).toBe(true)
-    await act(async () => { opened.resolve(undefined) })
-    expect(view.button('#continue').disabled).toBe(false)
-  })
-
   it('starts the ahel.ai sign-in and offers Cancel while the browser is open', async () => {
     const view = mount('en')
     await act(async () => { fireEvent.click(view.button('#sign-in')) })
@@ -59,14 +47,10 @@ describe('desktop welcome presentation', () => {
     expect(view.api.cancelSignIn).toHaveBeenCalledOnce()
   })
 
-  it('shows a retryable failure when the workspace cannot open', async () => {
-    const view = mount('en')
-    view.api.continue.mockRejectedValueOnce(new Error('closed'))
-    await act(async () => { fireEvent.click(view.button('#continue')) })
-    expect(document.querySelector('#continue-error')!.hasAttribute('hidden')).toBe(false)
-    expect(document.querySelector('#continue-error')!.textContent).toBe(view.api.messages.welcomeContinueFailed)
-    await act(async () => { fireEvent.click(view.button('#continue')) })
-    expect(view.api.continue).toHaveBeenCalledTimes(2)
-    expect(document.querySelector('#continue-error')!.hasAttribute('hidden')).toBe(true)
+  it('says the session ended until the next sign-in starts', async () => {
+    const view = mount('en', 'session-ended')
+    expect(document.querySelector('#sign-in-status')!.textContent).toBe(view.api.messages.welcomeSessionEnded)
+    await act(async () => { fireEvent.click(view.button('#sign-in')) })
+    expect(document.querySelector('#sign-in-status')!.textContent).toBe(view.api.messages.welcomeSignInWaiting)
   })
 })

@@ -84,9 +84,9 @@ describe.skipIf(!existsSync(preload('preload-app')))('built sandboxed Desktop pr
       expect(send).toHaveBeenCalledWith('dsh-desktop:locale-changed', 'zh')
     } else {
       expect(exposed.has('ahelWelcome')).toBe(true)
-      const bridge = exposed.get('ahelWelcome') as { continue(): Promise<unknown> }
-      void bridge.continue()
-      expect(invoke).toHaveBeenCalledWith('ahel-welcome:continue')
+      const bridge = exposed.get('ahelWelcome') as { signIn(): Promise<unknown> }
+      void bridge.signIn()
+      expect(invoke).toHaveBeenCalledWith('ahel-welcome:sign-in')
     }
   })
 })

@@ -4,7 +4,6 @@ import type { DesktopLocale } from './locale.ts'
 
 /** Private native welcome channels, installed only while its window exists. */
 export const WELCOME_IPC = {
-  continue: 'ahel-welcome:continue',
   signIn: 'ahel-welcome:sign-in',
   cancelSignIn: 'ahel-welcome:cancel-sign-in',
   signInState: 'ahel-welcome:sign-in-state',
@@ -17,13 +16,14 @@ export interface WelcomeSignInState {
   readonly errorCode?: string
 }
 
+/**
+ * Why the welcome opened in place of the workspace, shown above the sign-in button:
+ * `session-ended` when the ahel.ai sign-in ended without the person signing out.
+ */
+export type WelcomeNotice = 'session-ended'
+
 /** Host-owned operations used by the welcome window. */
 export interface WelcomeOperations {
-  /**
-   * Open the workspace without signing in (bring-your-own-key use).
-   * @returns completion after the workspace opens.
-   */
-  continue(): Promise<void>
   /**
    * Start the ahel.ai sign-in: the shell opens the system browser on the consent page.
    * @returns once the browser was asked to open.
@@ -38,6 +38,8 @@ export interface WelcomeOperations {
 
 /** The renderer receives localized copy, the operations and progress; it holds no credentials. */
 export type WelcomeApi = DesktopLocale & WelcomeOperations & {
+  /** Notice the shell opened this window with, or null. */
+  readonly notice: WelcomeNotice | null
   /**
    * Observe sign-in progress pushed by the shell.
    * @param listener - progress recipient.

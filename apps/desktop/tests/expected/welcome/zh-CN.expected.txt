@@ -1,6 +1,5 @@
 Ahel Desktop
 Ahel
 欢迎使用 Ahel Desktop
-使用 ahel.ai 账户登录，即可使用 Ahel 应用和 Ahel 模型；也可以在“设置 → 模型”中添加自己的 Anthropic 或 OpenAI 密钥。
+使用 ahel.ai 账户登录，即可使用你的应用和模型。
 使用 Ahel 登录
-使用我自己的密钥

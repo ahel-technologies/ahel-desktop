@@ -43,7 +43,6 @@ beforeEach(() => { electron.create.mockReset(); electron.handlers.clear() })
 
 const operations = {
   ...signInOperations,
-  continue: () => Promise.resolve(),
 }
 
 describe('desktop welcome window', () => {
@@ -111,10 +110,10 @@ describe('desktop welcome window', () => {
   it('accepts actions only from its own top frame and removes handlers on close', async () => {
     const window = createWindow()
     electron.create.mockReturnValue(window)
-    const enter = vi.fn(operations.continue)
-    await openWelcomeWindow(resolveDesktopLocale('en'), { ...signInOperations, continue: enter })
+    const enter = vi.fn(operations.signIn)
+    await openWelcomeWindow(resolveDesktopLocale('en'), { ...signInOperations, signIn: enter })
     const own = { sender: window.webContents, senderFrame: window.webContents.mainFrame }
-    const handler = electron.handlers.get(WELCOME_IPC.continue)!
+    const handler = electron.handlers.get(WELCOME_IPC.signIn)!
     await expect(handler({ sender: {}, senderFrame: {} })).rejects.toThrow('unowned frame')
     await expect(handler({ ...own, senderFrame: {} })).rejects.toThrow('unowned frame')
     expect(enter).not.toHaveBeenCalled()
@@ -144,17 +143,17 @@ describe('desktop welcome window', () => {
     const previous = createWindow()
     const current = createWindow()
     electron.create.mockReturnValueOnce(previous).mockReturnValueOnce(current)
-    const previousContinue = vi.fn(operations.continue)
-    const currentContinue = vi.fn(operations.continue)
-    await openWelcomeWindow(resolveDesktopLocale('en'), { ...signInOperations, continue: previousContinue })
-    const previousHandler = electron.handlers.get(WELCOME_IPC.continue)!
+    const previousContinue = vi.fn(operations.signIn)
+    const currentContinue = vi.fn(operations.signIn)
+    await openWelcomeWindow(resolveDesktopLocale('en'), { ...signInOperations, signIn: previousContinue })
+    const previousHandler = electron.handlers.get(WELCOME_IPC.signIn)!
     const previousSender = { sender: previous.webContents, senderFrame: previous.webContents.mainFrame }
-    await openWelcomeWindow(resolveDesktopLocale('en'), { ...signInOperations, continue: currentContinue })
-    const currentHandler = electron.handlers.get(WELCOME_IPC.continue)!
+    await openWelcomeWindow(resolveDesktopLocale('en'), { ...signInOperations, signIn: currentContinue })
+    const currentHandler = electron.handlers.get(WELCOME_IPC.signIn)!
     await expect(previousHandler(previousSender)).rejects.toThrow('unowned frame')
     await expect(currentHandler(previousSender)).rejects.toThrow('unowned frame')
     previous.once.mock.calls[0]![1]()
-    expect(electron.handlers.get(WELCOME_IPC.continue)).toBe(currentHandler)
+    expect(electron.handlers.get(WELCOME_IPC.signIn)).toBe(currentHandler)
     await currentHandler({ sender: current.webContents, senderFrame: current.webContents.mainFrame })
     expect(currentContinue).toHaveBeenCalledOnce()
     expect(previousContinue).not.toHaveBeenCalled()

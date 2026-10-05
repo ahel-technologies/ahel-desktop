@@ -81,9 +81,10 @@ export interface DshDesktopProductApi {
   readonly account: {
     /**
      * Ask the shell to re-read the ahel.ai account; a signed-out account closes the workspace and shows the welcome.
+     * @param reason - `ended` when the sign-in ended without the person signing out; the welcome then says so.
      * @returns once the shell has acted on the Host's account state.
      */
-    changed(): Promise<void>
+    changed(reason?: 'signed-out' | 'ended'): Promise<void>
   }
   readonly updates: {
     status(): Promise<DesktopUpdatePresentation>
