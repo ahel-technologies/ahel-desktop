@@ -174,7 +174,7 @@ async function bench(options: {
   await ctx.plugin({ inject: [...settingsInject], apply: settingsApply }).await()
   if (options.describeGate === undefined) {
     await vi.waitFor(() => {
-      expect(ctx.configForms.developerTools.enabled.getSnapshot()).toBe(options.memory === true ? true : developerToolsEnabled)
+      expect(ctx.configForms.developerTools.enabled.getSnapshot()).toBe(options.memory === true ? false : developerToolsEnabled)
     })
     if (options.memory !== true) await vi.waitFor(() => { expect(ctx.configForms.get('ui-settings').getSnapshot().status).toBe('ready') })
   }
@@ -900,9 +900,11 @@ describe('ui-agent-preset apply', () => {
     declareRoot(b.slots)
     await b.ctx.plugin({ inject: [...inject], apply }).await()
     await vi.waitFor(() => { expect(b.calls.filter(call => call.startsWith('settings:'))).toEqual(['settings:{"selectedDefault":"standard"}']) })
-    const section = (b.slots.entries('settings.section')[0]!.inject as () => AgentPresetSectionInjected & Record<string, unknown>)()
-    await vi.waitFor(() => { expect(section.hooks.agentPresetSection.getSnapshot().rows.find(row => row.isDefault)?.id).toBe('standard') })
+    // The section is a Developer tools surface: absent until they turn on.
+    expect(b.slots.entries('settings.section')).toEqual([])
     await b.setDeveloperTools(true)
+    const section = (b.slots.entries('settings.section')[0]!.inject as () => AgentPresetSectionInjected & Record<string, unknown>)()
+    await section.load()
     expect(b.calls.filter(call => call.startsWith('settings:'))).toEqual(['settings:{"selectedDefault":"standard"}'])
     expect(section.hooks.agentPresetSection.getSnapshot().rows.find(row => row.isDefault)?.id).toBe('standard')
     await b.ctx.fiber.dispose()
@@ -917,9 +919,12 @@ describe('ui-agent-preset apply', () => {
       b.ctx.provide('sessions', sessionsDouble(b.ctx, { byId: {} }) as never)
       declareRoot(b.slots)
       await b.ctx.plugin({ inject: [...inject], apply }).await()
+      await vi.waitFor(() => { expect(b.calls).toContain('list') })
+      await Promise.resolve()
+      expect(b.calls.filter(call => call.startsWith('settings:'))).toEqual([])
+      await b.setDeveloperTools(true)
       const section = (b.slots.entries('settings.section')[0]!.inject as () => AgentPresetSectionInjected & Record<string, unknown>)()
       await section.load()
-      await Promise.resolve()
       expect(b.calls.filter(call => call.startsWith('settings:'))).toEqual([])
       expect(section.hooks.agentPresetSection.getSnapshot().rows.find(row => row.isDefault)?.id).toBe(id)
       await b.ctx.fiber.dispose()
@@ -993,6 +998,7 @@ describe('ui-agent-preset apply', () => {
       expect(b.calls.filter(call => call.startsWith('select:'))).toEqual([])
       expect(chip.hooks.agentPresetSeat.getSnapshot().current).toBe(preset)
       if (blank) {
+        await b.setDeveloperTools(true)
         const section = (b.slots.entries('settings.section')[0]!.inject as () => AgentPresetSectionInjected & Record<string, unknown>)()
         await section.makeDefault('cordis')
         expect(b.calls.filter(call => call.startsWith('select:'))).toEqual(preset === 'cordis' ? [] : ['select:cordis'])
@@ -1043,14 +1049,15 @@ describe('ui-agent-preset apply', () => {
     const sessions = sessionsDouble(b.ctx, state)
     b.ctx.provide('sessions', sessions as never)
     b.ctx.provide('uiWorkspace', uiWorkspaceDouble() as never)
+    await b.ctx.configForms.developerTools.setEnabled(true)
     await b.ctx.plugin({ inject: [...inject], apply }).await()
     const injectSeat = b.slots.entries('conversation.hero.agentPreset')[0]!
       .inject as (sessionId?: SessionId) => AgentPresetSeatInjected & Record<string, unknown>
     const chip = injectSeat()
     await chip.load()
     await chip.select(preset)
-    await b.ctx.configForms.developerTools.setEnabled(false)
     const section = (b.slots.entries('settings.section')[0]!.inject as () => AgentPresetSectionInjected & Record<string, unknown>)()
+    await b.ctx.configForms.developerTools.setEnabled(false)
     await section.load()
     expect(section.hooks.agentPresetSection.getSnapshot().rows.find(row => row.isDefault)?.id).toBe('minimal')
     expect(b.calls.filter(call => call.startsWith('settings:'))).toEqual([])

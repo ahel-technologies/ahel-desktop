@@ -19,6 +19,8 @@ async function bench() {
   const locale = new LocaleRuntime(ctx)
   locale.setLocale('zh')
   ctx.provide('locale', locale)
+  // Built-in plugins is a Developer tools section; these specs drive it.
+  ctx.provide('configForms', { developerTools: { enabled: { getSnapshot: () => true, subscribe: () => () => {} } } } as never)
   return { ctx, slots: ctx.get('slots') as SlotRegistry }
 }
 
@@ -36,7 +38,7 @@ describe('ui-settings-plugins apply', () => {
   })
 
   it('declares the services it uses', () => {
-    expect(inject).toEqual(['slots', 'locale'])
+    expect(inject).toEqual(['slots', 'locale', 'configForms'])
   })
 
   it('registers one Built-in plugins section and declares its tab slot, contributing no tab of its own', async () => {

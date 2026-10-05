@@ -79,6 +79,8 @@ async function mountSeat(viewportWidth = 1440, canShow = true, entryCount = 0, o
   runtime.ctx.provide('locale', locale)
   const catalog = createSnapshotStore<readonly ShortcutCatalogEntry[]>([])
   runtime.ctx.provide('shortcuts', { register: () => () => {}, catalog } as never)
+  // The panel registers only while Developer tools are on.
+  runtime.ctx.provide('configForms', { developerTools: { enabled: createSnapshotStore(true) } } as never)
   runtime.slots.installLocale(locale)
   await runtime.declare({
     'sidebar-right.test.opener': { kind: 'single', scope: 'session' },

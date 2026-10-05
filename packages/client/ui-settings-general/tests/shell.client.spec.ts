@@ -41,7 +41,8 @@ const CHILD_NAMES = Object.keys(CHILD_SPECS) as Array<keyof typeof CHILD_SPECS>
  * ui-settings-models, ui-settings-plugins, and ui-agent-preset. A plugin
  * adding a section changes this list.
  */
-const PRODUCT_SECTIONS: readonly string[] = ['general', 'models', 'plugins', 'agent-presets']
+/** Settings sections with Developer tools off (the default); Built-in plugins and Agent presets join when they are on. */
+const PRODUCT_SECTIONS: readonly string[] = ['general', 'models']
 /** Onboarding steps the web-app roster registers, in coordinator order. */
 const PRODUCT_ONBOARDING: readonly { id: string; order: number }[] = []
 
