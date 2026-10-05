@@ -249,6 +249,11 @@
     - id: ui-tool
       name: '@deepseek-ai/dsh-client-ui-tool'
 
+    # MCP Apps cards: the Host `mcpApps` Remote and the browser card that fills
+    # ui-tool's `tool.call.app` slot (package from phase1/card-renderer).
+    - id: ui-mcp-app
+      name: '@deepseek-ai/dsh-client-ui-mcp-app'
+
     - id: ui-workspace
       name: '@deepseek-ai/dsh-client-ui-workspace'
 
