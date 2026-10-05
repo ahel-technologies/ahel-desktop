@@ -2934,6 +2934,9 @@ importers:
       '@ahel/dsh-client-ui-conversation':
         specifier: workspace:*
         version: link:../ui-conversation
+      '@ahel/dsh-client-ui-layout':
+        specifier: workspace:*
+        version: link:../ui-layout
       '@ahel/dsh-client-ui-primitives':
         specifier: workspace:*
         version: link:../ui-primitives

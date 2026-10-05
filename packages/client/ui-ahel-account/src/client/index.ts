@@ -3,8 +3,9 @@
  * namespace, keeps one live account view from its `watch` stream, and fills
  * the sidebar footer (account menu, offline banner), the Settings > Models
  * footer (the Ahel row beside bring-your-own-key providers), the starter
- * prompts below the blank-session composer, and the rows for Ahel model
- * refusals in the transcript.
+ * prompts below the blank-session composer, the rows for Ahel model
+ * refusals in the transcript, and the Discover panel over the Host's
+ * `ahelCatalog` namespace.
  */
 import type { Context } from '@ahel/cordis'
 import type { HostObservable } from '@ahel/dsh-client-ui-slots'
@@ -18,15 +19,17 @@ import { AccountMenu } from './AccountMenu.tsx'
 import { AhelQuotaNotice, AhelTurnError, claimAhelFailure } from './AhelNotices.tsx'
 import { ModelsRow } from './ModelsRow.tsx'
 import { StarterPrompts } from './StarterPrompts.tsx'
+import { registerCatalog } from './catalog/apply.ts'
 import { en, NS, zh } from './locales.ts'
 
 export type {
   AccountMenuProps, AhelAccountInjected, AhelFailureCode, AhelQuotaNoticeProps, AhelTurnErrorProps, ModelsRowProps, StarterPromptsProps,
 } from './contract.ts'
 export type { AhelAccountKey } from './locales.ts'
+export type { CatalogPanelId, DiscoverInjected, DiscoverPageProps } from './catalog/contract.ts'
 
-/** Required services: the Remote mount, slots and dictionaries. */
-export const inject = ['remote', 'slots', 'locale']
+/** Required services: the Remote mount, slots, dictionaries and the main-panel layout. */
+export const inject = ['remote', 'slots', 'locale', 'layout']
 
 /** The desktop shell's account hook; absent in a plain browser. */
 interface DesktopAccount {
@@ -46,7 +49,7 @@ function openLink(url: string): void {
 
 /**
  * Register dictionaries, the account stream and both slot occupants.
- * @param ctx - Client context with the mounted `ahelAccount` namespace.
+ * @param ctx - Client context with the mounted `ahelAccount` and `ahelCatalog` namespaces.
  */
 function register(ctx: Context): void {
   ctx.effect(() => ctx.locale.register(NS, { en, zh }), 'ui-ahel-account: dictionaries')
@@ -113,6 +116,7 @@ function register(ctx: Context): void {
   ctx.slots.inject('shell.quota-notice', () => ctx.slots.register({
     name: 'shell.quota-notice', select: owner => owner.code === 'ACCOUNT_QUOTA' ? owner.code : null,
   }, AhelQuotaNotice))
+  registerCatalog(ctx, injected)
 }
 
 /**
@@ -122,7 +126,7 @@ function register(ctx: Context): void {
  */
 export async function apply(ctx: Context): Promise<() => Promise<void>> {
   const disposeRemote = await ctx.remote.$mount(ahelAccountRemote)
-  const ui = ctx.inject(['remote.ahelAccount', 'slots', 'locale'], (inner) => { register(inner) })
+  const ui = ctx.inject(['remote.ahelAccount', 'remote.ahelCatalog', 'slots', 'locale', 'layout'], (inner) => { register(inner) })
   try {
     await ui
   } catch (error) {
