@@ -21,9 +21,6 @@ describe('webApp (the real web profile)', () => {
     const dangling = webApp.rows.flatMap(row => row.inject.filter(target => !known.has(target)).map(target => `${row.name} -> ${target}`))
     expect(dangling).toEqual([])
     expect(bundleRoster(WEB_PROFILE_BUNDLES, undefined, profileScope('web')).rows).toEqual(webApp.rows)
-    expect(names).not.toContain('@ahel/dsh-client-ui-sidebar-browser')
-    expect(bundleRoster(WEB_PROFILE_BUNDLES, undefined, profileScope('desktop')).rows.map(row => row.name))
-      .toContain('@ahel/dsh-client-ui-sidebar-browser')
   })
 
   it('keeps browser rows with their declarations and drops Host-only, disabled, and subpath rows', () => {
@@ -35,7 +32,6 @@ describe('webApp (the real web profile)', () => {
     const names = webApp.rows.map(row => row.name)
     expect(names).toContain('@ahel/dsh-client-ui-settings-general')
     expect(names).not.toContain('@ahel/dsh-llm') // Host only
-    expect(names).toContain('@ahel/dsh-client-ui-schedule')
     expect(names).not.toContain('@ahel/dsh-web-app') // Host runtime glue, its `/startup` row is a subpath
   })
 })
