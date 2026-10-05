@@ -1,7 +1,7 @@
 .card {
   overflow: hidden;
   margin-top: 6px;
-  border: 1px solid var(--dsw-alias-border-l1);
+  border: 0.5px solid var(--dsw-alias-border-l1);
   border-radius: var(--dsw-radius-lg);
   background: var(--dsw-alias-bg-base);
 }
@@ -24,14 +24,14 @@
   justify-content: center;
   min-height: 72px;
   margin-top: 6px;
-  border: 1px solid var(--dsw-alias-border-l1);
+  border: 0.5px solid var(--dsw-alias-border-l1);
   border-radius: var(--dsw-radius-lg);
 }
 
 .fallback {
   margin-top: 6px;
   padding: 10px 12px;
-  border: 1px solid var(--dsw-alias-border-l1);
+  border: 0.5px solid var(--dsw-alias-border-l1);
   border-radius: var(--dsw-radius-lg);
   color: var(--dsw-alias-label-primary);
   font-size: var(--dsh-content-font-size-secondary, 13px);
