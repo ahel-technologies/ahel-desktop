@@ -2,13 +2,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { AhelTile } from '@ahel/dsh-client-ui-primitives'
 import type { AccountMenuProps } from './contract.ts'
+import type { CatalogPanelId } from './catalog/contract.ts'
 import type { AhelAccountKey } from './locales.ts'
 import css from './AhelAccount.module.css'
 
-/** ahel.ai pages the menu opens in the system browser. */
-const PAGES: readonly { key: AhelAccountKey; url: string }[] = [
+/** Menu links: in-app panels open in the main area, ahel.ai pages in the system browser. */
+const LINKS: readonly ({ key: AhelAccountKey; panel: CatalogPanelId } | { key: AhelAccountKey; url: string })[] = [
+  { key: 'discover', panel: 'ahel-discover' },
+  { key: 'appsTitle', panel: 'ahel-apps' },
   { key: 'studio', url: 'https://ahel.ai/app/studio' },
-  { key: 'discover', url: 'https://ahel.ai/discover' },
   { key: 'vault', url: 'https://ahel.ai/app/vault' },
   { key: 'openAhel', url: 'https://ahel.ai/app' },
 ]
@@ -31,7 +33,7 @@ function pageUrl(url: string, workspace: string | null): string {
  * @param props - composed slot props.
  * @returns the entry.
  */
-export function AccountMenu({ wide, signIn, signOut, selectWorkspace, openLink, useAccount, t }: AccountMenuProps) {
+export function AccountMenu({ wide, signIn, signOut, selectWorkspace, openLink, openPanel, useAccount, t }: AccountMenuProps) {
   const view = useAccount(value => value)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -93,10 +95,14 @@ export function AccountMenu({ wide, signIn, signOut, selectWorkspace, openLink, 
               {workspace === null && <div className={css.hint}>{t('workspaceDefault')}</div>}
             </div>
           )}
-          {PAGES.map(page => (
-            <button key={page.key} type="button" role="menuitem" className={css.item}
-              onClick={() => { openLink(pageUrl(page.url, workspace)); setOpen(false) }}>
-              {t(page.key)}
+          {LINKS.map(link => (
+            <button key={link.key} type="button" role="menuitem" className={css.item}
+              onClick={() => {
+                if ('panel' in link) openPanel(link.panel)
+                else openLink(pageUrl(link.url, workspace))
+                setOpen(false)
+              }}>
+              {t(link.key)}
             </button>
           ))}
           {signedIn

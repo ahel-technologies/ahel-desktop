@@ -6,6 +6,7 @@ import type {} from '@ahel/dsh-client-ui-settings-models/client'
 import type {} from '@ahel/dsh-client-ui-conversation/client'
 import type {} from '@ahel/dsh-client-ui-chat/client'
 import type {} from './locales.ts'
+import type { CatalogPanelId } from './catalog/contract.ts'
 
 /** Account operations and the live view; tokens never reach the browser. */
 export interface AhelAccountInjected {
@@ -19,6 +20,8 @@ export interface AhelAccountInjected {
   openLink(url: string): void
   /** Open Settings on the Models section, where own keys are added. */
   openModels(): void
+  /** Select one of this package's in-app panels. @param id - Discover or Your apps. */
+  openPanel(id: CatalogPanelId): void
   hooks: {
     /** The latest account view, or null before the first frame. */
     account: HostObservable<AhelAccountView | null>

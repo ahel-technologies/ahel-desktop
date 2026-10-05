@@ -10,6 +10,7 @@
 import type { Context } from '@ahel/cordis'
 import type { HostObservable } from '@ahel/dsh-client-ui-slots'
 import type { AhelAccountView } from '@ahel/dsh-ahel-account/types'
+import type { MainPanelId } from '@ahel/dsh-client-ui-layout/client'
 import type {} from '@ahel/dsh-api-remotes/client'
 import type {} from '@ahel/dsh-client-locale/client'
 import type {} from '@ahel/dsh-client-ui-renderer/client'
@@ -99,6 +100,7 @@ function register(ctx: Context): void {
     },
     openLink,
     openModels: () => { ctx.emit('settings/open-section', 'models') },
+    openPanel: (id) => { ctx.layout.selectPanel(id as MainPanelId) },
     hooks: { account },
   }
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
