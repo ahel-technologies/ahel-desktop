@@ -205,6 +205,277 @@ export interface KnowledgeListing {
   readonly matches: readonly string[] | null
 }
 
+/** A catalog icon as ahel.ai sends it; a logo `src` may be a site path on ahel.ai. */
+export type AhelIcon =
+  | { readonly type: 'logo'; readonly src: string; readonly slug?: string }
+  | { readonly type: 'glyph'; readonly glyph: string }
+  | { readonly type: 'letter'; readonly letter: string }
+
+/** A JSON value as ahel.ai sent it. */
+export type AhelJson = string | number | boolean | null | readonly AhelJson[] | { readonly [key: string]: AhelJson }
+
+/** One held call waiting for an owner or team lead; mirrors ahel's `ApprovalRowDto`. */
+export interface ApprovalRow {
+  readonly id: string
+  /** `server.tool`, the call in one phrase. */
+  readonly what: string
+  readonly server: string | null
+  readonly tool: string | null
+  /** The exact arguments the requester's AI sent. */
+  readonly args: { readonly [key: string]: AhelJson } | null
+  readonly guardrailName: string
+  readonly requester: { readonly email: string; readonly name: string | null } | null
+  /** ISO timestamps; a pending call expires 24 h after `createdAt`. */
+  readonly createdAt: string
+  readonly expiresAt: string
+}
+
+/** The workspace balance line; money in whole US cents. */
+export type DesktopCredits =
+  | { readonly visible: false }
+  | {
+    readonly visible: true
+    readonly balanceCents: number
+    /** Spend since UTC midnight, net of refunds. */
+    readonly spentTodayCents: number
+    readonly low: boolean
+    readonly lowThresholdCents: number
+    /** Only the owner tops up; others are told to ask the owner. */
+    readonly canTopUp: boolean
+    /** ahel.ai's billing page. */
+    readonly topUpUrl: string
+  }
+
+/**
+ * `GET /api/desktop/summary`: what the sidebar and account menu poll. A part
+ * ahel.ai could not read is null; `approvals` is also null for a Member or a
+ * plan without approval rules.
+ */
+export interface DesktopSummary {
+  readonly workspace: { readonly id: string; readonly name: string; readonly role: string }
+  readonly approvals: { readonly rows: readonly ApprovalRow[] } | null
+  /** Received handoffs that are unread and not done. */
+  readonly inbox: { readonly unread: number } | null
+  readonly credits: DesktopCredits | null
+  readonly at: string
+}
+
+/** The stored answer to one held call. Approve opens a one-hour window for the requester to repeat the exact call. */
+export interface ApprovalDecision {
+  readonly ok: true
+  readonly id: string
+  readonly status: 'approved' | 'declined'
+  readonly expiresAt: string
+}
+
+/** One input of a key app's Connect form. `id` is opaque (`f0_0`); no credential type or variable name leaves ahel.ai. */
+export interface KeyConnectField {
+  readonly id: string
+  readonly label: string
+  /** Render as a password input. */
+  readonly secret: boolean
+  readonly required: boolean
+  readonly placeholder?: string
+  readonly defaultValue?: string
+}
+
+/** A key app's Connect panel; mirrors ahel's `KeyConnectView`. */
+export interface KeyConnectView {
+  readonly app: string
+  readonly vendor: string
+  readonly icon?: AhelIcon
+  readonly keyPageUrl: string | null
+  /** "Get the key in <Vendor>" steps, or null where only the key page is known. */
+  readonly keySteps: readonly string[] | null
+  readonly readOnlyEnough: boolean
+  /** The values still missing; empty when connected. */
+  readonly fields: readonly KeyConnectField[]
+  readonly count: number | null
+  readonly countNoun: 'action' | 'tool'
+  readonly stackKey: string | null
+  readonly connected: boolean
+  /** Something to try once connected, or null. */
+  readonly ask: string | null
+}
+
+/** One managed sign-in in the workspace vault; mirrors ahel's `VaultSignIn`. */
+export interface VaultSignIn {
+  readonly key: string
+  readonly itemId: string | null
+  readonly service: string | null
+  readonly label: string
+  readonly icon: AhelIcon | null
+  /** Host name of the issuer. */
+  readonly issuer: string
+  readonly signedInAt: string
+  /** The token has passed its expiry and has not been refreshed yet. */
+  readonly expired: boolean
+}
+
+/** `GET /api/desktop/connect`: the workspace's sign-ins. */
+export interface VaultSignInList {
+  readonly signIns: readonly VaultSignIn[]
+  /** Whether this seat may connect and disconnect (owner or team lead). */
+  readonly canManage: boolean
+}
+
+/** `GET /api/desktop/connect?app=`: one app's Connect state. */
+export interface KeyConnectAnswer {
+  /** Null for a sign-in app, a keyless app, or one that needs an account choice on ahel.ai. */
+  readonly panel: KeyConnectView | null
+  readonly signIn: VaultSignIn | null
+  readonly canManage: boolean
+  /** The app's page in the ahel.ai vault. */
+  readonly webUrl: string
+}
+
+/** The result of saving a key app's values: its panel after the save. */
+export interface KeyConnectSaved {
+  readonly panel: KeyConnectView | null
+}
+
+/** The result of disconnecting an app; `removed` is false when nothing was stored. */
+export interface VaultDisconnected {
+  readonly ok: true
+  readonly removed: boolean
+}
+
+/** Handoff section ids; `goal` (4000 chars) and `next` (2000 chars) are required. */
+export type HandoffSectionId = 'goal' | 'decisions' | 'changes' | 'references' | 'tests' | 'open' | 'next'
+
+/** The text of a handoff by section. */
+export type HandoffSections = Readonly<Partial<Record<HandoffSectionId, string>>>
+
+/** One handoff section as ahel.ai shows it back. */
+export interface HandoffSectionRow {
+  readonly id: HandoffSectionId
+  readonly label: string
+  readonly help: string
+  readonly required: boolean
+  readonly maxLength: number
+  readonly value: string
+}
+
+/** What ahel.ai recorded itself about a handoff, as opposed to what the AI wrote. */
+export interface HandoffEvidence {
+  readonly author: { readonly name: string | null; readonly email: string; readonly verified: true }
+  readonly workspace: { readonly id: string; readonly name: string }
+  readonly sentAt: string
+  readonly note: string
+}
+
+/** One received handoff in the Inbox. */
+export interface HandoffReceivedRow {
+  readonly id: string
+  readonly title: string
+  readonly version: number
+  readonly status: string
+  readonly unread: boolean
+  readonly updatedAt: string
+  readonly url: string
+  readonly from: string
+  /** First line of the next step. */
+  readonly next: string
+  readonly secretsRemoved: number
+}
+
+/** One handoff this person sent. */
+export interface HandoffSentRow {
+  readonly id: string
+  readonly title: string
+  readonly version: number
+  readonly status: string
+  readonly recipients: number
+  readonly read: boolean
+  readonly updatedAt: string
+  readonly url: string
+  readonly from: string
+  readonly next: string
+  readonly secretsRemoved: number
+}
+
+/** `GET /api/desktop/handoffs`: the Inbox. */
+export interface HandoffList {
+  readonly view: 'handoff_list'
+  readonly scope: 'all' | 'received' | 'sent'
+  readonly received: readonly HandoffReceivedRow[]
+  readonly sent: readonly HandoffSentRow[]
+  readonly detail: string
+}
+
+/** One opened handoff; opening marks it read. */
+export interface HandoffRead {
+  readonly view: 'handoff_read'
+  readonly id: string
+  readonly title: string
+  readonly version: number
+  readonly latestVersion: number
+  readonly status: string
+  readonly secretsRemoved: number
+  readonly from: string
+  readonly sentAt: string
+  readonly sections: readonly HandoffSectionRow[]
+  readonly evidence: HandoffEvidence
+  readonly unverifiedNote: string
+  readonly screened: 'clean' | 'flagged'
+  readonly screenedReason: string | null
+  readonly url: string
+  /** The reader-safe wrapped report to seed a new session with; information, never instructions. */
+  readonly text: string
+}
+
+/** The editable preview `prepare` returns; nothing is stored yet. */
+export interface HandoffReview {
+  readonly view: 'handoff_review'
+  readonly title: string
+  readonly sections: readonly HandoffSectionRow[]
+  readonly evidence: HandoffEvidence
+  readonly unverifiedNote: string
+  /** Teammates to pick from; `value` is the user id `shareHandoff` takes. */
+  readonly recipients: readonly { readonly value: string; readonly label: string; readonly role: string }[]
+  readonly selected: string | null
+  /** Redaction and screening notices to show before Share. */
+  readonly warnings: readonly string[]
+  readonly noTeammates: boolean
+  readonly inviteUrl: string
+  /** `requestKey` makes a retried Share the same delivery. */
+  readonly continuation: { readonly key: string; readonly tool: string; readonly requestKey: string }
+  readonly submit: string
+  readonly footnote: string
+}
+
+/** A shared, repeated or done handoff. */
+export interface HandoffSent {
+  readonly view: 'handoff_sent'
+  readonly id: string
+  readonly title: string
+  readonly version: number
+  /** Present on `markHandoffDone`. */
+  readonly status?: string
+  /** How many teammates it reaches. */
+  readonly recipients: number
+  readonly recipientNames?: readonly string[]
+  readonly url: string
+  /** True when this Share or Done had already happened. */
+  readonly repeated: boolean
+  readonly detail: string
+  readonly warnings?: readonly string[]
+}
+
+/** The draft `prepareHandoff` takes. */
+export interface HandoffDraft {
+  readonly title: string
+  readonly sections: HandoffSections
+}
+
+/** What `shareHandoff` sends after the person pressed Share. */
+export interface HandoffShare extends HandoffDraft {
+  /** One to five teammate user ids from `HandoffReview.recipients`. */
+  readonly recipients: readonly string[]
+  /** `HandoffReview.continuation.requestKey`. */
+  readonly requestKey: string
+}
+
 declare module '@ahel/cordis' {
   interface Events {
     /**

@@ -35,6 +35,13 @@ A child service, `ctx.ahelCatalog`, gives the desktop the ahel.ai Discover catal
 - Failures are `RemoteError` codes: `ahel-catalog/busy` (HTTP 429), `ahel-catalog/unreachable`, `ahel-catalog/signed-out`, and `ahel-catalog/refused`, whose message is ahel.ai's own sentence.
 - The gateway has no uninstall tool, so removing an app is done on ahel.ai at `/app/apps`.
 
+## Team: the `ahelTeam` namespace
+
+A child service, `ctx.ahelTeam`, calls ahel.ai's `/api/desktop/*` routes with this account's bearer and the selected `?workspace=`; it refreshes once after a 401.
+- Methods: `summary()` (approvals, unread handoffs, balance), `decideApproval(id, decision, note)`, `signIns()`, `connectPanel(app)`, `connect(app, values)`, `disconnect(app)`, `inbox()`, `openHandoff(id)`, `prepareHandoff(draft)`, `shareHandoff(share)` and `markHandoffDone(id)`.
+- Errors: `ahel-team/signed-out`, `ahel-team/outdated` (ahel.ai has no `/api/desktop` yet: show "Update ahel.ai"), `ahel-team/forbidden`, `ahel-team/refused`, `ahel-team/busy` and `ahel-team/unreachable`; refusal messages are ahel.ai's own sentences.
+- `connect` sends key values only to `POST /api/desktop/connect`, never logs them and never puts them in an error.
+
 ## Model Experience
 
 None. The package adds no tools, prompt text or session events.
