@@ -9,8 +9,17 @@ import { basename, dirname, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
 const root = resolve(import.meta.dirname, '..')
-const { values } = parseArgs({ options: { 'host-addon-only': { type: 'boolean' } }, allowPositionals: false })
+const { values } = parseArgs({
+  options: { 'host-addon-only': { type: 'boolean' }, arch: { type: 'string' } },
+  allowPositionals: false,
+})
 const hostAddonOnly = values['host-addon-only'] === true
+// macOS cross-compiles the other architecture's addon with `cc -arch`; Linux builds only for its host.
+const targetArch = values.arch ?? process.arch
+if (targetArch !== process.arch && process.platform !== 'darwin') {
+  throw new Error(`build: --arch ${targetArch} is supported only on macOS`)
+}
+const DARWIN_CC_ARCH: Record<string, string> = { arm64: 'arm64', x64: 'x86_64' }
 const sources: Record<string, string> = {
   'landlock-run': 'packages/entry/src/main.c',
   flock: 'packages/entry/src/flock.c',
@@ -28,7 +37,7 @@ if (process.platform !== 'linux' && process.platform !== 'darwin') {
   if (hostAddonOnly) process.exit(0)
   throw new Error('build: system binaries are built on Linux or macOS; no native target for this host')
 }
-const host = `${process.platform}-${process.arch}`
+const host = `${process.platform}-${targetArch}`
 const libc = process.platform === 'linux'
   ? ((process.report.getReport() as { header: { glibcVersionRuntime?: string } }).header.glibcVersionRuntime ? 'glibc' : 'musl')
   : undefined
@@ -62,7 +71,9 @@ for (const name of readdirSync(join(root, 'packages')).sort()) {
       flags = ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-fPIC', '-fvisibility=hidden', '-DNAPI_VERSION=8', '-I', headers]
       if (process.platform === 'darwin') {
         if (binary.libc !== undefined) throw new Error('build: macOS flock does not select a Linux libc')
-        flags.push('-bundle', '-undefined', 'dynamic_lookup', '-mmacosx-version-min=11.0')
+        const ccArch = DARWIN_CC_ARCH[targetArch]
+        if (ccArch === undefined) throw new Error(`build: unsupported macOS architecture ${targetArch}`)
+        flags.push('-arch', ccArch, '-bundle', '-undefined', 'dynamic_lookup', '-mmacosx-version-min=11.0')
       } else {
         if (binary.libc !== 'glibc' && binary.libc !== 'musl') {
           throw new Error('build: Linux flock must select glibc or musl')

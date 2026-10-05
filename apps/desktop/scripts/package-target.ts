@@ -448,6 +448,18 @@ export async function packageTarget(
     '--pack-destination',
     buildPaths.packedLandlock,
   ], buildEnv, REPOSITORY_ROOT)
+  if (target.platform === 'darwin') {
+    // The Session lock loads flock from the entry's platform package. No registry publishes the
+    // @ahel platform packages, so the target's addon is built and packed beside the entry.
+    await execute(['exec', 'tsx', 'native/system/scripts/build.ts', '--host-addon-only', '--arch', target.arch], buildEnv, REPOSITORY_ROOT)
+    await execute([
+      '--dir',
+      `native/system/packages/darwin-${target.arch}`,
+      'pack',
+      '--pack-destination',
+      buildPaths.packedLandlock,
+    ], buildEnv, REPOSITORY_ROOT)
+  }
   await execute(['run', 'prepare:runtime', ...(signPrimaryRuntime ? ['--defer-primary-runtime-smoke'] : [])], downloadEnv)
   if (signPrimaryRuntime) await execute(['run', 'sign:primary-runtime'], electronBuilderEnv)
   await execute(['run', 'prepare:packages'], targetEnv)
