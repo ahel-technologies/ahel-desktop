@@ -5,9 +5,9 @@
  * dsh.client declaration.
  */
 
-import type { Context } from '@deepseek-ai/cordis'
-import type {} from '@deepseek-ai/dsh-system-prompt'
-import type {} from '@deepseek-ai/dsh-workspace-changes/types'
+import type { Context } from '@ahel/cordis'
+import type {} from '@ahel/dsh-system-prompt'
+import type {} from '@ahel/dsh-workspace-changes/types'
 import { registerPresentOpen } from './present-open.ts'
 
 /** Services required for file-reference guidance, change summaries, and authenticated native opens. */

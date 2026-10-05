@@ -9,20 +9,20 @@
  * the menu shows one disabled "connecting" row and the read is retried.
  * Balance (402) and availability (403) refusals become readable errors.
  *
- * @module @deepseek-ai/dsh-llm-ahel
+ * @module @ahel/dsh-llm-ahel
  */
 
-import type { Context } from '@deepseek-ai/cordis'
-import Schema from '@deepseek-ai/schemastery'
-import { LlmAdapter, LlmError, QUOTA_EXCEEDED_CODE } from '@deepseek-ai/dsh-llm'
+import type { Context } from '@ahel/cordis'
+import Schema from '@ahel/schemastery'
+import { LlmAdapter, LlmError, QUOTA_EXCEEDED_CODE } from '@ahel/dsh-llm'
 import type {
   AdapterRegistrationHandle, GenerateOptions, LlmFailure, LlmModelInfo, LlmProviderInfo, LlmResolvedModelInfo,
   PreparedAdapterCall, ResolvedRetryPolicy, StreamChunk,
-} from '@deepseek-ai/dsh-llm'
-import { PiAiAdapter, resolveProfiles } from '@deepseek-ai/dsh-llm-pi-ai'
-import type { PiAiAdapterOptions, PiAiModelProfile, ResolvedPiAiProviderProfile } from '@deepseek-ai/dsh-llm-pi-ai'
-import type {} from '@deepseek-ai/dsh-ahel-account'
-import type {} from '@deepseek-ai/dsh-agent-default-model'
+} from '@ahel/dsh-llm'
+import { PiAiAdapter, resolveProfiles } from '@ahel/dsh-llm-pi-ai'
+import type { PiAiAdapterOptions, PiAiModelProfile, ResolvedPiAiProviderProfile } from '@ahel/dsh-llm-pi-ai'
+import type {} from '@ahel/dsh-ahel-account'
+import type {} from '@ahel/dsh-agent-default-model'
 
 /** Cordis plugin name. */
 export const name = 'llm-ahel'

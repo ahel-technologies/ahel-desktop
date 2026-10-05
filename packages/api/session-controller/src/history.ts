@@ -1,24 +1,24 @@
 /** Cold Session history pagination and live-event source. */
 
-import type { Context } from '@deepseek-ai/cordis'
-import { Deque } from '@deepseek-ai/dsh-deque'
-import type { AssistantStreamFrame } from '@deepseek-ai/dsh-agent'
+import type { Context } from '@ahel/cordis'
+import { Deque } from '@ahel/dsh-deque'
+import type { AssistantStreamFrame } from '@ahel/dsh-agent'
 import {
   isAppendSurfaceEvent,
   SessionLogOffset,
   SessionSeq,
-} from '@deepseek-ai/dsh-session'
+} from '@ahel/dsh-session'
 import type {
   SessionEvent,
   SessionHeader,
   SessionId,
   SessionLogOffset as SessionLogOffsetType,
   SessionSeqCursor,
-} from '@deepseek-ai/dsh-session'
-import { SessionQueryError, type SessionObservation } from '@deepseek-ai/dsh-session-query'
-import type {} from '@deepseek-ai/dsh-subagent'
-import { RemoteError } from '@deepseek-ai/dsh-typert-protocol'
-import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+} from '@ahel/dsh-session'
+import { SessionQueryError, type SessionObservation } from '@ahel/dsh-session-query'
+import type {} from '@ahel/dsh-subagent'
+import { RemoteError } from '@ahel/dsh-typert-protocol'
+import type { JsonValue } from '@ahel/dsh-util-values'
 import type {
   SessionAddress,
   SessionAssistantStreamFrame,

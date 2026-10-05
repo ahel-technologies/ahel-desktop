@@ -1,10 +1,10 @@
 /** Chat inspection follows grouping while content updates stay on keyed row sources. */
 
-import type { ChatConversationViewNode, ChatSnapshot } from '@deepseek-ai/dsh-client-ui-chat/client'
-import { ChatSnapshotBuilder } from '@deepseek-ai/dsh-client-ui-chat/src/client/conversation-nodes/chat-snapshot-builder.ts'
-import { ConversationGroupStore } from '@deepseek-ai/dsh-client-ui-conversation/src/client/conversation/group-store.ts'
-import type { ConversationBinding, ConversationSnapshot, GroupKey, GroupSnapshot, NodeKey } from '@deepseek-ai/dsh-client-ui-conversation/client'
-import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
+import type { ChatConversationViewNode, ChatSnapshot } from '@ahel/dsh-client-ui-chat/client'
+import { ChatSnapshotBuilder } from '@ahel/dsh-client-ui-chat/src/client/conversation-nodes/chat-snapshot-builder.ts'
+import { ConversationGroupStore } from '@ahel/dsh-client-ui-conversation/src/client/conversation/group-store.ts'
+import type { ConversationBinding, ConversationSnapshot, GroupKey, GroupSnapshot, NodeKey } from '@ahel/dsh-client-ui-conversation/client'
+import { createSnapshotStore } from '@ahel/dsh-client-store'
 import { expect, it, onTestFinished, vi } from 'vitest'
 import { ChatNodeModel } from '../src/client/views/chat-node/model.ts'
 

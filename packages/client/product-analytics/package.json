@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-client-product-analytics",
+  "name": "@ahel/dsh-client-product-analytics",
   "description": "Desktop product event collection and authenticated Host reporting",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -39,7 +39,7 @@
   "dsh": {
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-api-gateway"
+        "@ahel/dsh-api-gateway"
       ],
       "platform": "web"
     }
@@ -50,19 +50,19 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@ahel/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-api-gateway": "workspace:*",
-    "@deepseek-ai/dsh-compaction": "workspace:*",
-    "@deepseek-ai/dsh-llm": "workspace:*",
-    "@deepseek-ai/dsh-session": "workspace:*",
-    "@deepseek-ai/dsh-host-product-telemetry-otel": "workspace:*",
-    "@deepseek-ai/dsh-host-webserver": "workspace:*",
-    "@deepseek-ai/dsh-settings": "workspace:*",
-    "@deepseek-ai/cordis-plugin-loader": "workspace:~",
-    "@deepseek-ai/dsh-otel": "workspace:*"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-api-gateway": "workspace:*",
+    "@ahel/dsh-compaction": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-session": "workspace:*",
+    "@ahel/dsh-host-product-telemetry-otel": "workspace:*",
+    "@ahel/dsh-host-webserver": "workspace:*",
+    "@ahel/dsh-settings": "workspace:*",
+    "@ahel/cordis-plugin-loader": "workspace:~",
+    "@ahel/dsh-otel": "workspace:*"
   },
   "files": [
     "lib/index.js",
@@ -74,8 +74,8 @@
     "lib/typert.remote-client.d.ts"
   ],
   "dependencies": {
-    "@deepseek-ai/dsh-typert-protocol": "workspace:*",
-    "@deepseek-ai/schemastery": "workspace:~",
+    "@ahel/dsh-typert-protocol": "workspace:*",
+    "@ahel/schemastery": "workspace:~",
     "zod": "^4.4.3"
   }
 }

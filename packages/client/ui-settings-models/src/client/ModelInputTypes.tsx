@@ -1,7 +1,7 @@
 /** Input-type declarations for the provider catalog editors. */
 
 import type { ReactNode } from 'react'
-import { Checkbox } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Checkbox } from '@ahel/dsh-client-ui-primitives'
 import type { ModelDraft } from './model-drafts.ts'
 import type { ModelsKey } from './locales.ts'
 import styles from './ModelsSection.module.css'

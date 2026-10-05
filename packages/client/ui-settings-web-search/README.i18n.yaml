@@ -5,33 +5,33 @@
 /:
   en: eff9af22a9850194
   zh: 58b875260fa46398
-/deepseek-ai-dsh-client-ui-settings-web-search:
-  en: 968c0f6ba2415331
-  zh: aaf9e2aa22eafc98
-/deepseek-ai-dsh-client-ui-settings-web-search/summary:
+/ahel-dsh-client-ui-settings-web-search:
+  en: 5806d752ff3f86c6
+  zh: 7446314044f9f5bc
+/ahel-dsh-client-ui-settings-web-search/summary:
   en: 274a2946fd70f3ff
   zh: 9c914c3f5852143a
-/deepseek-ai-dsh-client-ui-settings-web-search/table-of-contents:
+/ahel-dsh-client-ui-settings-web-search/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
-/deepseek-ai-dsh-client-ui-settings-web-search/use-this-package:
+/ahel-dsh-client-ui-settings-web-search/use-this-package:
   en: 861539e21f7837e5
   zh: cd6e177abaa15a0a
-/deepseek-ai-dsh-client-ui-settings-web-search/understand-the-implementation:
+/ahel-dsh-client-ui-settings-web-search/understand-the-implementation:
   en: a33b941d91e21943
   zh: c5b0296ea5dda2da
-/deepseek-ai-dsh-client-ui-settings-web-search/further-exploration:
+/ahel-dsh-client-ui-settings-web-search/further-exploration:
   en: 0f5a43380a4f1029
   zh: ab6641e5de19784e
-/deepseek-ai-dsh-client-ui-settings-web-search/model-experience:
+/ahel-dsh-client-ui-settings-web-search/model-experience:
   en: e12a218d52c2c72b
   zh: d27c384eec054445
-/deepseek-ai-dsh-client-ui-settings-web-search/model-experience/kv-cache-effect:
+/ahel-dsh-client-ui-settings-web-search/model-experience/kv-cache-effect:
   en: ca75c51c89c2c9b0
   zh: 6e1c9a8fdde89577
-/deepseek-ai-dsh-client-ui-settings-web-search/known-limitations-and-deferred-work:
+/ahel-dsh-client-ui-settings-web-search/known-limitations-and-deferred-work:
   en: f39732a7b6d94bd2
   zh: 3761b69b9fdda382
-/deepseek-ai-dsh-client-ui-settings-web-search/known-limitations-and-deferred-work/dev-note:
+/ahel-dsh-client-ui-settings-web-search/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: e88aeb617ffb74ea

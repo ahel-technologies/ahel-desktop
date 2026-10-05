@@ -21,13 +21,13 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import picomatch from 'picomatch'
-import { createNodeBuiltins, REPLACED_PREFIXES } from '@deepseek-ai/dsh-experimental-webworker-runtime/src/node/builtins.ts'
+import { createNodeBuiltins, REPLACED_PREFIXES } from '@ahel/dsh-experimental-webworker-runtime/src/node/builtins.ts'
 import {
   setActiveModuleLoader, WorkerModuleLoader,
-} from '@deepseek-ai/dsh-experimental-webworker-runtime/src/module-system/module-loader.ts'
-import { inflateImage } from '@deepseek-ai/dsh-experimental-webworker-runtime/src/storage/image-gzip.ts'
-import { loadVfsImage } from '@deepseek-ai/dsh-experimental-webworker-runtime/src/storage/memory.ts'
-import { setActiveVfs } from '@deepseek-ai/dsh-experimental-webworker-runtime/src/storage/active.ts'
+} from '@ahel/dsh-experimental-webworker-runtime/src/module-system/module-loader.ts'
+import { inflateImage } from '@ahel/dsh-experimental-webworker-runtime/src/storage/image-gzip.ts'
+import { loadVfsImage } from '@ahel/dsh-experimental-webworker-runtime/src/storage/memory.ts'
+import { setActiveVfs } from '@ahel/dsh-experimental-webworker-runtime/src/storage/active.ts'
 import { indexWorkspacePackages, previewFixtures } from '../src/repository.ts'
 import { DEFAULT_ROOT, MANIFEST_PATH, packVfsImage, packVfsOverlay } from '../src/pack.ts'
 import { PAGE_ASSETS } from '../src/rules.ts'
@@ -35,10 +35,10 @@ import { PAGE_ASSETS } from '../src/rules.ts'
 const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url))
 
 /** A leaf workspace package: real build output, no dependencies to drag in. */
-const SUBJECT = '@deepseek-ai/dsh-timeout'
-const LANDLOCK = '@deepseek-ai/node-addon-system'
+const SUBJECT = '@ahel/dsh-timeout'
+const LANDLOCK = '@ahel/node-addon-system'
 const LANDLOCK_ENTRY = `${LANDLOCK}/landlock-run`
-const WEB_SERVER = '@deepseek-ai/dsh-host-webserver'
+const WEB_SERVER = '@ahel/dsh-host-webserver'
 
 const workspaces = indexWorkspacePackages(repoRoot)
 

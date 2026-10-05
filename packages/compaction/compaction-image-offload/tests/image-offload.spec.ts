@@ -4,16 +4,16 @@
  */
 
 import { afterEach, describe, expect, it } from 'vitest'
-import { Context } from '@deepseek-ai/cordis'
-import AgentLoop from '@deepseek-ai/dsh-agent-loop'
-import type { Agent } from '@deepseek-ai/dsh-agent'
-import BasicCompactionEngine from '@deepseek-ai/dsh-compaction-basic'
-import TokenMeter from '@deepseek-ai/dsh-token-meter'
-import { mountAgentLoopTestDependencies } from '@deepseek-ai/dsh-agent-loop-testkit'
-import { createAssistantMessage, createToolResultMessage, createUserMessage, IMAGE_OFFLOAD_REQUIRED_CODE, LlmAdapter, LlmError, requiredImageOffload, ToolCallId } from '@deepseek-ai/dsh-llm'
-import type { ContentBlock, GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
-import { isReplacementSurfaceEvent, SessionId } from '@deepseek-ai/dsh-session'
-import type { Session } from '@deepseek-ai/dsh-session'
+import { Context } from '@ahel/cordis'
+import AgentLoop from '@ahel/dsh-agent-loop'
+import type { Agent } from '@ahel/dsh-agent'
+import BasicCompactionEngine from '@ahel/dsh-compaction-basic'
+import TokenMeter from '@ahel/dsh-token-meter'
+import { mountAgentLoopTestDependencies } from '@ahel/dsh-agent-loop-testkit'
+import { createAssistantMessage, createToolResultMessage, createUserMessage, IMAGE_OFFLOAD_REQUIRED_CODE, LlmAdapter, LlmError, requiredImageOffload, ToolCallId } from '@ahel/dsh-llm'
+import type { ContentBlock, GenerateOptions, StreamChunk } from '@ahel/dsh-llm'
+import { isReplacementSurfaceEvent, SessionId } from '@ahel/dsh-session'
+import type { Session } from '@ahel/dsh-session'
 import * as offload from '../src/index.ts'
 
 type ScriptEntry = StreamChunk[] | (() => never)

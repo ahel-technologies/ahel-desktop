@@ -1,9 +1,9 @@
 /** Host registration for the browser locale preference. */
-import type {} from '@deepseek-ai/dsh-settings'
+import type {} from '@ahel/dsh-settings'
 
-import type { Volatile, Context } from '@deepseek-ai/cordis'
+import type { Volatile, Context } from '@ahel/cordis'
 
-import z from '@deepseek-ai/schemastery'
+import z from '@ahel/schemastery'
 import { LOCALE_PREFERENCE_FIELD } from './locale-settings.ts'
 
 import { LocaleSettingsFields } from './locale-settings.ts'

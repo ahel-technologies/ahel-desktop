@@ -3,7 +3,7 @@ description: "The process-local background-job registry for users and maintainer
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-jobs-local
+# @ahel/dsh-jobs-local
 
 English | [中文](README.zh.md)
 
@@ -36,7 +36,7 @@ Choose it when jobs should live in the harness process and die with it. Avoid it
 Loading the plugin registers `ctx.jobs`; every field is optional.
 
 ```yaml
-- name: '@deepseek-ai/dsh-jobs-local'
+- name: '@ahel/dsh-jobs-local'
 ```
 
 | Field | Default | Meaning |

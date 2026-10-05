@@ -7,12 +7,12 @@
  * infrastructure failures (spawn errors, aborts) surface as isError
  * results.
  *
- * @module @deepseek-ai/dsh-tool-pwsh/render
+ * @module @ahel/dsh-tool-pwsh/render
  */
 
-import type { ShellSandboxInfo, CollectedOutput } from '@deepseek-ai/dsh-shell'
-import type { SandboxMode } from '@deepseek-ai/dsh-sandbox'
-import { escalationHintMarker, sandboxDenialMarker } from '@deepseek-ai/dsh-sandbox'
+import type { ShellSandboxInfo, CollectedOutput } from '@ahel/dsh-shell'
+import type { SandboxMode } from '@ahel/dsh-sandbox'
+import { escalationHintMarker, sandboxDenialMarker } from '@ahel/dsh-sandbox'
 
 /* jscpd:ignore-start -- deliberate twin of dsh-tool-bash/render.ts (Agent Note). */
 

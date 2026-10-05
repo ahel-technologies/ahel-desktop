@@ -1,6 +1,6 @@
 # Phase 2 wiring: Ahel login in the desktop shell
 
-Status on `phase2/ahel-login` (rebased on `master` a73af0eb64). Packages: `@deepseek-ai/dsh-ahel-account` (service `ctx.ahelAccount`, Remote namespace `ahelAccount`), `@deepseek-ai/dsh-llm-ahel` (route `ahel`), `@deepseek-ai/dsh-client-ui-ahel-account` (browser UI).
+Status on `master` (Phase 2b). Packages: `@ahel/dsh-ahel-account` (service `ctx.ahelAccount`, Remote namespace `ahelAccount`), `@ahel/dsh-llm-ahel` (route `ahel`), `@ahel/dsh-client-ui-ahel-account` (browser UI).
 
 ## Done
 
@@ -11,10 +11,16 @@ Status on `phase2/ahel-login` (rebased on `master` a73af0eb64). Packages: `@deep
 5. Sidebar: `ui-ahel-account` fills `sidebar.footer.action` with the account entry (avatar, name or email, workspaces, Open ahel.ai, Sign out; signed out: Sign in with Ahel through `window.open`, which the shell hands to the system browser).
 6. Settings > Models: `ui-ahel-account` fills `settings.models.footer` with the Ahel row (state, sign-in). BYO routes (`anthropic`, `openai`) stay on `llm-pi-ai` with keys from the same page; the `ahel` route comes from `llm-ahel` and appears in the model menu once signed in.
 
+## Done in Phase 2b
+
+1. Sign-out from the sidebar closes the workspace and shows the welcome at once (renderer hint over `account-changed` IPC; main re-reads `ahelAccount.state()`).
+2. llm-ahel lists `GET /api/llm/v1/models` only when it answers 200; otherwise the model menu shows one disabled "Ahel (connecting…)" row and the read retries every 30 s. The route exists only while signed in. After the list loads, the first Ahel model becomes the saved default when none is saved and no bring-your-own route is configured.
+3. Workspace picker in the account menu (from the `/api/mcp/profile` workspaces captured at sign-in). The choice is the `ahel-account` `workspace` setting, mirrored into the grant; MCP sends `?workspace=` (`auth.workspaceParam`), models send `?workspace=` on `/models` and `X-Ahel-Workspace` on completions.
+4. Account menu links: Studio (`/app/studio`), Discover (`/discover`), Vault (`/app/vault`), ahel.ai (`/app`), each with `?workspace=` when one is chosen.
+5. npm scope `@deepseek-ai/*` is now `@ahel/*`; the `dsh` CLI name stays. Profiles naming the old scope are rewritten on load.
+
 ## Left
 
-1. Sign-out from the sidebar keeps the workspace open; the welcome returns on the next launch. Showing it at once needs main to watch `ahelAccount/watch`.
-2. The model picker does not pick an Ahel model by default after sign-in.
-3. Workspace picker (`X-Ahel-Workspace`) is not exposed; ahel.ai pins the token to the person's seat.
-4. Tokens live in `$DSH_HOME/.credentials.yaml` (mode 600). A Keychain provider is Phase 3.
-5. The metered proxy (`/api/llm/v1`) lands with ahel `desktop-metered-models`; until then the fallback model list shows and requests fail with a readable error.
+1. Tokens live in `$DSH_HOME/.credentials.yaml` (mode 600). A Keychain provider is Phase 3.
+2. The metered proxy (`/api/llm/v1`) is on ahel branch `desktop-metered-models`, not live; until it is, the menu shows "Ahel (connecting…)" and the composer has no Ahel model.
+3. The workspace list is the one captured at sign-in; a workspace joined later shows after the next sign-in.

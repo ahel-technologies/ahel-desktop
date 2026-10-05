@@ -15,8 +15,8 @@
   en: 33d781bf61684c3f
   zh: f8ed47f6c14c39f3
 /ahel-desktop/key-technical-decisions/bundled-workspace-dependencies:
-  en: 4756d98463944634
-  zh: fea5cb2f8d70c953
+  en: 10e658f0127c4c35
+  zh: 8234dcf77ace2e95
 /ahel-desktop/bundled-command-runtime:
   en: 9e5a935cc331ac4a
   zh: 4c2467eba44b06c1
@@ -30,8 +30,8 @@
   en: 84a9cc7ca9455aa8
   zh: 4091b8aa8231b74a
 /ahel-desktop/develop:
-  en: 22cb97d9f5cdd511
-  zh: e60113795b689416
+  en: a55e387501593b55
+  zh: de4e8384910c174f
 /ahel-desktop/develop/first-launch-welcome:
   en: aa8a6d681bcc65dd
   zh: 73798f682f2b1cc7
@@ -45,11 +45,11 @@
   en: 47ddcc2de4bf4782
   zh: ed0fb19220faae7a
 /ahel-desktop/package/runtime-file-selection:
-  en: 329a8e7add7ba7bb
-  zh: f33cd905f9d37814
+  en: b7a6daf607b053a3
+  zh: 81a75f0937a19d58
 /ahel-desktop/package/macos-signing-and-notarization:
-  en: 0a9b234eba393986
-  zh: 03f2eede8b3ffc5b
+  en: 37ca268963acc4bb
+  zh: 388f444145509419
 /ahel-desktop/package/unsigned-macos-development-build:
   en: 31667d6bb9c1f3c4
   zh: 2be9b4b0586b1596

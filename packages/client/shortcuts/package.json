@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-client-shortcuts",
+  "name": "@ahel/dsh-client-shortcuts",
   "description": "Application keyboard command registry and physical-key routing",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -32,7 +32,7 @@
   "dsh": {
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-client-locale"
+        "@ahel/dsh-client-locale"
       ],
       "platform": "web"
     }
@@ -43,16 +43,16 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@ahel/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-client-locale": "workspace:*",
-    "@deepseek-ai/dsh-client-store": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-primitives": "workspace:*",
-    "@deepseek-ai/dsh-brand": "workspace:*",
-    "@deepseek-ai/dsh-client-test-runtime": "workspace:*",
-    "@deepseek-ai/dsh-host-webserver": "workspace:*"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-client-locale": "workspace:*",
+    "@ahel/dsh-client-store": "workspace:*",
+    "@ahel/dsh-client-ui-primitives": "workspace:*",
+    "@ahel/dsh-brand": "workspace:*",
+    "@ahel/dsh-client-test-runtime": "workspace:*",
+    "@ahel/dsh-host-webserver": "workspace:*"
   },
   "files": [
     "lib/index.js",
@@ -61,8 +61,8 @@
     "lib/types/**/*.d.ts"
   ],
   "dependencies": {
-    "@deepseek-ai/dsh-util-crypto": "workspace:*",
-    "@deepseek-ai/dsh-util-values": "workspace:*",
-    "@deepseek-ai/schemastery": "workspace:~"
+    "@ahel/dsh-util-crypto": "workspace:*",
+    "@ahel/dsh-util-values": "workspace:*",
+    "@ahel/schemastery": "workspace:~"
   }
 }

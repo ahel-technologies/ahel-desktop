@@ -10,21 +10,21 @@
  * disposing the old instance and creating a new one; identical `serverName`
  * reproduces identical public tool names.
  *
- * @module @deepseek-ai/dsh-mcp-client
+ * @module @ahel/dsh-mcp-client
  */
 
-import type { Context, Fiber } from '@deepseek-ai/cordis'
-import { credentialRef } from '@deepseek-ai/dsh-credentials'
-import z from '@deepseek-ai/schemastery'
-import { scopeOf } from '@deepseek-ai/dsh-scope'
-import { MAX_TIMER_DELAY_MS } from '@deepseek-ai/dsh-timeout'
+import type { Context, Fiber } from '@ahel/cordis'
+import { credentialRef } from '@ahel/dsh-credentials'
+import z from '@ahel/schemastery'
+import { scopeOf } from '@ahel/dsh-scope'
+import { MAX_TIMER_DELAY_MS } from '@ahel/dsh-timeout'
 import { DEFAULT_MAX_INSTRUCTION_BYTES, RECONNECT_DEFAULTS, resolveReconnectPolicy, startConnection } from './connection.ts'
 import type { ReconnectConfig, ResolvedReconnectPolicy } from './connection.ts'
 import { registerServerContext } from './server-context.ts'
 import { oauthGrantAuthProvider, readOAuthGrant } from './oauth.ts'
 import type { AuthProvider } from '@modelcontextprotocol/client'
 // Side-effect type import: declaration-merges `ctx.tools` onto Context.
-import type {} from '@deepseek-ai/dsh-tools'
+import type {} from '@ahel/dsh-tools'
 
 export { createMcpToolDefinition, publicToolName } from './tools.ts'
 export { liveResultMeta, MCP_APP_MIME_TYPE, MCP_APPS_EXTENSION, readToolUi } from './apps.ts'

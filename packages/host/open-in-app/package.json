@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-host-open-in-app",
+  "name": "@ahel/dsh-host-open-in-app",
   "description": "Host half of open-in-app: resolved application catalog, icons, and the launch endpoint as three webServer routes",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -36,17 +36,17 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@deepseek-ai/dsh-launch-environment": "workspace:*",
-    "@deepseek-ai/dsh-native-command": "workspace:*",
-    "@deepseek-ai/dsh-subprocess": "workspace:*",
-    "@deepseek-ai/schemastery": "workspace:~"
+    "@ahel/dsh-launch-environment": "workspace:*",
+    "@ahel/dsh-native-command": "workspace:*",
+    "@ahel/dsh-subprocess": "workspace:*",
+    "@ahel/schemastery": "workspace:~"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@ahel/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/cordis-plugin-loader": "workspace:~",
-    "@deepseek-ai/dsh-host-webserver": "workspace:*"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/cordis-plugin-loader": "workspace:~",
+    "@ahel/dsh-host-webserver": "workspace:*"
   }
 }

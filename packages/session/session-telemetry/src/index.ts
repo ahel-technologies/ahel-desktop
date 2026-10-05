@@ -11,13 +11,13 @@
  * backend responsibilities are documented in the
  * [Session telemetry reference](../README.md#understand-the-implementation).
  *
- * @module @deepseek-ai/dsh-session-telemetry
+ * @module @ahel/dsh-session-telemetry
  */
 
-import { Context, Service } from '@deepseek-ai/cordis'
-import type { SessionEvent, SessionId } from '@deepseek-ai/dsh-session'
+import { Context, Service } from '@ahel/cordis'
+import type { SessionEvent, SessionId } from '@ahel/dsh-session'
 
-declare module '@deepseek-ai/cordis' {
+declare module '@ahel/cordis' {
   interface Context {
     sessionTelemetry: SessionTelemetryBackend
   }

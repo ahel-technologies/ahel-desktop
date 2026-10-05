@@ -7,42 +7,42 @@
  * event ledger with its timing overview, and fiber disposal removes the tab.
  * Timeline projection and inclusive focus edge cases ride along.
  */
-import type { GlobalStandardProps } from '@deepseek-ai/dsh-client-ui-slots'
+import type { GlobalStandardProps } from '@ahel/dsh-client-ui-slots'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createElement, type ComponentProps, type FC, type ReactNode } from 'react'
-import { bindSnapshotSelector, SlotTestRuntime, stubConfigForm } from '@deepseek-ai/dsh-client-test-runtime'
-import { resolveSlotLabel } from '@deepseek-ai/dsh-client-ui-slots'
+import { bindSnapshotSelector, SlotTestRuntime, stubConfigForm } from '@ahel/dsh-client-test-runtime'
+import { resolveSlotLabel } from '@ahel/dsh-client-ui-slots'
 import {
   EMPTY_CONVERSATION_SNAPSHOT, UiConversation,
-} from '@deepseek-ai/dsh-client-ui-conversation/client'
+} from '@ahel/dsh-client-ui-conversation/client'
 import type {
   ConversationBinding, ConversationSnapshot, ConversationViewSnapshotMap, ConvViewProps,
   InputActions, InputState, RequestView, ViewTab,
-} from '@deepseek-ai/dsh-client-ui-conversation/client'
-import { EMPTY_CHAT_SNAPSHOT } from '@deepseek-ai/dsh-client-ui-chat/client'
+} from '@ahel/dsh-client-ui-conversation/client'
+import { EMPTY_CHAT_SNAPSHOT } from '@ahel/dsh-client-ui-chat/client'
 import type {
   ChatSnapshot, LegacyConversationSlice,
-} from '@deepseek-ai/dsh-client-ui-chat/client'
-import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
-import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
-import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
+} from '@ahel/dsh-client-ui-chat/client'
+import { SlotRegistry } from '@ahel/dsh-client-ui-renderer/client'
+import { createSnapshotStore } from '@ahel/dsh-client-store'
+import type { ObservableSnapshot } from '@ahel/dsh-client-store'
 import type {
   SessionBinding, SessionListState, SessionProjectionMap, SessionSnapshot, UseProjection,
-} from '@deepseek-ai/dsh-api-session-controller/client'
-import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
-import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import type { SessionStatusSnapshot } from '@deepseek-ai/dsh-client-ui-session/client'
+} from '@ahel/dsh-api-session-controller/client'
+import type { WorkspaceSnapshot } from '@ahel/dsh-api-workspace-controller/client'
+import type { SessionId } from '@ahel/dsh-session/types'
+import type { SessionStatusSnapshot } from '@ahel/dsh-client-ui-session/client'
 import {
   ConversationSession, ConversationSessionHeader,
   type ConversationSessionHeaderProps, type ConversationSessionProps,
-} from '@deepseek-ai/dsh-client-ui-conversation/src/client/skeleton/ConversationSession.tsx'
-import { createConversationStore } from '@deepseek-ai/dsh-client-ui-conversation/src/client/stores.ts'
-import { zh as conversationZh } from '@deepseek-ai/dsh-client-ui-conversation/src/client/locales.ts'
-import * as localePlugin from '@deepseek-ai/dsh-client-locale/client'
-import { apply, inject } from '@deepseek-ai/dsh-client-ui-trajectory/client'
-import { apply as nodeApply } from '@deepseek-ai/dsh-client-ui-trajectory'
-import { PartialArguments } from '@deepseek-ai/dsh-util-values'
+} from '@ahel/dsh-client-ui-conversation/src/client/skeleton/ConversationSession.tsx'
+import { createConversationStore } from '@ahel/dsh-client-ui-conversation/src/client/stores.ts'
+import { zh as conversationZh } from '@ahel/dsh-client-ui-conversation/src/client/locales.ts'
+import * as localePlugin from '@ahel/dsh-client-locale/client'
+import { apply, inject } from '@ahel/dsh-client-ui-trajectory/client'
+import { apply as nodeApply } from '@ahel/dsh-client-ui-trajectory'
+import { PartialArguments } from '@ahel/dsh-util-values'
 import type { TrajectoryTurnModel } from '../src/client/layout.ts'
 import { TrajectoryTimeline as LocalizedTrajectoryTimeline } from '../src/client/TrajectoryTimeline.tsx'
 import {

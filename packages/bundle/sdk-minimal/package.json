@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-sdk-minimal",
+  "name": "@ahel/dsh-sdk-minimal",
   "description": "The standalone minimal SDK profile bundle: JSON-RPC, one DeepSeek adapter, persistent shell, and JSONL sessions",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -34,33 +34,33 @@
     }
   },
   "dependencies": {
-    "@deepseek-ai/cordis-plugin-timer": "workspace:~",
-    "@deepseek-ai/dsh-agent": "workspace:*",
-    "@deepseek-ai/dsh-agent-loop": "workspace:*",
-    "@deepseek-ai/dsh-jobs-local": "workspace:*",
-    "@deepseek-ai/dsh-llm": "workspace:*",
-    "@deepseek-ai/dsh-llm-retry": "workspace:*",
-    "@deepseek-ai/dsh-mcp-resources": "workspace:*",
-    "@deepseek-ai/dsh-sandbox-local": "workspace:*",
-    "@deepseek-ai/dsh-sandbox-policy": "workspace:*",
-    "@deepseek-ai/dsh-sdk-app": "workspace:*",
-    "@deepseek-ai/dsh-sdk-jsonrpc-server": "workspace:*",
-    "@deepseek-ai/dsh-session": "workspace:*",
-    "@deepseek-ai/dsh-session-persistence-jsonl": "workspace:*",
-    "@deepseek-ai/dsh-session-projection": "workspace:*",
-    "@deepseek-ai/dsh-session-title": "workspace:*",
-    "@deepseek-ai/dsh-subprocess-local": "workspace:*",
-    "@deepseek-ai/dsh-system-prompt": "workspace:*",
-    "@deepseek-ai/dsh-terminal": "workspace:*",
-    "@deepseek-ai/dsh-terminal-bash": "workspace:*",
-    "@deepseek-ai/dsh-tool-bash-persistent": "workspace:*",
-    "@deepseek-ai/dsh-tool-pwsh-persistent": "workspace:*",
-    "@deepseek-ai/dsh-tools": "workspace:*"
+    "@ahel/cordis-plugin-timer": "workspace:~",
+    "@ahel/dsh-agent": "workspace:*",
+    "@ahel/dsh-agent-loop": "workspace:*",
+    "@ahel/dsh-jobs-local": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-llm-retry": "workspace:*",
+    "@ahel/dsh-mcp-resources": "workspace:*",
+    "@ahel/dsh-sandbox-local": "workspace:*",
+    "@ahel/dsh-sandbox-policy": "workspace:*",
+    "@ahel/dsh-sdk-app": "workspace:*",
+    "@ahel/dsh-sdk-jsonrpc-server": "workspace:*",
+    "@ahel/dsh-session": "workspace:*",
+    "@ahel/dsh-session-persistence-jsonl": "workspace:*",
+    "@ahel/dsh-session-projection": "workspace:*",
+    "@ahel/dsh-session-title": "workspace:*",
+    "@ahel/dsh-subprocess-local": "workspace:*",
+    "@ahel/dsh-system-prompt": "workspace:*",
+    "@ahel/dsh-terminal": "workspace:*",
+    "@ahel/dsh-terminal-bash": "workspace:*",
+    "@ahel/dsh-tool-bash-persistent": "workspace:*",
+    "@ahel/dsh-tool-pwsh-persistent": "workspace:*",
+    "@ahel/dsh-tools": "workspace:*"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@ahel/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@ahel/cordis": "workspace:~"
   }
 }

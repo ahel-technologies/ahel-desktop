@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-browser-use",
+  "name": "@ahel/dsh-browser-use",
   "description": "Exclusive named browser-use provider registration",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -32,11 +32,11 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-brand": "workspace:*"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-brand": "workspace:*"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-brand": "workspace:*"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-brand": "workspace:*"
   }
 }

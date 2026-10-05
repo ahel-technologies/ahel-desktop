@@ -2,11 +2,11 @@
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { AssistantStreamAccumulator } from '@deepseek-ai/dsh-llm/assistant-stream'
-import { MessageId, ToolCallId } from '@deepseek-ai/dsh-llm'
-import type { ContentBlock, StreamChunk } from '@deepseek-ai/dsh-llm'
-import { SESSION_FORMAT_VERSION, SessionId } from '@deepseek-ai/dsh-session'
-import type { SessionEvent, SessionEventMap, SessionEventType, SessionHeader } from '@deepseek-ai/dsh-session'
+import { AssistantStreamAccumulator } from '@ahel/dsh-llm/assistant-stream'
+import { MessageId, ToolCallId } from '@ahel/dsh-llm'
+import type { ContentBlock, StreamChunk } from '@ahel/dsh-llm'
+import { SESSION_FORMAT_VERSION, SessionId } from '@ahel/dsh-session'
+import type { SessionEvent, SessionEventMap, SessionEventType, SessionHeader } from '@ahel/dsh-session'
 import {
   eventLines,
   generationLogPath,

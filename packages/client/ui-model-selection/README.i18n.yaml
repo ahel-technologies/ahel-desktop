@@ -5,42 +5,42 @@
 /:
   en: f39813648aeef5a0
   zh: eea25094e8bfc031
-/deepseek-ai-dsh-client-ui-model-selection:
-  en: 4cb6feb12e46f3a0
-  zh: eea39dd76fe1fa8b
-/deepseek-ai-dsh-client-ui-model-selection/summary:
+/ahel-dsh-client-ui-model-selection:
+  en: 858cffb546a64ee0
+  zh: 782126609ba5918c
+/ahel-dsh-client-ui-model-selection/summary:
   en: 2fb361ef704528fb
   zh: 2537d2afb4d2cb45
-/deepseek-ai-dsh-client-ui-model-selection/table-of-contents:
+/ahel-dsh-client-ui-model-selection/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
-/deepseek-ai-dsh-client-ui-model-selection/use-this-package:
+/ahel-dsh-client-ui-model-selection/use-this-package:
   en: cac9aa99cad5ba74
   zh: 7dcfdd38ddc6fba5
-/deepseek-ai-dsh-client-ui-model-selection/use-this-package/model-and-effort:
+/ahel-dsh-client-ui-model-selection/use-this-package/model-and-effort:
   en: d7c7b9bc065fa36d
   zh: 2165e2d650e0dce7
-/deepseek-ai-dsh-client-ui-model-selection/use-this-package/unroutable-sessions:
+/ahel-dsh-client-ui-model-selection/use-this-package/unroutable-sessions:
   en: 7b605f17afe4de77
   zh: 6059ea2419cb5a39
-/deepseek-ai-dsh-client-ui-model-selection/use-this-package/selection-failures:
+/ahel-dsh-client-ui-model-selection/use-this-package/selection-failures:
   en: 2cfcb0352a380466
   zh: 543650336ce22e4a
-/deepseek-ai-dsh-client-ui-model-selection/understand-the-implementation:
+/ahel-dsh-client-ui-model-selection/understand-the-implementation:
   en: 05ec85eb92d8ece4
   zh: 78c0e4764bffa003
-/deepseek-ai-dsh-client-ui-model-selection/further-exploration:
+/ahel-dsh-client-ui-model-selection/further-exploration:
   en: 14acd4692e923480
   zh: ff89aed852aa0da8
-/deepseek-ai-dsh-client-ui-model-selection/model-experience:
+/ahel-dsh-client-ui-model-selection/model-experience:
   en: 782f79ed910f426a
   zh: 54a2e3e32a747544
-/deepseek-ai-dsh-client-ui-model-selection/model-experience/kv-cache-effect:
+/ahel-dsh-client-ui-model-selection/model-experience/kv-cache-effect:
   en: 68e54c00412a40d1
   zh: 0ac96f57fd194d96
-/deepseek-ai-dsh-client-ui-model-selection/known-limitations-and-deferred-work:
+/ahel-dsh-client-ui-model-selection/known-limitations-and-deferred-work:
   en: 75b37954ceacd92a
   zh: a49d0361486e35c4
-/deepseek-ai-dsh-client-ui-model-selection/known-limitations-and-deferred-work/dev-note:
+/ahel-dsh-client-ui-model-selection/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 3bb0c20c93f16f98

@@ -3,7 +3,7 @@ description: "面向侧栏与空白会话首屏的 Ahel 品牌填充；供选择
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-client-ui-brand-ahel
+# @ahel/dsh-client-ui-brand-ahel
 
 [English](README.md) | 中文
 
@@ -29,7 +29,7 @@ kind: "package-reference"
 
 ### 品牌图形
 
-标志块是红色 `#e42238` 圆角方块，内含奶油色 `#f6f1e7` 链环字形；两种颜色在浅色与深色主题下都保持不变。字标是 Prime 字体的小写 "ahel"，以轮廓绘制并使用周围文字颜色，因此在两种主题下都跟随侧栏墨色。两者都来自 `@deepseek-ai/dsh-client-ui-primitives`（`AhelTile`、`BrandWordmark`）。
+标志块是红色 `#e42238` 圆角方块，内含奶油色 `#f6f1e7` 链环字形；两种颜色在浅色与深色主题下都保持不变。字标是 Prime 字体的小写 "ahel"，以轮廓绘制并使用周围文字颜色，因此在两种主题下都跟随侧栏墨色。两者都来自 `@ahel/dsh-client-ui-primitives`（`AhelTile`、`BrandWordmark`）。
 
 ### 替换品牌
 

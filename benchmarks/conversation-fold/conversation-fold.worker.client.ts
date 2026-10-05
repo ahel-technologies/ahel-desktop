@@ -1,13 +1,13 @@
 /** Compiled worker for Client history folding and live tool preparation. */
 
 import { performance } from 'node:perf_hooks'
-import { Context } from '@deepseek-ai/cordis'
-import { AssistantStreamAccumulator } from '@deepseek-ai/dsh-llm/assistant-stream'
-import { LlmAttemptId, ToolCallId } from '@deepseek-ai/dsh-llm/brand'
-import type { StreamChunk } from '@deepseek-ai/dsh-llm'
-import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
-import type { ChatNode, ChatSnapshot } from '@deepseek-ai/dsh-client-ui-chat/client'
-import type { SessionEventLikeEntry } from '@deepseek-ai/dsh-api-session-controller/client'
+import { Context } from '@ahel/cordis'
+import { AssistantStreamAccumulator } from '@ahel/dsh-llm/assistant-stream'
+import { LlmAttemptId, ToolCallId } from '@ahel/dsh-llm/brand'
+import type { StreamChunk } from '@ahel/dsh-llm'
+import type { SessionEvent } from '@ahel/dsh-session/types'
+import type { ChatNode, ChatSnapshot } from '@ahel/dsh-client-ui-chat/client'
+import type { SessionEventLikeEntry } from '@ahel/dsh-api-session-controller/client'
 // These Client-only fold modules have no plain-Node package export and are compiled into this worker.
 import { ConversationNodeAssembler } from '../../packages/client/ui-conversation/src/client/conversation/assembler.ts'
 import { ConversationEventRegistry } from '../../packages/client/ui-conversation/src/client/conversation/event-registry.ts'
@@ -258,12 +258,12 @@ function preparingTool(tool: 'write' | 'bash', characters: number, definitions: 
 }
 
 assertBuiltBenchmarkRuntime(import.meta.url, {
-  '@deepseek-ai/dsh-brand': import.meta.resolve('@deepseek-ai/dsh-brand'),
-  '@deepseek-ai/dsh-client-store': import.meta.resolve('@deepseek-ai/dsh-client-store'),
-  '@deepseek-ai/dsh-llm/assistant-stream': import.meta.resolve('@deepseek-ai/dsh-llm/assistant-stream'),
-  '@deepseek-ai/dsh-session/surface': import.meta.resolve('@deepseek-ai/dsh-session/surface'),
-  '@deepseek-ai/dsh-token-meter/client': import.meta.resolve('@deepseek-ai/dsh-token-meter/client'),
-  '@deepseek-ai/dsh-util-values': import.meta.resolve('@deepseek-ai/dsh-util-values'),
+  '@ahel/dsh-brand': import.meta.resolve('@ahel/dsh-brand'),
+  '@ahel/dsh-client-store': import.meta.resolve('@ahel/dsh-client-store'),
+  '@ahel/dsh-llm/assistant-stream': import.meta.resolve('@ahel/dsh-llm/assistant-stream'),
+  '@ahel/dsh-session/surface': import.meta.resolve('@ahel/dsh-session/surface'),
+  '@ahel/dsh-token-meter/client': import.meta.resolve('@ahel/dsh-token-meter/client'),
+  '@ahel/dsh-util-values': import.meta.resolve('@ahel/dsh-util-values'),
 })
 const scope = new Context()
 try {

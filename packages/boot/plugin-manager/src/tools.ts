@@ -1,13 +1,13 @@
 /** Agent-facing current-profile management using the same service as Web controls. */
-import { assertNever } from '@deepseek-ai/dsh-util-values'
-import type { Context } from '@deepseek-ai/cordis'
+import { assertNever } from '@ahel/dsh-util-values'
+import type { Context } from '@ahel/cordis'
 import type {} from './index.ts'
-import type {} from '@deepseek-ai/dsh-sandbox-policy'
-import type {} from '@deepseek-ai/dsh-user-approval'
-import { approveEscalation } from '@deepseek-ai/dsh-sandbox'
+import type {} from '@ahel/dsh-sandbox-policy'
+import type {} from '@ahel/dsh-user-approval'
+import { approveEscalation } from '@ahel/dsh-sandbox'
 import type { PluginEntryId } from './types.ts'
-import { defineTool } from '@deepseek-ai/dsh-tools'
-import { getDshRuntimeVersion } from '@deepseek-ai/dsh-app-boot'
+import { defineTool } from '@ahel/dsh-tools'
+import { getDshRuntimeVersion } from '@ahel/dsh-app-boot'
 
 /** Required services for the management tool. */
 export const inject = ['tools', 'pluginManager', 'sandboxPolicy']

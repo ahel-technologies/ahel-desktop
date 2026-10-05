@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-tool-present",
+  "name": "@ahel/dsh-tool-present",
   "description": "Explicit workspace file delivery declarations for the DeepSeek Harness",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -32,29 +32,29 @@
     "lib/types/**/*.d.ts"
   ],
   "dependencies": {
-    "@deepseek-ai/schemastery": "workspace:~"
+    "@ahel/schemastery": "workspace:~"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-agent": "workspace:*",
-    "@deepseek-ai/dsh-fs": "workspace:*",
-    "@deepseek-ai/dsh-llm": "workspace:*",
-    "@deepseek-ai/dsh-session": "workspace:*",
-    "@deepseek-ai/dsh-session-projection": "workspace:*",
-    "@deepseek-ai/dsh-tools": "workspace:*"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-agent": "workspace:*",
+    "@ahel/dsh-fs": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-session": "workspace:*",
+    "@ahel/dsh-session-projection": "workspace:*",
+    "@ahel/dsh-tools": "workspace:*"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-agent": "workspace:*",
-    "@deepseek-ai/dsh-fs": "workspace:*",
-    "@deepseek-ai/dsh-llm": "workspace:*",
-    "@deepseek-ai/dsh-session": "workspace:*",
-    "@deepseek-ai/dsh-session-projection": "workspace:*",
-    "@deepseek-ai/dsh-tools": "workspace:*",
-    "@deepseek-ai/dsh-agent-loop": "workspace:*",
-    "@deepseek-ai/dsh-agent-loop-testkit": "workspace:*",
-    "@deepseek-ai/dsh-fs-local": "workspace:*",
-    "@deepseek-ai/dsh-system-prompt": "workspace:*",
-    "@deepseek-ai/dsh-scope": "workspace:*"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-agent": "workspace:*",
+    "@ahel/dsh-fs": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-session": "workspace:*",
+    "@ahel/dsh-session-projection": "workspace:*",
+    "@ahel/dsh-tools": "workspace:*",
+    "@ahel/dsh-agent-loop": "workspace:*",
+    "@ahel/dsh-agent-loop-testkit": "workspace:*",
+    "@ahel/dsh-fs-local": "workspace:*",
+    "@ahel/dsh-system-prompt": "workspace:*",
+    "@ahel/dsh-scope": "workspace:*"
   }
 }

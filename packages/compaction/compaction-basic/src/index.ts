@@ -1,21 +1,21 @@
 /**
  * Basic replay-aware compaction backend.
  *
- * @module @deepseek-ai/dsh-compaction-basic
+ * @module @ahel/dsh-compaction-basic
  */
 
-import { Context } from '@deepseek-ai/cordis'
-import z from '@deepseek-ai/schemastery'
-import { CompactionEngine, ManualCompactionError } from '@deepseek-ai/dsh-compaction'
-import type { CompactionResult, CompactionTrigger } from '@deepseek-ai/dsh-compaction'
-import type { Session, SessionSeq } from '@deepseek-ai/dsh-session'
-import { CONTEXT_WINDOW_EXCEEDED_CODE } from '@deepseek-ai/dsh-llm'
-import type { LlmCallConfig } from '@deepseek-ai/dsh-llm'
-import { assertNever } from '@deepseek-ai/dsh-util-values'
-import type { Agent, PreStepDecision } from '@deepseek-ai/dsh-agent'
-import type { CommandId } from '@deepseek-ai/dsh-commands/brand'
+import { Context } from '@ahel/cordis'
+import z from '@ahel/schemastery'
+import { CompactionEngine, ManualCompactionError } from '@ahel/dsh-compaction'
+import type { CompactionResult, CompactionTrigger } from '@ahel/dsh-compaction'
+import type { Session, SessionSeq } from '@ahel/dsh-session'
+import { CONTEXT_WINDOW_EXCEEDED_CODE } from '@ahel/dsh-llm'
+import type { LlmCallConfig } from '@ahel/dsh-llm'
+import { assertNever } from '@ahel/dsh-util-values'
+import type { Agent, PreStepDecision } from '@ahel/dsh-agent'
+import type { CommandId } from '@ahel/dsh-commands/brand'
 // Type-only: makes the optional sibling service available to `ctx.get()`.
-import type {} from '@deepseek-ai/dsh-compaction-tool-result-pruner'
+import type {} from '@ahel/dsh-compaction-tool-result-pruner'
 import {
   resolveCompactSpec,
   resolveConfig,

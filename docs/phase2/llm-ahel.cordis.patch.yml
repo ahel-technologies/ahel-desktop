@@ -4,6 +4,6 @@
 # packages/bundle/base/cordis.patch.yml. BYO-key routes stay on `llm-pi-ai`.
 - insert:
     - id: llm-ahel
-      name: '@deepseek-ai/dsh-llm-ahel'
+      name: '@ahel/dsh-llm-ahel'
       config:
         baseURL: https://ahel.ai/api/llm/v1

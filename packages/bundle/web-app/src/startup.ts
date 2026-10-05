@@ -4,12 +4,12 @@
  * and its `--help` text, then provides the immutable values as
  * {@link WEB_STARTUP_SERVICE}. Ordinary rows inject that service before
  * reading it from lazy config.
- * @module @deepseek-ai/dsh-web-app/startup
+ * @module @ahel/dsh-web-app/startup
  */
 
 import { Command } from 'commander'
-import type { Context } from '@deepseek-ai/cordis'
-import { parseCmdline } from '@deepseek-ai/dsh-cmdline'
+import type { Context } from '@ahel/cordis'
+import { parseCmdline } from '@ahel/dsh-cmdline'
 import { parsePublicUrl } from './public-url.ts'
 
 /** Stable Cordis plugin name. */

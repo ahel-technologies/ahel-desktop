@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-client-ui-reference",
+  "name": "@ahel/dsh-client-ui-reference",
   "description": "Unified Web @file and @session reference source",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -28,12 +28,12 @@
   "dsh": {
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-api-remotes",
-        "@deepseek-ai/dsh-api-session-controller",
-        "@deepseek-ai/dsh-client-connection",
-        "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-ui-input-trigger",
-        "@deepseek-ai/dsh-client-ui-sidebar-right"
+        "@ahel/dsh-api-remotes",
+        "@ahel/dsh-api-session-controller",
+        "@ahel/dsh-client-connection",
+        "@ahel/dsh-client-locale",
+        "@ahel/dsh-client-ui-input-trigger",
+        "@ahel/dsh-client-ui-sidebar-right"
       ],
       "platform": "web"
     }
@@ -44,23 +44,23 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@ahel/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/dsh-api-remotes": "workspace:*",
-    "@deepseek-ai/dsh-api-session-controller": "workspace:*",
-    "@deepseek-ai/dsh-client-connection": "workspace:*",
-    "@deepseek-ai/dsh-client-locale": "workspace:*",
-    "@deepseek-ai/dsh-client-test-runtime": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-input-trigger": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-primitives": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-slots": "workspace:*",
-    "@deepseek-ai/dsh-file-reference": "workspace:*",
-    "@deepseek-ai/dsh-session-reference": "workspace:*",
-    "@deepseek-ai/dsh-typert-protocol": "workspace:*",
-    "@deepseek-ai/dsh-util-workspace-path": "workspace:*",
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-client-ui-sidebar-right": "workspace:*"
+    "@ahel/dsh-api-remotes": "workspace:*",
+    "@ahel/dsh-api-session-controller": "workspace:*",
+    "@ahel/dsh-client-connection": "workspace:*",
+    "@ahel/dsh-client-locale": "workspace:*",
+    "@ahel/dsh-client-test-runtime": "workspace:*",
+    "@ahel/dsh-client-ui-input-trigger": "workspace:*",
+    "@ahel/dsh-client-ui-primitives": "workspace:*",
+    "@ahel/dsh-client-ui-slots": "workspace:*",
+    "@ahel/dsh-file-reference": "workspace:*",
+    "@ahel/dsh-session-reference": "workspace:*",
+    "@ahel/dsh-typert-protocol": "workspace:*",
+    "@ahel/dsh-util-workspace-path": "workspace:*",
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-client-ui-sidebar-right": "workspace:*"
   },
   "files": [
     "lib/index.js",

@@ -3,7 +3,7 @@ description: "MCP client bridge for deployments and maintainers choosing, config
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-mcp-client
+# @ahel/dsh-mcp-client
 
 English | [中文](README.zh.md)
 
@@ -33,7 +33,7 @@ Add one entry per server; nothing else is required. After the harness starts, th
 
 ```yaml
 - id: mcp-github
-  name: '@deepseek-ai/dsh-mcp-client'
+  name: '@ahel/dsh-mcp-client'
   config:
     serverName: github
     transport: stdio
@@ -43,7 +43,7 @@ Add one entry per server; nothing else is required. After the harness starts, th
       GITHUB_TOKEN: !!js process.env.GITHUB_TOKEN
 
 - id: mcp-web
-  name: '@deepseek-ai/dsh-mcp-client'
+  name: '@ahel/dsh-mcp-client'
   config:
     serverName: web
     transport: streamable-http
@@ -58,7 +58,7 @@ Add one entry per server; nothing else is required. After the harness starts, th
 | `serverName` | required | Namespace for the server's tool names; `[A-Za-z0-9_-]{1,32}`, unique inside one registration scope |
 | `command` / `args` / `env` / `cwd` | — | stdio: executable, arguments, extra env merged over scrubbed ambient env, working directory |
 | `url` / `headers` | — | streamable-http: endpoint URL and extra request headers |
-| `auth.credentialRef` | — | streamable-http: credential reference holding an OAuth grant (e.g. `AHEL_ACCOUNT`); the server connects only while it is set, sends its bearer, refreshes it within `auth.refreshSkewMs` (60 s) or after a 401, and drops its tools when the reference is removed |
+| `auth.credentialRef` | — | streamable-http: credential reference holding an OAuth grant (e.g. `AHEL_ACCOUNT`); the server connects only while it is set, sends its bearer, refreshes it within `auth.refreshSkewMs` (60 s) or after a 401, and drops its tools when the reference is removed; `auth.workspaceParam` sends the grant's selected workspace as that query parameter |
 | `toolCallTimeoutMs` | `60,000` | Timeout per `tools/call` or resource request |
 | `maxInstructionBytes` | `32,768` | Maximum UTF-8 bytes of server instructions including attribution; an oversized value rejects the connection |
 | `failOnStartupError` | `false` | Reject plugin activation when the initial connection or tool synchronization fails |

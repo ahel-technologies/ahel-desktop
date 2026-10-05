@@ -3,7 +3,7 @@ description: "每个基于 base 的 dsh --profile 表层共享的聊天核心：
 kind: "package-bundle"
 ---
 
-# @deepseek-ai/dsh-base
+# @ahel/dsh-base
 
 [English](README.md) | 中文
 
@@ -29,7 +29,7 @@ kind: "package-bundle"
 
 ### 最小自定义 profile
 
-核心本身不带入口。请把它与一个模式组合包搭配；当 agent 需要本地工具时，在两者之间列出 `@deepseek-ai/dsh-agent-tools`。下面的 profile `package.json` 与随发行版交付的 `headless` profile 一致：
+核心本身不带入口。请把它与一个模式组合包搭配；当 agent 需要本地工具时，在两者之间列出 `@ahel/dsh-agent-tools`。下面的 profile `package.json` 与随发行版交付的 `headless` profile 一致：
 
 ```json
 {
@@ -37,7 +37,7 @@ kind: "package-bundle"
   "private": true,
   "dsh": {
     "profile": {
-      "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-agent-tools", "@deepseek-ai/dsh-headless"]
+      "bundles": ["@ahel/dsh-base", "@ahel/dsh-agent-tools", "@ahel/dsh-headless"]
     }
   }
 }

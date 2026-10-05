@@ -1,4 +1,4 @@
-# @deepseek-ai/dsh-ahel-account
+# @ahel/dsh-ahel-account
 
 The ahel.ai account for Ahel Desktop. One browser sign-in stores one OAuth grant under the credential reference `AHEL_ACCOUNT`; the Ahel MCP server (`dsh-mcp-client` with `auth.credentialRef: AHEL_ACCOUNT`) and Ahel models (`dsh-llm-ahel`) both use it.
 
@@ -6,7 +6,7 @@ The ahel.ai account for Ahel Desktop. One browser sign-in stores one OAuth grant
 
 ```yaml
 - id: ahel-account
-  name: '@deepseek-ai/dsh-ahel-account'
+  name: '@ahel/dsh-ahel-account'
 ```
 
 | Field | Default | Meaning |

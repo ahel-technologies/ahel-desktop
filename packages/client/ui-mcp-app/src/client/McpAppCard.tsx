@@ -1,7 +1,7 @@
 /** Interactive MCP Apps card rendered under a settled MCP tool call. */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import { StateDot } from '@ahel/dsh-client-ui-primitives'
+import type { JsonValue } from '@ahel/dsh-util-values'
 import type { McpAppJsonObject } from '../types.ts'
 import { McpAppBridge, type McpAppHostContext } from './bridge.ts'
 import { appContentSecurityPolicy, APP_FRAME_SANDBOX, withContentSecurityPolicy } from './document.ts'

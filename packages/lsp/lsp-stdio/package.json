@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-lsp-stdio",
+  "name": "@ahel/dsh-lsp-stdio",
   "description": "Generic stdio language-server provider for the DeepSeek Harness LSP capability seam (ctx.lsp) — spawns configured servers, translates JSON-RPC, and serves transient-open goToDefinition/findReferences/goToImplementation/hover queries in the host filesystem namespace",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -27,28 +27,28 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-brand": "workspace:*",
-    "@deepseek-ai/dsh-fs": "workspace:*",
-    "@deepseek-ai/dsh-llm": "workspace:*",
-    "@deepseek-ai/dsh-lsp": "workspace:*",
-    "@deepseek-ai/dsh-subprocess": "workspace:*",
-    "@deepseek-ai/dsh-timeout": "workspace:*"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-brand": "workspace:*",
+    "@ahel/dsh-fs": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-lsp": "workspace:*",
+    "@ahel/dsh-subprocess": "workspace:*",
+    "@ahel/dsh-timeout": "workspace:*"
   },
   "dependencies": {
-    "@deepseek-ai/dsh-util-values": "workspace:*",
-    "@deepseek-ai/schemastery": "workspace:~"
+    "@ahel/dsh-util-values": "workspace:*",
+    "@ahel/schemastery": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-brand": "workspace:*",
-    "@deepseek-ai/dsh-fs": "workspace:*",
-    "@deepseek-ai/dsh-fs-local": "workspace:*",
-    "@deepseek-ai/dsh-llm": "workspace:*",
-    "@deepseek-ai/dsh-lsp": "workspace:*",
-    "@deepseek-ai/dsh-subprocess": "workspace:*",
-    "@deepseek-ai/dsh-subprocess-local": "workspace:*",
-    "@deepseek-ai/dsh-timeout": "workspace:*",
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-brand": "workspace:*",
+    "@ahel/dsh-fs": "workspace:*",
+    "@ahel/dsh-fs-local": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-lsp": "workspace:*",
+    "@ahel/dsh-subprocess": "workspace:*",
+    "@ahel/dsh-subprocess-local": "workspace:*",
+    "@ahel/dsh-timeout": "workspace:*",
     "typescript": "^6.0.3",
     "typescript-language-server": "^5.0.0"
   }

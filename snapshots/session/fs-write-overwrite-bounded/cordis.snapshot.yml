@@ -1,24 +1,24 @@
 # Keyless replay counterpart to fs-diff-bound.cordis.yml. The ACP and
 # persistence rows keep the recorded flash model and raw JSONL harvest.
 - id: agent-default-model
-  name: '@deepseek-ai/dsh-agent-default-model'
+  name: '@ahel/dsh-agent-default-model'
   config:
     provider: deepseek-official
     model: deepseek-v4-flash
 
 - id: session-persistence-jsonl
-  name: '@deepseek-ai/dsh-session-persistence-jsonl'
+  name: '@ahel/dsh-session-persistence-jsonl'
   config:
     root: !!js dshHomePath('sessions')
     compression: none
 
 - id: agent-instructions
-  name: '@deepseek-ai/dsh-agent-instructions'
+  name: '@ahel/dsh-agent-instructions'
   config:
     maxBytes: 65536
 
 - id: system-prompt
-  name: '@deepseek-ai/dsh-system-prompt'
+  name: '@ahel/dsh-system-prompt'
   config:
     personaPrefix: |
       You are a coding assistant powered by the {{model}} model. Your working directory is {{cwd}}. Your bash tool runs under a file sandbox — a `[sandbox: file access denied …]` result is policy, not a command bug.
@@ -26,14 +26,14 @@
       Verify your work by running the code or tests. Keep answers brief and factual.
 
 - id: fs-sandbox
-  name: '@deepseek-ai/dsh-fs-sandbox'
+  name: '@ahel/dsh-fs-sandbox'
   config:
     cwd: !!js process.cwd()
     diffBasisMaxBytes: 64
 
 - insert:
     - id: llm-replay
-      name: '@deepseek-ai/dsh-llm-replay'
+      name: '@ahel/dsh-llm-replay'
       config:
         providers:
           - id: deepseek-official

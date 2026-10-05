@@ -146,7 +146,7 @@ def test_stage_runtime_copies_platform_payload(
         spawn_helper.chmod(0o755)
         expected[spawn_helper.name] = b"helper"
     office = executable.parent / build_python_release.office_sidecar_name(executable.name)
-    office_asset = office / "node_modules" / "@deepseek-ai" / "libreoffice-kit-wasm" / "assets" / "soffice.data"
+    office_asset = office / "node_modules" / "@ahel" / "libreoffice-kit-wasm" / "assets" / "soffice.data"
     office_asset.parent.mkdir(parents=True)
     office_asset.write_bytes(b"office data")
     resources = executable.with_name(executable.name.removeprefix("deepseek-harness-sdk-runtime-").removesuffix(".exe"))
@@ -208,10 +208,10 @@ def test_office_wheel_requires_only_target_engine(
     engine = ({"kind": "native", "executable": "bin/helper"} if native else
               {"kind": "wasm", "loader": "loader.cjs", "wasm": "engine.wasm", "data": "engine.data", "metadata": "fonts.json"})
     with zipfile.ZipFile(wheel, "w") as archive:
-        archive.writestr(f"{root}/@deepseek-ai/libreoffice-kit/package.json", json.dumps({
-            "optionalDependencies": {f"@deepseek-ai/libreoffice-kit-{selected}": "0.0.1"},
+        archive.writestr(f"{root}/@ahel/libreoffice-kit/package.json", json.dumps({
+            "optionalDependencies": {f"@ahel/libreoffice-kit-{selected}": "0.0.1"},
         }))
-        base = f"{root}/@deepseek-ai/libreoffice-kit-{selected}"
+        base = f"{root}/@ahel/libreoffice-kit-{selected}"
         if invalid != "missing-engine":
             archive.writestr(f"{base}/prebuilds.json", json.dumps({"engine": engine}))
         for field in (("executable",) if native else ("loader", "wasm", "data", "metadata")):
@@ -222,7 +222,7 @@ def test_office_wheel_requires_only_target_engine(
             archive.writestr(asset, b"payload")
         if invalid == "foreign-engine":
             foreign = "wasm" if native else "darwin-arm64"
-            archive.writestr(f"{root}/@deepseek-ai/libreoffice-kit-{foreign}/prebuilds.json", "{}")
+            archive.writestr(f"{root}/@ahel/libreoffice-kit-{foreign}/prebuilds.json", "{}")
     with zipfile.ZipFile(wheel) as archive:
         if invalid is None:
             build_python_release.verify_office_payload(archive, root, platform_tag)

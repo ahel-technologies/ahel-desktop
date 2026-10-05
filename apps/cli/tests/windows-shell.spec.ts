@@ -16,9 +16,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import yaml from 'js-yaml'
-import { entryListSchema } from '@deepseek-ai/cordis-plugin-include'
-import { evaluate } from '@deepseek-ai/cordis-plugin-loader'
-import { bundlePatchPaths, composeEntries, initProfile, loadProfile, PROFILES_DIR } from '@deepseek-ai/dsh-app-boot'
+import { entryListSchema } from '@ahel/cordis-plugin-include'
+import { evaluate } from '@ahel/cordis-plugin-loader'
+import { bundlePatchPaths, composeEntries, initProfile, loadProfile, PROFILES_DIR } from '@ahel/dsh-app-boot'
 
 /**
  * The effective disabled state of one row on one platform: a `!!js` expression
@@ -55,7 +55,7 @@ describe('the shipped shell composition (real bundle layers)', () => {
   }
 
   it('composes the confined pwsh roster on win32 and the bash roster on POSIX from the same agent-tools rows', () => {
-    const { byId, warnings } = compose('agent', ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-agent-tools'])
+    const { byId, warnings } = compose('agent', ['@ahel/dsh-base', '@ahel/dsh-agent-tools'])
     // One shared patch set, two rosters: the shell stacks gate themselves.
     for (const id of SHELL_ROWS) expect(byId.has(id), `row ${id}`).toBe(true)
     for (const [id, win32] of [['bash-sandbox', true], ['tool-bash', true], ['pwsh-sandbox', false], ['tool-pwsh', false]] as const) {
@@ -74,14 +74,14 @@ describe('the shipped shell composition (real bundle layers)', () => {
     const bundleManifest = JSON.parse(readFileSync(
       fileURLToPath(new URL('../../../packages/bundle/agent-tools/package.json', import.meta.url)), 'utf8',
     )) as { dependencies?: Record<string, string> }
-    for (const name of ['@deepseek-ai/dsh-pwsh-sandbox', '@deepseek-ai/dsh-tool-pwsh']) {
+    for (const name of ['@ahel/dsh-pwsh-sandbox', '@ahel/dsh-tool-pwsh']) {
       expect(bundleManifest.dependencies?.[name], `cold-start closure must reach ${name}`).toBeDefined()
     }
     expect(warnings).toEqual([])
   })
 
   it('the chat-core web profile mounts no shell stack', () => {
-    const { byId, warnings } = compose('web', ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'])
+    const { byId, warnings } = compose('web', ['@ahel/dsh-base', '@ahel/dsh-web-app'])
     for (const id of SHELL_ROWS) expect(byId.has(id), `row ${id}`).toBe(false)
     expect(warnings).toEqual([])
   })
@@ -91,9 +91,9 @@ describe('the shipped web agent presets', () => {
   const webBundle = fileURLToPath(new URL('../../../packages/bundle/web-app/', import.meta.url))
   const webManifest = JSON.parse(readFileSync(join(webBundle, 'package.json'), 'utf8')) as { dsh: { bundle: { patch: string[] } } }
   const presetRows = composeEntries([bundlePatchPaths(webBundle, webManifest.dsh.bundle).flatMap(file =>
-    yaml.load(readFileSync(file, 'utf8'), { schema: entryListSchema }) as import('@deepseek-ai/cordis-plugin-include').PatchOptions[])])
+    yaml.load(readFileSync(file, 'utf8'), { schema: entryListSchema }) as import('@ahel/cordis-plugin-include').PatchOptions[])])
 
-  const definitions = presetRows.filter(row => row.name === '@deepseek-ai/dsh-agent-preset').map(row => row.config as import('@deepseek-ai/dsh-agent-preset-registry').PresetDefinition)
+  const definitions = presetRows.filter(row => row.name === '@ahel/dsh-agent-preset').map(row => row.config as import('@ahel/dsh-agent-preset-registry').PresetDefinition)
 
   it('ship only the standard preset, which mounts no shell tool or persistent shell row', () => {
     expect(definitions.map(definition => definition.id)).toEqual(['standard'])

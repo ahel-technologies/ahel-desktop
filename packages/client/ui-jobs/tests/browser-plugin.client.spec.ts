@@ -3,14 +3,14 @@
  * registrations against the real SlotRegistry (with fiber teardown proving
  * removal — HMR safety), and the inert node entry.
  */
-import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
-import { Context } from '@deepseek-ai/cordis'
-import { JobId } from '@deepseek-ai/dsh-jobs/brand'
-import { SessionId } from '@deepseek-ai/dsh-session/types'
+import { createSnapshotStore } from '@ahel/dsh-client-store'
+import { Context } from '@ahel/cordis'
+import { JobId } from '@ahel/dsh-jobs/brand'
+import { SessionId } from '@ahel/dsh-session/types'
 import { describe, expect, it } from 'vitest'
-import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
-import { stubConfigForm } from '@deepseek-ai/dsh-client-test-runtime'
-import { apply as applyLocale, inject as localeInject } from '@deepseek-ai/dsh-client-locale/client'
+import { SlotRegistry } from '@ahel/dsh-client-ui-renderer/client'
+import { stubConfigForm } from '@ahel/dsh-client-test-runtime'
+import { apply as applyLocale, inject as localeInject } from '@ahel/dsh-client-locale/client'
 import { apply, inject } from '../src/client/index.ts'
 import type { JobListInjected } from '../src/client/JobListAction.tsx'
 import { apply as applyNode } from '../src/index.ts'

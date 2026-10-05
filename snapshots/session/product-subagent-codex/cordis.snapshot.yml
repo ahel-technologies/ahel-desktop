@@ -2,7 +2,7 @@
 # providers and tools while replacing only the external model adapter.
 - insert:
     - id: llm-replay
-      name: '@deepseek-ai/dsh-llm-replay'
+      name: '@ahel/dsh-llm-replay'
       config:
         providers:
           - id: deepseek-official
@@ -11,24 +11,24 @@
               - id: deepseek-v4-flash
               - id: deepseek-v4-pro
     - id: subagent-codex-primary
-      name: '@deepseek-ai/dsh-subagent-codex'
+      name: '@ahel/dsh-subagent-codex'
       config:
         providerName: codex-primary
         model: codex-primary-model
     - id: subagent-codex-secondary
-      name: '@deepseek-ai/dsh-subagent-codex'
+      name: '@ahel/dsh-subagent-codex'
       config:
         providerName: codex-secondary
         model: codex-secondary-model
     - id: tool-subagent-codex-primary
-      name: '@deepseek-ai/dsh-tool-subagent'
+      name: '@ahel/dsh-tool-subagent'
       config:
         provider: codex-primary
         toolName: subagent_codex_primary
         backgroundMode: one-shot
         maxDepth: provider-managed
     - id: tool-subagent-codex-secondary
-      name: '@deepseek-ai/dsh-tool-subagent'
+      name: '@ahel/dsh-tool-subagent'
       config:
         provider: codex-secondary
         toolName: subagent_codex_secondary

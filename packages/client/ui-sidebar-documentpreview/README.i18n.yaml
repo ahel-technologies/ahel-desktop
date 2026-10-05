@@ -5,42 +5,42 @@
 /:
   en: ef50065f5ff17aa1
   zh: ee5d2b7986739fca
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview:
-  en: 5168e03d461318f5
-  zh: 7ad97d70ee331bfd
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/summary:
+/ahel-dsh-client-ui-sidebar-documentpreview:
+  en: 9f34b0ce346620a8
+  zh: e6a10aae4ace5505
+/ahel-dsh-client-ui-sidebar-documentpreview/summary:
   en: a74c16667d0baada
   zh: 4fd709ff9f98b84f
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/table-of-contents:
+/ahel-dsh-client-ui-sidebar-documentpreview/table-of-contents:
   en: 0dd8c3a22e28aacf
   zh: c27c11bf4b5cceba
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/what-it-registers:
-  en: a8eaf01a3a3390ee
-  zh: ddea36dbcc4a0159
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/addresses:
+/ahel-dsh-client-ui-sidebar-documentpreview/what-it-registers:
+  en: bab0b5774f486506
+  zh: 90f5f4c248b9b18f
+/ahel-dsh-client-ui-sidebar-documentpreview/addresses:
   en: 949156aa02ec8b07
   zh: d3675754e2a37b5d
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/how-it-reads:
+/ahel-dsh-client-ui-sidebar-documentpreview/how-it-reads:
   en: b056bbe0f74fe328
   zh: fd9ac88f08825afc
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/excel-preview:
+/ahel-dsh-client-ui-sidebar-documentpreview/excel-preview:
   en: b99b0e0b8efc2853
   zh: 4327352d1334fc6b
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/office-preview:
+/ahel-dsh-client-ui-sidebar-documentpreview/office-preview:
   en: a7b9f6c09c2051a2
   zh: 0ea2c2a2dd5fadd9
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/navigation:
+/ahel-dsh-client-ui-sidebar-documentpreview/navigation:
   en: 5cd81a7b3cdc83bd
   zh: 4cdd1b7ede497925
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/model-experience:
+/ahel-dsh-client-ui-sidebar-documentpreview/model-experience:
   en: ca1deb99d0e44755
   zh: f285fc56cee669ec
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/model-experience/kv-cache-effect:
+/ahel-dsh-client-ui-sidebar-documentpreview/model-experience/kv-cache-effect:
   en: 7edb4c0bb5f13847
   zh: ae5d0bbebe4aa563
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/known-limitations-and-deferred-work:
+/ahel-dsh-client-ui-sidebar-documentpreview/known-limitations-and-deferred-work:
   en: 8a7fef9ec62b7320
   zh: cd2f6921d62d3ba9
-/deepseek-ai-dsh-client-ui-sidebar-documentpreview/known-limitations-and-deferred-work/dev-note:
+/ahel-dsh-client-ui-sidebar-documentpreview/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: e88aeb617ffb74ea

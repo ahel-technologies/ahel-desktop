@@ -3,24 +3,24 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
-import { Context } from '@deepseek-ai/cordis'
-import Loader from '@deepseek-ai/cordis-plugin-loader'
-import Include from '@deepseek-ai/cordis-plugin-include'
-import { ToolCallId } from '@deepseek-ai/dsh-llm'
-import { Session, SessionId } from '@deepseek-ai/dsh-session'
-import AgentRegistry from '@deepseek-ai/dsh-agent'
-import type { Agent } from '@deepseek-ai/dsh-agent'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
-import TerminalSessionService from '@deepseek-ai/dsh-terminal'
-import SandboxProvider from '@deepseek-ai/dsh-sandbox'
-import type { ConfinedArgv, SandboxPolicy } from '@deepseek-ai/dsh-sandbox'
-import SandboxPolicyService from '@deepseek-ai/dsh-sandbox-policy'
-import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
-import LocalSubprocessRuntime from '@deepseek-ai/dsh-subprocess-local'
-import * as TerminalLocal from '@deepseek-ai/dsh-terminal-bash'
-import * as ToolPty from '@deepseek-ai/dsh-tool-terminal'
-import { unsupportedInbox } from '@deepseek-ai/dsh-agent-loop-testkit'
+import { Context } from '@ahel/cordis'
+import Loader from '@ahel/cordis-plugin-loader'
+import Include from '@ahel/cordis-plugin-include'
+import { ToolCallId } from '@ahel/dsh-llm'
+import { Session, SessionId } from '@ahel/dsh-session'
+import AgentRegistry from '@ahel/dsh-agent'
+import type { Agent } from '@ahel/dsh-agent'
+import SystemPrompt from '@ahel/dsh-system-prompt'
+import ToolRuntime from '@ahel/dsh-tools'
+import TerminalSessionService from '@ahel/dsh-terminal'
+import SandboxProvider from '@ahel/dsh-sandbox'
+import type { ConfinedArgv, SandboxPolicy } from '@ahel/dsh-sandbox'
+import SandboxPolicyService from '@ahel/dsh-sandbox-policy'
+import SessionProjectionRegistry from '@ahel/dsh-session-projection'
+import LocalSubprocessRuntime from '@ahel/dsh-subprocess-local'
+import * as TerminalLocal from '@ahel/dsh-terminal-bash'
+import * as ToolPty from '@ahel/dsh-tool-terminal'
+import { unsupportedInbox } from '@ahel/dsh-agent-loop-testkit'
 
 let root: string | undefined
 let context: Context | undefined
@@ -66,18 +66,18 @@ suite('terminal real Loader composition through cordis.yml', () => {
     root = await mkdtemp(join(tmpdir(), 'dsh-pty-loader-'))
     const configPath = join(root, 'cordis.yml')
     await writeFile(configPath, [
-      "- name: '@deepseek-ai/dsh-agent'",
-      "- name: '@deepseek-ai/dsh-system-prompt'",
-      "- name: '@deepseek-ai/dsh-tools'",
-      "- name: '@deepseek-ai/dsh-terminal'",
-      "- name: '@deepseek-ai/dsh-test-sandbox'",
-      "- name: '@deepseek-ai/dsh-session-projection'",
-      "- name: '@deepseek-ai/dsh-sandbox-policy'",
+      "- name: '@ahel/dsh-agent'",
+      "- name: '@ahel/dsh-system-prompt'",
+      "- name: '@ahel/dsh-tools'",
+      "- name: '@ahel/dsh-terminal'",
+      "- name: '@ahel/dsh-test-sandbox'",
+      "- name: '@ahel/dsh-session-projection'",
+      "- name: '@ahel/dsh-sandbox-policy'",
       '  config:',
       '    mode: danger-full-access',
       `    workspaceRoot: ${JSON.stringify(root)}`,
-      "- name: '@deepseek-ai/dsh-subprocess-local'",
-      "- name: '@deepseek-ai/dsh-terminal-bash'",
+      "- name: '@ahel/dsh-subprocess-local'",
+      "- name: '@ahel/dsh-terminal-bash'",
       '  config:',
       '    pollIntervalMs: 10',
       '    exactProbeAfterMs: 20',
@@ -85,7 +85,7 @@ suite('terminal real Loader composition through cordis.yml', () => {
       '    handoffGraceMs: 250',
       '    timeoutMs: 2000',
       '    disposeGraceMs: 500',
-      "- name: '@deepseek-ai/dsh-tool-terminal'",
+      "- name: '@ahel/dsh-tool-terminal'",
       '',
     ].join('\n'))
 
@@ -94,16 +94,16 @@ suite('terminal real Loader composition through cordis.yml', () => {
     await context.plugin(Loader)
     context.loader.builtins.include = Include
     const modules = new Map<string, unknown>([
-      ['@deepseek-ai/dsh-agent', AgentRegistry],
-      ['@deepseek-ai/dsh-system-prompt', SystemPrompt],
-      ['@deepseek-ai/dsh-tools', ToolRuntime],
-      ['@deepseek-ai/dsh-terminal', TerminalSessionService],
-      ['@deepseek-ai/dsh-test-sandbox', PassthroughSandbox],
-      ['@deepseek-ai/dsh-session-projection', SessionProjectionRegistry],
-      ['@deepseek-ai/dsh-sandbox-policy', SandboxPolicyService],
-      ['@deepseek-ai/dsh-subprocess-local', LocalSubprocessRuntime],
-      ['@deepseek-ai/dsh-terminal-bash', TerminalLocal],
-      ['@deepseek-ai/dsh-tool-terminal', ToolPty],
+      ['@ahel/dsh-agent', AgentRegistry],
+      ['@ahel/dsh-system-prompt', SystemPrompt],
+      ['@ahel/dsh-tools', ToolRuntime],
+      ['@ahel/dsh-terminal', TerminalSessionService],
+      ['@ahel/dsh-test-sandbox', PassthroughSandbox],
+      ['@ahel/dsh-session-projection', SessionProjectionRegistry],
+      ['@ahel/dsh-sandbox-policy', SandboxPolicyService],
+      ['@ahel/dsh-subprocess-local', LocalSubprocessRuntime],
+      ['@ahel/dsh-terminal-bash', TerminalLocal],
+      ['@ahel/dsh-tool-terminal', ToolPty],
     ])
     context.loader.internal = {
       version: 'v2',

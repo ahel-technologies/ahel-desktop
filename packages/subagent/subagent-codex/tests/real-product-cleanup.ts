@@ -1,5 +1,5 @@
 import { rm } from 'node:fs/promises'
-import type { Context } from '@deepseek-ai/cordis'
+import type { Context } from '@ahel/cordis'
 import type { ResponsesFixture } from './responses-fixture.ts'
 
 interface RealProductResources {

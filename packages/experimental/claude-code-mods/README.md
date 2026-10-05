@@ -3,7 +3,7 @@ description: "Experimental bridge that runs Claude Code mods as DSH plugins: the
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-experimental-claude-code-mods
+# @ahel/dsh-experimental-claude-code-mods
 
 English | [中文](README.zh.md)
 
@@ -29,7 +29,7 @@ A mod is a plugin. `defineMod` takes the mod's `register` function with the iden
 
 ```ts
 // mods/token-weather/index.ts — `register` is the mod's own hooks module (`./hooks/token-weather.mjs`).
-import { defineMod, type ModOn } from '@deepseek-ai/dsh-experimental-claude-code-mods'
+import { defineMod, type ModOn } from '@ahel/dsh-experimental-claude-code-mods'
 
 declare const register: (on: ModOn, options: Readonly<Record<string, unknown>>) => void
 
@@ -37,7 +37,7 @@ export default defineMod({ name: 'token-weather', version: '0.1.0', root: import
 ```
 
 ```yaml
-- name: '@deepseek-ai/dsh-experimental-claude-code-mods'
+- name: '@ahel/dsh-experimental-claude-code-mods'
 - name: './mods/blast-radius/index.ts'
 - name: './mods/token-weather/index.ts'
   config:
@@ -99,7 +99,7 @@ A call whose service is not composed rejects with the missing service's package 
 <a id="test-a-mod"></a>
 ### Test a mod
 
-`createModTestKit` from `@deepseek-ai/dsh-experimental-claude-code-mods/testing` loads `defineMod` plugins or bare definitions and raises events through them with stubs beneath, in the shape of `claude-code/testing`: `kit.on('tool.call', () => ({ result: 'ok' }))` answers in the engine's place, `kit.$.tool.call({ tool: 'Bash', command: 'ls' })` raises the event, `kit.$.ui.mount({ component: 'AbovePrompt' })` renders the band and finds or presses its elements, and `mock.store(kit.on)` answers `$.store` from memory. Inside this repository, `claude-code/testing` resolves to the kit plus Vitest's `describe`, `test`, and `expect`, so the [example mods' tests](examples/token-weather/tests/token-weather.test.ts) run as written for `claude plugin test`.
+`createModTestKit` from `@ahel/dsh-experimental-claude-code-mods/testing` loads `defineMod` plugins or bare definitions and raises events through them with stubs beneath, in the shape of `claude-code/testing`: `kit.on('tool.call', () => ({ result: 'ok' }))` answers in the engine's place, `kit.$.tool.call({ tool: 'Bash', command: 'ls' })` raises the event, `kit.$.ui.mount({ component: 'AbovePrompt' })` renders the band and finds or presses its elements, and `mock.store(kit.on)` answers `$.store` from memory. Inside this repository, `claude-code/testing` resolves to the kit plus Vitest's `describe`, `test`, and `expect`, so the [example mods' tests](examples/token-weather/tests/token-weather.test.ts) run as written for `claude plugin test`.
 
 -----
 
@@ -205,7 +205,7 @@ These limits describe where a Claude Code mod behaves differently through this b
 - **No sandbox, no static analysis, no hot reload** — the hooks module runs in-process with Node's globals and the process's full authority (its environment, network, filesystem, and tools); the `$`-only access rule, `claude plugin validate`, type generation, `--plugin-dir` watching, and the in-session mod authoring flow are not implemented. Mount only mods you would run as a plugin. Mounting a mod again re-runs `register` on the same evaluated module, so module-level variables keep their values.
 - **`turn.complete` text** — the `{ text }` a hook returns reaches the host log, not a line under the answer; `durationMs` counts from the turn's `turn/start`.
 - **`$.session.usage`** — `window` is `0` and `percent` absent until the route's context window and a provider usage report are known through the token meter; `rateLimits` is always empty. `$.fs.stat` reports `mtimeMs: 0`.
-- **`plugin.json` and `hooks.json`** — not read; `defineMod` carries the identity, and a plugin's settings hooks need `@deepseek-ai/dsh-hooks-claude-code`.
+- **`plugin.json` and `hooks.json`** — not read; `defineMod` carries the identity, and a plugin's settings hooks need `@ahel/dsh-hooks-claude-code`.
 
 <a id="dev-note"></a>
 ### Dev Note

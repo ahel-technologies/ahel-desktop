@@ -5,39 +5,39 @@
 /:
   en: 3466a4047190c550
   zh: d690e53cf115b77b
-/deepseek-ai-dsh-client-ui-brand-ahel:
-  en: dc4251cba6a29c9b
-  zh: 5757585b7c998666
-/deepseek-ai-dsh-client-ui-brand-ahel/summary:
+/ahel-dsh-client-ui-brand-ahel:
+  en: 697a77745bd7b311
+  zh: a43b43fab36a82dd
+/ahel-dsh-client-ui-brand-ahel/summary:
   en: 59d754774b01ef8f
   zh: 16a8d49e37205fe9
-/deepseek-ai-dsh-client-ui-brand-ahel/table-of-contents:
+/ahel-dsh-client-ui-brand-ahel/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
-/deepseek-ai-dsh-client-ui-brand-ahel/use-this-package:
+/ahel-dsh-client-ui-brand-ahel/use-this-package:
   en: 3c4e36809459c8a9
   zh: e03e58af0023d4ad
-/deepseek-ai-dsh-client-ui-brand-ahel/use-this-package/brand-artwork:
-  en: 1f6a562b1fe5e15f
-  zh: 89a4354414c49f01
-/deepseek-ai-dsh-client-ui-brand-ahel/use-this-package/replacing-the-brand:
+/ahel-dsh-client-ui-brand-ahel/use-this-package/brand-artwork:
+  en: f915d166a63541d4
+  zh: 7446397e62d524cc
+/ahel-dsh-client-ui-brand-ahel/use-this-package/replacing-the-brand:
   en: 97e7135c911e9944
   zh: a0370907c49678d0
-/deepseek-ai-dsh-client-ui-brand-ahel/understand-the-implementation:
+/ahel-dsh-client-ui-brand-ahel/understand-the-implementation:
   en: e89274fab6dbec0d
   zh: fcb0dcd02a8d684b
-/deepseek-ai-dsh-client-ui-brand-ahel/further-exploration:
+/ahel-dsh-client-ui-brand-ahel/further-exploration:
   en: c9ae240d8e831cc0
   zh: a7c9170bae79824f
-/deepseek-ai-dsh-client-ui-brand-ahel/model-experience:
+/ahel-dsh-client-ui-brand-ahel/model-experience:
   en: 618008c7641070e7
   zh: 7233febb4d92ccfb
-/deepseek-ai-dsh-client-ui-brand-ahel/model-experience/kv-cache-effect:
+/ahel-dsh-client-ui-brand-ahel/model-experience/kv-cache-effect:
   en: ca75c51c89c2c9b0
   zh: f57cc48a1b5cbfa9
-/deepseek-ai-dsh-client-ui-brand-ahel/known-limitations-and-deferred-work:
+/ahel-dsh-client-ui-brand-ahel/known-limitations-and-deferred-work:
   en: 744ef9e7ef54e2b1
   zh: 8d369dfc034ecceb
-/deepseek-ai-dsh-client-ui-brand-ahel/known-limitations-and-deferred-work/dev-note:
+/ahel-dsh-client-ui-brand-ahel/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 3bb0c20c93f16f98

@@ -1,7 +1,7 @@
 /** Host end of the MCP Apps postMessage bridge, driven as a fake app frame would drive it. */
 
 import { describe, expect, it, vi, type Mock } from 'vitest'
-import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import type { JsonValue } from '@ahel/dsh-util-values'
 import { McpAppBridge, MCP_APPS_PROTOCOL_VERSION, RPC_ERRORS, readRpcMessage, type McpAppBridgeHandlers } from '../src/client/bridge.ts'
 
 type HandlerMocks = { readonly [K in keyof McpAppBridgeHandlers]: Mock<McpAppBridgeHandlers[K]> }

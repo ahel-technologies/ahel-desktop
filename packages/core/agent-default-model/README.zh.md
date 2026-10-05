@@ -3,7 +3,7 @@ description: "面向用户与维护者的部署默认模型选择说明，用于
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-agent-default-model
+# @ahel/dsh-agent-default-model
 
 [English](README.md) | 中文
 
@@ -32,7 +32,7 @@ kind: "package-reference"
 所有字段均可省略。未配置 provider 和模型时，默认值为第一个提供模型的已注册提供方路由的第一个模型；两者都没有时不存在默认值，由入口提示用户添加模型。
 
 ```yaml
-- name: '@deepseek-ai/dsh-agent-default-model'
+- name: '@ahel/dsh-agent-default-model'
   config:
     provider: anthropic
     model: claude-sonnet-4-5

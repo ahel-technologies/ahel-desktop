@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-api-remotes",
+  "name": "@ahel/dsh-api-remotes",
   "description": "Remote BFF assembly for application-selected Host capabilities",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -32,7 +32,7 @@
   "dsh": {
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-api-gateway"
+        "@ahel/dsh-api-gateway"
       ],
       "platform": "web",
       "immediately": true
@@ -50,47 +50,47 @@
     "lib/types/**/*.d.ts"
   ],
   "dependencies": {
-    "@deepseek-ai/dsh-deque": "workspace:*",
-    "@deepseek-ai/dsh-util-values": "workspace:*"
+    "@ahel/dsh-deque": "workspace:*",
+    "@ahel/dsh-util-values": "workspace:*"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-scope": "workspace:*"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-scope": "workspace:*"
   },
   "devDependencies": {
-    "@deepseek-ai/dsh-agent": "workspace:*",
-    "@deepseek-ai/dsh-agent-preset-registry": "workspace:*",
-    "@deepseek-ai/dsh-api-gateway": "workspace:*",
-    "@deepseek-ai/dsh-api-job-controller": "workspace:*",
-    "@deepseek-ai/dsh-api-session-controller": "workspace:*",
-    "@deepseek-ai/dsh-api-settings-controller": "workspace:*",
-    "@deepseek-ai/dsh-api-workspace-controller": "workspace:*",
-    "@deepseek-ai/dsh-api-workspace-files": "workspace:*",
-    "@deepseek-ai/dsh-client-connection": "workspace:*",
-    "@deepseek-ai/dsh-client-file-upload": "workspace:*",
-    "@deepseek-ai/dsh-commands": "workspace:*",
-    "@deepseek-ai/dsh-cordis-host-runner": "workspace:*",
-    "@deepseek-ai/dsh-credentials": "workspace:*",
-    "@deepseek-ai/dsh-file-reference": "workspace:*",
-    "@deepseek-ai/dsh-goal": "workspace:*",
-    "@deepseek-ai/dsh-host-plugin-inventory": "workspace:*",
-    "@deepseek-ai/dsh-llm": "workspace:*",
-    "@deepseek-ai/dsh-message-feedback": "workspace:*",
-    "@deepseek-ai/dsh-permission-presets": "workspace:*",
-    "@deepseek-ai/dsh-schedule": "workspace:*",
-    "@deepseek-ai/dsh-scope": "workspace:*",
-    "@deepseek-ai/dsh-session-reference": "workspace:*",
-    "@deepseek-ai/dsh-settings": "workspace:*",
-    "@deepseek-ai/dsh-subagent": "workspace:*",
-    "@deepseek-ai/dsh-typert-protocol": "workspace:*",
-    "@deepseek-ai/dsh-user-approval": "workspace:*",
-    "@deepseek-ai/dsh-user-questions": "workspace:*",
-    "@deepseek-ai/cordis": "workspace:~",
+    "@ahel/dsh-agent": "workspace:*",
+    "@ahel/dsh-agent-preset-registry": "workspace:*",
+    "@ahel/dsh-api-gateway": "workspace:*",
+    "@ahel/dsh-api-job-controller": "workspace:*",
+    "@ahel/dsh-api-session-controller": "workspace:*",
+    "@ahel/dsh-api-settings-controller": "workspace:*",
+    "@ahel/dsh-api-workspace-controller": "workspace:*",
+    "@ahel/dsh-api-workspace-files": "workspace:*",
+    "@ahel/dsh-client-connection": "workspace:*",
+    "@ahel/dsh-client-file-upload": "workspace:*",
+    "@ahel/dsh-commands": "workspace:*",
+    "@ahel/dsh-cordis-host-runner": "workspace:*",
+    "@ahel/dsh-credentials": "workspace:*",
+    "@ahel/dsh-file-reference": "workspace:*",
+    "@ahel/dsh-goal": "workspace:*",
+    "@ahel/dsh-host-plugin-inventory": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-message-feedback": "workspace:*",
+    "@ahel/dsh-permission-presets": "workspace:*",
+    "@ahel/dsh-schedule": "workspace:*",
+    "@ahel/dsh-scope": "workspace:*",
+    "@ahel/dsh-session-reference": "workspace:*",
+    "@ahel/dsh-settings": "workspace:*",
+    "@ahel/dsh-subagent": "workspace:*",
+    "@ahel/dsh-typert-protocol": "workspace:*",
+    "@ahel/dsh-user-approval": "workspace:*",
+    "@ahel/dsh-user-questions": "workspace:*",
+    "@ahel/cordis": "workspace:~",
     "zod": "^4.4.3",
-    "@deepseek-ai/dsh-command-feedback": "workspace:*",
-    "@deepseek-ai/dsh-api-terminal-controller": "workspace:*",
-    "@deepseek-ai/dsh-plugin-manager": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-plugin-manager": "workspace:*",
-    "@deepseek-ai/dsh-client-product-analytics": "workspace:*"
+    "@ahel/dsh-command-feedback": "workspace:*",
+    "@ahel/dsh-api-terminal-controller": "workspace:*",
+    "@ahel/dsh-plugin-manager": "workspace:*",
+    "@ahel/dsh-client-ui-plugin-manager": "workspace:*",
+    "@ahel/dsh-client-product-analytics": "workspace:*"
   }
 }

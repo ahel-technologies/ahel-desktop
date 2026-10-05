@@ -1,23 +1,23 @@
 /**
  * Caller identity, workspace authorization, and visible lineage projection.
  *
- * @module @deepseek-ai/dsh-tool-session-query/workspace-access
+ * @module @ahel/dsh-tool-session-query/workspace-access
  */
 
-import type { Context } from '@deepseek-ai/cordis'
-import { brandString } from '@deepseek-ai/dsh-brand'
-import { HarnessError } from '@deepseek-ai/dsh-llm'
+import type { Context } from '@ahel/cordis'
+import { brandString } from '@ahel/dsh-brand'
+import { HarnessError } from '@ahel/dsh-llm'
 import {
   type SessionHeader,
   type SessionId as SessionIdValue,
-} from '@deepseek-ai/dsh-session'
-import type { TurnBoundaryProjection } from '@deepseek-ai/dsh-agent'
+} from '@ahel/dsh-session'
+import type { TurnBoundaryProjection } from '@ahel/dsh-agent'
 import type {
   SessionLineageNode,
   SessionRecord,
-} from '@deepseek-ai/dsh-session-query'
-import type { ToolRunContext } from '@deepseek-ai/dsh-tools'
-import type {} from '@deepseek-ai/dsh-session-projection'
+} from '@ahel/dsh-session-query'
+import type { ToolRunContext } from '@ahel/dsh-tools'
+import type {} from '@ahel/dsh-session-projection'
 import { serviceBoundary } from './service-boundary.ts'
 
 interface Caller {

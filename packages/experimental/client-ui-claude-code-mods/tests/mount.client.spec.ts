@@ -1,17 +1,17 @@
 /** The band's registration: the Remote mount, one watch per session fed into the dock entry, and the press. */
 import assert from 'node:assert/strict'
-import { Context, Service } from '@deepseek-ai/cordis'
-import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
-import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
-import type { SurfaceSnapshot } from '@deepseek-ai/dsh-experimental-claude-code-mods/types'
-import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import { RemoteError, type TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
+import { Context, Service } from '@ahel/cordis'
+import { LocaleRuntime } from '@ahel/dsh-client-locale/client'
+import { SlotRegistry } from '@ahel/dsh-client-ui-renderer/client'
+import type { SurfaceSnapshot } from '@ahel/dsh-experimental-claude-code-mods/types'
+import type { SessionId } from '@ahel/dsh-session/types'
+import { RemoteError, type TypertRemoteContribution } from '@ahel/dsh-typert-protocol'
 import { expect, it, vi } from 'vitest'
 import { apply as hostApply } from '../src/index.ts'
 import { Band, type BandInjected } from '../src/client/Band.tsx'
 import { inject, mountModsBand } from '../src/client/mount.ts'
 
-const REMOTE: TypertRemoteContribution = { package: '@deepseek-ai/dsh-experimental-claude-code-mods', descriptors: [] }
+const REMOTE: TypertRemoteContribution = { package: '@ahel/dsh-experimental-claude-code-mods', descriptors: [] }
 
 /** Narrow the erased registry payload before exercising the band's injected face. */
 function assertBandInjected(value: Record<string, unknown>): asserts value is Record<string, unknown> & BandInjected {

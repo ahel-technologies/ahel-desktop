@@ -20,4 +20,4 @@
 
 - insert:
     - id: llm-replay
-      name: '@deepseek-ai/dsh-llm-replay'
+      name: '@ahel/dsh-llm-replay'

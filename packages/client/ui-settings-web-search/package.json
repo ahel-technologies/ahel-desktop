@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-client-ui-settings-web-search",
+  "name": "@ahel/dsh-client-ui-settings-web-search",
   "description": "Placeholder for the removed web-search provider settings page; registers nothing",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -37,10 +37,10 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@ahel/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~"
+    "@ahel/cordis": "workspace:~"
   },
   "files": [
     "lib/index.js",

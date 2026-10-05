@@ -1,8 +1,8 @@
 /** Shared projection of the live LLM registry into the browser model catalog. */
 
-import { RemoteError } from '@deepseek-ai/dsh-typert-protocol'
-import type { LlmModelInfo } from '@deepseek-ai/dsh-llm'
-import type { Context } from '@deepseek-ai/cordis'
+import { RemoteError } from '@ahel/dsh-typert-protocol'
+import type { LlmModelInfo } from '@ahel/dsh-llm'
+import type { Context } from '@ahel/cordis'
 import type {
   ModelCatalog,
   ModelReasoning,

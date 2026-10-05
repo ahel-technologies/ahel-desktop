@@ -3,7 +3,7 @@ description: "Placeholder for the removed web-search provider settings page on t
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-client-ui-settings-web-search
+# @ahel/dsh-client-ui-settings-web-search
 
 English | [中文](README.zh.md)
 

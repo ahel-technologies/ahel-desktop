@@ -2,9 +2,9 @@
 /** Present UI derives statuses and details from durable tool records. */
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-import type { StartedToolCall, ToolResultNode } from '@deepseek-ai/dsh-client-ui-chat/client'
-import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
-import { PartialArguments } from '@deepseek-ai/dsh-util-values'
+import type { StartedToolCall, ToolResultNode } from '@ahel/dsh-client-ui-chat/client'
+import { makeTranslate } from '@ahel/dsh-client-test-runtime'
+import { PartialArguments } from '@ahel/dsh-util-values'
 import { PresentRow } from '../src/client/PresentRow.tsx'
 import { en } from '../src/client/locales.ts'
 

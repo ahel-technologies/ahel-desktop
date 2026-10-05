@@ -9,14 +9,14 @@
   en: 14a83a0440499136
   zh: 15587f8e821c5a17
 /agent-note-typert-gateway-targeted-method-calls/decision:
-  en: 44d946b53496974c
-  zh: 403447c25a5b2d7c
+  en: a586f2de7c12d43f
+  zh: 84157f3fb60d3148
 /agent-note-typert-gateway-targeted-method-calls/components-and-cordis-services:
-  en: aa7f509189ade32e
-  zh: ef2841bc793f31b2
+  en: 7a1e15d2cd4f4d69
+  zh: b2f9645ee4ce2db3
 /agent-note-typert-gateway-targeted-method-calls/business-declarations:
-  en: c6b70d442b137d2e
-  zh: 6d0dbefe89937ef1
+  en: 77adc5bc597d3a7d
+  zh: d0756cea6a37a05b
 /agent-note-typert-gateway-targeted-method-calls/decorators-and-the-explicit-gateway-facet:
   en: 155afbe4b8af600b
   zh: 14705698a9cdbd84
@@ -36,14 +36,14 @@
   en: 6ea4bddcf35a834d
   zh: 4af474c6818b1cf0
 /agent-note-typert-gateway-targeted-method-calls/the-remote-package-entry:
-  en: 75e977fe0fb71d59
-  zh: 00760c79da173cb7
+  en: 90c5cd2e7ed7f9e9
+  zh: 8f9d575a242b9f03
 /agent-note-typert-gateway-targeted-method-calls/strict-consumer-api-types:
   en: 983f55c0ed4a8edc
   zh: 5a736e00e4b57e6a
 /agent-note-typert-gateway-targeted-method-calls/client-typert-and-the-api-gateway-client-face:
-  en: 9dc732c13ffaee63
-  zh: 4977aaef0856956d
+  en: d8c4f298662a4a6c
+  zh: 4140aab19dbdbb96
 /agent-note-typert-gateway-targeted-method-calls/cross-environment-isomorphism-constraints:
   en: 5d14e1b7afc53efb
   zh: e2f4b5814083738f
@@ -60,17 +60,17 @@
   en: e8f9d48c42e27fb6
   zh: 445bc192d67c71f1
 /agent-note-typert-gateway-targeted-method-calls/package-boundaries:
-  en: df2c448d3a0680eb
-  zh: 47327d4d26ec5887
+  en: a8c4c885f927cf3f
+  zh: 747b8b84a5c2e833
 /agent-note-typert-gateway-targeted-method-calls/shipped-scope-and-deferred-work:
-  en: b1c0c3dd77c56ce8
-  zh: 769ffd4aeefd949c
+  en: 86c4d1c11d13dffd
+  zh: a4bc5353ff036b72
 /agent-note-typert-gateway-targeted-method-calls/alternatives-considered:
   en: 0d68c499b7780f4f
   zh: bdd1e57232b996e2
 /agent-note-typert-gateway-targeted-method-calls/verification:
-  en: 7433bdb522bb2083
-  zh: 545c17613b636f00
+  en: 2be1c8a38ea2f3ae
+  zh: 70768e66e9323496
 /agent-note-typert-gateway-targeted-method-calls/consequences:
   en: c3459afdb606cfbe
   zh: ec69f2bb39170a7c

@@ -3,17 +3,17 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/rescope.md
 /vendored-package-rescope:
-  en: c8aa4d3384ea1306
-  zh: 5aa030587d5b634d
+  en: dc101f8f0c162aed
+  zh: 0a15ddc4139099e4
 /vendored-package-rescope/name-mapping:
-  en: cc0f91dc4bb82605
-  zh: 81d5031752c6ea74
+  en: ed3b64ed18731bcb
+  zh: dcd6dd9270d7efaf
 /vendored-package-rescope/what-the-rename-does-not-touch:
-  en: e781d7e1b46c0974
-  zh: 9796fb884c25d850
+  en: f3974f065f7a3ccf
+  zh: afbc1fb5b805b793
 /vendored-package-rescope/what-your-code-has-to-change:
-  en: 50a48dfda6cea731
-  zh: 55028c5c04270eff
+  en: e4e4dce57fbbd812
+  zh: cd43812eef05fb41
 /vendored-package-rescope/applying-verifying-and-reverting:
   en: 2a7f21e03e6cb4f7
   zh: dcf4172adf916fda

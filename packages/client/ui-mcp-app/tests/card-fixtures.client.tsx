@@ -2,9 +2,9 @@
 
 import { vi } from 'vitest'
 import { act, render, waitFor } from '@testing-library/react'
-import type { ToolResultNode } from '@deepseek-ai/dsh-client-ui-chat/client'
-import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
-import { PartialArguments, type JsonValue } from '@deepseek-ai/dsh-util-values'
+import type { ToolResultNode } from '@ahel/dsh-client-ui-chat/client'
+import { makeTranslate } from '@ahel/dsh-client-test-runtime'
+import { PartialArguments, type JsonValue } from '@ahel/dsh-util-values'
 import { McpAppCard } from '../src/client/McpAppCard.tsx'
 import type { McpAppCardProps, McpAppInjected } from '../src/client/contract.ts'
 import { en } from '../src/client/locales.ts'

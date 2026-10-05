@@ -5,72 +5,72 @@
 /:
   en: af2e4e5296596e8f
   zh: 70c0b5ac93209d00
-/deepseek-ai-dsh-web-app:
-  en: f4da95d498221fcd
-  zh: 6cc704e7aa6f376d
-/deepseek-ai-dsh-web-app/summary:
+/ahel-dsh-web-app:
+  en: c905aa4bf49f43d5
+  zh: d5c936a7afad6978
+/ahel-dsh-web-app/summary:
   en: 345df61cb73aa5a8
   zh: f148953d65b3629c
-/deepseek-ai-dsh-web-app/table-of-contents:
+/ahel-dsh-web-app/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
-/deepseek-ai-dsh-web-app/use-this-package:
+/ahel-dsh-web-app/use-this-package:
   en: 3bd37b85139d2fa7
   zh: ba86c807eb83866e
-/deepseek-ai-dsh-web-app/use-this-package/starting-the-web-gui:
+/ahel-dsh-web-app/use-this-package/starting-the-web-gui:
   en: 68f2232f65c9ab2f
   zh: 18272085dc90d4fc
-/deepseek-ai-dsh-web-app/use-this-package/configuration:
+/ahel-dsh-web-app/use-this-package/configuration:
   en: 922af3dca5d60317
   zh: 7f953a2dc7718d65
-/deepseek-ai-dsh-web-app/use-this-package/listening-trust-and-public-deployments:
+/ahel-dsh-web-app/use-this-package/listening-trust-and-public-deployments:
   en: a79add86cb73d966
   zh: 78b58259f98ed063
-/deepseek-ai-dsh-web-app/use-this-package/running-over-ssh:
+/ahel-dsh-web-app/use-this-package/running-over-ssh:
   en: 45db677dcc91c5c9
   zh: 75b765f7f1e15035
-/deepseek-ai-dsh-web-app/use-this-package/per-session-agent-setup:
+/ahel-dsh-web-app/use-this-package/per-session-agent-setup:
   en: 24f700d0d6e08d94
   zh: 8dad3cb855aeccdc
-/deepseek-ai-dsh-web-app/understand-the-implementation:
+/ahel-dsh-web-app/understand-the-implementation:
   en: 22190d744dc1f685
   zh: 965664d74372a273
-/deepseek-ai-dsh-web-app/understand-the-implementation/patch-semantics:
+/ahel-dsh-web-app/understand-the-implementation/patch-semantics:
   en: c9aa23245e44ef16
   zh: e271b782833b25f6
-/deepseek-ai-dsh-web-app/understand-the-implementation/advertised-application-url:
+/ahel-dsh-web-app/understand-the-implementation/advertised-application-url:
   en: ca977d2b2bcf72c5
   zh: 2b81b377c133c1a8
-/deepseek-ai-dsh-web-app/understand-the-implementation/readiness:
+/ahel-dsh-web-app/understand-the-implementation/readiness:
   en: 973128fd346869df
   zh: 54e6792f9f82a192
-/deepseek-ai-dsh-web-app/understand-the-implementation/lan-trust-sampling:
+/ahel-dsh-web-app/understand-the-implementation/lan-trust-sampling:
   en: b5ed8ff0056ca9da
   zh: fdc1fa4f14cb00b3
-/deepseek-ai-dsh-web-app/understand-the-implementation/source-map:
-  en: d2a52f3f3e5c9bd8
-  zh: e856b8b3cbafdf61
-/deepseek-ai-dsh-web-app/further-exploration:
+/ahel-dsh-web-app/understand-the-implementation/source-map:
+  en: 6cac167ef6dc608c
+  zh: 5157848364162f04
+/ahel-dsh-web-app/further-exploration:
   en: aaa746ff8e4bef78
   zh: 5547448abea69d7e
-/deepseek-ai-dsh-web-app/model-experience:
+/ahel-dsh-web-app/model-experience:
   en: 215e7ba838619b7b
   zh: a311da3843709f90
-/deepseek-ai-dsh-web-app/model-experience/harness-source-and-web-surface-context:
+/ahel-dsh-web-app/model-experience/harness-source-and-web-surface-context:
   en: e6febc53efe0f51d
   zh: 9177816a8678d65d
-/deepseek-ai-dsh-web-app/model-experience/harness-source-and-web-surface-context/what-the-model-sees:
+/ahel-dsh-web-app/model-experience/harness-source-and-web-surface-context/what-the-model-sees:
   en: fb3a184c864c2b0b
   zh: 97ce9d68d2698db1
-/deepseek-ai-dsh-web-app/model-experience/harness-source-and-web-surface-context/token-effect:
+/ahel-dsh-web-app/model-experience/harness-source-and-web-surface-context/token-effect:
   en: e5ea38f3d99306a9
   zh: e10d494093313ef3
-/deepseek-ai-dsh-web-app/model-experience/harness-source-and-web-surface-context/kv-cache-effect:
+/ahel-dsh-web-app/model-experience/harness-source-and-web-surface-context/kv-cache-effect:
   en: 1d7d87f54b20b563
   zh: d150a51615d278e8
-/deepseek-ai-dsh-web-app/known-limitations-and-deferred-work:
+/ahel-dsh-web-app/known-limitations-and-deferred-work:
   en: d6de1d07249ef3b0
   zh: 49d01329256e2eb3
-/deepseek-ai-dsh-web-app/known-limitations-and-deferred-work/dev-note:
+/ahel-dsh-web-app/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 3bb0c20c93f16f98

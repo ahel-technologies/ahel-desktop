@@ -18,16 +18,16 @@
  * profile directory. Pnpm-managed entries in the profile's `node_modules`
  * resolve first. The runtime resolution supplies packages carried by the
  * installation and selected bundles to Node's ESM and CommonJS resolvers.
- * @module @deepseek-ai/dsh-app-boot/profile
+ * @module @ahel/dsh-app-boot/profile
  */
 
 import { createRequire } from 'node:module'
 import { existsSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve, sep } from 'node:path'
-import type { EntryOptions } from '@deepseek-ai/cordis-plugin-loader'
-import { applyEntryPatches, type PatchOptions } from '@deepseek-ai/cordis-plugin-include'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import type { DshBundleManifest, DshPackageManifest } from '@deepseek-ai/dsh-package-manifest'
+import type { EntryOptions } from '@ahel/cordis-plugin-loader'
+import { applyEntryPatches, type PatchOptions } from '@ahel/cordis-plugin-include'
+import { resolveDshHome } from '@ahel/dsh-home-paths'
+import type { DshBundleManifest, DshPackageManifest } from '@ahel/dsh-package-manifest'
 import { evaluatePluginCompatibility, pluginCompatibilityWarning } from './plugin-compatibility.ts'
 import { readProfileVersionExemptions } from './profile-compatibility.ts'
 import { loadOverlayPatches } from './index.ts'
@@ -178,28 +178,31 @@ export function resolveProfileDir(name: string, home: string = resolveDshHome())
 /** The shipped profile templates auto-initialized on first use, by name. */
 export const PROFILE_TEMPLATES: Record<string, ProfileTemplate> = {
   acp: {
-    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-agent-tools', '@deepseek-ai/dsh-acp-app'],
+    bundles: ['@ahel/dsh-base', '@ahel/dsh-agent-tools', '@ahel/dsh-acp-app'],
   },
   web: {
-    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'],
+    bundles: ['@ahel/dsh-base', '@ahel/dsh-web-app'],
   },
   headless: {
-    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-agent-tools', '@deepseek-ai/dsh-headless'],
+    bundles: ['@ahel/dsh-base', '@ahel/dsh-agent-tools', '@ahel/dsh-headless'],
   },
   sdk: {
-    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-agent-tools', '@deepseek-ai/dsh-sdk-app'],
+    bundles: ['@ahel/dsh-base', '@ahel/dsh-agent-tools', '@ahel/dsh-sdk-app'],
   },
   'sdk-minimal': {
-    bundles: ['@deepseek-ai/dsh-sdk-minimal'],
+    bundles: ['@ahel/dsh-sdk-minimal'],
   },
 }
 
 /** Installation-owned bundle tuples normalized to the shipped template. */
 const INSTALLATION_OWNED_PROFILE_TUPLES: Record<string, readonly string[]> = {
-  headless: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@deepseek-ai/dsh-headless'],
-  acp: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-acp-app'],
-  sdk: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-sdk-app'],
+  headless: ['@ahel/dsh-base', '@ahel/dsh-web-app', '@ahel/dsh-headless'],
+  acp: ['@ahel/dsh-base', '@ahel/dsh-acp-app'],
+  sdk: ['@ahel/dsh-base', '@ahel/dsh-sdk-app'],
 }
+
+/** npm scope of the packages before the Ahel rename. */
+const LEGACY_SCOPE = /^@deepseek-ai\//
 
 /**
  * Bundles an earlier release shipped and the installation no longer carries;
@@ -208,11 +211,11 @@ const INSTALLATION_OWNED_PROFILE_TUPLES: Record<string, readonly string[]> = {
 const RETIRED_BUNDLES: ReadonlySet<string> = new Set([
   // The Web composition mounts Schedule itself
   // ([upgrade guide](../../../../docs/upgrade-guide/v0.2.0-rc.2/schedule-bundle-retired/guide.md)).
-  '@deepseek-ai/dsh-experimental-schedule-bundle',
+  '@ahel/dsh-experimental-schedule-bundle',
 ])
 
 /** The bundle list a `dsh plugin` init uses for a name with no shipped template. */
-export const DEFAULT_PROFILE_BUNDLES: readonly string[] = ['@deepseek-ai/dsh-base']
+export const DEFAULT_PROFILE_BUNDLES: readonly string[] = ['@ahel/dsh-base']
 
 /**
  * The bundles the dsh installation ships for a person to switch on: each a
@@ -664,8 +667,9 @@ function normalizeShippedProfile(name: string, dir: string, manifest: ProfileMan
  */
 function dropRetiredBundles(dir: string, manifest: ProfileManifest): ProfileManifest {
   const bundles = manifest.dsh?.profile?.bundles ?? []
-  const kept = bundles.filter(bundle => !RETIRED_BUNDLES.has(bundle))
-  if (kept.length === bundles.length) return manifest
+  // Profiles written before the npm scope moved to @ahel name the old scope.
+  const kept = bundles.map(bundle => bundle.replace(LEGACY_SCOPE, '@ahel/')).filter(bundle => !RETIRED_BUNDLES.has(bundle))
+  if (sameBundles(kept, bundles)) return manifest
   const normalized = withBundles(manifest, kept)
   writeProfileManifest(dir, normalized)
   return normalized
@@ -692,7 +696,7 @@ function packageDirFromAnchor(anchor: string, packageName: string): string | und
 /**
  * Resolve one bundle package's directory: installation anchor first, then the
  * profile directory. The installation-first order is the contract that
- * `@deepseek-ai/dsh-base` (and every other in-box bundle) always comes from
+ * `@ahel/dsh-base` (and every other in-box bundle) always comes from
  * the same installation as the running dsh, never from a profile-local copy.
  * Resolution does not require the package to export `./package.json`.
  * @param binName - the diagnostic prefix on the thrown error.

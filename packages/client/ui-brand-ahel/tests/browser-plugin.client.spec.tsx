@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { Context } from '@deepseek-ai/cordis'
+import { Context } from '@ahel/cordis'
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render } from '@testing-library/react'
-import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
+import { SlotRegistry } from '@ahel/dsh-client-ui-renderer/client'
 import { apply, inject } from '../src/client/index.ts'
 import { AhelBrandMark, AhelBrandName, AhelHeroMark } from '../src/client/Brand.tsx'
 import { apply as hostApply } from '../src/index.ts'

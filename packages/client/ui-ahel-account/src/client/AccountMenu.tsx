@@ -1,6 +1,6 @@
 /** Sidebar footer entry for the ahel.ai account: identity, workspace choice, ahel.ai pages, sign-in and sign-out. */
 import { useEffect, useRef, useState } from 'react'
-import { AhelTile } from '@deepseek-ai/dsh-client-ui-primitives'
+import { AhelTile } from '@ahel/dsh-client-ui-primitives'
 import type { AccountMenuProps } from './contract.ts'
 import type { AhelAccountKey } from './locales.ts'
 import css from './AhelAccount.module.css'

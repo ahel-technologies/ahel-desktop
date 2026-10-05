@@ -8,7 +8,7 @@
 # $DSH_HOME/mcp-oauth/ahel.json (mode 600).
 - insert:
     - id: mcp-ahel
-      name: '@deepseek-ai/dsh-mcp-client'
+      name: '@ahel/dsh-mcp-client'
       config:
         serverName: ahel
         transport: streamable-http

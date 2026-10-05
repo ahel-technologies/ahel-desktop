@@ -2,24 +2,24 @@
  * Cross-session snapshot preparation. Hosts adapt mentions into structured
  * references; this service owns exact reads, projection, budgets, and durable context.
  *
- * @module @deepseek-ai/dsh-session-reference
+ * @module @ahel/dsh-session-reference
  */
 
-import { Context } from '@deepseek-ai/cordis'
-import z from '@deepseek-ai/schemastery'
-import type { Agent, PreStepDecision } from '@deepseek-ai/dsh-agent'
-import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
-import { createUserMessage, freezeMessage, LlmError } from '@deepseek-ai/dsh-llm'
-import type { ContentBlock, LlmResolvedModelInfo, UserMessage } from '@deepseek-ai/dsh-llm'
-import type { SessionId } from '@deepseek-ai/dsh-session'
+import { Context } from '@ahel/cordis'
+import z from '@ahel/schemastery'
+import type { Agent, PreStepDecision } from '@ahel/dsh-agent'
+import { Remote, TypertRemoteService } from '@ahel/dsh-typert-protocol'
+import { createUserMessage, freezeMessage, LlmError } from '@ahel/dsh-llm'
+import type { ContentBlock, LlmResolvedModelInfo, UserMessage } from '@ahel/dsh-llm'
+import type { SessionId } from '@ahel/dsh-session'
 // Type-only: the `title` projection key plus the live registry and durable
 // cache Context merges — the two projection faces discovery labels from.
-import type { ProjectionSnapshot } from '@deepseek-ai/dsh-session-projection'
-import type {} from '@deepseek-ai/dsh-session-projection-cache'
-import type {} from '@deepseek-ai/dsh-session-title'
-import type {} from '@deepseek-ai/dsh-subagent'
-import type {} from '@deepseek-ai/dsh-system-prompt'
-import type { SessionRecord, SessionSurfaceSnapshot } from '@deepseek-ai/dsh-session-query'
+import type { ProjectionSnapshot } from '@ahel/dsh-session-projection'
+import type {} from '@ahel/dsh-session-projection-cache'
+import type {} from '@ahel/dsh-session-title'
+import type {} from '@ahel/dsh-subagent'
+import type {} from '@ahel/dsh-system-prompt'
+import type { SessionRecord, SessionSurfaceSnapshot } from '@ahel/dsh-session-query'
 import { prepareReferenceOmission, REFERENCE_WARNING } from './spill.ts'
 import {
   DEFAULT_CANDIDATE_LIMIT,
@@ -63,7 +63,7 @@ ${REFERENCE_WARNING}
 `
 const PROMPT_SUFFIX = '\n</referenced-sessions>'
 
-declare module '@deepseek-ai/cordis' {
+declare module '@ahel/cordis' {
   interface Context {
     sessionReferenceResolver: SessionReferenceResolver
   }

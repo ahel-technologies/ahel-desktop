@@ -1,6 +1,6 @@
 /** Client-safe Ahel account state; no token, verifier or code crosses this projection. */
-import type {} from '@deepseek-ai/cordis'
-import type { Branded } from '@deepseek-ai/dsh-brand'
+import type {} from '@ahel/cordis'
+import type { Branded } from '@ahel/dsh-brand'
 
 /** Identity of one local sign-in attempt. */
 export type AhelSignInAttemptId = Branded<'AhelSignInAttemptId'>
@@ -47,7 +47,7 @@ export interface AhelAccountView {
   readonly workspace: string | null
 }
 
-declare module '@deepseek-ai/cordis' {
+declare module '@ahel/cordis' {
   interface Events {
     /**
      * The account view changed: a sign-in step, a completed sign-in or sign-out, or an external edit of the stored grant.

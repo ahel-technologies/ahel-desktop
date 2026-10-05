@@ -1,4 +1,4 @@
-# @deepseek-ai/dsh-llm-ahel
+# @ahel/dsh-llm-ahel
 
 Ahel-metered models for Ahel Desktop. Registers one OpenAI-compatible route, `ahel` ("Ahel"), served by the `dsh-llm-pi-ai` adapter against `https://ahel.ai/api/llm/v1`. The bearer is the signed-in ahel.ai account's access token from `ctx.ahelAccount` (`dsh-ahel-account`), read and refreshed per request; no API key is stored for this route.
 
@@ -6,7 +6,7 @@ Ahel-metered models for Ahel Desktop. Registers one OpenAI-compatible route, `ah
 
 ```yaml
 - id: llm-ahel
-  name: '@deepseek-ai/dsh-llm-ahel'
+  name: '@ahel/dsh-llm-ahel'
 ```
 
 | Field | Default | Meaning |

@@ -1,5 +1,5 @@
 /** Locale-owned copy for the Ahel account menu and the Models row. */
-import type {} from '@deepseek-ai/dsh-client-ui-slots'
+import type {} from '@ahel/dsh-client-ui-slots'
 
 /** Dictionary namespace. */
 export const NS = 'ahel-account'
@@ -49,7 +49,7 @@ export const zh: Record<AhelAccountKey, string> = {
   modelsHint: '在模型菜单中选择 Ahel 模型。上方你自己的密钥依然可用。',
 }
 
-declare module '@deepseek-ai/dsh-client-ui-slots' {
+declare module '@ahel/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
     /** Ahel account menu and Models row copy. */
     'ahel-account': AhelAccountKey

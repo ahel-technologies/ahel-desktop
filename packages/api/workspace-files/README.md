@@ -3,7 +3,7 @@ description: "Workspace file service for the web GUI: bounded reads and target-s
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-api-workspace-files
+# @ahel/dsh-api-workspace-files
 
 English | [中文](README.zh.md)
 

@@ -3,7 +3,7 @@ description: "The shared chat core for every base-backed dsh --profile surface: 
 kind: "package-bundle"
 ---
 
-# @deepseek-ai/dsh-base
+# @ahel/dsh-base
 
 English | [中文](README.zh.md)
 
@@ -29,7 +29,7 @@ You get the chat core automatically: the shipped `web`, `headless`, `sdk`, and `
 
 ### A minimal custom profile
 
-The core carries no entry point of its own. Pair it with a mode bundle, and list `@deepseek-ai/dsh-agent-tools` between them when the agent needs local tools. This profile `package.json` matches the shipped `headless` profile:
+The core carries no entry point of its own. Pair it with a mode bundle, and list `@ahel/dsh-agent-tools` between them when the agent needs local tools. This profile `package.json` matches the shipped `headless` profile:
 
 ```json
 {
@@ -37,7 +37,7 @@ The core carries no entry point of its own. Pair it with a mode bundle, and list
   "private": true,
   "dsh": {
     "profile": {
-      "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-agent-tools", "@deepseek-ai/dsh-headless"]
+      "bundles": ["@ahel/dsh-base", "@ahel/dsh-agent-tools", "@ahel/dsh-headless"]
     }
   }
 }

@@ -2,21 +2,21 @@
  * Shared service mounting, real AgentLoop drivers, and structural Inbox stubs
  * for agent-loop tests. Callers retain ownership of their contexts, adapters,
  * optional plugins, agents, and teardown.
- * @module @deepseek-ai/dsh-agent-loop-testkit
+ * @module @ahel/dsh-agent-loop-testkit
  */
 
-import type { Context } from '@deepseek-ai/cordis'
-import AgentRegistry from '@deepseek-ai/dsh-agent'
-import type { Agent, AgentOptions, Inbox, InboxTarget } from '@deepseek-ai/dsh-agent'
-import AgentLoop from '@deepseek-ai/dsh-agent-loop'
-import LlmRuntime from '@deepseek-ai/dsh-llm'
-import SessionStore from '@deepseek-ai/dsh-session'
-import type { SessionHeader, SessionId, UserMessage } from '@deepseek-ai/dsh-session'
-import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import type { Config as SystemPromptConfig } from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
-import type { Config as ToolRuntimeConfig } from '@deepseek-ai/dsh-tools'
+import type { Context } from '@ahel/cordis'
+import AgentRegistry from '@ahel/dsh-agent'
+import type { Agent, AgentOptions, Inbox, InboxTarget } from '@ahel/dsh-agent'
+import AgentLoop from '@ahel/dsh-agent-loop'
+import LlmRuntime from '@ahel/dsh-llm'
+import SessionStore from '@ahel/dsh-session'
+import type { SessionHeader, SessionId, UserMessage } from '@ahel/dsh-session'
+import SessionProjectionRegistry from '@ahel/dsh-session-projection'
+import SystemPrompt from '@ahel/dsh-system-prompt'
+import type { Config as SystemPromptConfig } from '@ahel/dsh-system-prompt'
+import ToolRuntime from '@ahel/dsh-tools'
+import type { Config as ToolRuntimeConfig } from '@ahel/dsh-tools'
 
 export { createInboxStub, unsupportedInbox } from './inbox.ts'
 

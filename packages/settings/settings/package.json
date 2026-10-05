@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-settings",
+  "name": "@ahel/dsh-settings",
   "description": "Abstract user-settings seam (ctx.settings) for the DeepSeek Harness",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
@@ -32,27 +32,27 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-brand": "workspace:*",
-    "@deepseek-ai/dsh-session": "workspace:*",
-    "@deepseek-ai/schemastery": "workspace:~"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-brand": "workspace:*",
+    "@ahel/dsh-session": "workspace:*",
+    "@ahel/schemastery": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-brand": "workspace:*",
-    "@deepseek-ai/dsh-session": "workspace:*",
-    "@deepseek-ai/schemastery": "workspace:~",
-    "@deepseek-ai/cordis-plugin-timer": "workspace:~",
-    "@deepseek-ai/dsh-app-boot": "workspace:*",
-    "@deepseek-ai/dsh-hmr": "workspace:*",
-    "@deepseek-ai/dsh-agent-default-model": "workspace:*",
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-brand": "workspace:*",
+    "@ahel/dsh-session": "workspace:*",
+    "@ahel/schemastery": "workspace:~",
+    "@ahel/cordis-plugin-timer": "workspace:~",
+    "@ahel/dsh-app-boot": "workspace:*",
+    "@ahel/dsh-hmr": "workspace:*",
+    "@ahel/dsh-agent-default-model": "workspace:*",
     "yaml": "^2.8.1"
   },
   "dependencies": {
-    "@deepseek-ai/dsh-util-values": "workspace:*",
-    "@deepseek-ai/dsh-config-editor": "workspace:*",
-    "@deepseek-ai/cordis-plugin-loader": "workspace:~",
-    "@deepseek-ai/cosmokit": "workspace:~",
+    "@ahel/dsh-util-values": "workspace:*",
+    "@ahel/dsh-config-editor": "workspace:*",
+    "@ahel/cordis-plugin-loader": "workspace:~",
+    "@ahel/cosmokit": "workspace:~",
     "yaml": "^2.8.1"
   }
 }

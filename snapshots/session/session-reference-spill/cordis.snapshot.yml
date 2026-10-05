@@ -5,13 +5,13 @@
   disabled: true
 
 - id: session-persistence-jsonl
-  name: '@deepseek-ai/dsh-session-persistence-jsonl'
+  name: '@ahel/dsh-session-persistence-jsonl'
   config:
     root: !!js dshHomePath('sessions')
     compression: none
 
 - id: sandbox
-  name: '@deepseek-ai/dsh-sandbox-local'
+  name: '@ahel/dsh-sandbox-local'
   config:
     runnerCommand:
       - bash
@@ -23,7 +23,7 @@
 
 - insert:
     - id: llm-replay
-      name: '@deepseek-ai/dsh-llm-replay'
+      name: '@ahel/dsh-llm-replay'
       config:
         providers:
           - id: deepseek-official
@@ -33,14 +33,14 @@
               - id: deepseek-v4-pro
 
 - id: spill-local
-  name: '@deepseek-ai/dsh-spill-local'
+  name: '@ahel/dsh-spill-local'
   config:
     root: !!js process.env.DSH_SNAPSHOT_SPILL_ROOT ?? './.spill'
     cleanupPeriodDays: 0
 
 - insert:
     - id: session-reference
-      name: '@deepseek-ai/dsh-session-reference'
+      name: '@ahel/dsh-session-reference'
       config:
         maxReferenceBytes: 360
     - id: reference-source-fixture

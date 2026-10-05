@@ -1,6 +1,6 @@
 /** Both halves load without registering anything while no search provider ships. */
 
-import { Context } from '@deepseek-ai/cordis'
+import { Context } from '@ahel/cordis'
 import { expect, it } from 'vitest'
 import { apply, inject } from '../src/client/index.ts'
 import { apply as hostApply } from '../src/index.ts'

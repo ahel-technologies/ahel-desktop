@@ -3,7 +3,7 @@ description: "dsh Web 客户端的 Client 工具展示插件：完整调用树�
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-client-ui-tool
+# @ahel/dsh-client-ui-tool
 
 [English](README.md) | 中文
 
@@ -47,7 +47,7 @@ owner 载荷为 `ToolCallOwnerProps`：`callId`、`toolName`、`phase` 判别字
 
 ### MCP Apps 卡片插槽
 
-当一个已结束且成功的调用在持久化结果元数据中带有 `mcpApp` 记录时，还会在该调用自身的行下方直接渲染单一插槽 `tool.call.app`。所有者载荷为 `ToolAppOwnerProps`：`callId`、`toolName` 以及已结束的 `block`。占位组件自行校验记录；没有占位组件时只渲染该行。[`@deepseek-ai/dsh-client-ui-mcp-app`](../ui-mcp-app/README.zh.md) 负责填充该插槽。
+当一个已结束且成功的调用在持久化结果元数据中带有 `mcpApp` 记录时，还会在该调用自身的行下方直接渲染单一插槽 `tool.call.app`。所有者载荷为 `ToolAppOwnerProps`：`callId`、`toolName` 以及已结束的 `block`。占位组件自行校验记录；没有占位组件时只渲染该行。[`@ahel/dsh-client-ui-mcp-app`](../ui-mcp-app/README.zh.md) 负责填充该插槽。
 
 ### 内置视图
 
@@ -93,7 +93,7 @@ Auto 拒绝优先于按工具名选择的专门视图。其通用行保留调用
 
 展开后的状态圆点和文字使用静态语义色。操作回执和任务输出的标题保持中性色，展开时省略标题中的状态。中断回执仅确认已发出中断请求。
 
-terminal model 使用浏览器安全入口 `@deepseek-ai/dsh-spill-policy/notice` 的 `hasSpillNotice`，而非独立的 UI 匹配规则。[spill-policy README](../../spill/spill-policy/README.zh.md#shared-notice-ownership) 负责提示文本的格式化与识别。该检查保守地选择通用输出；匹配的文本无法证明其来源，回放也不改变已记录的结果字节。
+terminal model 使用浏览器安全入口 `@ahel/dsh-spill-policy/notice` 的 `hasSpillNotice`，而非独立的 UI 匹配规则。[spill-policy README](../../spill/spill-policy/README.zh.md#shared-notice-ownership) 负责提示文本的格式化与识别。该检查保守地选择通用输出；匹配的文本无法证明其来源，回放也不改变已记录的结果字节。
 
 ### 声明的可选能力
 

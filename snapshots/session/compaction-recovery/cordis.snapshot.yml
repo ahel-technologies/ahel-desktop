@@ -1,13 +1,13 @@
 # Keyless context-overflow replay composition.
 
 - id: session-persistence-jsonl
-  name: '@deepseek-ai/dsh-session-persistence-jsonl'
+  name: '@ahel/dsh-session-persistence-jsonl'
   config:
     root: !!js dshHomePath('sessions')
     compression: none
 
 - id: compaction-basic
-  name: '@deepseek-ai/dsh-compaction-basic'
+  name: '@ahel/dsh-compaction-basic'
   config:
     thresholdRatio: 0.99
     retainTokens: 20
@@ -15,7 +15,7 @@
 
 - insert:
     - id: llm-replay
-      name: '@deepseek-ai/dsh-llm-replay'
+      name: '@ahel/dsh-llm-replay'
       config:
         providers:
           - id: deepseek-official

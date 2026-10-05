@@ -4,28 +4,28 @@ import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
-import type { Context } from '@deepseek-ai/cordis'
+import type { Context } from '@ahel/cordis'
 import {
   initProfile,
   createRuntimeResolution,
   loadOverlayPatches,
   PluginPackages,
   type Profile,
-} from '@deepseek-ai/dsh-app-boot'
-import { provideCmdline } from '@deepseek-ai/dsh-cmdline'
-import { SessionId } from '@deepseek-ai/dsh-session'
-import type { Agent } from '@deepseek-ai/dsh-agent'
-import type { PatchOptions } from '@deepseek-ai/cordis-plugin-include'
+} from '@ahel/dsh-app-boot'
+import { provideCmdline } from '@ahel/dsh-cmdline'
+import { SessionId } from '@ahel/dsh-session'
+import type { Agent } from '@ahel/dsh-agent'
+import type { PatchOptions } from '@ahel/cordis-plugin-include'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { bundlePatchPaths } from '@deepseek-ai/dsh-app-boot'
-import type {} from '@deepseek-ai/dsh-compaction-basic'
-import type {} from '@deepseek-ai/dsh-tools'
+import { bundlePatchPaths } from '@ahel/dsh-app-boot'
+import type {} from '@ahel/dsh-compaction-basic'
+import type {} from '@ahel/dsh-tools'
 // Type-only: resolves `ctx.get('sessionProjections')` and `ctx.get('tokenMeter')`.
-import type {} from '@deepseek-ai/dsh-session-projection'
-import type {} from '@deepseek-ai/dsh-token-meter'
+import type {} from '@ahel/dsh-session-projection'
+import type {} from '@ahel/dsh-token-meter'
 
 const REPO_ROOT = fileURLToPath(new URL('../../..', import.meta.url))
-const { boot } = createRequire(import.meta.url)(join(REPO_ROOT, 'packages/boot/app-boot/lib/index.js')) as typeof import('@deepseek-ai/dsh-app-boot')
+const { boot } = createRequire(import.meta.url)(join(REPO_ROOT, 'packages/boot/app-boot/lib/index.js')) as typeof import('@ahel/dsh-app-boot')
 /** The shipped Web surface: the dsh-base and dsh-web-app bundle patches over an empty profile. */
 const BASE_PATCH = join(REPO_ROOT, 'packages/bundle/base/cordis.patch.yml')
 const WEB_BUNDLE = join(REPO_ROOT, 'packages/bundle/web-app')
@@ -83,15 +83,15 @@ async function bootWeb(profileHome: string): Promise<Context> {
     // supplies `directoryPicker` without one.
     { id: 'directory-picker', disabled: true },
     { insert: [
-      { id: 'directory-picker-browse', name: '@deepseek-ai/dsh-host-directory-picker-browse' },
-      { id: 'ui-directory-picker-browse', name: '@deepseek-ai/dsh-client-ui-directory-picker-browse' },
+      { id: 'directory-picker-browse', name: '@ahel/dsh-host-directory-picker-browse' },
+      { id: 'ui-directory-picker-browse', name: '@ahel/dsh-client-ui-directory-picker-browse' },
     ] },
     { id: 'agent-preset-registry', config: { default: 'standard' } },
   ]
   const home = profileHome
   const profileDir = join(home, 'profiles', 'spec')
   await mkdir(profileDir, { recursive: true })
-  initProfile(profileDir, ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'])
+  initProfile(profileDir, ['@ahel/dsh-base', '@ahel/dsh-web-app'])
   const profile: Profile = { skippedBundles: [],
     name: 'spec',
     dir: profileDir,
@@ -118,7 +118,7 @@ async function bootWeb(profileHome: string): Promise<Context> {
   return await boot('dsh-test', rootConfig, [...bundlePatches, ...overrides], async (bootCtx) => {
     bootCtx.provide('profileContext', { name: 'spec', dir: profileDir, patchPath: profile.patchPath,
       installAnchor: INSTALL_ANCHOR, home, cwd: home,
-      startedBundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'],
+      startedBundles: ['@ahel/dsh-base', '@ahel/dsh-web-app'],
       overlays: [], telemetryDisabledEnv: '1' })
     await bootCtx.plugin(PluginPackages, { resolution })
     bootCtx.provide('connection', {

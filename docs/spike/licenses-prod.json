@@ -4127,7 +4127,7 @@
  ],
  "MPL-2.0": [
   {
-   "name": "@deepseek-ai/libreoffice-kit",
+   "name": "@ahel/libreoffice-kit",
    "versions": [
     "0.1.5"
    ],
@@ -4136,7 +4136,7 @@
    "description": "Convert, recalculate, and render Office documents with prebuilt LibreOffice"
   },
   {
-   "name": "@deepseek-ai/libreoffice-kit-darwin-arm64",
+   "name": "@ahel/libreoffice-kit-darwin-arm64",
    "versions": [
     "0.1.5"
    ],

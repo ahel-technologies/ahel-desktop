@@ -14,7 +14,7 @@
  */
 
 import type { AuthProvider } from '@modelcontextprotocol/client'
-import type { CredentialProvider, CredentialRef } from '@deepseek-ai/dsh-credentials'
+import type { CredentialProvider, CredentialRef } from '@ahel/dsh-credentials'
 
 /** OAuth grant document stored as one credential reference's value. Field names follow the OAuth wire names. */
 export interface StoredOAuthGrant {
@@ -197,7 +197,7 @@ export async function refreshOAuthGrant(grant: StoredOAuthGrant, options: Omit<O
 }
 
 /** Process-wide in-flight refreshes keyed by reference, shared by every package that bundles this module. */
-const REFRESHES = Symbol.for('@deepseek-ai/dsh-mcp-client/oauth-grant-refreshes')
+const REFRESHES = Symbol.for('@ahel/dsh-mcp-client/oauth-grant-refreshes')
 type RefreshRegistry = Map<string, Promise<StoredOAuthGrant | undefined>>
 function refreshRegistry(): RefreshRegistry {
   const holder = globalThis as typeof globalThis & { [REFRESHES]?: RefreshRegistry }

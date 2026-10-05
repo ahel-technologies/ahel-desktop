@@ -9,7 +9,7 @@
 import type { AuthProvider, Transport } from '@modelcontextprotocol/client'
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
-import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
+import { scrubbedParentEnv } from '@ahel/dsh-subprocess'
 import type { Config } from './index.ts'
 
 /**

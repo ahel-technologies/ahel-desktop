@@ -1,5 +1,5 @@
 {
-  "name": "@deepseek-ai/dsh-desktop-host",
+  "name": "@ahel/dsh-desktop-host",
   "description": "Private Node-mode host process for the Electron desktop application",
   "version": "0.2.1-alpha.1",
   "private": true,
@@ -12,19 +12,19 @@
   ],
   "dependencies": {
     "koffi": "^3.1.0",
-    "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh": "workspace:*",
-    "@deepseek-ai/dsh-agent": "workspace:*",
-    "@deepseek-ai/dsh-app-boot": "workspace:*",
-    "@deepseek-ai/dsh-client-connection": "workspace:*",
-    "@deepseek-ai/dsh-host-webserver": "workspace:*",
-    "@deepseek-ai/dsh-jobs": "workspace:*",
-    "@deepseek-ai/dsh-schedule": "workspace:*",
-    "@deepseek-ai/dsh-workspace": "workspace:*"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh": "workspace:*",
+    "@ahel/dsh-agent": "workspace:*",
+    "@ahel/dsh-app-boot": "workspace:*",
+    "@ahel/dsh-client-connection": "workspace:*",
+    "@ahel/dsh-host-webserver": "workspace:*",
+    "@ahel/dsh-jobs": "workspace:*",
+    "@ahel/dsh-schedule": "workspace:*",
+    "@ahel/dsh-workspace": "workspace:*"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis-plugin-loader": "workspace:~",
-    "@deepseek-ai/cordis-plugin-include": "workspace:~",
-    "@deepseek-ai/dsh-skill": "workspace:*"
+    "@ahel/cordis-plugin-loader": "workspace:~",
+    "@ahel/cordis-plugin-include": "workspace:~",
+    "@ahel/dsh-skill": "workspace:*"
   }
 }

@@ -1,5 +1,5 @@
 /**
- * @deepseek-ai/dsh-web-app — the browser-surface bundle's runtime glue plugin
+ * @ahel/dsh-web-app — the browser-surface bundle's runtime glue plugin
  * plus the bundle patch (`cordis.patch.yml`, declared by the `dsh.bundle.patch`
  * manifest field). The plugin owns the browser-surface glue: it resolves
  * the built frontend dist (workspace knowledge of this bundle, never user
@@ -9,7 +9,7 @@
  * advertised `publicUrl` replaces the published root — the loopback URL
  * otherwise. App command-line values arrive through the `webStartup` service
  * expressions in the bundle patch.
- * @module @deepseek-ai/dsh-web-app
+ * @module @ahel/dsh-web-app
  */
 
 import { spawn, type ChildProcess } from 'node:child_process'
@@ -17,16 +17,16 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { networkInterfaces } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import type { Context } from '@deepseek-ai/cordis'
-import z from '@deepseek-ai/schemastery'
-import { addHarnessSourceSection, auditStartupEntries } from '@deepseek-ai/dsh-app-boot'
-import type {} from '@deepseek-ai/dsh-client-connection'
-import * as FrontendStatic from '@deepseek-ai/dsh-host-frontend-static'
-import { launchedThroughSsh, launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
-import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
-import type {} from '@deepseek-ai/cordis-plugin-loader'
-import type {} from '@deepseek-ai/dsh-host-webserver'
-import type {} from '@deepseek-ai/dsh-shell-env'
+import type { Context } from '@ahel/cordis'
+import z from '@ahel/schemastery'
+import { addHarnessSourceSection, auditStartupEntries } from '@ahel/dsh-app-boot'
+import type {} from '@ahel/dsh-client-connection'
+import * as FrontendStatic from '@ahel/dsh-host-frontend-static'
+import { launchedThroughSsh, launchEnvironmentOf } from '@ahel/dsh-launch-environment'
+import { scrubbedParentEnv } from '@ahel/dsh-subprocess'
+import type {} from '@ahel/cordis-plugin-loader'
+import type {} from '@ahel/dsh-host-webserver'
+import type {} from '@ahel/dsh-shell-env'
 import { parsePublicUrl } from './public-url.ts'
 
 /** Stable Cordis plugin name. */
@@ -178,10 +178,10 @@ function appRootUrl(ctx: Context, publicUrl: string | undefined): string {
 function resolveDistIndex(): string {
   const require = createRequire(import.meta.url)
   try {
-    return join(dirname(require.resolve('@deepseek-ai/dsh-web-frontend/package.json')), 'dist', 'index.html')
+    return join(dirname(require.resolve('@ahel/dsh-web-frontend/package.json')), 'dist', 'index.html')
   } catch {
     /* v8 ignore next 2 -- reachable only when the frontend package is absent from the checkout */
-    throw new Error('web-app: @deepseek-ai/dsh-web-frontend is not resolvable from this composition')
+    throw new Error('web-app: @ahel/dsh-web-frontend is not resolvable from this composition')
   }
 }
 

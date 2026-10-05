@@ -103,14 +103,14 @@
     order: 1
     plugins:
       - id: persona
-        name: '@deepseek-ai/dsh-persona'
+        name: '@ahel/dsh-persona'
         config:
           prefix: You are Ahel, a helpful assistant powered by the {{model}} model.
           suffix: ''
       - id: time-context
-        name: '@deepseek-ai/dsh-time-context'
+        name: '@ahel/dsh-time-context'
       - id: tool-ask-user
-        name: '@deepseek-ai/dsh-tool-ask-user'
+        name: '@ahel/dsh-tool-ask-user'
 
 # -- client panels for removed features
 - id: ui-open-in-app

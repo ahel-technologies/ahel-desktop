@@ -23,58 +23,58 @@ describe('desktop package-set selection', () => {
 
   it('includes only the available internal production closure', () => {
     const available = new Map<string, PackedDesktopPackage>([
-      ['@deepseek-ai/dsh', packed('@deepseek-ai/dsh', {
-        dependencies: { '@deepseek-ai/dsh-base': '^1.0.0', external: '^2.0.0' },
-        optionalDependencies: { '@deepseek-ai/platform-package': '1.0.0', '@deepseek-ai/missing-platform': '1.0.0' },
+      ['@ahel/dsh', packed('@ahel/dsh', {
+        dependencies: { '@ahel/dsh-base': '^1.0.0', external: '^2.0.0' },
+        optionalDependencies: { '@ahel/platform-package': '1.0.0', '@ahel/missing-platform': '1.0.0' },
       })],
-      ['@deepseek-ai/dsh-desktop-host', packed('@deepseek-ai/dsh-desktop-host', {
-        dependencies: { '@deepseek-ai/dsh': '^1.0.0' },
+      ['@ahel/dsh-desktop-host', packed('@ahel/dsh-desktop-host', {
+        dependencies: { '@ahel/dsh': '^1.0.0' },
       })],
-      ['@deepseek-ai/dsh-base', packed('@deepseek-ai/dsh-base', {
-        peerDependencies: { '@deepseek-ai/cordis': '^1.0.0' },
+      ['@ahel/dsh-base', packed('@ahel/dsh-base', {
+        peerDependencies: { '@ahel/cordis': '^1.0.0' },
       })],
-      ['@deepseek-ai/cordis', packed('@deepseek-ai/cordis')],
-      ['@deepseek-ai/platform-package', packed('@deepseek-ai/platform-package')],
-      ['@deepseek-ai/unused', packed('@deepseek-ai/unused')],
+      ['@ahel/cordis', packed('@ahel/cordis')],
+      ['@ahel/platform-package', packed('@ahel/platform-package')],
+      ['@ahel/unused', packed('@ahel/unused')],
     ])
     expect(selectDesktopPackageClosure(available).map(entry => entry.manifest.name)).toEqual([
-      '@deepseek-ai/cordis',
-      '@deepseek-ai/dsh',
-      '@deepseek-ai/dsh-base',
-      '@deepseek-ai/dsh-desktop-host',
-      '@deepseek-ai/platform-package',
+      '@ahel/cordis',
+      '@ahel/dsh',
+      '@ahel/dsh-base',
+      '@ahel/dsh-desktop-host',
+      '@ahel/platform-package',
     ])
   })
 
   it.each([
-    '@deepseek-ai/dsh-base', '@deepseek-ai/cordis', '@deepseek-ai/node-addon-system',
+    '@ahel/dsh-base', '@ahel/cordis', '@ahel/node-addon-system',
   ])('rejects required prepared package %s absent from the packed release inputs', (dependency) => {
     const available = new Map<string, PackedDesktopPackage>([
-      ['@deepseek-ai/dsh', packed('@deepseek-ai/dsh', {
+      ['@ahel/dsh', packed('@ahel/dsh', {
         dependencies: { [dependency]: '^1.0.0' },
       })],
-      ['@deepseek-ai/dsh-desktop-host', packed('@deepseek-ai/dsh-desktop-host', {
-        dependencies: { '@deepseek-ai/dsh': '^1.0.0' },
+      ['@ahel/dsh-desktop-host', packed('@ahel/dsh-desktop-host', {
+        dependencies: { '@ahel/dsh': '^1.0.0' },
       })],
     ])
     expect(() => selectDesktopPackageClosure(available)).toThrow(/unpacked package/u)
     expect(() => selectDesktopPackageClosure(new Map([
-      ['@deepseek-ai/dsh', packed('@deepseek-ai/dsh')],
-    ]))).toThrow(/omit @deepseek-ai\/dsh-desktop-host/u)
+      ['@ahel/dsh', packed('@ahel/dsh')],
+    ]))).toThrow(/omit @ahel\/dsh-desktop-host/u)
   })
 
   it('leaves independently published packages to npm resolution', () => {
     const available = new Map<string, PackedDesktopPackage>([
-      ['@deepseek-ai/dsh', packed('@deepseek-ai/dsh', {
+      ['@ahel/dsh', packed('@ahel/dsh', {
         dependencies: {
           '@example/published-kit': '0.0.1',
           '@example/published-kit-wasm': '0.0.1',
         },
       })],
-      ['@deepseek-ai/dsh-desktop-host', packed('@deepseek-ai/dsh-desktop-host')],
+      ['@ahel/dsh-desktop-host', packed('@ahel/dsh-desktop-host')],
     ])
     expect(selectDesktopPackageClosure(available).map(entry => entry.manifest.name)).toEqual([
-      '@deepseek-ai/dsh', '@deepseek-ai/dsh-desktop-host',
+      '@ahel/dsh', '@ahel/dsh-desktop-host',
     ])
   })
 

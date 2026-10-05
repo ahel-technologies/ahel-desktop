@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import * as yaml from 'js-yaml'
-import { entryListSchema } from '@deepseek-ai/cordis-plugin-include'
+import { entryListSchema } from '@ahel/cordis-plugin-include'
 
 interface Row { id?: string; name?: string; config?: Record<string, unknown>; disabled?: unknown }
 

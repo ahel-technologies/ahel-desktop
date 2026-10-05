@@ -14,7 +14,7 @@ import { CARD_HTML, CARD_URI, cardNode, cardProps, fromFrame, mountedCard, poste
 import { startCardHost, type CardHost } from './fixtures/card-host.mjs'
 
 const { mockTransport } = vi.hoisted(() => ({ mockTransport: vi.fn<() => unknown>() }))
-vi.mock('@deepseek-ai/dsh-mcp-client/src/transport.ts', () => ({ createTransport: mockTransport }))
+vi.mock('@ahel/dsh-mcp-client/src/transport.ts', () => ({ createTransport: mockTransport }))
 
 afterEach(cleanup)
 

@@ -1,23 +1,23 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { Context } from '@deepseek-ai/cordis'
+import { Context } from '@ahel/cordis'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { Agent } from '@deepseek-ai/dsh-agent'
-import { createUserMessage, ToolCallId  } from '@deepseek-ai/dsh-llm'
+import type { Agent } from '@ahel/dsh-agent'
+import { createUserMessage, ToolCallId  } from '@ahel/dsh-llm'
 import SessionStore, {
   SESSION_FORMAT_VERSION,
   SessionId,
   SessionSeq,
   type Session,
-} from '@deepseek-ai/dsh-session'
-import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
-import { turnBoundaryProjectionDefinition } from '@deepseek-ai/dsh-agent-loop'
-import JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
-import SqliteSessionQueryEngine from '@deepseek-ai/dsh-session-query-sqlite'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
-import * as ToolSessionQuery from '@deepseek-ai/dsh-tool-session-query'
+} from '@ahel/dsh-session'
+import SessionProjectionRegistry from '@ahel/dsh-session-projection'
+import { turnBoundaryProjectionDefinition } from '@ahel/dsh-agent-loop'
+import JsonlSessionPersistence from '@ahel/dsh-session-persistence-jsonl'
+import SqliteSessionQueryEngine from '@ahel/dsh-session-query-sqlite'
+import SystemPrompt from '@ahel/dsh-system-prompt'
+import ToolRuntime from '@ahel/dsh-tools'
+import * as ToolSessionQuery from '@ahel/dsh-tool-session-query'
 
 const temporaryDirectories: string[] = []
 const contexts: Context[] = []

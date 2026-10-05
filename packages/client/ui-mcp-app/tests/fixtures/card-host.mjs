@@ -6,16 +6,16 @@
  * `mcpApps` Host controller. Types: card-host.d.mts.
  */
 import { z } from 'zod'
-import { Context } from '@deepseek-ai/cordis'
+import { Context } from '@ahel/cordis'
 import { InMemoryTransport } from '@modelcontextprotocol/client'
 import { McpServer } from '@modelcontextprotocol/server'
 import { serveStdio } from '@modelcontextprotocol/server/stdio'
-import { ToolCallId } from '@deepseek-ai/dsh-llm'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
-import McpResources from '@deepseek-ai/dsh-mcp-resources'
-import { remoteErrorOf } from '@deepseek-ai/dsh-typert-protocol'
-import { resolveReconnectPolicy, startConnection } from '@deepseek-ai/dsh-mcp-client/src/connection.ts'
+import { ToolCallId } from '@ahel/dsh-llm'
+import SystemPrompt from '@ahel/dsh-system-prompt'
+import ToolRuntime from '@ahel/dsh-tools'
+import McpResources from '@ahel/dsh-mcp-resources'
+import { remoteErrorOf } from '@ahel/dsh-typert-protocol'
+import { resolveReconnectPolicy, startConnection } from '@ahel/dsh-mcp-client/src/connection.ts'
 import McpAppsController from '../../src/index.ts'
 
 /** @param uri @param html */

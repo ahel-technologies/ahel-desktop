@@ -3,14 +3,14 @@
  * namespace and fills the Tool layer's `tool.call.app` slot with a sandboxed
  * card for every settled call that persisted an `mcpApp` record.
  */
-import type { Context } from '@deepseek-ai/cordis'
-import z from '@deepseek-ai/schemastery'
-import type { TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
-import type {} from '@deepseek-ai/dsh-api-remotes/client'
-import type {} from '@deepseek-ai/dsh-client-locale/client'
-import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
-import type {} from '@deepseek-ai/dsh-client-ui-theme/client'
-import mcpAppsRemote from '@deepseek-ai/dsh-client-ui-mcp-app/remote'
+import type { Context } from '@ahel/cordis'
+import z from '@ahel/schemastery'
+import type { TypertRemoteContribution } from '@ahel/dsh-typert-protocol'
+import type {} from '@ahel/dsh-api-remotes/client'
+import type {} from '@ahel/dsh-client-locale/client'
+import type {} from '@ahel/dsh-client-ui-renderer/client'
+import type {} from '@ahel/dsh-client-ui-theme/client'
+import mcpAppsRemote from '@ahel/dsh-client-ui-mcp-app/remote'
 import { registerMcpAppCard } from './register.ts'
 
 /** Client configuration. */

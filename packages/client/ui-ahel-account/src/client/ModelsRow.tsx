@@ -1,5 +1,5 @@
 /** The Ahel row in Settings > Models, below the bring-your-own-key providers. */
-import { AhelTile } from '@deepseek-ai/dsh-client-ui-primitives'
+import { AhelTile } from '@ahel/dsh-client-ui-primitives'
 import type { ModelsRowProps } from './contract.ts'
 import css from './AhelAccount.module.css'
 

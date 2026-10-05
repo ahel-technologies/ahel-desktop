@@ -3,7 +3,7 @@ description: "MCP Apps card host: renders an MCP server's ui:// card in a sandbo
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-client-ui-mcp-app
+# @ahel/dsh-client-ui-mcp-app
 
 English | [中文](README.zh.md)
 
@@ -25,11 +25,11 @@ This package renders MCP Apps cards (`io.modelcontextprotocol/ui`, protocol 2026
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount one row in a Web or Desktop composition that also mounts `@deepseek-ai/dsh-mcp-client`, `@deepseek-ai/dsh-mcp-resources`, and `@deepseek-ai/dsh-client-ui-tool`. The row loads the Host controller and the browser card.
+Mount one row in a Web or Desktop composition that also mounts `@ahel/dsh-mcp-client`, `@ahel/dsh-mcp-resources`, and `@ahel/dsh-client-ui-tool`. The row loads the Host controller and the browser card.
 
 ```yaml
 - id: ui-mcp-app
-  name: '@deepseek-ai/dsh-client-ui-mcp-app'
+  name: '@ahel/dsh-client-ui-mcp-app'
   config:
     maxHeight: 640
 ```
@@ -38,7 +38,7 @@ Mount one row in a Web or Desktop composition that also mounts `@deepseek-ai/dsh
 |---|---|---|
 | `maxHeight` | `640` | Largest card height in CSS pixels; taller app content scrolls inside the card |
 
-A server declares a card by setting `_meta.ui.resourceUri` to a `ui://` URI on a tool in `tools/list` and serving that URI with MIME type `text/html;profile=mcp-app`. `@deepseek-ai/dsh-mcp-client` persists the record; this package needs no per-server configuration.
+A server declares a card by setting `_meta.ui.resourceUri` to a `ui://` URI on a tool in `tools/list` and serving that URI with MIME type `text/html;profile=mcp-app`. `@ahel/dsh-mcp-client` persists the record; this package needs no per-server configuration.
 
 A card's `tools/call` runs the named tool of the card's own server through the Session Agent's tool registry, so pre-execute policy, guards, approval, and post-execute policy apply exactly as for a model call. The tool's `_meta.ui.visibility` must include `app`; calls to other servers are refused. `ui/open-link` opens `http:` and `https:` URLs through the window-open path, which the desktop shell hands to the system browser.
 
@@ -52,7 +52,7 @@ A card's `tools/call` runs the named tool of the card's own server through the S
 
 The Host plugin provides `ctx.mcpApps` and the Remote namespace `mcpApps` with two methods. `readResource(agent, server, uri)` reads through `ctx.mcpResources.readAppResource`, which caches `ui://` reads per server connection generation and URI. `callTool(agent, server, tool, args)` resolves the tool's public registry name, checks its MCP descriptor and visibility, and calls `ctx.tools.execute` with the Agent; the result's `_meta` comes from the call's presentation record, never from the canonical value. The Client mounts the generated Remote contribution itself.
 
-The Client registers the `tool.call.app` occupant declared by `@deepseek-ai/dsh-client-ui-tool`. The card validates the record, reads the resource, and prepends the MCP Apps content security policy, built from the resource's declared domains, as the first element of the document head. The frame uses `sandbox="allow-scripts allow-forms"` without `allow-same-origin`, so the app runs in an opaque origin with no access to the host page, its storage, or its cookies, and cannot open popups or navigate the top window. The page's message listener accepts only messages whose source is the card's own frame window and whose origin is `null`. A second frame `load` event means the frame navigated; the bridge then stops and the card shows its fallback.
+The Client registers the `tool.call.app` occupant declared by `@ahel/dsh-client-ui-tool`. The card validates the record, reads the resource, and prepends the MCP Apps content security policy, built from the resource's declared domains, as the first element of the document head. The frame uses `sandbox="allow-scripts allow-forms"` without `allow-same-origin`, so the app runs in an opaque origin with no access to the host page, its storage, or its cookies, and cannot open popups or navigate the top window. The page's message listener accepts only messages whose source is the card's own frame window and whose origin is `null`. A second frame `load` event means the frame navigated; the bridge then stops and the card shows its fallback.
 
 The bridge holds tool input and result notifications until the app sends `ui/notifications/initialized`, then sends them in that order. Host context carries the theme's color scheme, inline display mode, the height cap, locale, time zone, platform, and style variables mapped from the current design tokens; a theme change sends only the changed fields.
 

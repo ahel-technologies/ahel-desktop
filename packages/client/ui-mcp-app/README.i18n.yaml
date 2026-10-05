@@ -5,42 +5,42 @@
 /:
   en: 88842be6ed692c4a
   zh: 91ba1714ea0db53d
-/deepseek-ai-dsh-client-ui-mcp-app:
-  en: 085f28acb34c0607
-  zh: 3813eea55de0b154
-/deepseek-ai-dsh-client-ui-mcp-app/summary:
+/ahel-dsh-client-ui-mcp-app:
+  en: 0b681962a5357425
+  zh: f397d39a9e25575b
+/ahel-dsh-client-ui-mcp-app/summary:
   en: 46364722a466bcd3
   zh: 2b8c0ed849fded94
-/deepseek-ai-dsh-client-ui-mcp-app/table-of-contents:
+/ahel-dsh-client-ui-mcp-app/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
-/deepseek-ai-dsh-client-ui-mcp-app/use-this-package:
-  en: 6b93983e64ebe511
-  zh: 6c969fc58cb4d332
-/deepseek-ai-dsh-client-ui-mcp-app/understand-the-implementation:
-  en: 4f345a2f4aaccc0a
-  zh: 963402522ec1c174
-/deepseek-ai-dsh-client-ui-mcp-app/further-exploration:
+/ahel-dsh-client-ui-mcp-app/use-this-package:
+  en: 7df5fe51615ce4ab
+  zh: 1a39cb40e1f0852f
+/ahel-dsh-client-ui-mcp-app/understand-the-implementation:
+  en: 32c60ef181257204
+  zh: 74af62df478bb636
+/ahel-dsh-client-ui-mcp-app/further-exploration:
   en: 17e73be181dc0d7d
   zh: ba1c5b385eb30797
-/deepseek-ai-dsh-client-ui-mcp-app/model-experience:
+/ahel-dsh-client-ui-mcp-app/model-experience:
   en: 215e7ba838619b7b
   zh: a311da3843709f90
-/deepseek-ai-dsh-client-ui-mcp-app/model-experience/cards-and-card-initiated-calls:
+/ahel-dsh-client-ui-mcp-app/model-experience/cards-and-card-initiated-calls:
   en: 2babecd6c5aaa619
   zh: 87bc31912cf86678
-/deepseek-ai-dsh-client-ui-mcp-app/model-experience/cards-and-card-initiated-calls/what-the-model-sees:
+/ahel-dsh-client-ui-mcp-app/model-experience/cards-and-card-initiated-calls/what-the-model-sees:
   en: 83f5f052e587a65d
   zh: 8073ec753b28e192
-/deepseek-ai-dsh-client-ui-mcp-app/model-experience/cards-and-card-initiated-calls/token-effect:
+/ahel-dsh-client-ui-mcp-app/model-experience/cards-and-card-initiated-calls/token-effect:
   en: 404d13a440a13c35
   zh: 1e8407514a331f4c
-/deepseek-ai-dsh-client-ui-mcp-app/model-experience/cards-and-card-initiated-calls/kv-cache-effect:
+/ahel-dsh-client-ui-mcp-app/model-experience/cards-and-card-initiated-calls/kv-cache-effect:
   en: ca75c51c89c2c9b0
   zh: f57cc48a1b5cbfa9
-/deepseek-ai-dsh-client-ui-mcp-app/known-limitations-and-deferred-work:
+/ahel-dsh-client-ui-mcp-app/known-limitations-and-deferred-work:
   en: dadf5846a76a5137
   zh: 687dc64f5fd347b2
-/deepseek-ai-dsh-client-ui-mcp-app/known-limitations-and-deferred-work/dev-note:
+/ahel-dsh-client-ui-mcp-app/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: e88aeb617ffb74ea

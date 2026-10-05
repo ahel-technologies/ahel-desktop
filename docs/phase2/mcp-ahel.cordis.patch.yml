@@ -7,9 +7,9 @@
 # advertises resource https://mcp.ahel.ai, which strict clients refuse.
 - insert:
     - id: ahel-account
-      name: '@deepseek-ai/dsh-ahel-account'
+      name: '@ahel/dsh-ahel-account'
     - id: mcp-ahel
-      name: '@deepseek-ai/dsh-mcp-client'
+      name: '@ahel/dsh-mcp-client'
       config:
         serverName: ahel
         transport: streamable-http

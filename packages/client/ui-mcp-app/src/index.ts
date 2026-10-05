@@ -5,37 +5,37 @@
  * `ctx.tools` pipeline (pre-execute policy, guards, approval, post-execute)
  * on behalf of the Session's Agent.
  *
- * @module @deepseek-ai/dsh-client-ui-mcp-app
+ * @module @ahel/dsh-client-ui-mcp-app
  */
 
 import { randomUUID } from 'node:crypto'
-import type { Context } from '@deepseek-ai/cordis'
-import type { Agent } from '@deepseek-ai/dsh-agent'
-import { createUserMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
-import { liveResultMeta, publicToolName } from '@deepseek-ai/dsh-mcp-client'
-import type {} from '@deepseek-ai/dsh-mcp-resources'
-import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
-import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import type { Context } from '@ahel/cordis'
+import type { Agent } from '@ahel/dsh-agent'
+import { createUserMessage, ToolCallId } from '@ahel/dsh-llm'
+import { liveResultMeta, publicToolName } from '@ahel/dsh-mcp-client'
+import type {} from '@ahel/dsh-mcp-resources'
+import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
+import type { JsonValue } from '@ahel/dsh-util-values'
 import { callResultOf, cardActionText, cardContextText } from './call-result.ts'
 import type { McpAppCallResult, McpAppJsonObject } from './types.ts'
 
 export type * from './types.ts'
 
-declare module '@deepseek-ai/cordis' {
+declare module '@ahel/cordis' {
   interface Context {
     /** Remote access for MCP Apps cards to their own MCP server. */
     mcpApps: McpAppsController
   }
 }
 
-declare module '@deepseek-ai/dsh-llm' {
+declare module '@ahel/dsh-llm' {
   interface MessageSourceMap {
     /** Context reported by an MCP Apps card: a card-initiated tool call or `ui/update-model-context`. */
     'mcp-app': { kind: 'mcp-app' }
   }
 }
 
-declare module '@deepseek-ai/dsh-typert-protocol' {
+declare module '@ahel/dsh-typert-protocol' {
   interface RemoteErrorDetailsMap {
     /** The named tool is not an MCP tool of that server in the Agent's scope. */
     'mcp-app/unknown-tool': { readonly server: string; readonly tool: string }

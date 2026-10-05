@@ -1,6 +1,6 @@
 # Dev-only twin of ../ui-mcp-app.cordis.patch.yml for source checkouts: names
 # the built entry by path because the web profile's resolver manifests do not
-# list @deepseek-ai/dsh-client-ui-mcp-app until the bundle row is merged.
+# list @ahel/dsh-client-ui-mcp-app until the bundle row is merged.
 - insert:
     - id: ui-mcp-app
       name: '../../../packages/client/ui-mcp-app/lib/index.js'

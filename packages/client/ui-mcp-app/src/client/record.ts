@@ -1,6 +1,6 @@
 /** Client-side validation of the persisted `mcpApp` card record and MCP Apps resource reads. */
 
-import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import type { JsonValue } from '@ahel/dsh-util-values'
 
 /** MIME type of an MCP Apps HTML resource. */
 export const MCP_APP_MIME_TYPE = 'text/html;profile=mcp-app'

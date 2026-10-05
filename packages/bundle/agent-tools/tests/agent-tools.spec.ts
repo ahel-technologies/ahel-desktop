@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import * as yaml from 'js-yaml'
-import { entryListSchema } from '@deepseek-ai/cordis-plugin-include'
-import { evaluate } from '@deepseek-ai/cordis-plugin-loader'
+import { entryListSchema } from '@ahel/cordis-plugin-include'
+import { evaluate } from '@ahel/cordis-plugin-loader'
 
 describe('dsh-agent-tools bundle', () => {
   it('declares a parseable patch list through the dsh.bundle.patch manifest field', () => {
@@ -43,9 +43,9 @@ describe('dsh-agent-tools bundle', () => {
     expect(rows.find(row => row.id === 'web')?.config).toEqual({ fetchProvider: 'http' })
     expect(rows.find(row => row.id === 'web-fetch-http')).toBeDefined()
     expect(rows.find(row => row.id === 'tool-web')?.config).toMatchObject({ fetch: true })
-    expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-codex')
-    expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-claude-code')
-    expect(manifest.dependencies).toHaveProperty('@deepseek-ai/dsh-web-fetch-http')
+    expect(manifest.dependencies).not.toHaveProperty('@ahel/dsh-subagent-codex')
+    expect(manifest.dependencies).not.toHaveProperty('@ahel/dsh-subagent-claude-code')
+    expect(manifest.dependencies).toHaveProperty('@ahel/dsh-web-fetch-http')
   })
 
   it('gates each shell stack by platform with a symmetric disabled expression', () => {

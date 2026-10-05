@@ -1,7 +1,7 @@
 /** Projection of a registry tool outcome onto MCP `CallToolResult` fields for a card. */
 
-import type { ToolExecutionResult } from '@deepseek-ai/dsh-tools'
-import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import type { ToolExecutionResult } from '@ahel/dsh-tools'
+import type { JsonValue } from '@ahel/dsh-util-values'
 import type { McpAppCallResult, McpAppJsonObject } from './types.ts'
 
 /** Narrow one JSON value to a string-keyed object. */

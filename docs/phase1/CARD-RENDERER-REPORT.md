@@ -138,7 +138,7 @@ Also run:
 ## Manual check (Web)
 
 - Fixture flow, no key or account: `docs/phase1/fixture/run-card-fixture.sh`.
-  - `@deepseek-ai/dsh-llm-replay` replays `card-fixture.session.v4.jsonl` as the model. It calls `mcp__cards__show_card` and then answers.
+  - `@ahel/dsh-llm-replay` replays `card-fixture.session.v4.jsonl` as the model. It calls `mcp__cards__show_card` and then answers.
   - The stdio fixture server `packages/client/ui-mcp-app/tests/fixtures/cards-server.mjs` serves the tool and a dependency-free MCP Apps card.
   - Send any prompt and expand "Called tools". The screenshots above come from this flow.
 - Ahel: `docs/phase1/fixture/run-ahel-signin.sh` mounts `https://mcp.ahel.ai/mcp` with the spike OAuth row plus the card host, and prints the ahel.ai sign-in URL. Reached on 2026-10-05.
@@ -165,9 +165,9 @@ The one bundle row, once the other branch owns the bundle: add it to `packages/b
 
 ```yaml
     - id: ui-mcp-app
-      name: '@deepseek-ai/dsh-client-ui-mcp-app'
+      name: '@ahel/dsh-client-ui-mcp-app'
 ```
 
-Add `"@deepseek-ai/dsh-client-ui-mcp-app": "workspace:*"` to the dependencies of `packages/bundle/web-app/package.json`, or of the Ahel bundle that replaces it. Without that entry, the Loader cannot resolve the bare name ("failed to import"). Until then, dev runs use `docs/phase1/fixture/ui-mcp-app.dev.cordis.patch.yml`, which names the built entry by path.
+Add `"@ahel/dsh-client-ui-mcp-app": "workspace:*"` to the dependencies of `packages/bundle/web-app/package.json`, or of the Ahel bundle that replaces it. Without that entry, the Loader cannot resolve the bare name ("failed to import"). Until then, dev runs use `docs/phase1/fixture/ui-mcp-app.dev.cordis.patch.yml`, which names the built entry by path.
 
 The desktop shell already sends `window.open` http(s) URLs to `shell.openExternal`, so no `apps/desktop` change is needed. The client bundle inlines zod from the generated Typert codecs (about 200 KB), the same as other self-mounted Remotes.

@@ -1,6 +1,6 @@
 /** Browser-safe wire types shared by the MCP Apps Host controller and the card Client. */
 
-import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import type { JsonValue } from '@ahel/dsh-util-values'
 
 /** JSON object with string keys. */
 export type McpAppJsonObject = { [key: string]: JsonValue }

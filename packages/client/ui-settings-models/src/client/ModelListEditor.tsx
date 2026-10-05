@@ -16,8 +16,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { LlmDiscoveredModel } from '@deepseek-ai/dsh-api-remotes/client'
-import { Button, IconPlusOutlineRegular, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { LlmDiscoveredModel } from '@ahel/dsh-api-remotes/client'
+import { Button, IconPlusOutlineRegular, Modal } from '@ahel/dsh-client-ui-primitives'
 import { formatCapacity, parseCapacity } from './model-drafts.ts'
 import type { ModelsOperations } from './operations.ts'
 import type { ModelDraft as CatalogModelDraft } from './model-drafts.ts'

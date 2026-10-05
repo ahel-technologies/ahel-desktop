@@ -1,9 +1,9 @@
 # Keyless replay keeps the LSP composition intact and replaces only the model adapter.
 - insert:
     - id: lsp
-      name: '@deepseek-ai/dsh-lsp'
+      name: '@ahel/dsh-lsp'
     - id: lsp-stdio
-      name: '@deepseek-ai/dsh-lsp-stdio'
+      name: '@ahel/dsh-lsp-stdio'
       config:
         servers:
           fixture:
@@ -12,11 +12,11 @@
             extensionToLanguage:
               '.ts': typescript
     - id: tool-lsp
-      name: '@deepseek-ai/dsh-tool-lsp'
+      name: '@ahel/dsh-tool-lsp'
       config:
         maxLocations: 1
     - id: llm-replay
-      name: '@deepseek-ai/dsh-llm-replay'
+      name: '@ahel/dsh-llm-replay'
       config:
         providers:
           - id: deepseek-official
@@ -26,4 +26,4 @@
               - id: deepseek-v4-pro
 
 - id: timeout-policy
-  name: '@deepseek-ai/dsh-tool-call-timeout-policy'
+  name: '@ahel/dsh-tool-call-timeout-policy'

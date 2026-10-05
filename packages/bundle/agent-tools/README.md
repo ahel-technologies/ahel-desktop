@@ -3,7 +3,7 @@ description: "The local agent tool plane for headless, SDK, and ACP profiles: sh
 kind: "package-bundle"
 ---
 
-# @deepseek-ai/dsh-agent-tools
+# @ahel/dsh-agent-tools
 
 English | [中文](README.zh.md)
 
@@ -29,13 +29,13 @@ The shipped `headless`, `sdk`, and `acp` profiles already list this bundle, so a
 
 ### Add it to a profile
 
-List the bundle after `@deepseek-ai/dsh-base` and before the mode bundle in the profile `package.json`. The shipped `headless` profile uses this order:
+List the bundle after `@ahel/dsh-base` and before the mode bundle in the profile `package.json`. The shipped `headless` profile uses this order:
 
 ```json
 {
   "dsh": {
     "profile": {
-      "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-agent-tools", "@deepseek-ai/dsh-headless"]
+      "bundles": ["@ahel/dsh-base", "@ahel/dsh-agent-tools", "@ahel/dsh-headless"]
     }
   }
 }
@@ -68,12 +68,12 @@ Default file editing uses `read`, `write`, and `edit`. The `str_replace_editor` 
 ```yaml
 - insert:
     - id: tool-str-replace-editor
-      name: '@deepseek-ai/dsh-tool-str-replace-editor'
+      name: '@ahel/dsh-tool-str-replace-editor'
       config:
         maxOutputChars: 16000
 ```
 
-The `ralph` iteration tool ships disabled; a later patch layer restores it with `- id: tool-ralph` and `disabled: false`. Web search needs a provider: mount one, such as `@deepseek-ai/dsh-web-search-exa`, and name it in the `web` row's `searchProvider`.
+The `ralph` iteration tool ships disabled; a later patch layer restores it with `- id: tool-ralph` and `disabled: false`. Web search needs a provider: mount one, such as `@ahel/dsh-web-search-exa`, and name it in the `web` row's `searchProvider`.
 
 ### Telemetry opt-in
 
@@ -104,7 +104,7 @@ A patch replaces the targeted row's whole `config` rather than merging into it. 
 
 ### Platform gating
 
-The patch gates the two shell stacks by platform on its own rows: `bash-sandbox` and `tool-bash` carry `disabled: !!js process.platform === 'win32'`, and their twins `pwsh-sandbox` and `tool-pwsh` mount on win32 only with the inverted expression. The permission surface stays identical to POSIX: the sandbox policy executes the same file-effect policy through the Windows ACL restricted-token runner (`dsh-sandbox-local` → `@deepseek-ai/dsh-sandbox-windows-acl`), and the core's `fs-sandbox` keeps fencing `ctx.fs` writes.
+The patch gates the two shell stacks by platform on its own rows: `bash-sandbox` and `tool-bash` carry `disabled: !!js process.platform === 'win32'`, and their twins `pwsh-sandbox` and `tool-pwsh` mount on win32 only with the inverted expression. The permission surface stays identical to POSIX: the sandbox policy executes the same file-effect policy through the Windows ACL restricted-token runner (`dsh-sandbox-local` → `@ahel/dsh-sandbox-windows-acl`), and the core's `fs-sandbox` keeps fencing `ctx.fs` writes.
 
 ### Source map
 
@@ -150,7 +150,7 @@ These limits tell you where the tool plane needs extra care or where an override
 - **Not shipped in the dsh runtime** — the package is private and a development dependency of the CLI, so only a source checkout resolves it.
 - **No web composition** — the `web` profile does not list this bundle, and no shipped test covers that combination.
 - **Overrides replace whole settings blocks** — a patch entry replaces the target's entire configuration, so your override must restate every setting you want to keep; nothing merges automatically.
-- **Windows temp grants are private per-session subdirectories** — `workspace-write` confines writes to the workspace plus the session's own temp subdirectory (`<temp>\dsh-<hash>`, TMP/TEMP rewritten for confined children); `read-only` grants nothing. See `@deepseek-ai/dsh-sandbox-windows-acl`.
+- **Windows temp grants are private per-session subdirectories** — `workspace-write` confines writes to the workspace plus the session's own temp subdirectory (`<temp>\dsh-<hash>`, TMP/TEMP rewritten for confined children); `read-only` grants nothing. See `@ahel/dsh-sandbox-windows-acl`.
 - **Web search has no default provider** — the `web_search` tool has no backend until a profile mounts a search provider and names it in `searchProvider`.
 
 <a id="dev-note"></a>

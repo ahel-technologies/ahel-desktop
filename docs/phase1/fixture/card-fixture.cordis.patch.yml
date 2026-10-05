@@ -16,14 +16,14 @@
   disabled: true
 
 - id: agent-default-model
-  name: '@deepseek-ai/dsh-agent-default-model'
+  name: '@ahel/dsh-agent-default-model'
   config:
     provider: deepseek-official
     model: deepseek-v4-flash
 
 - insert:
     - id: llm-replay
-      name: '@deepseek-ai/dsh-llm-replay'
+      name: '@ahel/dsh-llm-replay'
       config:
         file: !!js process.env.AHEL_CARD_FIXTURE_SESSION
         providers:
@@ -34,7 +34,7 @@
                 inputModalities: [text]
 
     - id: mcp-cards
-      name: '@deepseek-ai/dsh-mcp-client'
+      name: '@ahel/dsh-mcp-client'
       config:
         serverName: cards
         transport: stdio

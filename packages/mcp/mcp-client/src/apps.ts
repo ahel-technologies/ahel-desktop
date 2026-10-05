@@ -10,7 +10,7 @@
  * @module
  */
 
-import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import type { JsonValue } from '@ahel/dsh-util-values'
 
 /** Extension identifier advertised in the client `initialize` capabilities. */
 export const MCP_APPS_EXTENSION = 'io.modelcontextprotocol/ui'
@@ -41,10 +41,10 @@ export interface McpToolDescriptor {
   readonly ui: McpToolUi
 }
 
-declare module '@deepseek-ai/dsh-tools' {
+declare module '@ahel/dsh-tools' {
   interface ToolDefinition {
     /**
-     * Present on tools bridged by `@deepseek-ai/dsh-mcp-client`: the owning
+     * Present on tools bridged by `@ahel/dsh-mcp-client`: the owning
      * server and its `tools/list` metadata. Never model-visible.
      */
     readonly mcp?: McpToolDescriptor

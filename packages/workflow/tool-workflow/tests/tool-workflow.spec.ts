@@ -1,28 +1,28 @@
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
-import { Context } from '@deepseek-ai/cordis'
-import Loader from '@deepseek-ai/cordis-plugin-loader'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime, { TOOL_ABORTED_BEFORE_DISPATCH } from '@deepseek-ai/dsh-tools'
-import type { ToolExecutionResult, ToolExecutionToken } from '@deepseek-ai/dsh-tools'
-import type { Agent } from '@deepseek-ai/dsh-agent'
-import { unsupportedInbox } from '@deepseek-ai/dsh-agent-loop-testkit'
-import { WorkflowRunId, WorkflowEngine } from '@deepseek-ai/dsh-workflow'
+import { Context } from '@ahel/cordis'
+import Loader from '@ahel/cordis-plugin-loader'
+import SystemPrompt from '@ahel/dsh-system-prompt'
+import ToolRuntime, { TOOL_ABORTED_BEFORE_DISPATCH } from '@ahel/dsh-tools'
+import type { ToolExecutionResult, ToolExecutionToken } from '@ahel/dsh-tools'
+import type { Agent } from '@ahel/dsh-agent'
+import { unsupportedInbox } from '@ahel/dsh-agent-loop-testkit'
+import { WorkflowRunId, WorkflowEngine } from '@ahel/dsh-workflow'
 import type {
   WorkflowAgentEndInfo, WorkflowAgentInfo, WorkflowResult, WorkflowRun,
   WorkflowRunId as WorkflowRunIdType, WorkflowStartRequest,
-} from '@deepseek-ai/dsh-workflow'
-import { ToolCallId } from '@deepseek-ai/dsh-llm'
-import type { JobId } from '@deepseek-ai/dsh-jobs'
-import AgentRegistry from '@deepseek-ai/dsh-agent'
-import LocalJobRegistry from '@deepseek-ai/dsh-jobs-local'
-import * as ToolTasks from '@deepseek-ai/dsh-tool-jobs'
-import SubagentRuntime from '@deepseek-ai/dsh-subagent'
-import PtcWorkflowEngine from '@deepseek-ai/dsh-workflow-ptc'
+} from '@ahel/dsh-workflow'
+import { ToolCallId } from '@ahel/dsh-llm'
+import type { JobId } from '@ahel/dsh-jobs'
+import AgentRegistry from '@ahel/dsh-agent'
+import LocalJobRegistry from '@ahel/dsh-jobs-local'
+import * as ToolTasks from '@ahel/dsh-tool-jobs'
+import SubagentRuntime from '@ahel/dsh-subagent'
+import PtcWorkflowEngine from '@ahel/dsh-workflow-ptc'
 import { mountWorkflowRuntime } from '../../workflow-ptc/tests/setup.ts'
 import * as toolWorkflow from '../src/index.ts'
 import type {} from '../src/types.ts'
-import { Session, SessionId } from '@deepseek-ai/dsh-session'
-import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
+import { Session, SessionId } from '@ahel/dsh-session'
+import SessionProjectionRegistry from '@ahel/dsh-session-projection'
 
 const testToolSignal = new AbortController().signal
 
@@ -593,7 +593,7 @@ describe('dsh-tool-workflow', () => {
       const result = await execute(ctx, { script: SCRIPT, meta: META, run_in_background: true }, { agent: parent })
       expect(result.isError).toBe(true)
       expect((result.content[0] as { text: string }).text)
-        .toContain('background jobs unavailable: load @deepseek-ai/dsh-jobs and @deepseek-ai/dsh-tool-jobs')
+        .toContain('background jobs unavailable: load @ahel/dsh-jobs and @ahel/dsh-tool-jobs')
     })
 
     it('a disabled composition hides the parameter and rejects the call', async () => {

@@ -1,5 +1,5 @@
 /** Cache limits shared by the Host configuration and browser document previews. */
-import z from '@deepseek-ai/schemastery'
+import z from '@ahel/schemastery'
 
 /** Browser document preview limits. */
 export interface Config {

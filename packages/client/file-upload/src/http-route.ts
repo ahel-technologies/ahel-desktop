@@ -1,8 +1,8 @@
 /** Authenticated raw-byte upload route registered on the Connection fetch registry. */
 
-import { brandString } from '@deepseek-ai/dsh-brand'
-import type { SessionId } from '@deepseek-ai/dsh-session'
-import { remoteErrorOf } from '@deepseek-ai/dsh-typert-protocol'
+import { brandString } from '@ahel/dsh-brand'
+import type { SessionId } from '@ahel/dsh-session'
+import { remoteErrorOf } from '@ahel/dsh-typert-protocol'
 import type { FileUploads } from './index.ts'
 import type { FileUploadValue } from './types.ts'
 

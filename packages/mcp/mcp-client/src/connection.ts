@@ -16,10 +16,10 @@
  */
 
 import { Client, type AuthProvider, type Transport } from '@modelcontextprotocol/client'
-import type { Context } from '@deepseek-ai/cordis'
-import { assertNever, type JsonValue } from '@deepseek-ai/dsh-util-values'
+import type { Context } from '@ahel/cordis'
+import { assertNever, type JsonValue } from '@ahel/dsh-util-values'
 import type { ServerContext } from './server-context.ts'
-import { MAX_TIMER_DELAY_MS } from '@deepseek-ai/dsh-timeout'
+import { MAX_TIMER_DELAY_MS } from '@ahel/dsh-timeout'
 import { createTransport } from './transport.ts'
 import { syncTools } from './tools.ts'
 import { MCP_APP_MIME_TYPE, MCP_APPS_EXTENSION } from './apps.ts'

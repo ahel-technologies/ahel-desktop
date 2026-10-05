@@ -1,5 +1,5 @@
 /** Locale-owned copy for MCP Apps cards. */
-import type {} from '@deepseek-ai/dsh-client-ui-slots'
+import type {} from '@ahel/dsh-client-ui-slots'
 
 /** Dictionary namespace for MCP Apps cards. */
 export const NS = 'mcp-app'
@@ -27,7 +27,7 @@ export const en: Record<McpAppKey, string> = {
   structured: 'Structured result',
 }
 
-declare module '@deepseek-ai/dsh-client-ui-slots' {
+declare module '@ahel/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
     /** MCP Apps card frame, loading, and fallback copy. */
     'mcp-app': McpAppKey

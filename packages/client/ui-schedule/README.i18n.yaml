@@ -5,36 +5,36 @@
 /:
   en: 265778d19fe0dd76
   zh: 78b0a191a4bd4e4e
-/deepseek-ai-dsh-client-ui-schedule:
-  en: 862120984d5392eb
-  zh: eb3e5d5a802da592
-/deepseek-ai-dsh-client-ui-schedule/summary:
+/ahel-dsh-client-ui-schedule:
+  en: 1564a85a1b9ea051
+  zh: 66c402235d1fbaef
+/ahel-dsh-client-ui-schedule/summary:
   en: 8dfc371c14bb4415
   zh: 9b3545c1a7468a7a
-/deepseek-ai-dsh-client-ui-schedule/table-of-contents:
+/ahel-dsh-client-ui-schedule/table-of-contents:
   en: d152484eb41ac6b4
   zh: 405b30feaf48c087
-/deepseek-ai-dsh-client-ui-schedule/use-this-package:
+/ahel-dsh-client-ui-schedule/use-this-package:
   en: c668e3d223102e47
   zh: efedf3996679fb17
-/deepseek-ai-dsh-client-ui-schedule/use-this-package/time-zone-data-source:
+/ahel-dsh-client-ui-schedule/use-this-package/time-zone-data-source:
   en: 6bd6882dbbbefcb0
   zh: 03aa15f1a65d13dc
-/deepseek-ai-dsh-client-ui-schedule/understand-the-implementation:
-  en: a03a551e0ed96c6b
-  zh: a85efe7db56b7df3
-/deepseek-ai-dsh-client-ui-schedule/further-exploration:
+/ahel-dsh-client-ui-schedule/understand-the-implementation:
+  en: 69a19702ef15d2a9
+  zh: 37a9e2e38f468aa2
+/ahel-dsh-client-ui-schedule/further-exploration:
   en: 06e265120b05dbf5
   zh: 08ab1ef979b8ea40
-/deepseek-ai-dsh-client-ui-schedule/model-experience:
+/ahel-dsh-client-ui-schedule/model-experience:
   en: a8838aba5fd29fd8
   zh: b9f67d82c81dd030
-/deepseek-ai-dsh-client-ui-schedule/model-experience/kv-cache-effect:
+/ahel-dsh-client-ui-schedule/model-experience/kv-cache-effect:
   en: 4b81350950285d47
   zh: 6dc3d5cf7ca8a622
-/deepseek-ai-dsh-client-ui-schedule/known-limitations-and-deferred-work:
+/ahel-dsh-client-ui-schedule/known-limitations-and-deferred-work:
   en: ce8cd6e03f4763ae
   zh: 65ad26aad74d83ca
-/deepseek-ai-dsh-client-ui-schedule/known-limitations-and-deferred-work/dev-note:
+/ahel-dsh-client-ui-schedule/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: a4b126f9a4eaca6f

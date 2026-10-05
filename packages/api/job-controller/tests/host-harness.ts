@@ -1,10 +1,10 @@
-import { Context } from '@deepseek-ai/cordis'
-import AgentRegistry from '@deepseek-ai/dsh-agent'
-import { unsupportedInbox } from '@deepseek-ai/dsh-agent-loop-testkit'
-import type { Agent } from '@deepseek-ai/dsh-agent'
-import type { JobAppendOptions, JobHandle, JobOutcome } from '@deepseek-ai/dsh-jobs'
-import LocalJobRegistry from '@deepseek-ai/dsh-jobs-local'
-import { Session, SessionId } from '@deepseek-ai/dsh-session'
+import { Context } from '@ahel/cordis'
+import AgentRegistry from '@ahel/dsh-agent'
+import { unsupportedInbox } from '@ahel/dsh-agent-loop-testkit'
+import type { Agent } from '@ahel/dsh-agent'
+import type { JobAppendOptions, JobHandle, JobOutcome } from '@ahel/dsh-jobs'
+import LocalJobRegistry from '@ahel/dsh-jobs-local'
+import { Session, SessionId } from '@ahel/dsh-session'
 
 /** A registry with a tiny ring so eviction is cheap to reach. */
 export async function harness(): Promise<Context> {

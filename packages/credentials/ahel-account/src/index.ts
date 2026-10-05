@@ -10,20 +10,20 @@
  * sign-out, profile and watch; `accessToken()` and `setOpener()` stay
  * Host-only.
  *
- * @module @deepseek-ai/dsh-ahel-account
+ * @module @ahel/dsh-ahel-account
  */
 
 import { randomUUID } from 'node:crypto'
 import { hostname } from 'node:os'
-import type { Context, Volatile } from '@deepseek-ai/cordis'
-import type {} from '@deepseek-ai/dsh-config-editor'
-import Schema from '@deepseek-ai/schemastery'
-import { brandString } from '@deepseek-ai/dsh-brand'
-import { credentialRef } from '@deepseek-ai/dsh-credentials'
-import type { CredentialRef } from '@deepseek-ai/dsh-credentials'
-import { currentOAuthGrant, OAuthGrantError, readOAuthGrant, writeOAuthGrant } from '@deepseek-ai/dsh-mcp-client'
-import type { StoredOAuthGrant } from '@deepseek-ai/dsh-mcp-client'
-import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import type { Context, Volatile } from '@ahel/cordis'
+import type {} from '@ahel/dsh-config-editor'
+import Schema from '@ahel/schemastery'
+import { brandString } from '@ahel/dsh-brand'
+import { credentialRef } from '@ahel/dsh-credentials'
+import type { CredentialRef } from '@ahel/dsh-credentials'
+import { currentOAuthGrant, OAuthGrantError, readOAuthGrant, writeOAuthGrant } from '@ahel/dsh-mcp-client'
+import type { StoredOAuthGrant } from '@ahel/dsh-mcp-client'
+import { Remote, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import {
   authorizeUrl, createPkce, discover, exchange, fetchProfile, randomState, register, revoke, SignInError, startLoopbackListener,
 } from './signin.ts'
@@ -34,7 +34,7 @@ export type {
   AhelAccountView, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView, AhelSignInErrorCode, AhelWorkspace,
 } from './types.ts'
 
-declare module '@deepseek-ai/cordis' {
+declare module '@ahel/cordis' {
   interface Context {
     ahelAccount: AhelAccount
   }

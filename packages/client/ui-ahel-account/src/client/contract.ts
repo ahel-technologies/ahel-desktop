@@ -1,8 +1,8 @@
 /** Injected face shared by the account menu and the Models row. */
-import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type { AhelAccountView } from '@deepseek-ai/dsh-ahel-account/types'
-import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
-import type {} from '@deepseek-ai/dsh-client-ui-settings-models/client'
+import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@ahel/dsh-client-ui-slots'
+import type { AhelAccountView } from '@ahel/dsh-ahel-account/types'
+import type {} from '@ahel/dsh-client-ui-sidebar/client'
+import type {} from '@ahel/dsh-client-ui-settings-models/client'
 import type {} from './locales.ts'
 
 /** Account operations and the live view; tokens never reach the browser. */

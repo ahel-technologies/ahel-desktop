@@ -4,13 +4,13 @@
  * the sidebar footer (account menu) and the Settings > Models footer (the Ahel
  * row beside bring-your-own-key providers).
  */
-import type { Context } from '@deepseek-ai/cordis'
-import type { HostObservable } from '@deepseek-ai/dsh-client-ui-slots'
-import type { AhelAccountView } from '@deepseek-ai/dsh-ahel-account/types'
-import type {} from '@deepseek-ai/dsh-api-remotes/client'
-import type {} from '@deepseek-ai/dsh-client-locale/client'
-import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
-import ahelAccountRemote from '@deepseek-ai/dsh-ahel-account/remote'
+import type { Context } from '@ahel/cordis'
+import type { HostObservable } from '@ahel/dsh-client-ui-slots'
+import type { AhelAccountView } from '@ahel/dsh-ahel-account/types'
+import type {} from '@ahel/dsh-api-remotes/client'
+import type {} from '@ahel/dsh-client-locale/client'
+import type {} from '@ahel/dsh-client-ui-renderer/client'
+import ahelAccountRemote from '@ahel/dsh-ahel-account/remote'
 import type { AhelAccountInjected } from './contract.ts'
 import { AccountMenu } from './AccountMenu.tsx'
 import { ModelsRow } from './ModelsRow.tsx'

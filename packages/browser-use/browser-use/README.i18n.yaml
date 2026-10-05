@@ -5,33 +5,33 @@
 /:
   en: f40b34f771caa863
   zh: f61d7ce73e0720e2
-/deepseek-ai-dsh-browser-use:
-  en: 2dbab261a3c343cc
-  zh: f2cf8d237182cef1
-/deepseek-ai-dsh-browser-use/summary:
+/ahel-dsh-browser-use:
+  en: 73910a3e716cd0fd
+  zh: 7d10ab98a538b4df
+/ahel-dsh-browser-use/summary:
   en: 3e2c0d4aad911b93
   zh: 3e3903754a46de8e
-/deepseek-ai-dsh-browser-use/table-of-contents:
+/ahel-dsh-browser-use/table-of-contents:
   en: d152484eb41ac6b4
   zh: f14f34fce35a8d90
-/deepseek-ai-dsh-browser-use/use-this-package:
-  en: d0c5ace058c0572a
-  zh: 2bbfa786c1f9ba53
-/deepseek-ai-dsh-browser-use/understand-the-implementation:
+/ahel-dsh-browser-use/use-this-package:
+  en: 5e7d294b89055b5a
+  zh: 60869d720dccf7f6
+/ahel-dsh-browser-use/understand-the-implementation:
   en: c4d9ec0df22a30ea
   zh: 06057e2a56cebbb9
-/deepseek-ai-dsh-browser-use/further-exploration:
+/ahel-dsh-browser-use/further-exploration:
   en: 5ae59b1b38304607
   zh: 429171c1a3fb914c
-/deepseek-ai-dsh-browser-use/model-experience:
+/ahel-dsh-browser-use/model-experience:
   en: 8780c250dfaefaaa
   zh: f1fd94f7531b60a1
-/deepseek-ai-dsh-browser-use/model-experience/kv-cache-effect:
+/ahel-dsh-browser-use/model-experience/kv-cache-effect:
   en: 0cc866a67a19d08b
   zh: c6a46b147b042cff
-/deepseek-ai-dsh-browser-use/known-limitations-and-deferred-work:
+/ahel-dsh-browser-use/known-limitations-and-deferred-work:
   en: 43952e97817e9e32
   zh: a5e494860a71fc71
-/deepseek-ai-dsh-browser-use/known-limitations-and-deferred-work/dev-note:
+/ahel-dsh-browser-use/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 8ec3e73528ddb1a6

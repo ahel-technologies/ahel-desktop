@@ -4,9 +4,9 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { Context } from '@deepseek-ai/cordis'
-import type { SandboxPolicy } from '@deepseek-ai/dsh-sandbox'
-import { LocalSandboxProvider } from '@deepseek-ai/dsh-sandbox-local'
+import { Context } from '@ahel/cordis'
+import type { SandboxPolicy } from '@ahel/dsh-sandbox'
+import { LocalSandboxProvider } from '@ahel/dsh-sandbox-local'
 import { bwrapProfileArgs } from '../src/profiles.ts'
 
 /**

@@ -1,9 +1,9 @@
 /** Fixed Escape routing into the current Conversation turn's scoped cancellation. */
-import type { ISessions, SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client'
-import type { Shortcuts } from '@deepseek-ai/dsh-client-shortcuts/client'
-import type { UiSession } from '@deepseek-ai/dsh-client-ui-session/client'
-import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
+import type { ISessions, SessionBinding } from '@ahel/dsh-api-session-controller/client'
+import type { Shortcuts } from '@ahel/dsh-client-shortcuts/client'
+import type { UiSession } from '@ahel/dsh-client-ui-session/client'
+import type { SessionId } from '@ahel/dsh-session/types'
+import type { ObservableSnapshot } from '@ahel/dsh-client-store'
 import { StopSequence } from './stop-sequence.ts'
 
 /**

@@ -3,7 +3,7 @@ description: "The deployment default model selection for users and maintainers c
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-agent-default-model
+# @ahel/dsh-agent-default-model
 
 English | [中文](README.zh.md)
 
@@ -32,7 +32,7 @@ Mount this package wherever agents are created without an explicit model route. 
 Every field is optional. Without a provider and model, the default is the first model of the first registered provider route that advertises one; with neither, there is no default and the entry point asks the user to add a model.
 
 ```yaml
-- name: '@deepseek-ai/dsh-agent-default-model'
+- name: '@ahel/dsh-agent-default-model'
   config:
     provider: anthropic
     model: claude-sonnet-4-5

@@ -19,7 +19,7 @@ The app builds (`pnpm run build`), packages unsigned for mac arm64 (`pnpm run pa
   - computer-use and the cua-driver packages.
   - ui-brand-official.
 - **Unmounted, still in the tree:** shell, fs tools, sandboxes, skills, subagents, PTC, workflows, jobs, goals, plan, schedule, web tools, telemetry, product analytics, and their client panels.
-  - Their rows moved from `dsh-base` to the new private bundle `@deepseek-ai/dsh-agent-tools`. Only the headless, sdk and acp profiles use it.
+  - Their rows moved from `dsh-base` to the new private bundle `@ahel/dsh-agent-tools`. Only the headless, sdk and acp profiles use it.
   - The web and desktop profiles load base + web-app only. Evidence: `web-profile-dump-config.yml`, 99 rows, 0 DeepSeek or telemetry rows.
   - `release:pack` packs only the runtime closure of `dsh` + desktop-host: 161 of 305 packages.
 - **DeepSeek UI removed:**
@@ -64,6 +64,6 @@ The app builds (`pnpm run build`), packages unsigned for mac arm64 (`pnpm run pa
 - **DeepSeek defaults remain in unshipped code:** `acp-app` and the SDK client / Python SDK still default to the `deepseek-official` provider.
 - **Composer placeholder** still reads "Describe what you want to build"; the coding-view toggle is still in Settings → General.
 - **Windows:** an unsigned Windows build has no `publisherName`, so update signatures are not checked.
-- **Installer log path** still contains the `@deepseek-ai` package name until the npm scope rename.
+- **Installer log path** used the `@deepseek-ai` package name; fixed by the Phase 2b scope rename.
 - **Primary runtime:** the bundled Python/Node runtime still ships, for the CLI command manager. Removing it is a follow-up.
 - **Old local file:** the spike's local `apps/desktop/.env.macos` in the original checkout holds keys that packaging now rejects. Delete those lines.

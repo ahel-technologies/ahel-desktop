@@ -3,7 +3,7 @@ description: "Ahel brand occupants for the sidebar and the blank-session hero; f
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-client-ui-brand-ahel
+# @ahel/dsh-client-ui-brand-ahel
 
 English | [中文](README.zh.md)
 
@@ -29,7 +29,7 @@ Mount this plugin in the browser roster of an Ahel deployment. The Web applicati
 
 ### Brand artwork
 
-The tile is a red `#e42238` rounded square with a cream `#f6f1e7` chain-link glyph; both inks stay fixed in light and dark themes. The wordmark is lowercase "ahel" in Prime, drawn as outlines in the surrounding text color, so it follows the sidebar ink in both themes. Both come from `@deepseek-ai/dsh-client-ui-primitives` (`AhelTile`, `BrandWordmark`).
+The tile is a red `#e42238` rounded square with a cream `#f6f1e7` chain-link glyph; both inks stay fixed in light and dark themes. The wordmark is lowercase "ahel" in Prime, drawn as outlines in the surrounding text color, so it follows the sidebar ink in both themes. Both come from `@ahel/dsh-client-ui-primitives` (`AhelTile`, `BrandWordmark`).
 
 ### Replacing the brand
 

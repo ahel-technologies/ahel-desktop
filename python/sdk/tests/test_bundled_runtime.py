@@ -72,9 +72,9 @@ def test_bundled_runtime_boots_the_sdk_profile(
     assert init.serverInfo.name == "ahel-desktop-sdk-runtime"
     profile = json.loads((tmp_path / "home" / "profiles" / "sdk" / "package.json").read_text())
     assert profile["dsh"]["profile"]["bundles"] == [
-        "@deepseek-ai/dsh-base",
-        "@deepseek-ai/dsh-agent-tools",
-        "@deepseek-ai/dsh-sdk-app",
+        "@ahel/dsh-base",
+        "@ahel/dsh-agent-tools",
+        "@ahel/dsh-sdk-app",
     ]
 
 
@@ -108,7 +108,7 @@ def test_bundled_runtime_surfaces_unbundled_plugin_failure(
 ) -> None:
     patch = tmp_path / "missing.patch.yml"
     patch.write_text(json.dumps([{
-        "insert": [{"id": "missing", "name": "@deepseek-ai/dsh-does-not-exist"}],
+        "insert": [{"id": "missing", "name": "@ahel/dsh-does-not-exist"}],
     }]))
 
     client = _client(tmp_path, mode, monkeypatch, patch)
@@ -119,4 +119,4 @@ def test_bundled_runtime_surfaces_unbundled_plugin_failure(
     finally:
         client.close()
 
-    assert "@deepseek-ai/dsh-does-not-exist" in str(excinfo.value)
+    assert "@ahel/dsh-does-not-exist" in str(excinfo.value)

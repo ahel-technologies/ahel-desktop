@@ -1,6 +1,6 @@
-import { AhelTile, BrandWordmark } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { HeroBrandMarkOwnerProps } from '@deepseek-ai/dsh-client-ui-conversation/client'
-import type { SidebarBrandMarkOwnerProps } from '@deepseek-ai/dsh-client-ui-sidebar/client'
+import { AhelTile, BrandWordmark } from '@ahel/dsh-client-ui-primitives'
+import type { HeroBrandMarkOwnerProps } from '@ahel/dsh-client-ui-conversation/client'
+import type { SidebarBrandMarkOwnerProps } from '@ahel/dsh-client-ui-sidebar/client'
 
 /**
  * Render the Ahel tile at the edge requested by the sidebar.

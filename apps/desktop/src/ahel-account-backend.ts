@@ -1,6 +1,6 @@
 /** Native client of the Host's `ahelAccount` Remote namespace; tokens never leave the Host. */
 
-import type { AhelAccountView, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView } from '@deepseek-ai/dsh-ahel-account/types'
+import type { AhelAccountView, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView } from '@ahel/dsh-ahel-account/types'
 import { connectHostRpc, record } from './host-settings.ts'
 
 /** Account operations the shell drives from the welcome window and the menu. */

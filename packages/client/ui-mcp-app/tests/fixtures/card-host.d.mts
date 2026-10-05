@@ -1,6 +1,6 @@
 /** Types of the Host half of the card integration spec (card-host.mjs). */
 import type { Mock } from 'vitest'
-import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import type { JsonValue } from '@ahel/dsh-util-values'
 import type { McpAppCallResult, McpAppJsonObject } from '../../src/types.ts'
 
 /** Settled registry result fields the spec reads. */

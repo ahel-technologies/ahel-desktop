@@ -1,32 +1,32 @@
-# == @deepseek-ai/dsh-base
+# == @ahel/dsh-base
 - id: plugin-manager
-  name: '@deepseek-ai/dsh-plugin-manager'
+  name: '@ahel/dsh-plugin-manager'
   disabled: !!js '!ctx.get(''profileContext'')'
 - id: timer
-  name: '@deepseek-ai/cordis-plugin-timer'
+  name: '@ahel/cordis-plugin-timer'
 - id: hmr
-  name: '@deepseek-ai/dsh-hmr'
+  name: '@ahel/dsh-hmr'
   disabled: !!js '!ctx.get(''profileContext'')'
   config:
     root: []
 - id: llm
-  name: '@deepseek-ai/dsh-llm'
+  name: '@ahel/dsh-llm'
 - id: session
-  name: '@deepseek-ai/dsh-session'
+  name: '@ahel/dsh-session'
 - id: typert
-  name: '@deepseek-ai/dsh-typert-registry'
+  name: '@ahel/dsh-typert-registry'
 - id: typert-loader
-  name: '@deepseek-ai/dsh-typert-loader'
+  name: '@ahel/dsh-typert-loader'
 - id: typert-gateway
-  name: '@deepseek-ai/dsh-api-gateway'
+  name: '@ahel/dsh-api-gateway'
 - id: session-title
-  name: '@deepseek-ai/dsh-session-title'
+  name: '@ahel/dsh-session-title'
   config:
     fallbackMaxWords: 5
     fallbackMaxBytes: 40
     maxTitleBytes: 80
 - id: session-title-llm
-  name: '@deepseek-ai/dsh-session-title-first-prompt-llm'
+  name: '@ahel/dsh-session-title-first-prompt-llm'
   config:
     targetWords: 5
     targetCjkCharacters: 10
@@ -34,84 +34,84 @@
     maxOutputTokens: 64
     timeoutMs: 60000
 - id: user-questions
-  name: '@deepseek-ai/dsh-user-questions'
+  name: '@ahel/dsh-user-questions'
 - id: agent
-  name: '@deepseek-ai/dsh-agent'
+  name: '@ahel/dsh-agent'
 - id: agent-default-model
-  name: '@deepseek-ai/dsh-agent-default-model'
+  name: '@ahel/dsh-agent-default-model'
 - id: llm-retry
-  name: '@deepseek-ai/dsh-llm-retry'
+  name: '@ahel/dsh-llm-retry'
 - id: config-editor
-  name: '@deepseek-ai/dsh-config-editor'
+  name: '@ahel/dsh-config-editor'
   disabled: !!js '!ctx.get(''profileContext'')'
 - id: settings
-  name: '@deepseek-ai/dsh-settings'
+  name: '@ahel/dsh-settings'
   disabled: !!js '!ctx.get(''profileContext'')'
 - id: authorization
-  name: '@deepseek-ai/dsh-authorization'
+  name: '@ahel/dsh-authorization'
 - id: credentials
-  name: '@deepseek-ai/dsh-credentials-local'
+  name: '@ahel/dsh-credentials-local'
 - id: llm-pi-ai
-  name: '@deepseek-ai/dsh-llm-pi-ai'
+  name: '@ahel/dsh-llm-pi-ai'
 - id: session-persistence-jsonl
-  name: '@deepseek-ai/dsh-session-persistence-jsonl'
+  name: '@ahel/dsh-session-persistence-jsonl'
   config:
     root: !!js dshHomePath('sessions')
 - id: attachment-local
-  name: '@deepseek-ai/dsh-attachment-local'
+  name: '@ahel/dsh-attachment-local'
 - id: session-query-sqlite
-  name: '@deepseek-ai/dsh-session-query-sqlite'
+  name: '@ahel/dsh-session-query-sqlite'
   config:
     path: ':memory:'
     openAt: never
 - id: session-projection
-  name: '@deepseek-ai/dsh-session-projection'
+  name: '@ahel/dsh-session-projection'
 - id: storage
-  name: '@deepseek-ai/dsh-storage'
+  name: '@ahel/dsh-storage'
 - id: storage-json
-  name: '@deepseek-ai/dsh-storage-json'
+  name: '@ahel/dsh-storage-json'
   config:
     root: !!js dshHomePath('storages')
 - id: storage-domain
-  name: '@deepseek-ai/dsh-storage-domain'
+  name: '@ahel/dsh-storage-domain'
   config:
     backend: json
 - id: session-projection-cache
-  name: '@deepseek-ai/dsh-session-projection-cache'
+  name: '@ahel/dsh-session-projection-cache'
   config:
     writeEveryEvents: 200
     writeIntervalMs: 5000
 - id: sandbox-policy
-  name: '@deepseek-ai/dsh-sandbox-policy'
+  name: '@ahel/dsh-sandbox-policy'
   config:
     mode: !!js process.env.DSH_PERMISSION_MODE ?? 'workspace-write'
     workspaceRoot: !!js process.cwd()
 - id: approval
-  name: '@deepseek-ai/dsh-user-approval'
+  name: '@ahel/dsh-user-approval'
   config:
     policy: !!js >-
       (process.env.DSH_PERMISSION_MODE ?? 'workspace-write') ===
       'danger-full-access' ? 'never' : 'ask'
 - id: commands
-  name: '@deepseek-ai/dsh-commands'
+  name: '@ahel/dsh-commands'
 - id: command-feedback
-  name: '@deepseek-ai/dsh-command-feedback'
+  name: '@ahel/dsh-command-feedback'
 - id: token-meter
-  name: '@deepseek-ai/dsh-token-meter'
+  name: '@ahel/dsh-token-meter'
 - id: timeout-policy
-  name: '@deepseek-ai/dsh-tool-call-timeout-policy'
+  name: '@ahel/dsh-tool-call-timeout-policy'
 - id: spill-local
-  name: '@deepseek-ai/dsh-spill-local'
+  name: '@ahel/dsh-spill-local'
 - id: spill-policy
-  name: '@deepseek-ai/dsh-spill-policy'
+  name: '@ahel/dsh-spill-policy'
   config:
     maxInlineTokens: 12500
 - id: session-checkpoint-policy
-  name: '@deepseek-ai/dsh-session-checkpoint-policy'
+  name: '@ahel/dsh-session-checkpoint-policy'
 - id: image-offload
-  name: '@deepseek-ai/dsh-compaction-image-offload'
+  name: '@ahel/dsh-compaction-image-offload'
 - id: repeat-tool-reminder
-  name: '@deepseek-ai/dsh-repeat-tool-reminder'
+  name: '@ahel/dsh-repeat-tool-reminder'
   config:
     thresholds:
       - 3
@@ -119,57 +119,57 @@
       - 8
     argumentsPreviewChars: 500
 - id: mcp-resources
-  name: '@deepseek-ai/dsh-mcp-resources'
-# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+  name: '@ahel/dsh-mcp-resources'
+# == @ahel/dsh-base, patched by @ahel/dsh-web-app
 - id: tools
-  name: '@deepseek-ai/dsh-tools'
+  name: '@ahel/dsh-tools'
   config:
     mode: !!js process.env.DSH_TOOLS_MODE
 - id: system-prompt
-  name: '@deepseek-ai/dsh-system-prompt'
+  name: '@ahel/dsh-system-prompt'
   config:
     personaSuffix: ''
     personaPrefix: You are Ahel, a helpful assistant powered by the {{model}} model.
-# == @deepseek-ai/dsh-base
+# == @ahel/dsh-base
 - id: agent-loop
-  name: '@deepseek-ai/dsh-agent-loop'
+  name: '@ahel/dsh-agent-loop'
   config:
     agents: []
 - id: fs-sandbox
-  name: '@deepseek-ai/dsh-fs-sandbox'
-# == @deepseek-ai/dsh-web-app
+  name: '@ahel/dsh-fs-sandbox'
+# == @ahel/dsh-web-app
 - id: message-feedback
-  name: '@deepseek-ai/dsh-message-feedback'
+  name: '@ahel/dsh-message-feedback'
   config:
     maxNoteBytes: 8192
 - id: session-log-download
-  name: '@deepseek-ai/dsh-session-log-export'
+  name: '@ahel/dsh-session-log-export'
 - id: workspace
-  name: '@deepseek-ai/dsh-workspace'
+  name: '@ahel/dsh-workspace'
 - id: session-reference
-  name: '@deepseek-ai/dsh-session-reference'
+  name: '@ahel/dsh-session-reference'
 - id: file-reference-local
-  name: '@deepseek-ai/dsh-file-reference-local'
+  name: '@ahel/dsh-file-reference-local'
 - id: session-stats
-  name: '@deepseek-ai/dsh-session-stats'
+  name: '@ahel/dsh-session-stats'
 - id: session-turn-outline
-  name: '@deepseek-ai/dsh-session-turn-outline'
+  name: '@ahel/dsh-session-turn-outline'
 - id: directory-picker
-  name: '@deepseek-ai/dsh-host-directory-picker-auto'
+  name: '@ahel/dsh-host-directory-picker-auto'
 - id: plugin-inventory
-  name: '@deepseek-ai/dsh-host-plugin-inventory'
+  name: '@ahel/dsh-host-plugin-inventory'
 - id: session-controller
-  name: '@deepseek-ai/dsh-api-session-controller'
+  name: '@ahel/dsh-api-session-controller'
 - id: settings-controller
-  name: '@deepseek-ai/dsh-api-settings-controller'
+  name: '@ahel/dsh-api-settings-controller'
 - id: workspace-controller
-  name: '@deepseek-ai/dsh-api-workspace-controller'
+  name: '@ahel/dsh-api-workspace-controller'
 - id: cordis-host-runner
-  name: '@deepseek-ai/dsh-cordis-host-runner'
+  name: '@ahel/dsh-cordis-host-runner'
 - id: web-startup
-  name: '@deepseek-ai/dsh-web-app/startup'
+  name: '@ahel/dsh-web-app/startup'
 - id: webserver
-  name: '@deepseek-ai/dsh-host-webserver'
+  name: '@ahel/dsh-host-webserver'
   inject:
     - webStartup
   config:
@@ -179,7 +179,7 @@
     compressionLevel: 1
     compressionThresholdBytes: 1024
 - id: web-runtime
-  name: '@deepseek-ai/dsh-web-app'
+  name: '@ahel/dsh-web-app'
   inject:
     - webStartup
   config:
@@ -189,102 +189,102 @@
     surfaceContext: true
     trustedHosts: !!js ctx.webStartup.trustedHosts
 - id: client-hmr
-  name: '@deepseek-ai/dsh-client-hmr'
+  name: '@ahel/dsh-client-hmr'
 - id: modules
-  name: '@deepseek-ai/dsh-client-modules'
+  name: '@ahel/dsh-client-modules'
 - id: connection
-  name: '@deepseek-ai/dsh-client-connection'
+  name: '@ahel/dsh-client-connection'
   inject:
     - webRuntime
   config:
     trustedHosts: !!js ctx.webRuntime.trustedHosts
 - id: file-upload
-  name: '@deepseek-ai/dsh-client-file-upload'
+  name: '@ahel/dsh-client-file-upload'
 - id: api-remotes
-  name: '@deepseek-ai/dsh-api-remotes'
+  name: '@ahel/dsh-api-remotes'
 - id: cordis-client-runner
-  name: '@deepseek-ai/dsh-cordis-client-runner'
+  name: '@ahel/dsh-cordis-client-runner'
 - id: ui-theme
-  name: '@deepseek-ai/dsh-client-ui-theme'
+  name: '@ahel/dsh-client-ui-theme'
 - id: locale
-  name: '@deepseek-ai/dsh-client-locale'
+  name: '@ahel/dsh-client-locale'
 - id: shortcuts
-  name: '@deepseek-ai/dsh-client-shortcuts'
+  name: '@ahel/dsh-client-shortcuts'
 - id: ui-shortcuts
-  name: '@deepseek-ai/dsh-client-ui-shortcuts'
+  name: '@ahel/dsh-client-ui-shortcuts'
 - id: ui-layout
-  name: '@deepseek-ai/dsh-client-ui-layout'
+  name: '@ahel/dsh-client-ui-layout'
 - id: ui-renderer
-  name: '@deepseek-ai/dsh-client-ui-renderer'
+  name: '@ahel/dsh-client-ui-renderer'
 - id: ui-session
-  name: '@deepseek-ai/dsh-client-ui-session'
+  name: '@ahel/dsh-client-ui-session'
 - id: resources
-  name: '@deepseek-ai/dsh-client-resources'
+  name: '@ahel/dsh-client-resources'
 - id: ui-sidebar
-  name: '@deepseek-ai/dsh-client-ui-sidebar'
+  name: '@ahel/dsh-client-ui-sidebar'
 - id: ui-sidebar-right
-  name: '@deepseek-ai/dsh-client-ui-sidebar-right'
+  name: '@ahel/dsh-client-ui-sidebar-right'
 - id: ui-settings
-  name: '@deepseek-ai/dsh-client-ui-settings'
+  name: '@ahel/dsh-client-ui-settings'
 - id: ui-settings-general
-  name: '@deepseek-ai/dsh-client-ui-settings-general'
+  name: '@ahel/dsh-client-ui-settings-general'
 - id: ui-settings-models
-  name: '@deepseek-ai/dsh-client-ui-settings-models'
+  name: '@ahel/dsh-client-ui-settings-models'
 - id: ui-plugin-manager
-  name: '@deepseek-ai/dsh-client-ui-plugin-manager'
+  name: '@ahel/dsh-client-ui-plugin-manager'
 - id: ui-settings-plugin-inventory
-  name: '@deepseek-ai/dsh-client-ui-settings-plugin-inventory'
+  name: '@ahel/dsh-client-ui-settings-plugin-inventory'
 - id: ui-conversation
-  name: '@deepseek-ai/dsh-client-ui-conversation'
+  name: '@ahel/dsh-client-ui-conversation'
 - id: ui-approval
-  name: '@deepseek-ai/dsh-client-ui-approval'
+  name: '@ahel/dsh-client-ui-approval'
 - id: ui-chat
-  name: '@deepseek-ai/dsh-client-ui-chat'
+  name: '@ahel/dsh-client-ui-chat'
 - id: ui-brand-ahel
-  name: '@deepseek-ai/dsh-client-ui-brand-ahel'
+  name: '@ahel/dsh-client-ui-brand-ahel'
 - id: ui-attachment
-  name: '@deepseek-ai/dsh-client-ui-attachment'
+  name: '@ahel/dsh-client-ui-attachment'
 - id: ui-tool
-  name: '@deepseek-ai/dsh-client-ui-tool'
+  name: '@ahel/dsh-client-ui-tool'
 - id: ui-workspace
-  name: '@deepseek-ai/dsh-client-ui-workspace'
+  name: '@ahel/dsh-client-ui-workspace'
 - id: ui-input-trigger
-  name: '@deepseek-ai/dsh-client-ui-input-trigger'
+  name: '@ahel/dsh-client-ui-input-trigger'
 - id: ui-commands
-  name: '@deepseek-ai/dsh-client-ui-commands'
+  name: '@ahel/dsh-client-ui-commands'
 - id: ui-reference
-  name: '@deepseek-ai/dsh-client-ui-reference'
+  name: '@ahel/dsh-client-ui-reference'
 - id: ui-message-feedback
-  name: '@deepseek-ai/dsh-client-ui-message-feedback'
+  name: '@ahel/dsh-client-ui-message-feedback'
 - id: ui-model-selection
-  name: '@deepseek-ai/dsh-client-ui-model-selection'
+  name: '@ahel/dsh-client-ui-model-selection'
 - id: ui-agent-preset
-  name: '@deepseek-ai/dsh-client-ui-agent-preset'
+  name: '@ahel/dsh-client-ui-agent-preset'
 - id: ui-settings-plugins
-  name: '@deepseek-ai/dsh-client-ui-settings-plugins'
+  name: '@ahel/dsh-client-ui-settings-plugins'
 - id: ui-settings-agent-loop
-  name: '@deepseek-ai/dsh-client-ui-settings-agent-loop'
+  name: '@ahel/dsh-client-ui-settings-agent-loop'
 - id: ui-user-questions
-  name: '@deepseek-ai/dsh-client-ui-user-questions'
+  name: '@ahel/dsh-client-ui-user-questions'
 - id: ui-trajectory
-  name: '@deepseek-ai/dsh-client-ui-trajectory'
+  name: '@ahel/dsh-client-ui-trajectory'
 - id: agent-preset-registry
-  name: '@deepseek-ai/dsh-agent-preset-registry'
+  name: '@ahel/dsh-agent-preset-registry'
   config:
     default: standard
 - id: preset-standard
-  name: '@deepseek-ai/dsh-agent-preset'
+  name: '@ahel/dsh-agent-preset'
   config:
     id: standard
     order: 1
     plugins:
       - id: persona
-        name: '@deepseek-ai/dsh-persona'
+        name: '@ahel/dsh-persona'
         config:
           suffix: ''
           prefix: You are Ahel, a helpful assistant powered by the {{model}} model.
       - id: time-context
-        name: '@deepseek-ai/dsh-time-context'
+        name: '@ahel/dsh-time-context'
       - id: compaction
         name: cordis:group
         group: true
@@ -293,14 +293,14 @@
           toolResultPruner: true
         config:
           - id: compaction-basic
-            name: '@deepseek-ai/dsh-compaction-basic'
+            name: '@ahel/dsh-compaction-basic'
           - id: command-compact
-            name: '@deepseek-ai/dsh-command-compact'
+            name: '@ahel/dsh-command-compact'
           - id: tool-result-pruner
-            name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+            name: '@ahel/dsh-compaction-tool-result-pruner'
             config:
               thresholdChars: 8192
               headChars: 4096
               tailChars: 1024
       - id: tool-ask-user
-        name: '@deepseek-ai/dsh-tool-ask-user'
+        name: '@ahel/dsh-tool-ask-user'

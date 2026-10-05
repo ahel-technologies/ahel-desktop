@@ -79,7 +79,7 @@ The app must stay running during sign-in, because the callback listens on port 3
 
 ## Prune
 
-Method: `dsh --profile web --dump-config` (296 rows, 258 active, 185 distinct `@deepseek-ai/*` plugin packages mounted out of 486 workspace packages). The overlay `docs/spike/prune-chat-mcp.cordis.yml` was then booted with `dsh --profile web --patch … --no-open`. It boots clean, with 0 inactive entries.
+Method: `dsh --profile web --dump-config` (296 rows, 258 active, 185 distinct `@ahel/*` plugin packages mounted out of 486 workspace packages). The overlay `docs/spike/prune-chat-mcp.cordis.yml` was then booted with `dsh --profile web --patch … --no-open`. It boots clean, with 0 inactive entries.
 
 Result: **102 keep / 84 drop** of the 185 mounted packages. Lists: `docs/spike/prune-keep.txt`, `docs/spike/prune-drop.txt`.
 
@@ -104,7 +104,7 @@ No GPL, AGPL, SSPL or BUSL-only package in either tree. Flagged:
 | Package | Licence | Pulled in by | Action |
 |---|---|---|---|
 | `@anthropic-ai/claude-agent-sdk` (+ darwin-arm64) | Unknown (Anthropic Commercial Terms) | `subagent-claude-code` | Drop (pruned) |
-| `@deepseek-ai/libreoffice-kit` (+ darwin-arm64) | MPL-2.0 | `desktop-host`, `office-to-pdf` | Drop (pruned) |
+| `@ahel/libreoffice-kit` (+ darwin-arm64) | MPL-2.0 | `desktop-host`, `office-to-pdf` | Drop (pruned) |
 | `@ubjs/core`, `@ubjs/node`, `@ubjs/node-darwin-arm64` | MPL-2.0 | `experimental/computer-use-cua-driver-native` | Drop |
 | `@trycua/cua-driver-darwin-arm64` | MIT AND MPL-2.0 | same | Drop |
 | `lightningcss` (+ darwin-arm64) | MPL-2.0 | Vite build (dev-time) | Keep, not shipped |
@@ -134,7 +134,7 @@ Grep across non-test, non-doc source.
 | Crash reports | Local crash report helper | `apps/desktop/src/crash-report.ts` |
 | Sentry / PostHog | None. "sentry" hits are unrelated words ("sentry" key handlers) | — |
 
-Spike run note: the first two packaged launches (about 5 minutes) ran with default Desktop telemetry on, so anonymous product telemetry may have reached `deepseeksvc.com`. Later runs use `docs/spike/desktop-no-telemetry.cordis.yml`. Electron also created `~/Library/Application Support/@deepseek-ai/dsh-desktop`.
+Spike run note: the first two packaged launches (about 5 minutes) ran with default Desktop telemetry on, so anonymous product telemetry may have reached `deepseeksvc.com`. Later runs use `docs/spike/desktop-no-telemetry.cordis.yml`. Electron also created `~/Library/Application Support/@ahel/dsh-desktop`.
 
 ### DeepSeek key, account and model UI to remove in Phase 1 (Karl decision 2)
 
@@ -211,9 +211,9 @@ Source mark for Phase 1: `ahel/design/project/assets/Logos/ahel-tile.svg` (and `
   - `dsh://` is set by `app.setAsDefaultProtocolClient('dsh')` at `main.ts:1228`.
   - `dsh-app://app/` is checked in `main.ts:719,726` and `keyboard.ts:68`.
   - Keep `dsh-app` internally or rename it together with every origin check.
-- **User data dir.** `~/Library/Application Support/@deepseek-ai/dsh-desktop` follows the desktop `package.json` name. Rename the package or set `app.setName`/`userData` explicitly. `DSH_HOME` defaults to `~/.dsh` (`packages/util/home-paths/src/index.ts:12`).
+- **User data dir.** `~/Library/Application Support/@ahel/dsh-desktop` follows the desktop `package.json` name. Rename the package or set `app.setName`/`userData` explicitly. `DSH_HOME` defaults to `~/.dsh` (`packages/util/home-paths/src/index.ts:12`).
 - **Theme tokens.** The base custom properties are in `packages/client/ui-theme/src/styles/base.css` (15 vars), with `boot-theme.ts`, `focus.css` and `gradient-shadow-text.css` next to it. DeepSeek blue `#4D6BFE` is hard-coded in `apps/desktop/renderer/{update-dialog,mandatory-update}.css` and `packages/client/ui-attachment/src/FileCard.module.css`. Phase 1 maps these to the Ahel "Studio" slate tokens from `ahel/design`.
-- **npm scope.** `@deepseek-ai/*` on every workspace package. Renaming it is optional for the binary, but it is visible in the plugin manager and in error messages.
+- **npm scope.** `@ahel/*` on every workspace package. Renaming it is optional for the binary, but it is visible in the plugin manager and in error messages.
 
 ## Go/No-go
 

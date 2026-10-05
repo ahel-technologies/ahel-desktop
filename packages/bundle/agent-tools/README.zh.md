@@ -3,7 +3,7 @@ description: "headless、SDK 与 ACP profile 的本地 agent 工具平面：shel
 kind: "package-bundle"
 ---
 
-# @deepseek-ai/dsh-agent-tools
+# @ahel/dsh-agent-tools
 
 [English](README.md) | 中文
 
@@ -29,13 +29,13 @@ kind: "package-bundle"
 
 ### 加入 profile
 
-在 profile 的 `package.json` 中，把本组合包列在 `@deepseek-ai/dsh-base` 之后、模式组合包之前。随发行版交付的 `headless` profile 使用以下顺序：
+在 profile 的 `package.json` 中，把本组合包列在 `@ahel/dsh-base` 之后、模式组合包之前。随发行版交付的 `headless` profile 使用以下顺序：
 
 ```json
 {
   "dsh": {
     "profile": {
-      "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-agent-tools", "@deepseek-ai/dsh-headless"]
+      "bundles": ["@ahel/dsh-base", "@ahel/dsh-agent-tools", "@ahel/dsh-headless"]
     }
   }
 }
@@ -68,12 +68,12 @@ kind: "package-bundle"
 ```yaml
 - insert:
     - id: tool-str-replace-editor
-      name: '@deepseek-ai/dsh-tool-str-replace-editor'
+      name: '@ahel/dsh-tool-str-replace-editor'
       config:
         maxOutputChars: 16000
 ```
 
-`ralph` 迭代工具默认禁用；后续 patch 层用 `- id: tool-ralph` 与 `disabled: false` 恢复它。Web 搜索需要提供方：挂载一个提供方（例如 `@deepseek-ai/dsh-web-search-exa`），并在 `web` 行的 `searchProvider` 中指定它。
+`ralph` 迭代工具默认禁用；后续 patch 层用 `- id: tool-ralph` 与 `disabled: false` 恢复它。Web 搜索需要提供方：挂载一个提供方（例如 `@ahel/dsh-web-search-exa`），并在 `web` 行的 `searchProvider` 中指定它。
 
 ### 启用遥测
 
@@ -104,7 +104,7 @@ patch 会替换目标行的整个 `config`，而不是合并进它。后续组�
 
 ### 平台门控
 
-patch 在自身上按平台门控两个 shell 栈：`bash-sandbox` 与 `tool-bash` 携带 `disabled: !!js process.platform === 'win32'`，孪生行 `pwsh-sandbox` 与 `tool-pwsh` 以取反的表达式仅在 win32 挂载。权限面与 POSIX 完全一致：沙箱策略通过 Windows ACL 受限令牌 runner（`dsh-sandbox-local` → `@deepseek-ai/dsh-sandbox-windows-acl`）执行相同的文件效果策略，核心的 `fs-sandbox` 继续围栏 `ctx.fs` 写入。
+patch 在自身上按平台门控两个 shell 栈：`bash-sandbox` 与 `tool-bash` 携带 `disabled: !!js process.platform === 'win32'`，孪生行 `pwsh-sandbox` 与 `tool-pwsh` 以取反的表达式仅在 win32 挂载。权限面与 POSIX 完全一致：沙箱策略通过 Windows ACL 受限令牌 runner（`dsh-sandbox-local` → `@ahel/dsh-sandbox-windows-acl`）执行相同的文件效果策略，核心的 `fs-sandbox` 继续围栏 `ctx.fs` 写入。
 
 ### 源码地图
 
@@ -150,7 +150,7 @@ patch 在自身上按平台门控两个 shell 栈：`bash-sandbox` 与 `tool-bas
 - **不随 dsh 运行时交付**——本包为私有包，且是 CLI 的开发依赖，因此只有源码检出能解析它。
 - **没有 web 组合**——`web` profile 不列出本组合包，也没有随附测试覆盖该组合。
 - **覆盖会替换整个设置块**——patch 条目会替换目标的整个配置，因此你的覆盖必须重述每个想保留的设置；不会自动合并。
-- **Windows 的临时目录授权是按会话的私有子目录**——`workspace-write` 把写入限制在工作区与会话自己的 temp 子目录（`<temp>\dsh-<hash>`，受限子进程的 TMP/TEMP 被改写）；`read-only` 不授予任何临时目录写入权限。见 `@deepseek-ai/dsh-sandbox-windows-acl`。
+- **Windows 的临时目录授权是按会话的私有子目录**——`workspace-write` 把写入限制在工作区与会话自己的 temp 子目录（`<temp>\dsh-<hash>`，受限子进程的 TMP/TEMP 被改写）；`read-only` 不授予任何临时目录写入权限。见 `@ahel/dsh-sandbox-windows-acl`。
 - **Web 搜索没有默认提供方**——在 profile 挂载搜索提供方并在 `searchProvider` 中指定它之前，`web_search` 工具没有可用后端。
 
 <a id="dev-note"></a>

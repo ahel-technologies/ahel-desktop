@@ -1,4 +1,4 @@
-# Agent preset standard: one `@deepseek-ai/dsh-agent-preset` declaration inserted
+# Agent preset standard: one `@ahel/dsh-agent-preset` declaration inserted
 # after the web patch. Edits saved from the Web editor override this row's
 # `config.plugins` by id from the profile patch.
 #
@@ -7,18 +7,18 @@
 # the host `mcp-client` rows, not through this preset.
 - insert:
     - id: preset-standard
-      name: '@deepseek-ai/dsh-agent-preset'
+      name: '@ahel/dsh-agent-preset'
       config:
         id: standard
         order: 1
         plugins:
           - id: persona
-            name: '@deepseek-ai/dsh-persona'
+            name: '@ahel/dsh-persona'
             config:
               suffix: ''
               prefix: You are Ahel, a helpful assistant powered by the {{model}} model.
           - id: time-context
-            name: '@deepseek-ai/dsh-time-context'
+            name: '@ahel/dsh-time-context'
           - id: compaction
             name: cordis:group
             group: true
@@ -27,14 +27,14 @@
               toolResultPruner: true
             config:
               - id: compaction-basic
-                name: '@deepseek-ai/dsh-compaction-basic'
+                name: '@ahel/dsh-compaction-basic'
               - id: command-compact
-                name: '@deepseek-ai/dsh-command-compact'
+                name: '@ahel/dsh-command-compact'
               - id: tool-result-pruner
-                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                name: '@ahel/dsh-compaction-tool-result-pruner'
                 config:
                   thresholdChars: 8192
                   headChars: 4096
                   tailChars: 1024
           - id: tool-ask-user
-            name: '@deepseek-ai/dsh-tool-ask-user'
+            name: '@ahel/dsh-tool-ask-user'

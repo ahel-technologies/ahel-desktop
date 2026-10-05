@@ -3,7 +3,7 @@ description: "Client Tool presentation plugin for the dsh web client: whole-call
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-client-ui-tool
+# @ahel/dsh-client-ui-tool
 
 English | [中文](README.zh.md)
 
@@ -47,7 +47,7 @@ The owner payload is `ToolCallOwnerProps`: `callId`, `toolName`, the `phase` dis
 
 ### MCP Apps card slot
 
-A settled, successful call whose persisted result metadata carries an `mcpApp` record also renders the single `tool.call.app` slot directly below the call's own row. The owner payload is `ToolAppOwnerProps`: `callId`, `toolName`, and the settled `block`. The occupant validates the record; with no occupant the row renders alone. [`@deepseek-ai/dsh-client-ui-mcp-app`](../ui-mcp-app/README.md) fills it.
+A settled, successful call whose persisted result metadata carries an `mcpApp` record also renders the single `tool.call.app` slot directly below the call's own row. The owner payload is `ToolAppOwnerProps`: `callId`, `toolName`, and the settled `block`. The occupant validates the record; with no occupant the row renders alone. [`@ahel/dsh-client-ui-mcp-app`](../ui-mcp-app/README.md) fills it.
 
 ### Built-in views
 
@@ -93,7 +93,7 @@ Recorded tool details cover goal and schedule tools, Cordis inspection, workflow
 
 Expanded status dots and labels use static semantic colors. Receipt and job-output headers keep neutral text and omit the status while expanded. An interruption receipt confirms only that interruption was requested.
 
-The terminal model uses `hasSpillNotice` from the browser-safe `@deepseek-ai/dsh-spill-policy/notice` entry, not an independent UI pattern. The [spill-policy README](../../spill/spill-policy/README.md#shared-notice-ownership) owns notice formatting and recognition. This check conservatively selects generic output; matching text cannot authenticate its source, and replay leaves recorded result bytes untouched.
+The terminal model uses `hasSpillNotice` from the browser-safe `@ahel/dsh-spill-policy/notice` entry, not an independent UI pattern. The [spill-policy README](../../spill/spill-policy/README.md#shared-notice-ownership) owns notice formatting and recognition. This check conservatively selects generic output; matching text cannot authenticate its source, and replay leaves recorded result bytes untouched.
 
 ### Declared optional capabilities
 

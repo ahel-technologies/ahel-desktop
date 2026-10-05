@@ -3,7 +3,7 @@ description: "dsh Web 客户端已移除的网页搜索提供方设置页的占�
 kind: "package-reference"
 ---
 
-# @deepseek-ai/dsh-client-ui-settings-web-search
+# @ahel/dsh-client-ui-settings-web-search
 
 [English](README.md) | 中文
 

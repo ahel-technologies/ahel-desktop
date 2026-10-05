@@ -329,7 +329,7 @@ Source: [`packages/core/session/src/types.ts:341`](../packages/core/session/src/
   commandId: CommandId
   kind: 'success' | 'error'
   text?: string
-  sourceEventSeq?: import('@deepseek-ai/dsh-session/types').SessionSeq
+  sourceEventSeq?: import('@ahel/dsh-session/types').SessionSeq
 }
 ```
 

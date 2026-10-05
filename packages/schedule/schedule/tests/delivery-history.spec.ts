@@ -1,7 +1,7 @@
 /** Saved delivery queries use task storage, never Session history or Agent activation. */
-import type { Context } from '@deepseek-ai/cordis'
-import { SessionId } from '@deepseek-ai/dsh-session'
-import { MessageId } from '@deepseek-ai/dsh-llm/brand'
+import type { Context } from '@ahel/cordis'
+import { SessionId } from '@ahel/dsh-session'
+import { MessageId } from '@ahel/dsh-llm/brand'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { ScheduleId, ScheduleInputError, createAfterScheduleRecord } from '../src/domain.ts'
 import { scheduleDomain, type ScheduleTask } from '../src/storage.ts'

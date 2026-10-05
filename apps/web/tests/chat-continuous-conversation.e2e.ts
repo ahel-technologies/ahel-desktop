@@ -9,9 +9,9 @@ import { join } from 'node:path'
 import type { Browser, Page } from 'playwright'
 import { chromium } from 'playwright'
 import { afterAll, beforeAll, describe, expect, it, onTestFailed } from 'vitest'
-import { ToolCallId, expandAssistantStream, type StreamChunk } from '@deepseek-ai/dsh-llm'
-import type { ReplayEntry, ReplayOverrideDoc } from '@deepseek-ai/dsh-llm-replay'
-import type { SessionEvent, SessionId } from '@deepseek-ai/dsh-session'
+import { ToolCallId, expandAssistantStream, type StreamChunk } from '@ahel/dsh-llm'
+import type { ReplayEntry, ReplayOverrideDoc } from '@ahel/dsh-llm-replay'
+import type { SessionEvent, SessionId } from '@ahel/dsh-session'
 import {
   launchWebScaffold,
   watchConsole,

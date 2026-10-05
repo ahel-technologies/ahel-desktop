@@ -5,57 +5,57 @@
 /:
   en: 78dd407a27fbd612
   zh: 15ab82e12eb2aedc
-/deepseek-ai-dsh-client-ui-settings-models:
-  en: 65e1e8a17a23e576
-  zh: 01de4e98a002d376
-/deepseek-ai-dsh-client-ui-settings-models/summary:
+/ahel-dsh-client-ui-settings-models:
+  en: ae0477e73861373a
+  zh: 9a6587e46b994dbc
+/ahel-dsh-client-ui-settings-models/summary:
   en: a2d4f52432380d6c
   zh: 3f6b1fadab6b7584
-/deepseek-ai-dsh-client-ui-settings-models/table-of-contents:
+/ahel-dsh-client-ui-settings-models/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
-/deepseek-ai-dsh-client-ui-settings-models/use-this-package:
+/ahel-dsh-client-ui-settings-models/use-this-package:
   en: bfed3b50fa99bac3
   zh: 4aeb3ea1743c28a4
-/deepseek-ai-dsh-client-ui-settings-models/use-this-package/api-keys:
+/ahel-dsh-client-ui-settings-models/use-this-package/api-keys:
   en: c2f2a5c06ef20d5b
   zh: 49a7eb0b66b4ed53
-/deepseek-ai-dsh-client-ui-settings-models/use-this-package/editing-a-provider:
+/ahel-dsh-client-ui-settings-models/use-this-package/editing-a-provider:
   en: 2d55e77b475b900a
   zh: b3bf7a94be6c79e5
-/deepseek-ai-dsh-client-ui-settings-models/use-this-package/adding-and-deleting-providers:
+/ahel-dsh-client-ui-settings-models/use-this-package/adding-and-deleting-providers:
   en: 9d533c65c82cd4a4
   zh: 0a5da334e127c035
-/deepseek-ai-dsh-client-ui-settings-models/use-this-package/first-run-dialogs:
+/ahel-dsh-client-ui-settings-models/use-this-package/first-run-dialogs:
   en: 9227c7d9cbffacaa
   zh: 1177704f618b3d39
-/deepseek-ai-dsh-client-ui-settings-models/use-this-package/extension-slots:
+/ahel-dsh-client-ui-settings-models/use-this-package/extension-slots:
   en: 572fda15ad3bcf3c
   zh: 5365aa93d2d398a0
-/deepseek-ai-dsh-client-ui-settings-models/understand-the-implementation:
+/ahel-dsh-client-ui-settings-models/understand-the-implementation:
   en: a87afbec5e339b36
   zh: 6348c81af7e650e1
-/deepseek-ai-dsh-client-ui-settings-models/understand-the-implementation/validation:
-  en: e0892d02af754442
-  zh: f2f2f6aef212502f
-/deepseek-ai-dsh-client-ui-settings-models/understand-the-implementation/concurrency-and-credentials:
+/ahel-dsh-client-ui-settings-models/understand-the-implementation/validation:
+  en: 6cc701d36f4e654e
+  zh: 441abf91ee81daac
+/ahel-dsh-client-ui-settings-models/understand-the-implementation/concurrency-and-credentials:
   en: 670b8c066aed9b7a
   zh: 2bedba9a2e0e3fee
-/deepseek-ai-dsh-client-ui-settings-models/understand-the-implementation/onboarding-coordinator:
+/ahel-dsh-client-ui-settings-models/understand-the-implementation/onboarding-coordinator:
   en: d9ce44768bd053ea
   zh: 61a6131377f813f3
-/deepseek-ai-dsh-client-ui-settings-models/further-exploration:
+/ahel-dsh-client-ui-settings-models/further-exploration:
   en: ebe784b59b29d781
   zh: 7566b21db1fdf1f0
-/deepseek-ai-dsh-client-ui-settings-models/model-experience:
+/ahel-dsh-client-ui-settings-models/model-experience:
   en: 3120df665299c634
   zh: 1d9f365d091d0d2a
-/deepseek-ai-dsh-client-ui-settings-models/model-experience/kv-cache-effect:
+/ahel-dsh-client-ui-settings-models/model-experience/kv-cache-effect:
   en: ca75c51c89c2c9b0
   zh: 9779c98fff4c949a
-/deepseek-ai-dsh-client-ui-settings-models/known-limitations-and-deferred-work:
+/ahel-dsh-client-ui-settings-models/known-limitations-and-deferred-work:
   en: 859fb098ebdd586b
   zh: 1e739d58e009e304
-/deepseek-ai-dsh-client-ui-settings-models/known-limitations-and-deferred-work/dev-note:
+/ahel-dsh-client-ui-settings-models/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 3bb0c20c93f16f98

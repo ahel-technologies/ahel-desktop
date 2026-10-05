@@ -15,49 +15,49 @@
 # Ahel Desktop keeps this layer to the chat core: model routing (llm-pi-ai),
 # sessions, settings, credentials, approvals and MCP resources. Shell,
 # filesystem tools, sandboxes, skills, subagents, PTC, workflows, jobs, goals,
-# plan mode, web tools and telemetry live in `@deepseek-ai/dsh-agent-tools`,
+# plan mode, web tools and telemetry live in `@ahel/dsh-agent-tools`,
 # which only the headless, sdk and acp profiles mount; the web and desktop
 # profiles never load them.
 
 - insert:
     - id: plugin-manager
-      name: '@deepseek-ai/dsh-plugin-manager'
+      name: '@ahel/dsh-plugin-manager'
       disabled: !!js "!ctx.get('profileContext')"
 
     - id: timer
-      name: '@deepseek-ai/cordis-plugin-timer'
+      name: '@ahel/cordis-plugin-timer'
 
     # Profile configuration reloads by default; module roots are opt-in.
     - id: hmr
-      name: '@deepseek-ai/dsh-hmr'
+      name: '@ahel/dsh-hmr'
       disabled: !!js "!ctx.get('profileContext')"
       config:
         root: []
 
     - id: llm
-      name: '@deepseek-ai/dsh-llm'
+      name: '@ahel/dsh-llm'
 
     - id: session
-      name: '@deepseek-ai/dsh-session'
+      name: '@ahel/dsh-session'
 
     - id: typert
-      name: '@deepseek-ai/dsh-typert-registry'
+      name: '@ahel/dsh-typert-registry'
 
     - id: typert-loader
-      name: '@deepseek-ai/dsh-typert-loader'
+      name: '@ahel/dsh-typert-loader'
 
     - id: typert-gateway
-      name: '@deepseek-ai/dsh-api-gateway'
+      name: '@ahel/dsh-api-gateway'
 
     - id: session-title
-      name: '@deepseek-ai/dsh-session-title'
+      name: '@ahel/dsh-session-title'
       config:
         fallbackMaxWords: 5
         fallbackMaxBytes: 40
         maxTitleBytes: 80
 
     - id: session-title-llm
-      name: '@deepseek-ai/dsh-session-title-first-prompt-llm'
+      name: '@ahel/dsh-session-title-first-prompt-llm'
       config:
         targetWords: 5
         targetCjkCharacters: 10
@@ -66,28 +66,28 @@
         timeoutMs: 60000
 
     - id: user-questions
-      name: '@deepseek-ai/dsh-user-questions'
+      name: '@ahel/dsh-user-questions'
 
     - id: agent
-      name: '@deepseek-ai/dsh-agent'
+      name: '@ahel/dsh-agent'
 
     # The transport-independent default for Agents created by entry points.
     # No provider is pinned: a saved selection wins, otherwise consumers fall
     # back to the first configured model route (none until the person adds a
     # model in Settings → Models).
     - id: agent-default-model
-      name: '@deepseek-ai/dsh-agent-default-model'
+      name: '@ahel/dsh-agent-default-model'
 
     - id: llm-retry
-      name: '@deepseek-ai/dsh-llm-retry'
+      name: '@ahel/dsh-llm-retry'
 
     # Live configuration forms persist through the launcher's profile.
     - id: config-editor
-      name: '@deepseek-ai/dsh-config-editor'
+      name: '@ahel/dsh-config-editor'
       disabled: !!js "!ctx.get('profileContext')"
 
     - id: settings
-      name: '@deepseek-ai/dsh-settings'
+      name: '@ahel/dsh-settings'
       disabled: !!js "!ctx.get('profileContext')"
 
     # Credential sources: inherited environment over the managed
@@ -95,10 +95,10 @@
     # Adapters resolve references per request; the Models page writes only the
     # managed document, which is never materialized into the process environment.
     - id: authorization
-      name: '@deepseek-ai/dsh-authorization'
+      name: '@ahel/dsh-authorization'
 
     - id: credentials
-      name: '@deepseek-ai/dsh-credentials-local'
+      name: '@ahel/dsh-credentials-local'
 
     # The pi-ai multi-provider twin, mounted dormant: zero routes (and no extra
     # models in the picker) until a `llm-pi-ai:` settings section supplies provider
@@ -108,10 +108,10 @@
     # adapters exist is composition; which providers run is the user's settings
     # document.
     - id: llm-pi-ai
-      name: '@deepseek-ai/dsh-llm-pi-ai'
+      name: '@ahel/dsh-llm-pi-ai'
 
     - id: session-persistence-jsonl
-      name: '@deepseek-ai/dsh-session-persistence-jsonl'
+      name: '@ahel/dsh-session-persistence-jsonl'
       config:
         root: !!js dshHomePath('sessions')
 
@@ -119,7 +119,7 @@
     # keep content-addressed references that this shared backend resolves for
     # provider requests and authorized history reads.
     - id: attachment-local
-      name: '@deepseek-ai/dsh-attachment-local'
+      name: '@ahel/dsh-attachment-local'
 
     # Full-text session search is opt-in. `openAt: never` keeps
     # ctx.sessionQuery mounted — exact reads, titles, and lineage traces
@@ -130,7 +130,7 @@
     # `first-search` or `startup` in a later patch layer (profile
     # cordis.patch.yml or a --patch overlay), typically with a durable `path`.
     - id: session-query-sqlite
-      name: '@deepseek-ai/dsh-session-query-sqlite'
+      name: '@ahel/dsh-session-query-sqlite'
       config:
         path: ':memory:'
         openAt: never
@@ -139,22 +139,22 @@
     # through its registered units, so the `list_agents` surface below fails
     # loud without it; web layers reuse this same mount for list rows.
     - id: session-projection
-      name: '@deepseek-ai/dsh-session-projection'
+      name: '@ahel/dsh-session-projection'
 
     # Durable KV storage: the storage hub, the json backend, and the
     # schema-validated domain form over them. Session-layer persistence (the
     # projection cache below; workspace in web layers)
     # routes through this stack, so it belongs to the shared base.
     - id: storage
-      name: '@deepseek-ai/dsh-storage'
+      name: '@ahel/dsh-storage'
 
     - id: storage-json
-      name: '@deepseek-ai/dsh-storage-json'
+      name: '@ahel/dsh-storage-json'
       config:
         root: !!js dshHomePath('storages')
 
     - id: storage-domain
-      name: '@deepseek-ai/dsh-storage-domain'
+      name: '@ahel/dsh-storage-domain'
       config:
         backend: json
 
@@ -163,83 +163,83 @@
     # checkpoint document per session), serving the session listing's
     # projection column.
     - id: session-projection-cache
-      name: '@deepseek-ai/dsh-session-projection-cache'
+      name: '@ahel/dsh-session-projection-cache'
       config:
         writeEveryEvents: 200
         writeIntervalMs: 5000
 
     - id: sandbox-policy
-      name: '@deepseek-ai/dsh-sandbox-policy'
+      name: '@ahel/dsh-sandbox-policy'
       config:
         mode: !!js process.env.DSH_PERMISSION_MODE ?? 'workspace-write'
         workspaceRoot: !!js process.cwd()
 
     - id: approval
-      name: '@deepseek-ai/dsh-user-approval'
+      name: '@ahel/dsh-user-approval'
       config:
         policy: !!js "(process.env.DSH_PERMISSION_MODE ?? 'workspace-write') === 'danger-full-access' ? 'never' : 'ask'"
 
     - id: commands
-      name: '@deepseek-ai/dsh-commands'
+      name: '@ahel/dsh-commands'
 
     - id: command-feedback
-      name: '@deepseek-ai/dsh-command-feedback'
+      name: '@ahel/dsh-command-feedback'
 
     - id: token-meter
-      name: '@deepseek-ai/dsh-token-meter'
+      name: '@ahel/dsh-token-meter'
 
     - id: timeout-policy
-      name: '@deepseek-ai/dsh-tool-call-timeout-policy'
+      name: '@ahel/dsh-tool-call-timeout-policy'
 
     - id: spill-local
-      name: '@deepseek-ai/dsh-spill-local'
+      name: '@ahel/dsh-spill-local'
 
     - id: spill-policy
-      name: '@deepseek-ai/dsh-spill-policy'
+      name: '@ahel/dsh-spill-policy'
       config:
         maxInlineTokens: 12500
 
     # Durability checkpoints before each model request and top-level dispatch.
     - id: session-checkpoint-policy
-      name: '@deepseek-ai/dsh-session-checkpoint-policy'
+      name: '@ahel/dsh-session-checkpoint-policy'
 
     # When an image-capable route rejects a request as over its image budget,
     # replace the oldest images with placeholders on the surface and retry.
     - id: image-offload
-      name: '@deepseek-ai/dsh-compaction-image-offload'
+      name: '@ahel/dsh-compaction-image-offload'
 
     # Consecutive-repeat reminders on the tool chain.
     - id: repeat-tool-reminder
-      name: '@deepseek-ai/dsh-repeat-tool-reminder'
+      name: '@ahel/dsh-repeat-tool-reminder'
       config:
         thresholds: [3, 5, 8]
         argumentsPreviewChars: 500
 
     - id: mcp-resources
-      name: '@deepseek-ai/dsh-mcp-resources'
+      name: '@ahel/dsh-mcp-resources'
 
     # ── rows every mode mounts, whose values each overlay may state ──────────────
 
     # The tool registry. Presentation mode is a deployment choice; omitting it here
     # keeps the schema default (native).
     - id: tools
-      name: '@deepseek-ai/dsh-tools'
+      name: '@ahel/dsh-tools'
 
     # The deployment persona is a deployment choice; plan-mode and tool plugins own
     # their own prompt sections.
     - id: system-prompt
-      name: '@deepseek-ai/dsh-system-prompt'
+      name: '@ahel/dsh-system-prompt'
       config:
         personaPrefix: ''
 
     # Agents created at startup. The base stays empty; raw overlays may create
     # agents, while Web creates sessions on client request.
     - id: agent-loop
-      name: '@deepseek-ai/dsh-agent-loop'
+      name: '@ahel/dsh-agent-loop'
       config:
         agents: []
 
     # The sandboxed filesystem provider. `cwd` defaults to `process.cwd()`; an
     # overlay can pin another workspace.
     - id: fs-sandbox
-      name: '@deepseek-ai/dsh-fs-sandbox'
+      name: '@ahel/dsh-fs-sandbox'
