@@ -45,7 +45,7 @@ async function server(reply: (response: ServerResponse, count: number) => void) 
   return {
     url: `http://127.0.0.1:${address.port}`, requests,
     async close() {
-      const closed = new Promise<void>((resolve, reject) => http.close(error => error ? reject(error) : resolve()))
+      const closed = new Promise<void>((resolve, reject) => http.close((error) => { if (error) reject(error); else resolve() }))
       http.closeAllConnections()
       await closed
     },

@@ -20,7 +20,7 @@ afterEach(() => { document.body.replaceChildren(); vi.unstubAllGlobals(); vi.res
 it('exposes no account, onboarding or Platform bridge to the application document', async () => {
   vi.stubGlobal('location', new URL('ahel-app://app/'))
   await import('../src/preload-app.ts')
-  const names = electron.contextBridge.exposeInMainWorld.mock.calls.map(([name]) => name)
+  const names = electron.contextBridge.exposeInMainWorld.mock.calls.map((call: unknown[]) => call[0])
   expect(names).not.toContain('dshOnboarding')
   expect(names).not.toContain('dshPlatform')
 })
