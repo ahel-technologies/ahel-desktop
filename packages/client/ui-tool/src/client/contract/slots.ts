@@ -42,7 +42,24 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * slot.
      */
     'tool.call.images': { kind: 'single'; scope: 'session'; owner: ToolImagesOwnerProps }
+    /**
+     * Interactive card for a settled, successful Tool call whose persisted
+     * result metadata carries an `mcpApp` record (an MCP Apps `ui://`
+     * resource). Rendered below the call's row; composing no card plugin
+     * leaves the row alone. The occupant validates the record itself.
+     */
+    'tool.call.app': { kind: 'single'; scope: 'session'; owner: ToolAppOwnerProps }
   }
+}
+
+/** Owner currency of the MCP Apps card slot. */
+export interface ToolAppOwnerProps {
+  /** Call identity, stable across all stages. */
+  callId: string
+  /** Wire Tool name. */
+  toolName: string
+  /** The settled call: arguments, model-facing content, and persisted metadata. */
+  block: ToolResultNode
 }
 
 /** Owner currency of the Tool image gallery slot: references plus the loader. */
@@ -152,6 +169,6 @@ export type ToolHostInfoInjected = {
 
 /** Full props of the Tool call-tree renderer registered as a tool-call Chat Node. */
 export type ToolTreeProps = PropsRuntime<'conversation.chat.node', 'tool-call'>
-  & PropsRenderSlots<'tool.call.toolview'>
+  & PropsRenderSlots<'tool.call.toolview' | 'tool.call.app'>
   & PropsLocale<'conversation'>
   & InjectFace<ToolHostInfoInjected>
