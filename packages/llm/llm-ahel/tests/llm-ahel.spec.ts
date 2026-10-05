@@ -100,6 +100,6 @@ it('serves Ahel models with the account bearer and explains a 402', async () => 
   expect(proxy.seen.at(-1)).toMatchObject({ method: 'POST', path: '/api/llm/v1/chat/completions', headers: { authorization: 'Bearer access-1' } })
 
   const refused = await ask(ctx)
-  expect(refused.finish).toMatchObject({ kind: 'error', failure: { code: 'QUOTA', status: 402 } })
+  expect(refused.finish).toMatchObject({ kind: 'error', failure: { code: 'ACCOUNT_QUOTA', status: 402 } })
   expect(refused.finish.kind === 'error' ? refused.finish.failure.message : '').toMatch(/^Ahel models: The workspace balance cannot cover this request\./)
 })

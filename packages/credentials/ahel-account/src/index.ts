@@ -58,6 +58,12 @@ export interface Config {
   refreshSkewMs?: number
   /** Selected ahel.ai workspace id, sent as `?workspace=` by the Ahel MCP server and models; unset uses the account default. */
   workspace?: Volatile<string | undefined>
+  /** Path on `appOrigin` read to tell whether ahel.ai is reachable; any HTTP answer counts. */
+  healthPath?: string
+  /** Wait between reachability reads while ahel.ai answers, in milliseconds. */
+  reachableIntervalMs?: number
+  /** Wait between reachability reads while ahel.ai does not answer, in milliseconds. */
+  unreachableIntervalMs?: number
 }
 
 /** Validated configuration. */
@@ -70,6 +76,9 @@ export const Config = Schema.object({
   requestTimeoutMs: Schema.number().min(1).max(120_000).default(30_000),
   refreshSkewMs: Schema.number().min(0).max(3_600_000).default(60_000),
   workspace: Schema.string().volatile(),
+  healthPath: Schema.string().pattern(/^\//).default('/api/health/live'),
+  reachableIntervalMs: Schema.number().min(1_000).max(3_600_000).default(60_000),
+  unreachableIntervalMs: Schema.number().min(1_000).max(3_600_000).default(5_000),
 })
 
 /** Opens the authorize URL in the person's browser (Electron `shell.openExternal`). */
@@ -120,6 +129,7 @@ export class AhelAccount extends TypertRemoteService {
   private opener: ExternalOpener | undefined
   private readonly listeners = new Set<() => void>()
   private closed = false
+  private reachable = true
 
   /**
    * @param ctx - Host context with the credentials service.
@@ -151,6 +161,30 @@ export class AhelAccount extends TypertRemoteService {
       this.attempt?.controller.abort()
       for (const listener of this.listeners) listener()
     }, 'ahel-account.lifetime')
+    const health = new URL(resolved.healthPath, this.appOrigin).href
+    ctx.effect(() => {
+      let timer: ReturnType<typeof setTimeout> | undefined
+      const controller = new AbortController()
+      const probe = async (): Promise<void> => {
+        let reachable = true
+        try {
+          const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(this.requestTimeoutMs)])
+          const response = await fetch(health, { redirect: 'manual', signal })
+          await response.body?.cancel()
+        } catch (_unreachable) {
+          // Only a failed connection or a timeout reaches here; every HTTP answer means ahel.ai is up.
+          reachable = controller.signal.aborted
+        }
+        if (controller.signal.aborted) return
+        if (reachable !== this.reachable) {
+          this.reachable = reachable
+          this.changed()
+        }
+        timer = setTimeout(() => { void probe() }, reachable ? resolved.reachableIntervalMs : resolved.unreachableIntervalMs)
+      }
+      void probe()
+      return () => { controller.abort(); clearTimeout(timer) }
+    }, 'ahel-account.reachability')
   }
 
   /**
@@ -166,6 +200,7 @@ export class AhelAccount extends TypertRemoteService {
       profile,
       attempt: this.attempt?.view ?? null,
       workspace: profile === null ? null : this.selectedWorkspace(profile) ?? null,
+      reachable: this.reachable,
     }
   }
 
@@ -312,6 +347,19 @@ export class AhelAccount extends TypertRemoteService {
    */
   async accessToken(): Promise<string | undefined> {
     return (await this.currentGrant())?.access_token
+  }
+
+  /**
+   * Host-only: after ahel.ai refused the current bearer, refresh it once. A
+   * refresh ahel.ai rejects signs the account out, like `accessToken()`.
+   */
+  async revalidate(): Promise<void> {
+    try {
+      const options = { refreshSkewMs: this.refreshSkewMs, requestTimeoutMs: this.requestTimeoutMs }
+      await currentOAuthGrant(this.ctx.credentials, this.ref, options, true)
+    } catch (error) {
+      if (!(error instanceof OAuthGrantError && error.rejected)) throw error
+    }
   }
 
   /**

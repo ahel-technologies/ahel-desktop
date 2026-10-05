@@ -7,14 +7,15 @@
  * in. The model list comes from `GET <baseURL>/models` (with the selected
  * `?workspace=`) and is re-read on every account change; until it answers 200
  * the menu shows one disabled "connecting" row and the read is retried.
- * Balance (402) and availability (403) refusals become readable errors.
+ * Balance (402), availability (403) and sign-in (401) refusals become
+ * failures with the codes below, which the Ahel account UI turns into notices.
  *
  * @module @ahel/dsh-llm-ahel
  */
 
 import type { Context } from '@ahel/cordis'
 import Schema from '@ahel/schemastery'
-import { LlmAdapter, LlmError, QUOTA_EXCEEDED_CODE } from '@ahel/dsh-llm'
+import { ACCOUNT_QUOTA_EXCEEDED_CODE, LlmAdapter, LlmError } from '@ahel/dsh-llm'
 import type {
   AdapterRegistrationHandle, GenerateOptions, LlmFailure, LlmModelInfo, LlmProviderInfo, LlmResolvedModelInfo,
   PreparedAdapterCall, ResolvedRetryPolicy, StreamChunk,
@@ -41,6 +42,11 @@ export interface AhelModel {
   maxTokens: number
 }
 
+/** Failure code of a 403: Ahel models are not turned on for the workspace. */
+export const AHEL_NOT_ENABLED_CODE = 'AHEL_NOT_ENABLED'
+/** Failure code of a 401 the account could not recover from by refreshing. */
+export const AHEL_SESSION_ENDED_CODE = 'AHEL_SESSION_ENDED'
+
 /** Deployment choices for the Ahel route. */
 export interface Config {
   /** OpenAI-compatible base URL of the metered proxy. */
@@ -51,7 +57,7 @@ export interface Config {
   displayName: string
   /** Deadline for the model-list request in milliseconds. */
   requestTimeoutMs: number
-  /** Wait between model-list reads while `GET <baseURL>/models` does not answer 200, in milliseconds. */
+  /** Longest wait between model-list reads while `GET <baseURL>/models` is not 200, in milliseconds; reads back off from 2 s. */
   retryIntervalMs: number
   /** Text of the one disabled model-menu row shown until the model list is read. */
   connectingLabel: string
@@ -141,11 +147,12 @@ function serverSentence(detail: string): string | undefined {
 }
 
 /**
- * Turn the proxy's balance and availability refusals into readable failures.
- * The OpenAI SDK reports them as `<status> <server message>`; the server
- * message is kept because ahel.ai writes it for people.
+ * Turn the proxy's balance, availability and sign-in refusals into coded
+ * failures. The OpenAI SDK reports them as `<status> <server message>`; the
+ * server message is kept for the session log, the client shows its own copy
+ * per code: `ACCOUNT_QUOTA` (402), `AHEL_NOT_ENABLED` (403), `AHEL_SESSION_ENDED` (401).
  * @param failure - failure from the pi-ai stream.
- * @returns the same failure, or a readable Ahel one for 401, 402 and 403.
+ * @returns the same failure, or a coded Ahel one for 401, 402 and 403.
  */
 export function readableFailure(failure: LlmFailure): LlmFailure {
   const match = /^\s*(40[123])\b\s*(.*)$/s.exec(failure.message)
@@ -154,18 +161,21 @@ export function readableFailure(failure: LlmFailure): LlmFailure {
   const server = serverSentence(match[2] ?? '')
   switch (status) {
     case 402:
-      return { ...failure, status, code: QUOTA_EXCEEDED_CODE, message: `Ahel models: ${server ?? 'the workspace balance or today\'s Ahel model limit is used up.'} Add money on ahel.ai, or use your own key in Settings > Models.` }
+      return { ...failure, status, code: ACCOUNT_QUOTA_EXCEEDED_CODE, message: `Ahel models: ${server ?? 'the workspace balance or today\'s Ahel model limit is used up.'} Add money on ahel.ai, or use your own key in Settings > Models.` }
     case 403:
-      return { ...failure, status, code: 'AUTH', message: `Ahel models are not available: ${server ?? 'they are not turned on for this workspace yet.'} Use your own key in Settings > Models meanwhile.` }
+      return { ...failure, status, code: AHEL_NOT_ENABLED_CODE, message: `Ahel models are not available: ${server ?? 'they are not turned on for this workspace yet.'} Use your own key in Settings > Models meanwhile.` }
     default:
-      return { ...failure, status, code: 'AUTH', message: 'Your Ahel sign-in has expired. Sign in to Ahel again.' }
+      return { ...failure, status, code: AHEL_SESSION_ENDED_CODE, message: 'Your Ahel sign-in has ended. Sign in to Ahel again.' }
   }
 }
 
-async function* readableStream(stream: AsyncIterable<StreamChunk>): AsyncIterable<StreamChunk> {
+async function* readableStream(stream: AsyncIterable<StreamChunk>, unauthorized: () => Promise<void>): AsyncIterable<StreamChunk> {
   for await (const chunk of stream) {
     if (chunk.type === 'finish' && chunk.reason.kind === 'error') {
-      yield { ...chunk, reason: { kind: 'error', failure: readableFailure(chunk.reason.failure) } }
+      const failure = readableFailure(chunk.reason.failure)
+      // A refused bearer gets one refresh; a refused refresh signs out, which returns Desktop to its welcome.
+      if (failure.code === AHEL_SESSION_ENDED_CODE) await unauthorized()
+      yield { ...chunk, reason: { kind: 'error', failure } }
     } else {
       yield chunk
     }
@@ -178,6 +188,7 @@ class AhelAdapter extends LlmAdapter {
     private readonly inner: PiAiAdapter,
     private readonly displayName: string,
     private readonly connecting: () => string | undefined,
+    private readonly unauthorized: () => Promise<void>,
   ) { super() }
   private ready(): void {
     const label = this.connecting()
@@ -196,9 +207,9 @@ class AhelAdapter extends LlmAdapter {
   override async prepareCall(provider: string, model: string, signal?: AbortSignal): Promise<PreparedAdapterCall> {
     this.ready()
     const prepared = await this.inner.prepareCall(provider, model, signal)
-    return { model: prepared.model, stream: options => readableStream(prepared.stream(options)) }
+    return { model: prepared.model, stream: options => readableStream(prepared.stream(options), this.unauthorized) }
   }
-  stream(options: GenerateOptions): AsyncIterable<StreamChunk> { return readableStream(this.inner.stream(options)) }
+  stream(options: GenerateOptions): AsyncIterable<StreamChunk> { return readableStream(this.inner.stream(options), this.unauthorized) }
 }
 
 /** pi-ai auth that never finds a stored or ambient credential, so only the account bearer authenticates. */
@@ -249,7 +260,13 @@ export function apply(ctx: Context, config: Config): void {
       return token
     },
     auth: NO_AMBIENT_AUTH,
-  }), config.displayName, () => models === undefined ? config.connectingLabel : undefined)
+  }), config.displayName, () => models === undefined ? config.connectingLabel : undefined, async () => {
+    try {
+      await ctx.ahelAccount.revalidate()
+    } catch (error) {
+      ctx.logger.warn(`llm-ahel: the Ahel sign-in could not be refreshed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  })
 
   let route: AdapterRegistrationHandle | undefined
   let published = ''
@@ -276,6 +293,7 @@ export function apply(ctx: Context, config: Config): void {
   }
 
   let generation = 0
+  let failures = 0
   let timer: ReturnType<typeof setTimeout> | undefined
   const refresh = async (): Promise<void> => {
     const current = ++generation
@@ -298,10 +316,12 @@ export function apply(ctx: Context, config: Config): void {
         models = undefined
         profiles = new Map()
         publish(true)
-        timer = setTimeout(refreshLogged, config.retryIntervalMs)
+        // A list that is late by seconds after sign-in arrives within seconds; a missing endpoint settles at the interval.
+        timer = setTimeout(refreshLogged, Math.min(config.retryIntervalMs, 2_000 * 2 ** failures++))
       }
     }
     if (current !== generation || listed === undefined) return
+    failures = 0
     models = listed
     profiles = build(listed, workspace)
     publish(true)
@@ -309,12 +329,15 @@ export function apply(ctx: Context, config: Config): void {
   }
   const refreshLogged = (): void => {
     refresh().catch((error: unknown) => {
-      ctx.logger.warn(`llm-ahel: model list unavailable, retrying in ${String(config.retryIntervalMs / 1000)} s: ${error instanceof Error ? error.message : String(error)}`)
+      ctx.logger.warn(`llm-ahel: model list unavailable, retrying: ${error instanceof Error ? error.message : String(error)}`)
     })
   }
   ctx.effect(() => () => { ++generation; clearTimeout(timer) }, 'llm-ahel.model-list')
   ctx.on('ahel-account/changed', (view) => {
-    if (view.attempt === null || view.attempt.phase === 'succeeded' || view.status === 'signed-out') refreshLogged()
+    if (view.attempt === null || view.attempt.phase === 'succeeded' || view.status === 'signed-out') {
+      failures = 0
+      refreshLogged()
+    }
   })
   refreshLogged()
 }

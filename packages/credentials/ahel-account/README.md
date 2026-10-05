@@ -18,8 +18,11 @@ The ahel.ai account for Ahel Desktop. One browser sign-in stores one OAuth grant
 | `signInTimeoutMs` | `300000` | Wait for the browser callback |
 | `requestTimeoutMs` | `30000` | Deadline per ahel.ai request |
 | `refreshSkewMs` | `60000` | Refresh when the token expires within this window |
+| `healthPath` | `/api/health/live` | Read on `appOrigin` to tell whether ahel.ai is reachable (`reachable` in the view) |
+| `reachableIntervalMs` | `60000` | Wait between reachability reads while ahel.ai answers |
+| `unreachableIntervalMs` | `5000` | Wait between reachability reads while it does not |
 
-The service is `ctx.ahelAccount`; the Remote namespace `ahelAccount` exposes `state()`, `signIn()`, `cancelSignIn(id)`, `signOut()`, `profile()` and the `watch` stream. Host code also has `accessToken()` (refreshes on demand) and `setOpener(fn)`.
+The service is `ctx.ahelAccount`; the Remote namespace `ahelAccount` exposes `state()`, `signIn()`, `cancelSignIn(id)`, `signOut()`, `profile()` and the `watch` stream. Host code also has `accessToken()` (refreshes on demand), `revalidate()` (forces one refresh after a 401) and `setOpener(fn)`.
 
 Sign-in copies the `ahel` CLI flow: discovery, a loopback listener on `127.0.0.1:<random port>/callback`, a fresh dynamic client registration per sign-in (a fixed client id would stay revoked forever), PKCE S256, scopes `openid profile email offline_access`, then `GET /api/mcp/profile`. `signIn()` resolves once the authorize URL exists and returns it in `attempt.authorizeUrl`; the opener set with `setOpener` opens it, otherwise it is logged. Sign-out calls `POST /api/mcp/revoke`, then deletes the credential even if the revoke failed.
 

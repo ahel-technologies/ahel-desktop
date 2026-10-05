@@ -45,6 +45,8 @@ export interface AhelAccountView {
   readonly attempt: AhelSignInAttemptView | null
   /** Selected workspace id (one of `profile.workspaces`); null leaves the choice to ahel.ai. */
   readonly workspace: string | null
+  /** Whether ahel.ai answered the latest reachability read. */
+  readonly reachable: boolean
 }
 
 declare module '@ahel/cordis' {
