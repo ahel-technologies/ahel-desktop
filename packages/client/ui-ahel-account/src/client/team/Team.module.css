@@ -1,0 +1,144 @@
+/*
+ * The Approvals panel in ahel.ai's design, over Catalog.module.css's
+ * --ahel-* tokens, page frame and buttons, plus the sidebar row's
+ * pending-count badge in the shell's own tokens.
+ */
+
+/* The sidebar glyph is the row's icon child; the badge rides its corner. */
+.glyph {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  border-radius: 7px;
+  background: var(--dsw-alias-state-error-primary);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 14px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.head { padding: 28px 0 24px; }
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 0 72px;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--ahel-line);
+  border-radius: var(--ahel-radius-card);
+  background: var(--ahel-card);
+  box-shadow: var(--ahel-shadow-rest);
+}
+
+.what {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ahel-ink);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ahel-muted);
+}
+
+.who { color: var(--ahel-body); font-weight: 500; }
+
+.rule {
+  padding: 1px 8px;
+  border-radius: var(--ahel-radius-chip);
+  background: var(--ahel-amber-soft);
+  color: var(--ahel-amber-ink);
+}
+
+.args summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ahel-body);
+}
+
+.args summary:focus-visible { outline: var(--ahel-focus); outline-offset: 2px; }
+
+.args pre {
+  margin: 8px 0 0;
+  max-height: 260px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: var(--ahel-radius-btn);
+  background: var(--ahel-soft);
+  font: 12.5px/1.5 var(--font-mono);
+  color: var(--ahel-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.note {
+  flex: 1 1 220px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--ahel-line-control);
+  border-radius: var(--ahel-radius-btn);
+  background: var(--ahel-card);
+  color: var(--ahel-ink);
+  font: 13.5px var(--font-sans);
+}
+
+.note:focus-visible { outline: var(--ahel-focus); outline-offset: 1px; }
+
+.result {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ahel-body);
+}
+
+.result[data-tone='approved'] { color: var(--ahel-teal-ink); }
+.result[data-tone='refused'] { color: var(--ahel-red-text); }
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ahel-red-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link:focus-visible { outline: var(--ahel-focus); outline-offset: 2px; }

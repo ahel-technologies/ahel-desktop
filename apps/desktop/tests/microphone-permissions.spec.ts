@@ -1,4 +1,4 @@
-/** Desktop permissions: denied by default; clipboard and audio only for the owned application frame. */
+/** Desktop permissions: denied by default; clipboard, notifications and audio only for the owned application frame. */
 import type { Session, WebContents } from 'electron'
 import { afterEach, expect, it, vi } from 'vitest'
 import { installMicrophonePermissions } from '../src/microphone-permissions.ts'
@@ -25,7 +25,8 @@ it('allows only audio checks from the owned primary application frame', () => {
   expect(f.check(f.primary, 'media', 'ahel-app://app', { ...details, mediaType: 'video' })).toBe(false)
   expect(f.check(f.primary, 'clipboard-sanitized-write', 'ahel-app://app', details)).toBe(true)
   expect(f.check(f.primary, 'clipboard-sanitized-write', 'ahel-app://app', { ...details, isMainFrame: false })).toBe(false)
-  expect(f.check(f.primary, 'notifications', 'ahel-app://app', details)).toBe(false)
+  expect(f.check(f.primary, 'notifications', 'ahel-app://app', details)).toBe(true)
+  expect(f.check(f.primary, 'notifications', 'ahel-app://app', { ...details, isMainFrame: false })).toBe(false)
   expect(f.check(f.primary, 'geolocation', 'https://example.com', details)).toBe(false)
 })
 it.each(['not-determined', 'granted', 'denied', 'restricted', 'unknown'] as const)(
@@ -65,6 +66,8 @@ it('requests macOS microphone access and reports operating-system rejection', as
   f.request(f.primary, 'clipboard-sanitized-write', done, { ...details, isMainFrame: false })
   expect(done).toHaveBeenLastCalledWith(false)
   f.request(f.primary, 'notifications', done, details)
+  expect(done).toHaveBeenLastCalledWith(true)
+  f.request(f.primary, 'notifications', done, { ...details, isMainFrame: false })
   expect(done).toHaveBeenLastCalledWith(false)
 })
 it.each(['win32', 'linux'] as const)('leaves system authorization to Chromium on %s', (platform) => {

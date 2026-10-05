@@ -5,7 +5,8 @@
  * footer (the Ahel row beside bring-your-own-key providers), the starter
  * prompts below the blank-session composer, the rows for Ahel model
  * refusals in the transcript, the Discover panel over the Host's
- * `ahelCatalog` namespace, and the balance line over `ahelTeam`'s summary.
+ * `ahelCatalog` namespace, and over `ahelTeam`'s summary the balance line
+ * and the Approvals panel with its badge and notifications.
  */
 import type { Context } from '@ahel/cordis'
 import type { HostObservable } from '@ahel/dsh-client-ui-slots'
@@ -21,6 +22,7 @@ import { AhelQuotaNotice, AhelTurnError, claimAhelFailure } from './AhelNotices.
 import { ModelsRow } from './ModelsRow.tsx'
 import { StarterPrompts } from './StarterPrompts.tsx'
 import { registerCatalog } from './catalog/apply.ts'
+import { registerTeam } from './team/apply.ts'
 import { registerTeamSummary } from './team/summary.ts'
 import { en, NS, zh } from './locales.ts'
 
@@ -29,7 +31,9 @@ export type {
 } from './contract.ts'
 export type { AhelAccountKey } from './locales.ts'
 export type { CatalogPanelId, DiscoverInjected, DiscoverPageProps } from './catalog/contract.ts'
-export type { TeamSummary, TeamSummaryState } from './team/contract.ts'
+export type {
+  ApprovalAnswer, ApprovalsInjected, ApprovalsPageProps, ApprovalsPanelIconProps, TeamSummary, TeamSummaryState,
+} from './team/contract.ts'
 
 /** Required services: the Remote mount, slots, dictionaries and the main-panel layout. */
 export const inject = ['remote', 'slots', 'locale', 'layout']
@@ -146,6 +150,7 @@ function register(ctx: Context): void {
     name: 'shell.quota-notice', select: owner => owner.code === 'ACCOUNT_QUOTA' ? owner.code : null,
   }, AhelQuotaNotice))
   registerCatalog(ctx, injected)
+  registerTeam(ctx, injected, team)
 }
 
 /**

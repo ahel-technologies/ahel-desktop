@@ -1,8 +1,11 @@
-/** Web permissions of the application session: deny by default, allow clipboard writes and microphone to the owned application frame. */
+/** Web permissions of the application session: deny by default; clipboard writes, notifications and microphone for the owned app frame. */
 import { systemPreferences, type Session, type WebContents } from 'electron'
 
-/** Permissions the application frame holds without asking: copy controls write text through the async Clipboard API. */
-const APPLICATION_PERMISSIONS: ReadonlySet<string> = new Set(['clipboard-sanitized-write'])
+/**
+ * Permissions the application frame holds without asking: copy controls write text through the async Clipboard API,
+ * and the Approvals panel posts a system notification when a held call arrives.
+ */
+const APPLICATION_PERMISSIONS: ReadonlySet<string> = new Set(['clipboard-sanitized-write', 'notifications'])
 
 function applicationFrame(url: string): boolean {
   try {
@@ -13,7 +16,7 @@ function applicationFrame(url: string): boolean {
 
 /**
  * Handle permission checks and requests for the application session. Every permission is denied unless the
- * primary window's main application frame asks: it may write the clipboard, and it may use the microphone
+ * primary window's main application frame asks: it may write the clipboard, post notifications, and use the microphone
  * for audio-only capture once the operating system grants it. Subframes, including MCP app cards, and
  * every other page hold no permission.
  * @param session - application's browser session.
