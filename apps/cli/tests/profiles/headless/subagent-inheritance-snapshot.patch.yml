@@ -6,9 +6,6 @@
 - id: headless-runner
   disabled: true
 
-- id: llm-deepseek
-  disabled: true
-
 - id: sandbox-policy
   config:
     mode: workspace-write
@@ -32,7 +29,3 @@
     # Publish the persisted agent before the driver selects the single root.
     - id: resumed-agent
       name: './tests/fixtures/subagent-inheritance-agent.ts'
-
-- id: session-log-deepseek
-  config:
-    enabled: false

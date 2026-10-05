@@ -47,7 +47,7 @@ describe('desktop release metadata', () => {
 const coordinators: InstanceType<typeof DesktopUpdateCoordinator>[] = []
 afterEach(() => { for (const item of coordinators.splice(0)) item.dispose() })
 
-function fixture() {
+function fixture(version = '1.1.0-alpha.1') {
   const events = new EventEmitter()
   const checkForUpdates = vi.fn(async () => ({
     isUpdateAvailable: true,
@@ -66,7 +66,7 @@ function fixture() {
   const updater = Object.assign(events, { checkForUpdates, downloadUpdate, quitAndInstall }) as unknown as AppUpdater
   const coordinator = new DesktopUpdateCoordinator(
     (state) => { states.push(state); return state },
-    beforeRestart, updater, () => true, () => '1.1.0-alpha.1', downloadResult,
+    beforeRestart, updater, () => true, () => version, downloadResult,
   )
   coordinators.push(coordinator)
   return { coordinator, updater, events, states, checkForUpdates, downloadUpdate, quitAndInstall, beforeRestart, downloadResult }
@@ -74,13 +74,8 @@ function fixture() {
 
 describe('desktop update coordinator', () => {
   it('offers prereleases only to a prerelease build', () => {
-    for (const [version, allowed] of [['1.1.0-alpha.1', true], ['1.1.0', false]] as const) {
-      const methods = { checkForUpdates: vi.fn(), downloadUpdate: vi.fn(), quitAndInstall: vi.fn() }
-      const updater = Object.assign(new EventEmitter(), methods) as AppUpdater
-      const coordinator = new DesktopUpdateCoordinator(state => state, async () => true, updater, () => true, () => version)
-      coordinators.push(coordinator)
-      expect(updater.allowPrerelease, version).toBe(allowed)
-    }
+    expect(fixture('1.1.0-alpha.1').updater.allowPrerelease).toBe(true)
+    expect(fixture('1.1.0').updater.allowPrerelease).toBe(false)
   })
 
   it('keeps safe preparation diagnostics separate and clears them on an explicit retry', async () => {

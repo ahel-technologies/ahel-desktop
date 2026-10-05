@@ -34,6 +34,7 @@ describe('dsh run with Agent Teams enabled', () => {
           profile: {
             bundles: [
               '@deepseek-ai/dsh-base',
+              '@deepseek-ai/dsh-agent-tools',
               '@deepseek-ai/dsh-headless',
               '@deepseek-ai/dsh-experimental-agent-team-profile',
             ],
@@ -41,8 +42,10 @@ describe('dsh run with Agent Teams enabled', () => {
         },
       }, undefined, 2) + '\n')
       await writeFile(join(profileDir, 'cordis.patch.yml'), [
-        '- id: llm-deepseek',
-        '  disabled: true',
+        '- id: agent-default-model',
+        '  config:',
+        '    provider: deepseek-official',
+        '    model: deepseek-v4-flash',
         '- id: session-persistence-jsonl',
         '  config:',
         `    root: '${sessions}'`,
@@ -60,7 +63,6 @@ describe('dsh run with Agent Teams enabled', () => {
           DSH_HOME: home,
           DSH_AGENTS_HOME: join(cwd, '.agents'),
           DSH_TELEMETRY_DISABLED: '1',
-          DEEPSEEK_API_KEY: '',
           NODE_OPTIONS: [
             process.env.NODE_OPTIONS,
             '--disable-warning=ExperimentalWarning',

@@ -1,5 +1,5 @@
 ---
-description: "Ready-made dsh profile bundles for the shared core, browser GUI, one-shot task, ACP, and SDK application surfaces."
+description: "Ready-made dsh profile bundles for the shared chat core, the local agent tool plane, and the browser GUI, one-shot task, ACP, and SDK application surfaces."
 kind: "package-group"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This group maps the installable patch layers used by `dsh --profile`. Each package declares `dsh.bundle.patch`; the launcher stacks those patch documents to assemble a named profile. The `web`, `headless`, `acp`, and `sdk` profiles build on `dsh-base`, while `sdk-minimal` supplies its complete tree in one bundle. Domain packages can declare additional layers outside this directory.
+This group maps the installable patch layers used by `dsh --profile`. Each package declares `dsh.bundle.patch`; the launcher stacks those patch documents to assemble a named profile. The `web`, `headless`, `acp`, and `sdk` profiles build on the `dsh-base` chat core; `headless`, `acp`, and `sdk` also add the `dsh-agent-tools` tool plane, and `web`, which the desktop app runs, does not. `sdk-minimal` supplies its complete tree in one bundle. Domain packages can declare additional layers outside this directory.
 
 ## Table of Contents
 
@@ -22,14 +22,15 @@ This group maps the installable patch layers used by `dsh --profile`. Each packa
 
 | Package | Role | ctx key |
 |---|---|---|
-| [`base`](base/README.md) | Shared core for base-backed profiles | — (patch only) |
+| [`base`](base/README.md) | Shared chat core for base-backed profiles | — (patch only) |
+| [`agent-tools`](agent-tools/README.md) | Local agent tool plane and opt-in telemetry rows for the headless, ACP, and SDK profiles | — (patch only) |
 | [`acp-app`](acp-app/README.md) | Automation-only ACP stdio application over base | mounts the ACP bridge |
 | [`web-app`](web-app/README.md) | Browser application layer over base | mounts Web rows |
 | [`headless`](headless/README.md) | One-shot command-line task application over base | `headless-runner` |
 | [`sdk-app`](sdk-app/README.md) | SDK JSON-RPC stdio application over base | mounts the SDK server |
 | [`sdk-minimal`](sdk-minimal/README.md) | Standalone minimal SDK application without base or Web | — (complete patch tree) |
 
-In-box bundles resolve from the dsh installation; out-of-tree bundles install into a profile through `dsh plugin --profile <name> add <package>`.
+The dsh runtime ships `base` and `web-app`; the other bundles here are development dependencies of the CLI and resolve from a source checkout. Out-of-tree bundles install into a profile through `dsh plugin --profile <name> add <package>`.
 
 <a id="related-documentation"></a>
 ## Related documentation

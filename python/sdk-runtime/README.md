@@ -10,20 +10,11 @@ The wheel installs a `dsh` console command and the `deepseek_harness_runtime` Py
 
 Production executables are named `deepseek-harness-sdk-runtime-<platform>-<arch>` under the module's `runtime/` directory; Windows uses the `.exe` suffix. Linux and macOS wheels include a target-native `-rg` sidecar, Windows includes `-rg.exe`, and macOS also includes `-spawn-helper` for `node-pty`. Published targets are Linux x64, Linux arm64, macOS arm64, macOS x64, and Windows x64. The wheel tag and payload must match exactly; no Windows arm64 wheel is published.
 
-Each target also requires `<executable-stem>-office/`, where the stem excludes `.exe`. This directory contains the complete installed Office packages and their dependencies, preserving engine resources, manifests, licenses, source inventories, and helper permissions. Copy this directory together with the executable. A missing target engine fails the sidecar build with its npm package name and target platform/architecture.
+Each wheel also includes `<platform>-<arch>/primary-runtime/` (CPython with its locked Python libraries, standalone Node, and pnpm). These are ordinary relocatable files, not bytes embedded in the executable. The shared builder selects target-native archives for all five wheel targets and executes its smoke on the native build host. Packaging and installed-runtime lookup reject missing resources, wrong-platform metadata, and lost Python or Node executable permissions. The short platform directory avoids repeating the executable name in Python DLL paths on Windows.
 
-Each wheel also includes `<platform>-<arch>/primary-runtime/` (CPython, locked Office Python libraries, standalone Node, and pnpm) and sibling `office-skills/` (three default workflows and their shared checker). These are ordinary relocatable files, not bytes embedded in the executable. The shared builder selects target-native archives for all five wheel targets and executes its smoke on the native build host. Packaging and installed-runtime lookup reject missing resources, wrong-platform metadata, and lost Python or Node executable permissions. The short platform directory avoids repeating the executable name in Python DLL paths on Windows.
+The packaged bootstrap supplies `DSH_BUNDLED_PRIMARY_RUNTIME` as a carrier default. The `sdk` profile uses it when `DSH_PRIMARY_RUNTIME` is unset; an explicit path overrides it, and an empty string disables the Python query. External payloads retain the `primary-runtime/` layout. The SDK reads Python in place without copying it into `DSH_HOME`. Source and dev-only Node carriers have no bundled default; they use an explicit `DSH_PRIMARY_RUNTIME`.
 
-The packaged bootstrap supplies `DSH_BUNDLED_PRIMARY_RUNTIME` as a carrier default. The `sdk` profile uses it when `DSH_PRIMARY_RUNTIME` is unset; an explicit path overrides it, and an empty string disables the query and Office provider. External payloads retain the `primary-runtime/` plus sibling `office-skills/` layout. Loaded skills expose the bundled Node and adjacent Office CLI as absolute paths; custom Python-only payloads must patch `skill-office.config.cli: false` or supply `skill-office.config.node`. The SDK reads Python in place without copying it into `DSH_HOME`. Source and dev-only Node carriers have no bundled default; they use an explicit `DSH_PRIMARY_RUNTIME`.
-
-Skill selection is independent of delivery: project, custom-directory, and user filesystem skills override same-name bundled skills. An SDK patch can disable only the Office provider while retaining the Python query:
-
-```yaml
-- id: skill-office
-  disabled: true
-```
-
-To replace the three Office workflows and shared checker as a set, patch `skill-office.config.assetRoot` to another absolute resource directory. Use the filesystem skill provider for arbitrary skill collections. Configuration patches apply at process startup; changing skills does not require rebuilding the runtime wheel or Python environment.
+Use the filesystem skill provider for skill collections; project, custom-directory, and user filesystem skills apply at process startup and do not require rebuilding the runtime wheel or Python environment.
 
 Repository builds also materialize a dev-only `runtime/node/` carrier. It runs `node runtime/node/node_modules/@deepseek-ai/dsh/lib/bin.js` on system Node 22.19 or newer. It is never selected automatically and is excluded from wheels and sdists.
 

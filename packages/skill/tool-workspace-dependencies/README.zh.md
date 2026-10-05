@@ -73,7 +73,6 @@ kind: "package-reference"
 <a id="further-exploration"></a>
 ## 延伸阅读
 
-- [Office skills](../skill-office/README.zh.md)——调用本工具取解释器的工作流。
 - [工具注册表](../../core/tools/README.zh.md)——注册与 schema。
 
 -----

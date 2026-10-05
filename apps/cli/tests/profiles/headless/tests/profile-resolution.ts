@@ -226,7 +226,6 @@ export function testProfileResolution(mode: ExampleMode): void {
         'cordis.patch.yml': JSON.stringify([
           { id: 'headless-startup', disabled: true },
           { id: 'headless-runner', disabled: true },
-          { id: 'llm-deepseek', disabled: true },
           { insert: [
             { id: 'external-plugin', name: pluginName },
             { id: 'resolution-probe', name: join(profileDir, 'probe.mjs') },

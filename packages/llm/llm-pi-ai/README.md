@@ -168,7 +168,6 @@ Successful assistant responses store a versioned, lossless-JSON replay state bes
 Read these pages when the package-level contract is not enough. They move from the service contract to the twin adapter and the shared types.
 
 - [dsh-llm service](../llm/README.md) — the provider-neutral service this adapter registers on.
-- [llm-deepseek adapter](../llm-deepseek/README.md) — the direct DeepSeek twin for the `deepseek-official` route.
 - [LLM streaming subsystem](../../../docs/subsystems/llm-streaming.md) — the `StreamChunk` protocol and adapter contract.
 - [llm-retry](../llm-retry/README.md) — the retry executor that applies each profile's `retryPolicy`.
 - [Twin LLM adapters](../../../.agents/notes/implemented/architecture/2026-06-13-twin-llm-adapters.md) — why the DeepSeek route ships two structurally different adapters.

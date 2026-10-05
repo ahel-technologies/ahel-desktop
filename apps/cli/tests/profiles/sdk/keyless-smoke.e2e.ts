@@ -1,14 +1,13 @@
 import { createServer } from 'node:http'
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { zstdDecompress } from 'node:zlib'
 import { resolveExampleLaunch } from '@deepseek-ai/dsh-loader-smoke'
 import { execa } from 'execa'
-import { describe, expect, it, onTestFinished } from 'vitest'
-import { workspaceDependencyPaths, type PrimaryRuntimeManifest } from '@deepseek-ai/dsh-tool-workspace-dependencies'
+import { describe, expect, it } from 'vitest'
 
 const repoRoot = fileURLToPath(new URL('../../../../../', import.meta.url))
 const launch = resolveExampleLaunch({
@@ -16,12 +15,41 @@ const launch = resolveExampleLaunch({
   mode: 'lib',
 })
 const decompress = promisify(zstdDecompress)
+const SMOKE_PROVIDER = 'smoke'
+const SMOKE_MODEL = 'smoke-model'
+const SMOKE_KEY_ENV = 'SMOKE_API_KEY'
 
-/** Frame one text or tool response from the local Messages endpoint. */
+/**
+ * Write a profile patch routing {@link SMOKE_PROVIDER} through a hand-declared
+ * pi-ai Messages route at the local fixture endpoint. `sdk` patches its
+ * dormant `llm-pi-ai` row; `sdk-minimal` mounts no adapter, so the row is
+ * inserted.
+ */
+async function writeRoutePatch(root: string, port: number, profile: 'sdk' | 'sdk-minimal'): Promise<string> {
+  const config = {
+    providers: {
+      [SMOKE_PROVIDER]: {
+        apiKeyEnv: SMOKE_KEY_ENV,
+        api: 'anthropic-messages',
+        baseURL: `http://127.0.0.1:${port}`,
+        models: [{ id: SMOKE_MODEL }],
+      },
+    },
+  }
+  const path = join(root, 'route.patch.yml')
+  await writeFile(path, JSON.stringify(profile === 'sdk'
+    ? [{ id: 'llm-pi-ai', config }]
+    : [{ insert: [{ id: 'llm-pi-ai', name: '@deepseek-ai/dsh-llm-pi-ai', config }] }]))
+  return path
+}
+
+/** Frame one text or tool response from the local Messages endpoint; tool input streams as one JSON delta. */
 function messagesResponse(content: Record<string, unknown>, stopReason: 'end_turn' | 'max_tokens' | 'tool_use'): string {
+  const { input, ...block } = content
   return [
-    { type: 'message_start', message: { id: 'sdk-smoke-response', model: 'deepseek-v4-pro', usage: { input_tokens: 3, output_tokens: 0 } } },
-    { type: 'content_block_start', index: 0, content_block: content },
+    { type: 'message_start', message: { id: 'sdk-smoke-response', model: 'smoke-model', usage: { input_tokens: 3, output_tokens: 0 } } },
+    { type: 'content_block_start', index: 0, content_block: input === undefined ? block : { ...block, input: {} } },
+    ...input === undefined ? [] : [{ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: JSON.stringify(input) } }],
     { type: 'content_block_stop', index: 0 },
     { type: 'message_delta', delta: { stop_reason: stopReason }, usage: { output_tokens: 1 } },
     { type: 'message_stop' },
@@ -91,10 +119,13 @@ describe('Python SDK dsh profile keyless smoke', () => {
     if (address === null || typeof address === 'string') throw new Error('model server did not bind a TCP port')
     // The line-predicate protocol driving below is the genuinely custom part;
     // execa owns spawn, the deadline, and exit settlement around it.
+    const routePatch = await writeRoutePatch(root, address.port, 'sdk')
     const child = execa(launch.command, [
       ...launch.args,
       '--profile',
       'sdk',
+      '--patch',
+      routePatch,
       ...(editorEnabled ? ['--patch', editorPatch] : []),
     ], {
       cwd: repoRoot,
@@ -103,8 +134,7 @@ describe('Python SDK dsh profile keyless smoke', () => {
         DSH_HOME: join(root, '.dsh'),
         DSH_PERMISSION_MODE: 'danger-full-access',
         DSH_TELEMETRY_DISABLED: '1',
-        DEEPSEEK_API_KEY: 'keyless-smoke-no-call',
-        DEEPSEEK_BASE_URL: `http://127.0.0.1:${address.port}`,
+        [SMOKE_KEY_ENV]: 'keyless-smoke-no-call',
         ...(envValue === undefined ? {} : { DSH_MAX_TOKENS_AS_SUCCESS: envValue }),
       },
       timeout: 35_000,
@@ -129,9 +159,8 @@ describe('Python SDK dsh profile keyless smoke', () => {
         method: 'initialize',
         params: {
           cwd: root,
-          provider: 'deepseek-official',
-          model: 'deepseek-v4-pro',
-          reasoningEffort: 'max',
+          provider: SMOKE_PROVIDER,
+          model: SMOKE_MODEL,
           maxTokens: 1234,
         },
       })}\n`)
@@ -139,7 +168,7 @@ describe('Python SDK dsh profile keyless smoke', () => {
       expect(initialized).toMatchObject({
         jsonrpc: '2.0',
         id: 1,
-        result: { serverInfo: { name: 'deepseek-harness-sdk-runtime' } },
+        result: { serverInfo: { name: 'ahel-desktop-sdk-runtime' } },
       })
 
       child.stdin.write(`${JSON.stringify({
@@ -174,7 +203,6 @@ describe('Python SDK dsh profile keyless smoke', () => {
       expect(modelRequests[0]?.tools).toEqual(expect.any(Array))
       const tools = modelRequests[0]?.tools as { name?: string }[]
       const toolNames = tools.map(tool => tool.name)
-      expect(modelRequests[0]?.output_config).toEqual({ effort: 'max' })
       expect(modelRequests[0]?.max_tokens).toBe(1234)
       expect(toolNames).toEqual(expect.arrayContaining(['read', 'write', 'edit', 'web_fetch', 'web_search']))
       expect(toolNames.includes('str_replace_editor')).toBe(editorEnabled)
@@ -240,10 +268,13 @@ describe('Python SDK dsh profile keyless smoke', () => {
     await new Promise<void>(resolve => modelServer.listen(0, '127.0.0.1', resolve))
     const address = modelServer.address()
     if (address === null || typeof address === 'string') throw new Error('model server did not bind a TCP port')
+    const routePatch = await writeRoutePatch(root, address.port, 'sdk-minimal')
     const child = execa(launch.command, [
       ...launch.args,
       '--profile',
       'sdk-minimal',
+      '--patch',
+      routePatch,
       ...(editorEnabled ? ['--patch', editorPatch] : []),
     ], {
       cwd: repoRoot,
@@ -251,8 +282,7 @@ describe('Python SDK dsh profile keyless smoke', () => {
         ...launch.env,
         DSH_HOME: join(root, '.dsh'),
         DSH_SYSTEM_PROMPT: 'Minimal allowlist prompt.',
-        DEEPSEEK_API_KEY: 'keyless-smoke-no-call',
-        DEEPSEEK_BASE_URL: `http://127.0.0.1:${address.port}`,
+        [SMOKE_KEY_ENV]: 'keyless-smoke-no-call',
       },
       timeout: 35_000,
       killSignal: 'SIGKILL',
@@ -274,7 +304,7 @@ describe('Python SDK dsh profile keyless smoke', () => {
         jsonrpc: '2.0',
         id: 1,
         method: 'initialize',
-        params: { cwd: root, provider: 'deepseek-official', model: 'deepseek-v4-pro' },
+        params: { cwd: root, provider: SMOKE_PROVIDER, model: SMOKE_MODEL },
       })}\n`)
       await waitForLine(lines, value => value.id === 1, () => stderr)
       child.stdin.write(`${JSON.stringify({
@@ -307,20 +337,12 @@ describe('Python SDK dsh profile keyless smoke', () => {
       expect(modelRequests).toHaveLength(editorEnabled ? 3 : 1)
       if (editorEnabled) {
         expect(await readFile(editorFile, 'utf8')).toBe(editorContent)
-        expect(modelRequests[2]?.messages).toEqual(expect.arrayContaining([
-          expect.objectContaining({
-            role: 'user',
-            content: expect.arrayContaining([
-              expect.objectContaining({
-                type: 'tool_result',
-                tool_use_id: 'editor-view',
-                content: expect.arrayContaining([
-                  { type: 'text', text: expect.stringContaining(editorContent.trim()) as unknown },
-                ]) as unknown,
-              }),
-            ]) as unknown,
-          }),
-        ]))
+        // The adapter may send a text-only tool result as a string or as blocks.
+        const messages = modelRequests[2]?.messages as { role: string; content: unknown }[]
+        const viewResult = messages
+          .flatMap(message => message.role === 'user' && Array.isArray(message.content) ? message.content as Record<string, unknown>[] : [])
+          .find(block => block.type === 'tool_result' && block.tool_use_id === 'editor-view')
+        expect(JSON.stringify(viewResult?.content)).toContain(editorContent.trim())
       }
 
       child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'shutdown' })}\n`)
@@ -348,7 +370,7 @@ describe('Python SDK dsh profile keyless smoke', () => {
       ...launch.args, '--profile', 'sdk', '--patch', patch,
     ], {
       cwd: repoRoot,
-      env: { ...launch.env, DSH_HOME: home, DSH_TELEMETRY_DISABLED: '1', DEEPSEEK_API_KEY: 'keyless-no-call' },
+      env: { ...launch.env, DSH_HOME: home, DSH_TELEMETRY_DISABLED: '1' },
       stdin: 'pipe',
       stripFinalNewline: false,
       timeout: 25_000,
@@ -390,7 +412,6 @@ describe('Python SDK dsh profile keyless smoke', () => {
         env: {
           ...launch.env,
           DSH_HOME: join(root, '.dsh'),
-          DEEPSEEK_API_KEY: 'keyless-smoke-no-call',
           DSH_MAX_TOKENS_AS_SUCCESS: 'sometimes',
         },
         stdin: 'ignore',
@@ -408,127 +429,4 @@ describe('Python SDK dsh profile keyless smoke', () => {
       await rm(root, { recursive: true, force: true })
     }
   }, 30_000)
-})
-
-/** Materialize a native-layout payload whose paths the query can validate without executing binaries. */
-async function officeFixture(root: string, pythonOnly: boolean) {
-  const source = join(root, 'resources', 'primary-runtime')
-  const manifest: PrimaryRuntimeManifest = {
-    desktopVersion: '1.0.0', platform: process.platform, arch: process.arch,
-    python: '3.12.14',
-    ...(pythonOnly ? {} : { node: '24.21.0', pnpm: '11.7.0' }),
-    pythonPackages: { 'python-docx': '1.2.0', 'python-pptx': '1.0.2', openpyxl: '3.1.5' },
-  }
-  const paths = workspaceDependencyPaths(source, manifest)
-  for (const file of [paths.python, paths.node, paths.pnpm]) {
-    if (file === undefined) continue
-    await mkdir(dirname(file), { recursive: true })
-    await writeFile(file, 'fixture interpreter')
-  }
-  await mkdir(paths.pythonPackages, { recursive: true })
-  if (paths.nodePackages !== undefined) await mkdir(paths.nodePackages, { recursive: true })
-  await writeFile(join(source, 'runtime.json'), JSON.stringify(manifest))
-  await cp(join(repoRoot, 'packages/skill/skill-office/assets'), join(root, 'resources', 'office-skills'), { recursive: true })
-  return { source, paths }
-}
-
-it.each(['unset', 'empty', 'bundled', 'full', 'python-only', 'python-only-no-cli', 'missing-assets', 'wrong-type'] as const)('composes Office resources through the SDK profile (%s)', async (mode) => {
-  const root = await mkdtemp(join(tmpdir(), 'sdk-office-'))
-  onTestFinished(() => rm(root, { recursive: true, force: true }))
-  const enabled = mode !== 'unset' && mode !== 'empty'
-  const { source, paths } = await officeFixture(root, mode.startsWith('python-only'))
-  if (mode === 'missing-assets') await rm(join(root, 'resources', 'office-skills'), { recursive: true })
-  if (mode === 'wrong-type') {
-    await rm(paths.python)
-    await mkdir(paths.python)
-  }
-  const requests: Record<string, unknown>[] = []
-  const server = createServer((request, response) => {
-    let body = ''
-    request.setEncoding('utf8').on('data', (chunk: string) => { body += chunk })
-    request.on('end', () => {
-      requests.push(JSON.parse(body) as Record<string, unknown>)
-      const query = requests.length === 1 && enabled
-      response.writeHead(200, { 'content-type': 'text/event-stream' })
-      response.end(messagesResponse(query
-        ? { type: 'tool_use', id: 'workspace-dependencies', name: 'load_workspace_dependencies', input: {} }
-        : { type: 'text', text: 'done' }, query ? 'tool_use' : 'end_turn'))
-    })
-  })
-  onTestFinished(() => new Promise<void>((resolve) => { server.close(() => { resolve() }) }))
-  await new Promise<void>((resolve) => { server.listen(0, '127.0.0.1', resolve) })
-  const address = server.address()
-  if (address === null || typeof address === 'string') throw new Error('model fixture did not bind')
-  const home = join(root, 'home')
-  const cliPatch = join(root, 'cli.patch.yml')
-  await writeFile(cliPatch, JSON.stringify(mode === 'python-only-no-cli' ? [{ id: 'skill-office', config: { assetRoot: join(root, 'resources', 'office-skills'), cli: false } }] : []))
-  const officeLaunch = resolveExampleLaunch({
-    srcBin: fileURLToPath(new URL('../../../src/bin.ts', import.meta.url)), mode: 'lib',
-    configArgs: ['--profile', 'sdk', '--patch', cliPatch],
-    env: { DSH_HOME: home, DSH_PRIMARY_RUNTIME: mode === 'unset' || mode === 'bundled' ? undefined : mode === 'empty' ? '' : source + '/',
-      DSH_BUNDLED_PRIMARY_RUNTIME: mode === 'unset' ? undefined : mode === 'bundled' || mode === 'empty' ? source : join(root, 'unused-default'),
-      DSH_PERMISSION_MODE: 'danger-full-access', DSH_TELEMETRY_DISABLED: '1',
-      DEEPSEEK_API_KEY: 'local-fixture', DEEPSEEK_BASE_URL: `http://127.0.0.1:${address.port}` },
-  })
-  const child = execa(officeLaunch.command, officeLaunch.args, { cwd: repoRoot, env: officeLaunch.env, timeout: 60_000, reject: false })
-  onTestFinished(async () => { child.kill('SIGKILL'); await child })
-  let buffer = '', stderr = ''
-  const lines: string[] = []
-  child.stdout.on('data', (chunk: Buffer) => {
-    buffer += chunk.toString()
-    const parts = buffer.split('\n')
-    buffer = parts.pop() ?? ''
-    lines.push(...parts)
-  })
-  child.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString() })
-  const send = (id: number, method: string, params?: object) => {
-    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`)
-    return waitForLine(lines, value => value.id === id, () => stderr)
-  }
-  expect(await send(1, 'initialize', { cwd: root, provider: 'deepseek-official', model: 'deepseek-v4-pro' })).toHaveProperty('result')
-  await send(2, 'session/prompt', { sessionId: 'office', contentBlocks: [{ type: 'text', text: 'Query workspace dependencies.' }] })
-  await waitForLine(lines, (value) => {
-    const params = value.params as { sessionId?: string; event?: { type?: string } } | undefined
-    return value.method === 'session.event' && params?.sessionId === 'office' && params.event?.type === 'turn/end'
-  }, () => stderr)
-  const names = (requests[0]!.tools as { name: string }[]).map(value => value.name)
-  expect(names.includes('load_workspace_dependencies')).toBe(enabled)
-  for (const name of ['office-docx', 'office-pptx', 'office-xlsx']) {
-    expect(JSON.stringify(requests[0]!.messages).includes(name)).toBe(enabled && mode !== 'missing-assets' && mode !== 'python-only')
-  }
-  if (mode === 'wrong-type') {
-    expect(requests).toHaveLength(2)
-    const messages = requests[1]!.messages as { content: { type: string; tool_use_id?: string; content?: unknown }[] }[]
-    const result = messages.flatMap(message => message.content).find(block => block.tool_use_id === 'workspace-dependencies')
-    expect(JSON.parse(JSON.stringify(result).replaceAll(JSON.stringify(paths.python).slice(1, -1), '<python>'))).toMatchInlineSnapshot(`
-      {
-        "content": [
-          {
-            "text": "Error: primary runtime: expected file at <python>",
-            "type": "text",
-          },
-        ],
-        "is_error": true,
-        "tool_use_id": "workspace-dependencies",
-        "type": "tool_result",
-      }
-    `)
-  } else if (enabled) {
-    expect(requests).toHaveLength(2)
-    const content: unknown = expect.arrayContaining([
-      expect.objectContaining({ type: 'tool_result', tool_use_id: 'workspace-dependencies',
-        content: [{ type: 'text', text: JSON.stringify(paths, undefined, 2) }] }),
-    ])
-    expect(requests[1]!.messages).toEqual(expect.arrayContaining([
-      expect.objectContaining({ role: 'user', content }),
-    ]))
-  }
-  if (mode === 'python-only') expect(stderr).toContain('node')
-  if (mode === 'missing-assets') expect(stderr).toContain('check_office.py')
-  await send(3, 'shutdown')
-  const exit = await child
-  expect(exit.timedOut).toBe(false)
-  expect(exit.signal).toBeUndefined()
-  expect(exit.exitCode, stderr).toBe(0)
-  await expect(readFile(join(home, 'dsh-runtimes', 'dsh-primary-runtime', 'runtime.json'))).rejects.toMatchObject({ code: 'ENOENT' })
 })

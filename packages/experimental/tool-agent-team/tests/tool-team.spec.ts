@@ -17,16 +17,29 @@ import * as SubagentSpawn from '@deepseek-ai/dsh-subagent-spawn-in-process'
 import { renderPrompt, renderContextSnapshot } from '@deepseek-ai/dsh-system-prompt'
 import * as ToolSubagentControl from '@deepseek-ai/dsh-tool-subagent-control'
 import { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
-import { resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
-import { serialize } from '@deepseek-ai/dsh-llm-deepseek/src/serialize.ts'
-import type { GenerateOptions } from '@deepseek-ai/dsh-llm'
+import type { ContentBlock, GenerateOptions } from '@deepseek-ai/dsh-llm'
 import { MockAdapter, textResponse, toolCallResponse } from '../../../core/agent-loop/tests/mock-adapter.ts'
 import TeamService from '../../agent-team/src/index.ts'
 import * as toolTeam from '../src/index.ts'
 
+/**
+ * Provider-neutral wire view of one request, enough to compare cache prefixes:
+ * the leading system message becomes the system prompt and adjacent same-role
+ * messages merge, as Messages-style providers receive them.
+ */
 function serializeRequest(request: GenerateOptions) {
-  const connection = resolveAdapterOptions({ models: [{ id: request.model, systemPromptUpdate: 'in-history' }] })
-  return serialize(request, connection, request.messages, new Map(), () => undefined)
+  const [first, ...rest] = request.messages
+  const leading = first?.role === 'system'
+  const system = request.system ?? (leading
+    ? first.content.map(block => block.type === 'text' ? block.text : '').join('')
+    : undefined)
+  const messages: { role: string; content: ContentBlock[] }[] = []
+  for (const message of leading ? rest : request.messages) {
+    const previous = messages.at(-1)
+    if (previous?.role === message.role) previous.content.push(...message.content)
+    else messages.push({ role: message.role, content: [...message.content] })
+  }
+  return { system, tools: request.tools, messages }
 }
 
 const SIGNAL = new AbortController().signal

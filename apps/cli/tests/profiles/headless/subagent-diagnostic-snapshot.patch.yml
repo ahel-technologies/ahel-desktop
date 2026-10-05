@@ -5,9 +5,6 @@
 - id: headless-runner
   disabled: true
 
-- id: llm-deepseek
-  disabled: true
-
 - id: session-query-sqlite
   disabled: true
 
@@ -26,7 +23,3 @@
     # Publish the persisted agent before the driver selects the single root.
     - id: resumed-agent
       name: './tests/fixtures/subagent-diagnostic-agent.ts'
-
-- id: session-log-deepseek
-  config:
-    enabled: false

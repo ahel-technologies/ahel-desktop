@@ -320,7 +320,12 @@ function openSse(response: ServerResponse, contentType = 'text/event-stream; cha
 }
 
 function writeSse(record: MockLlmRequestRecord, response: ServerResponse, payload: unknown): void {
-  response.write(`data: ${typeof payload === 'string' ? payload : JSON.stringify(payload)}\n\n`)
+  // Anthropic-SDK clients dispatch on the SSE `event:` field, not on the
+  // payload's `type`, so a typed payload carries both.
+  const type = typeof payload === 'object' && payload !== null && 'type' in payload && typeof payload.type === 'string'
+    ? `event: ${payload.type}\n`
+    : ''
+  response.write(`${type}data: ${typeof payload === 'string' ? payload : JSON.stringify(payload)}\n\n`)
   record.chunksSent += 1
 }
 

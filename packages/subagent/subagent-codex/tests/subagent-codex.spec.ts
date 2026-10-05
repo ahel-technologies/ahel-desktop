@@ -370,7 +370,6 @@ describe('task admission and package contracts', () => {
       'workspace:*',
     )
     expect(manifest.dependencies).toHaveProperty('@openai/codex', CODEX_VERSION)
-    expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-claude-code')
 
     const codexPackageJson = fileURLToPath(import.meta.resolve('@openai/codex/package.json'))
     const codexManifest = JSON.parse(readFileSync(codexPackageJson, 'utf8')) as {

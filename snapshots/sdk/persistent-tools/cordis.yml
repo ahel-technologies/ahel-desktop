@@ -8,15 +8,6 @@
       config:
         maxOutputChars: 16000
 
-- id: llm-deepseek
-  name: '@deepseek-ai/dsh-llm-deepseek-api-key'
-  config:
-    apiKeyEnv: DEEPSEEK_API_KEY
-    streamIdleTimeoutMs: 172800000
-    models:
-      - id: !!js process.env.DSH_MODEL ?? 'deepseek-v4-flash'
-        contextWindow: !!js Number(process.env.DSH_CONTEXT_WINDOW ?? 1000000)
-
 - id: sandbox-policy
   name: '@deepseek-ai/dsh-sandbox-policy'
   config:
@@ -162,7 +153,3 @@
           * To inspect a particular line range of a file, e.g. lines 10-25, try 'sed -n 10,25p /path/to/the/file'.
           * Please avoid commands that may produce a very large amount of output.
           * Please run long lived commands in the background, e.g. 'sleep 10 &' or start a server in the background.
-
-- id: session-log-deepseek
-  config:
-    enabled: false

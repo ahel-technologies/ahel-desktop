@@ -168,7 +168,6 @@ Config 更新严格验证发生变化的 provider。初始加载将已存储的�
 当包级约定不够用时阅读以下页面。它们从服务约定逐步进入孪生适配器与共享类型。
 
 - [dsh-llm 服务](../llm/README.zh.md)——本适配器注册其上的提供方无关服务。
-- [llm-deepseek 适配器](../llm-deepseek/README.zh.md)——`deepseek-official` 路由的 DeepSeek 直连孪生。
 - [LLM 流式子系统](../../../docs/subsystems/llm-streaming.zh.md)——`StreamChunk` 协议与适配器约定。
 - [llm-retry](../llm-retry/README.zh.md)——应用每个 profile `retryPolicy` 的重试执行器。
 - [孪生 LLM 适配器](../../../.agents/notes/implemented/architecture/2026-06-13-twin-llm-adapters.zh.md)——为什么 DeepSeek 路由交付两个结构不同的适配器。

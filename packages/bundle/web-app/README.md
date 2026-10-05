@@ -7,13 +7,9 @@ kind: "package-bundle"
 
 English | [中文](README.zh.md)
 
-Desktop analytics follows the [product collection policy](../../client/product-analytics/README.md), including its live application setting. Web usage is excluded.
-
-Desktop analytics schedules partial batches every 30 seconds, with a 15-second exporter timeout and a 20-second processor timeout. Shutdown allows 2 seconds to drain, then cancels pending requests and retry waits so telemetry does not keep the Host alive. Pending events may be lost on exit.
-
 ## Summary
 
-Run `dsh --profile web` for browser chat, model and settings management, and session history, using the same model access, tools, and safety defaults as other dsh surfaces. Startup prints a tokenized URL and normally opens the default browser; SSH sessions and `--no-open` require manual opening. You can change the port and allow extra hosts, but cannot bind all network interfaces. Remote access supports an advertised public HTTP(S) URL behind a prefix-stripping proxy. For one-shot command-line tasks, use `dsh-headless`.
+Run `dsh --profile web` for browser chat with your configured models and MCP tools, settings management, and session history; the desktop app runs the same bundles. Startup prints a tokenized URL and normally opens the default browser; SSH sessions and `--no-open` require manual opening. You can change the port and allow extra hosts, but cannot bind all network interfaces. Remote access supports an advertised public HTTP(S) URL behind a prefix-stripping proxy. For one-shot command-line tasks, use `dsh-headless`.
 
 ## Table of Contents
 
@@ -40,9 +36,9 @@ dsh --profile web --no-open --port 8080
 
 After startup you see a `dsh web:` line whose root URL carries a fresh process token. Unless `--no-open` or an SSH session suppresses it, the default browser opens that URL, receives a signed cookie, and redirects to the same directory without the token. You know it worked when the page loads and you can chat with the agent. Two failures to expect: if the frontend is not built, startup stops with a build hint (`pnpm run build` in a checkout); if the browser cannot be opened, a credential-free diagnostic prints to stderr while the server keeps running — open the printed startup URL yourself.
 
-**Settings → Models** displays **DeepSeek**, using `DEEPSEEK_API_KEY`. The default is `deepseek-official` / `deepseek-flash` (DeepSeek-V41-Flash). The [DeepSeek plugin](../../llm/llm-deepseek/README.md#endpoint-and-wire-format) uses the Messages API.
+**Settings → Models** adds model providers through the [pi-ai adapter](../../llm/llm-pi-ai/README.md); the profile has no model until you add one.
 
-Saved model selections override the composition default. The settings card accepts a Messages-compatible API address and a credential reference.
+A saved model selection overrides the composition default, which otherwise falls back to the first configured model route.
 
 ### Configuration
 
@@ -52,11 +48,11 @@ Saved model selections override the composition default. The settings card accep
 |---|---|---|
 | `openBrowser` | `true` | Open the default browser after startup; SSH launches suppress it |
 | `printUrl` | `true` | Print the `dsh web:` URL line at startup |
-| `surfaceContext` | `true` | Give the agent GUI-orientation context and expose `DSH_WEB_URL` to its shell commands |
+| `surfaceContext` | `true` | Give the agent GUI-orientation context and expose `DSH_WEB_URL` to shell commands when a shell tool is mounted |
 | `publicUrl` | Unset | Advertised HTTP(S) application root; otherwise announce the listener's loopback URL |
 | `trustedHosts` | `[]` | Extra hosts allowed to reach the GUI from the network |
 
-The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web-app) lists this runtime plugin's accepted fields and their JSDoc. The shipped composition inserts the `schedule` service row and the `ui-schedule` task page row, while the clock reading and the four reminder tools belong to the `standard`, `cordis`, and `ptc` presets. The `tool-subagent` and `tool-subagent-fork` rows in those presets deny the four tools, so a delegated child's scope never lists them.
+The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web-app) lists this runtime plugin's accepted fields and their JSDoc.
 
 <a id="public-deployments"></a>
 ### Listening, trust, and public deployments
@@ -73,7 +69,7 @@ When you launch `dsh --profile web` over SSH, the URL line still prints but the 
 
 ### Per-session agent setup
 
-Each browser session selects a shipped preset (`standard` by default). The Agent presets settings page changes the default and edits preset child plugins; saves persist in `$DSH_HOME/profiles/web/cordis.patch.yml`. Creator's plugin-management tool is enabled only when the Host provides an editable profile.
+Each browser session uses the shipped `standard` preset: the Ahel persona, the current time, context compaction with `/compact`, and the ask-user tool. MCP tools come from the MCP client rows the Host mounts, not from the preset. Edits saved from the Web editor override the preset's plugins by id in `$DSH_HOME/profiles/web/cordis.patch.yml`.
 
 -----
 
@@ -83,11 +79,11 @@ Each browser session selects a shipped preset (`standard` by default). The Agent
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The bundle is one patch layer of five files plus one runtime glue plugin: `cordis.patch.yml` carries the host rows and the preset registry, and each `presets/<id>.patch.yml` inserts one shipped preset declaration, applied in the order `dsh.bundle.patch` lists them. The storage stack and projection cache come from `dsh-base`; the web overlay's workspace and message-feedback rows consume that shared `storageDomain` service. The patch restates the surface-specific values the base deliberately omits, inserts the web-only host rows and browser roster, then moves the agent plane behind presets. The glue plugin owns dist serving, the advertised application URL, trust sampling, prompt sections, the bash variable, and the readiness announcements. The `office-to-pdf` row mounts one lazy [Office conversion provider](../../document/office-to-pdf/README.md) for Host consumers, including Desktop compositions using this bundle. The conversion service's Remote methods authorize preview reads, while Document Preview owns the Office viewer and Client cache.
+The bundle is one patch layer of two files plus one runtime glue plugin: `cordis.patch.yml` carries the host rows and the preset registry, and `presets/standard.patch.yml` inserts the shipped `standard` preset declaration, applied in the order `dsh.bundle.patch` lists them. The storage stack and projection cache come from `dsh-base`; the web overlay's workspace and message-feedback rows consume that shared `storageDomain` service. The patch restates the surface-specific values the base deliberately omits, inserts the web-only host rows and browser roster, then places the per-agent plugins behind the preset. The glue plugin owns dist serving, the advertised application URL, trust sampling, prompt sections, the bash variable, and the readiness announcements.
 
 ### Patch semantics
 
-A patch replaces the targeted row's whole `config`, so each web row restates every key it owns: the persona prefix and suffix templates, the `DSH_TOOLS_MODE` PTC mode opt-in, and the `session-query-sqlite` values on the base rows, then `insert` adds the web host rows, transport, and browser roster. The `webserver` and `web-runtime` rows inject the `webStartup` provider and read their invocation values directly; the `connection` row instead reads the bind-dependent `webRuntime` values the web-runtime row publishes, which are that provider's authorities plus the LAN literals of an all-interfaces bind. The per-agent tool rows the base mounts process-wide are disabled here and the preset roster takes over; the reasoning for each host-plane versus preset-plane decision is inline in the patch.
+A patch replaces the targeted row's whole `config`, so each web row restates every key it owns: the persona prefix and suffix templates, the `DSH_TOOLS_MODE` PTC mode opt-in, and the `session-query-sqlite` values on the base rows, then `insert` adds the web host rows, transport, and browser roster. The `webserver` and `web-runtime` rows inject the `webStartup` provider and read their invocation values directly; the `connection` row instead reads the bind-dependent `webRuntime` values the web-runtime row publishes, which are that provider's authorities plus the LAN literals of an all-interfaces bind. The base mounts no local tool rows, so the `standard` preset carries every per-agent plugin; the reasoning for each host-plane versus preset-plane decision is inline in the patch.
 
 ### Advertised application URL
 
@@ -109,7 +105,7 @@ The URL line and browser handoff are readiness signals: supervisors RPC as soon 
 | [`src/public-url.ts`](src/public-url.ts) | Advertised-root validation and trailing-slash normalization; a leaf module for local imports, not package API |
 | [`src/startup.ts`](src/startup.ts) | The `web-startup` provider: `--host`, `--port`, `--public-url`, `--trusted-host`, `--no-open`, `--help` |
 | [`cordis.patch.yml`](cordis.patch.yml) | The web patch: restated base values, web host rows, browser roster, preset registry |
-| [`presets/`](presets) | One `@deepseek-ai/dsh-agent-preset` declaration per shipped preset (`standard`, `ptc`, `minimal`, `cordis`), each its own patch file |
+| [`presets/`](presets) | The `@deepseek-ai/dsh-agent-preset` declaration of the shipped `standard` preset, in its own patch file |
 | [`tests/web-app.spec.ts`](tests/web-app.spec.ts) | Dist resolution, fallback seat, prompt sections, readiness, advertised URL publication |
 | [`tests/startup.spec.ts`](tests/startup.spec.ts) | Command-line parsing over a real Loader tree |
 | [`tests/public-url.spec.ts`](tests/public-url.spec.ts) | Advertised-root parsing and normalization |
@@ -129,6 +125,7 @@ Read these pages when you want to go deeper into the shared core, the browser re
 - [dsh-base](../base/README.md) — the shared core the GUI runs on.
 - [dsh-client-hmr](../../client/hmr/README.md) — how client-plugin changes reload during development.
 - [frontend-static](../../host/frontend-static/README.md) — how the built frontend is served.
+- [MCP client](../../mcp/mcp-client/README.md) — how configured MCP servers add tools to every session.
 - [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web-app) — every accepted config field and its source declaration.
 
 -----
@@ -140,11 +137,11 @@ Read these pages when you want to go deeper into the shared core, the browser re
 
 #### What the model sees
 
-When `surfaceContext` is true, the `harness:source` section identifies the on-disk Harness implementation without claiming it is the working directory, and the `app:web-surface` global section (first-party order 10100, after reusable instructions) orients the model to the GUI: the advertised application URL (defined under Listening, trust, and public deployments above), the "this page" referent, the update contract (the reload receiver is always on; no-refresh reloads additionally need the `pnpm run dev:web` watcher), and the instruction not to start replacement servers. `DSH_WEB_URL` additionally appears in the managed bash environment with its description, resolved per invocation from the live server. When it is false, neither section nor the variable is registered.
+When `surfaceContext` is true, the `harness:source` section identifies the on-disk Harness implementation without claiming it is the working directory, and the `app:web-surface` global section (first-party order 10100, after reusable instructions) orients the model to the GUI: the advertised application URL (defined under Listening, trust, and public deployments above), the "this page" referent, the update contract (the reload receiver is always on; no-refresh reloads additionally need the `pnpm run dev:web` watcher), and the instruction not to start replacement servers. When a shell environment service is mounted, `DSH_WEB_URL` additionally appears in the managed bash environment with its description, resolved per invocation from the live server; the `web` profile mounts none. When it is false, neither section nor the variable is registered.
 
 #### Token effect
 
-One source line and one prompt paragraph per session plus two managed-environment variable lines; constant per process.
+One source line and one prompt paragraph per session, plus two managed-environment variable lines when a shell environment service is mounted; constant per process.
 
 #### KV Cache effect
 
@@ -174,5 +171,3 @@ These limits tell you what to expect in unusual setups — a source checkout, SS
 None.
 
 </details>
-
-The Web composition includes the account Remote controller and Account settings section.

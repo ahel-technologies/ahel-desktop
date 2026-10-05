@@ -206,7 +206,7 @@ export const name = 'team-fixture-llm'
 /** LLM registry dependency. */
 export const inject = ['llm']
 
-/** Register the keyless adapter on the shipped default provider route. */
+/** Register the keyless adapter on the `deepseek-official` route the Agent Teams patches select. */
 export function apply(ctx) {
   ctx.llm.registerAdapter(['deepseek-official'], new TeamFixtureAdapter())
 }

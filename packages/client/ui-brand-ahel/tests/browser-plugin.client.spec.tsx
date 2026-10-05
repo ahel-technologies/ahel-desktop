@@ -14,7 +14,7 @@ const SIDEBAR_HOLES = [
   'sidebar.brand.name',
 ] as const
 
-const HERO_HOLE = 'conversation.hero.brand.mark'
+const HERO_HOLE = 'conversation.hero.brand.mark' as const
 
 async function bench(declare = true) {
   const ctx = new Context()

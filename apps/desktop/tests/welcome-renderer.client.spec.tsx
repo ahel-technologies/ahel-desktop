@@ -43,7 +43,7 @@ describe('desktop welcome presentation', () => {
     fireEvent.click(view.button('#continue'))
     expect(view.api.continue).toHaveBeenCalledOnce()
     expect(view.button('#continue').disabled).toBe(true)
-    await act(async () => { opened.resolve() })
+    await act(async () => { opened.resolve(undefined) })
     expect(view.button('#continue').disabled).toBe(false)
   })
 

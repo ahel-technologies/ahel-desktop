@@ -18,9 +18,6 @@
       "path": "../../llm/llm"
     },
     {
-      "path": "../../llm/llm-deepseek-api-key"
-    },
-    {
       "path": "../../core/agent"
     },
     {

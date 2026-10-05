@@ -40,7 +40,6 @@ const binScript = fileURLToPath(new URL('../../../../../../packages/test-support
 const dshBinScript = fileURLToPath(new URL('../../../../src/bin.ts', import.meta.url))
 const tsconfigPath = fileURLToPath(new URL('../../../../../../tsconfig.json', import.meta.url))
 const reasoningConfigPath = fileURLToPath(new URL('./fixtures/cli.patch.yml', import.meta.url))
-const deepseekDefaultsConfigPath = fileURLToPath(new URL('./fixtures/deepseek-defaults.patch.yml', import.meta.url))
 const piAiDefaultsConfigPath = fileURLToPath(new URL('./fixtures/pi-ai-defaults.patch.yml', import.meta.url))
 const headlessOverlayPath = fileURLToPath(new URL('./fixtures/headless-profile.patch.yml', import.meta.url))
 const headlessSessionExpected = join(goldensDir, 'headless-profile', 'session.expected.jsonl')
@@ -60,7 +59,6 @@ interface PersistedLog {
 interface DeepSeekDefaultsServer {
   readonly url: string
   readonly requests: JsonObject[]
-  readonly paths: string[]
   close(): Promise<void>
 }
 
@@ -82,19 +80,17 @@ async function expectHeadlessStream(normalized: string, expectedPath: string): P
   expect(parseJsonl(normalized)).toEqual(parseJsonl(expected))
 }
 
-/** Serve one deterministic DeepSeek-compatible response while retaining its request body. */
+/** Serve one deterministic chat-completions response while retaining its request body. */
 async function deepseekDefaultsServer(
-  options: { waitForTitleRequest?: boolean; piAiCompatibility?: true } = {},
+  options: { waitForTitleRequest?: boolean } = {},
 ): Promise<DeepSeekDefaultsServer> {
   const requests: JsonObject[] = []
-  const paths: string[] = []
   const server = createServer((request: IncomingMessage, response: ServerResponse) => {
     let body = ''
     request.setEncoding('utf8')
     request.on('data', (chunk: string) => { body += chunk })
     request.on('end', () => {
       requests.push(JSON.parse(body) as JsonObject)
-      paths.push(request.url ?? '')
       response.writeHead(200, { 'content-type': 'text/event-stream' })
       let keepAlives = 3
       const write = (): void => {
@@ -103,17 +99,6 @@ async function deepseekDefaultsServer(
           || (options.waitForTitleRequest === true && !requests.some(request => request.max_tokens === 64))) {
           response.write(': keep-alive\n\n')
           timer = setTimeout(write, 60)
-          return
-        }
-        if (options.piAiCompatibility !== true) {
-          response.end([
-            { type: 'message_start', message: { id: 'defaults-response', model: 'deepseek-v4-flash', usage: { input_tokens: 3, output_tokens: 0 } } },
-            { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
-            { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'DEFAULTS_OK' } },
-            { type: 'content_block_stop', index: 0 },
-            { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 1 } },
-            { type: 'message_stop' },
-          ].map(event => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`).join(''))
           return
         }
         response.end([
@@ -133,7 +118,6 @@ async function deepseekDefaultsServer(
   return {
     url: `http://127.0.0.1:${address.port}`,
     requests,
-    paths,
     close: () => new Promise(resolve => server.close(() => { resolve() })),
   }
 }
@@ -480,8 +464,7 @@ describe('headless stream-json snapshots', () => {
       tsconfigPath,
       env: {
         // First-run posture: no key in the environment, none under ./.dsh.
-        DEEPSEEK_API_KEY: '',
-        DEEPSEEK_BASE_URL: '',
+        SNAPSHOT_API_KEY: '',
         NODE_OPTIONS: [process.env.NODE_OPTIONS, '--disable-warning=ExperimentalWarning'].filter(Boolean).join(' '),
       },
       prepare: (cwd) => { runCwd = cwd },
@@ -496,12 +479,11 @@ describe('headless stream-json snapshots', () => {
     await expectHeadlessStream(normalized, streamExpected)
     // The durable failure leads with the credential store — the path that
     // keeps the secret out of configuration files — then names the launching
-    // environment, and stops there: configuration carries the reference, so
-    // there is no literal-key escape hatch left to offer.
+    // environment: configuration carries the reference, so there is no
+    // literal-key escape hatch left to offer.
     expect(normalized).toContain(
-      'store DEEPSEEK_API_KEY through the credentials service (the web Models page writes it),',
+      'store SNAPSHOT_API_KEY through the credentials service (the web Models page writes it) or export it,',
     )
-    expect(normalized).toContain('or export DEEPSEEK_API_KEY in the launching environment')
     expect(normalized).not.toContain('as a last resort')
   }, LOADER_SMOKE_TEST_TIMEOUT_MS)
 
@@ -520,8 +502,7 @@ describe('headless stream-json snapshots', () => {
         // A key that exists but no HTTP header can carry — the paste the
         // credential guard exists for: without it, `fetch` refuses to build
         // the header and the turn ends on a retried ByteString TypeError.
-        DEEPSEEK_API_KEY: 'sk-\u{1F600}pasted-from-a-chat-window',
-        DEEPSEEK_BASE_URL: '',
+        SNAPSHOT_API_KEY: 'sk-\u{1F600}pasted-from-a-chat-window',
         NODE_OPTIONS: [process.env.NODE_OPTIONS, '--disable-warning=ExperimentalWarning'].filter(Boolean).join(' '),
       },
       prepare: (cwd) => { runCwd = cwd },
@@ -534,7 +515,7 @@ describe('headless stream-json snapshots', () => {
     // The durable failure names the reference to correct and the writer that
     // usually owns it, and stays true in a composition that mounts no Models
     // page at all.
-    expect(normalized).toContain('the API key resolved from DEEPSEEK_API_KEY contains characters')
+    expect(normalized).toContain('the API key resolved from SNAPSHOT_API_KEY contains characters')
     expect(normalized).toContain('the web Models page writes it')
     // Neither the key nor its transport-level symptom (the ByteString error)
     // may reach the user: the code point of one character is still the key.
@@ -583,64 +564,8 @@ describe('headless stream-json snapshots', () => {
     `)
   }, LOADER_SMOKE_TEST_TIMEOUT_MS)
 
-  it('keeps provider comments alive and sends DeepSeek defaults through the one-shot app', async () => {
-    const server = await deepseekDefaultsServer()
-    try {
-      const result = await runLoaderSmoke({
-        label: 'DeepSeek adapter defaults headless stream-json snapshot',
-        tempDirPrefix: 'headless-snapshot-deepseek-defaults-',
-        binScript,
-        libBinScript: binScript,
-        configPath: deepseekDefaultsConfigPath,
-        binArgs: [
-          deepseekDefaultsConfigPath,
-          'return the deterministic response',
-        ],
-        tsconfigPath,
-        env: {
-          // Configuration carries only the reference; the key rides the
-          // launching environment, which is the whole credential plane here.
-          DEEPSEEK_API_KEY: 'snapshot-key',
-          DSH_SNAPSHOT_BASE_URL: server.url,
-          NODE_OPTIONS: [process.env.NODE_OPTIONS, '--disable-warning=ExperimentalWarning'].filter(Boolean).join(' '),
-        },
-      })
-
-      expect(result.stderr).toBe('')
-      expect(server.requests).toHaveLength(2)
-      expect(server.paths).toEqual(['/v1/messages', '/v1/messages'])
-      const agentRequest = server.requests.find(request => request.max_tokens === 256_000)
-      const titleRequest = server.requests.find(request => request.max_tokens === 64)
-      expect(agentRequest?.output_config).toEqual({ effort: 'low' })
-      expect(titleRequest).toBeDefined()
-      const header = (parseJsonl(result.stdout)
-        .map(record => record.event)
-        .find((event): event is JsonObject => (
-          event !== null
-          && typeof event === 'object'
-          && !Array.isArray(event)
-          && 'type' in event
-          && event.type === 'request/header'
-        ))?.data as JsonObject | undefined)?.header as JsonObject | undefined
-      expect(header?.config).toMatchInlineSnapshot(`
-        {
-          "maxTokens": 256000,
-          "model": "deepseek-v4-flash",
-          "provider": "deepseek-official",
-          "reasoningEffort": "low",
-        }
-      `)
-      expect(header?.adapterDefaults).toEqual({
-        maxTokens: true,
-        reasoningEffort: true,
-      })
-    } finally {
-      await server.close()
-    }
-  }, LOADER_SMOKE_TEST_TIMEOUT_MS)
-
   it('keeps the compatibility stream open until the title request arrives', async () => {
-    const server = await deepseekDefaultsServer({ waitForTitleRequest: true, piAiCompatibility: true })
+    const server = await deepseekDefaultsServer({ waitForTitleRequest: true })
     try {
       const response = await fetch(server.url, {
         method: 'POST',
@@ -677,7 +602,7 @@ describe('headless stream-json snapshots', () => {
   })
 
   it('sends pi-ai DeepSeek compatibility through the one-shot app', async () => {
-    const server = await deepseekDefaultsServer({ waitForTitleRequest: true, piAiCompatibility: true })
+    const server = await deepseekDefaultsServer({ waitForTitleRequest: true })
     try {
       const result = await runLoaderSmoke({
         label: 'pi-ai DeepSeek compatibility headless stream-json snapshot',

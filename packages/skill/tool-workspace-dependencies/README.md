@@ -73,7 +73,6 @@ A container can copy both directories into an immutable image layer and set `DSH
 <a id="further-exploration"></a>
 ## Further Exploration
 
-- [Office skills](../skill-office/README.md) — the workflows that call this tool for their interpreter.
 - [Tool registry](../../core/tools/README.md) — registration and schemas.
 
 -----

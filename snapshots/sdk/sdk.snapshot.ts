@@ -87,10 +87,6 @@ const RUNTIME_WORKSPACE_ENTRIES = [
   '.replay-fixtures',
   '.snapshot-patches',
 ] as const
-const dshSdkDiagnosticChildPatch = fileURLToPath(new URL(
-  './subagent-dsh-sdk-diagnostic/child.cordis.yml',
-  import.meta.url,
-))
 const dshSdkChildConfig = fileURLToPath(new URL(
   '../../packages/subagent/subagent-dsh-sdk/tests/fixtures/loader/child.patch.yml',
   import.meta.url,
@@ -142,9 +138,6 @@ const SDK_ASSERTIONS: Readonly<Record<string, SdkAssertions>> = {
   },
   'subagent-continuable': {
     environment: { DSH_SNAPSHOT_HUMAN_STEER: '1' },
-  },
-  'subagent-dsh-sdk-diagnostic': {
-    environment: { DSH_TEST_CHILD_PATCH: dshSdkDiagnosticChildPatch },
   },
   'persistent-tools': {
     environment: { DSH_SYSTEM_PROMPT: MINIMAL_SYSTEM_PROMPT },

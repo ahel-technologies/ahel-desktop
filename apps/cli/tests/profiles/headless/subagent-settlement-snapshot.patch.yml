@@ -5,9 +5,6 @@
 - id: headless-runner
   disabled: true
 
-- id: llm-deepseek
-  disabled: true
-
 - id: agent-loop
   config:
     agents:
@@ -28,7 +25,3 @@
     # Hold the parent's second step until the manager notice enters its inbox.
     - id: settlement-fence
       name: './tests/fixtures/subagent-settlement-fence.ts'
-
-- id: session-log-deepseek
-  config:
-    enabled: false

@@ -15,7 +15,6 @@ import { carrierKeyOf, type Scoped } from '@deepseek-ai/dsh-scope'
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import type SubagentRuntime from '@deepseek-ai/dsh-subagent'
 import type { SubagentRunEndInfo } from '@deepseek-ai/dsh-subagent'
-import * as LlmDeepSeek from '@deepseek-ai/dsh-llm-deepseek-api-key'
 import type {
   InitializeParams,
   InitializeResult,
@@ -74,11 +73,11 @@ function successStatus(reason: string, options: HarnessSdkJsonRpcServerOptions):
  */
 export class HarnessSdkJsonRpcServer {
   private cwd = process.cwd()
-  private provider = 'deepseek-official'
-  private model = 'deepseek-official'
+  // Set by `initialize`; prompts are rejected until it succeeds.
+  private provider = ''
+  private model = ''
   private reasoningEffort: ReturnType<typeof ReasoningEffortId> | undefined
   private maxTokens: number | undefined
-  private llmFiber: { dispose(): Promise<void> } | undefined
   private readonly sessions = new Map<string, SessionRecord>()
   private readonly sessionCreations = new Map<string, Promise<SessionRecord>>()
   private readonly disposers: (() => void)[] = []
@@ -130,7 +129,7 @@ export class HarnessSdkJsonRpcServer {
   }
 
   /**
-   * Validate and configure the SDK route, mounting the DeepSeek fallback only when unowned.
+   * Validate and configure the SDK route against an already registered adapter.
    * @param params - SDK handshake parameters.
    * @returns server identity for the handshake.
    */
@@ -149,11 +148,8 @@ export class HarnessSdkJsonRpcServer {
     const reasoningEffort = params.reasoningEffort === undefined
       ? undefined
       : ReasoningEffortId(params.reasoningEffort)
-    if (!this.hasAdapterFor(provider)) {
-      if (provider !== 'deepseek-official') throw new Error(`no adapter registered for provider "${provider}"`)
-      this.llmFiber = await this.ctx.plugin(LlmDeepSeek)
-    }
-    // Adapter presence was read from this service above; a successful fallback mount also requires it.
+    if (!this.hasAdapterFor(provider)) throw new Error(`no adapter registered for provider "${provider}"`)
+    // Adapter presence was read from this service above.
     const llm = this.ctx.get('llm') as LlmRuntime
     await llm.resolveCallConfig({
       provider,
@@ -167,7 +163,7 @@ export class HarnessSdkJsonRpcServer {
     this.reasoningEffort = reasoningEffort
     this.maxTokens = params.maxTokens
     this.initialized = true
-    return { serverInfo: { name: 'deepseek-harness-sdk-runtime', version: '0.0.1' } }
+    return { serverInfo: { name: 'ahel-desktop-sdk-runtime', version: '0.0.1' } }
   }
 
   /**
@@ -225,11 +221,9 @@ export class HarnessSdkJsonRpcServer {
         failures.push(error)
       }
     }
-    const teardownResults = await Promise.allSettled([
-      ...records.map(rec => Promise.resolve().then(() => rec.handle.dispose())),
-      ...(this.llmFiber === undefined ? [] : [Promise.resolve().then(() => this.llmFiber?.dispose())]),
-    ])
-    this.llmFiber = undefined
+    const teardownResults = await Promise.allSettled(
+      records.map(rec => Promise.resolve().then(() => rec.handle.dispose())),
+    )
     failures.push(...teardownResults
       .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
       .map(result => result.reason as unknown))
@@ -254,7 +248,7 @@ export class HarnessSdkJsonRpcServer {
       case 'shutdown':
         return this.shutdown()
       default:
-        throw new Error(`unknown DeepSeek Harness SDK runtime method: ${method}`)
+        throw new Error(`unknown Ahel Desktop SDK runtime method: ${method}`)
     }
   }
 

@@ -6,11 +6,11 @@
   en: af2e4e5296596e8f
   zh: 70c0b5ac93209d00
 /deepseek-ai-dsh-web-app:
-  en: a85684740ecd278a
-  zh: 7c54099b9edccf01
+  en: f4da95d498221fcd
+  zh: 6cc704e7aa6f376d
 /deepseek-ai-dsh-web-app/summary:
-  en: fd97ee0c14fb5378
-  zh: 0e1ccba47bc408d9
+  en: 345df61cb73aa5a8
+  zh: f148953d65b3629c
 /deepseek-ai-dsh-web-app/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
@@ -18,11 +18,11 @@
   en: 3bd37b85139d2fa7
   zh: ba86c807eb83866e
 /deepseek-ai-dsh-web-app/use-this-package/starting-the-web-gui:
-  en: b7ab01cfe9fed40f
-  zh: 23703ab7727c3ab5
+  en: 68f2232f65c9ab2f
+  zh: 18272085dc90d4fc
 /deepseek-ai-dsh-web-app/use-this-package/configuration:
-  en: a9ee366c5af68a6c
-  zh: 2711d7a3926e1101
+  en: 922af3dca5d60317
+  zh: 7f953a2dc7718d65
 /deepseek-ai-dsh-web-app/use-this-package/listening-trust-and-public-deployments:
   en: a79add86cb73d966
   zh: 78b58259f98ed063
@@ -30,14 +30,14 @@
   en: 45db677dcc91c5c9
   zh: 75b765f7f1e15035
 /deepseek-ai-dsh-web-app/use-this-package/per-session-agent-setup:
-  en: ccd6fc264b51e44b
-  zh: 3265c68477a89ec9
+  en: 24f700d0d6e08d94
+  zh: 8dad3cb855aeccdc
 /deepseek-ai-dsh-web-app/understand-the-implementation:
-  en: fb819d10930089a8
-  zh: f2dee0ff170a4d41
+  en: 22190d744dc1f685
+  zh: 965664d74372a273
 /deepseek-ai-dsh-web-app/understand-the-implementation/patch-semantics:
-  en: 954a424ea7182c8f
-  zh: 9339bc21dba44d40
+  en: c9aa23245e44ef16
+  zh: e271b782833b25f6
 /deepseek-ai-dsh-web-app/understand-the-implementation/advertised-application-url:
   en: ca977d2b2bcf72c5
   zh: 2b81b377c133c1a8
@@ -48,11 +48,11 @@
   en: b5ed8ff0056ca9da
   zh: fdc1fa4f14cb00b3
 /deepseek-ai-dsh-web-app/understand-the-implementation/source-map:
-  en: e41444bed021a121
-  zh: 44088a90df50d5b4
+  en: d2a52f3f3e5c9bd8
+  zh: e856b8b3cbafdf61
 /deepseek-ai-dsh-web-app/further-exploration:
-  en: f81694f7424e2988
-  zh: 6643f9227039e228
+  en: aaa746ff8e4bef78
+  zh: 5547448abea69d7e
 /deepseek-ai-dsh-web-app/model-experience:
   en: 215e7ba838619b7b
   zh: a311da3843709f90
@@ -60,11 +60,11 @@
   en: e6febc53efe0f51d
   zh: 9177816a8678d65d
 /deepseek-ai-dsh-web-app/model-experience/harness-source-and-web-surface-context/what-the-model-sees:
-  en: 583592075e04687d
-  zh: 9defddfd77bab0f7
+  en: fb3a184c864c2b0b
+  zh: 97ce9d68d2698db1
 /deepseek-ai-dsh-web-app/model-experience/harness-source-and-web-surface-context/token-effect:
-  en: 908fc84d6849a830
-  zh: 56fe5e418bab60ba
+  en: e5ea38f3d99306a9
+  zh: e10d494093313ef3
 /deepseek-ai-dsh-web-app/model-experience/harness-source-and-web-surface-context/kv-cache-effect:
   en: 1d7d87f54b20b563
   zh: d150a51615d278e8
@@ -72,5 +72,5 @@
   en: d6de1d07249ef3b0
   zh: 49d01329256e2eb3
 /deepseek-ai-dsh-web-app/known-limitations-and-deferred-work/dev-note:
-  en: 3f81b4f3beb74a0d
-  zh: 2e377ca40822d093
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

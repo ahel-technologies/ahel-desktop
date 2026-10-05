@@ -421,14 +421,22 @@ Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnp
 
 ### `ctx.agentDefaultModel` — `AgentDefaultModelConfig`
 
-Owns the default model selection independently of any Host or transport. Each operation reads the owning Config references.
+Owns the default model selection independently of any Host or transport. A configured provider and model win. Without them the default follows the first model of the first registered provider route, so a fresh install becomes usable as soon as the user adds one provider in Settings → Models.
 
 ```ts cordis-catalog
 /**
- * Read the current default model selection.
- * @returns a detached provider, model, and optional reasoning selection.
+ * Read the current default model selection without waiting for the provider registry.
+ * @returns the configured selection, else the last discovered fallback, else undefined.
  */
-currentSelection(): ModelSelection
+currentSelection(): ModelSelection | undefined
+
+/**
+ * Resolve the default model selection against the live provider registry.
+ * Entry points call this before creating an Agent or admitting a prompt, so
+ * a provider added since the last topology event is still found.
+ * @returns the configured selection, else the first advertised model, else undefined.
+ */
+async resolveSelection(): Promise<ModelSelection | undefined>
 
 /**
  * Save the complete default model selection. A deployment without a configuration

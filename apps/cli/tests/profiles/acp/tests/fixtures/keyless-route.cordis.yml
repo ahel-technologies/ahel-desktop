@@ -1,0 +1,16 @@
+# Keyless model route layered over the ACP live patch: a hand-declared pi-ai
+# Messages route the bridge selects but these smokes never call.
+- id: llm-pi-ai
+  config:
+    providers:
+      keyless:
+        apiKeyEnv: KEYLESS_API_KEY
+        api: anthropic-messages
+        baseURL: 'http://127.0.0.1:9'
+        models:
+          - id: keyless-model
+
+- id: acp
+  config:
+    provider: keyless
+    model: keyless-model

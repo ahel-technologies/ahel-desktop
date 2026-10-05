@@ -12,6 +12,7 @@ import AgentLoop from '@deepseek-ai/dsh-agent-loop'
 import { mountAgentLoopTestDependencies } from '@deepseek-ai/dsh-agent-loop-testkit'
 import { LlmAdapter } from '@deepseek-ai/dsh-llm'
 import type { GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
+import * as LlmPiAi from '@deepseek-ai/dsh-llm-pi-ai'
 import JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import * as jsonrpc from '../src/index.ts'
 
@@ -47,6 +48,18 @@ interface ApplyHarness {
 class DelayedAdapter extends LlmAdapter {
   async * stream(_options: GenerateOptions): AsyncIterable<StreamChunk> {
     throw new Error('not exercised')
+  }
+}
+
+/** Register the `messages` route: a real Messages adapter aimed at a loopback endpoint. */
+function messagesRoute(baseURL: string, model: string): (ctx: Context) => Promise<void> {
+  return async (ctx) => {
+    vi.stubEnv('SDK_TEST_API_KEY', 'test-key')
+    await ctx.plugin(LlmPiAi, {
+      providers: {
+        messages: { apiKeyEnv: 'SDK_TEST_API_KEY', api: 'anthropic-messages', baseURL, models: [{ id: model }] },
+      },
+    })
   }
 }
 
@@ -170,16 +183,15 @@ async function mockCompletionServer(): Promise<{ url: string; requests: unknown[
 describe('dsh-sdk-jsonrpc-server plugin apply', () => {
   it('serves initialize over the injected stdio pair', async () => {
     const storageDir = await mkdtemp(join(tmpdir(), 'dsh-jsonrpc-apply-init-'))
-    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
-    const harness = await mountPlugin(storageDir)
+    const harness = await mountPlugin(storageDir, { beforeServer: messagesRoute('http://127.0.0.1:9', 'apply-model') })
     try {
-      harness.send({ jsonrpc: '2.0', id: 'init-1', method: 'initialize', params: { cwd: storageDir, provider: 'deepseek-official', model: 'apply-model' } })
+      harness.send({ jsonrpc: '2.0', id: 'init-1', method: 'initialize', params: { cwd: storageDir, provider: 'messages', model: 'apply-model' } })
 
       const response = await harness.waitForFrame(frame => frame.id === 'init-1', 'initialize response')
       expect(response).toEqual({
         jsonrpc: '2.0',
         id: 'init-1',
-        result: { serverInfo: { name: 'deepseek-harness-sdk-runtime', version: '0.0.1' } },
+        result: { serverInfo: { name: 'ahel-desktop-sdk-runtime', version: '0.0.1' } },
       })
       expect(harness.exits()).toEqual([])
     } finally {
@@ -190,7 +202,6 @@ describe('dsh-sdk-jsonrpc-server plugin apply', () => {
 
   it('waits for Loader-owned adapter registration before initialize', async () => {
     const storageDir = await mkdtemp(join(tmpdir(), 'dsh-jsonrpc-apply-readiness-'))
-    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     let markStarted!: () => void
     let release!: () => void
     const started = new Promise<void>((resolve) => { markStarted = resolve })
@@ -232,7 +243,7 @@ describe('dsh-sdk-jsonrpc-server plugin apply', () => {
       const response = await harness.waitForFrame(frame => frame.id === 'init-delayed', 'initialize response after Loader settlement')
       expect(response).toMatchObject({
         id: 'init-delayed',
-        result: { serverInfo: { name: 'deepseek-harness-sdk-runtime' } },
+        result: { serverInfo: { name: 'ahel-desktop-sdk-runtime' } },
       })
       expect(harness.ctx.llm.listProviders()).toContainEqual({ id: 'delayed-private', name: 'delayed-private' })
     } finally {
@@ -246,11 +257,9 @@ describe('dsh-sdk-jsonrpc-server plugin apply', () => {
   it('drives a session/prompt turn end-to-end and forwards session notifications as output frames', async () => {
     const storageDir = await mkdtemp(join(tmpdir(), 'dsh-jsonrpc-apply-prompt-'))
     const llmServer = await mockCompletionServer()
-    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
-    vi.stubEnv('DEEPSEEK_BASE_URL', llmServer.url)
-    const harness = await mountPlugin(storageDir)
+    const harness = await mountPlugin(storageDir, { beforeServer: messagesRoute(llmServer.url, 'dsagent-model') })
     try {
-      harness.send({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { cwd: storageDir, provider: 'deepseek-official', model: 'dsagent-model' } })
+      harness.send({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { cwd: storageDir, provider: 'messages', model: 'dsagent-model' } })
       await harness.waitForFrame(frame => frame.id === 1, 'initialize response')
 
       harness.send({
@@ -319,7 +328,7 @@ describe('dsh-sdk-jsonrpc-server plugin apply', () => {
       expect(harness.events.filter(event => event.kind === 'root-disposed')).toHaveLength(1)
 
       const before = harness.frames().length
-      harness.send({ jsonrpc: '2.0', id: 'after-exit', method: 'initialize', params: { cwd: storageDir, provider: 'deepseek-official', model: 'x' } })
+      harness.send({ jsonrpc: '2.0', id: 'after-exit', method: 'initialize', params: { cwd: storageDir, provider: 'messages', model: 'x' } })
       await settle()
       expect(harness.frames().length).toBe(before)
     } finally {
@@ -341,7 +350,7 @@ describe('dsh-sdk-jsonrpc-server plugin apply', () => {
       expect(harness.outputErrors.map(error => error.message)).toEqual(['flush callback failed'])
 
       const before = harness.frames().length
-      harness.send({ jsonrpc: '2.0', id: 'after-flush-failure', method: 'initialize', params: { cwd: storageDir, provider: 'deepseek-official', model: 'x' } })
+      harness.send({ jsonrpc: '2.0', id: 'after-flush-failure', method: 'initialize', params: { cwd: storageDir, provider: 'messages', model: 'x' } })
       await settle()
       expect(harness.frames().length).toBe(before)
     } finally {
@@ -359,14 +368,14 @@ describe('dsh-sdk-jsonrpc-server plugin apply', () => {
       const error = await harness.waitForFrame(frame => frame.id === 'probe-1', 'error response for unknown method')
       expect(error.error).toMatchObject({
         code: -32603,
-        message: 'unknown DeepSeek Harness SDK runtime method: nope/unknown',
+        message: 'unknown Ahel Desktop SDK runtime method: nope/unknown',
       })
 
       await harness.fiber.dispose()
       expect(harness.events.some(event => event.kind === 'root-disposed')).toBe(false)
 
       const before = harness.frames().length
-      harness.send({ jsonrpc: '2.0', id: 'probe-2', method: 'initialize', params: { cwd: storageDir, provider: 'deepseek-official', model: 'x' } })
+      harness.send({ jsonrpc: '2.0', id: 'probe-2', method: 'initialize', params: { cwd: storageDir, provider: 'messages', model: 'x' } })
       await settle()
       expect(harness.frames().length).toBe(before)
       expect(harness.exits()).toEqual([])

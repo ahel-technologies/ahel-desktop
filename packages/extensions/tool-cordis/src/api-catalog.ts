@@ -84,13 +84,19 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
     key: 'agentDefaultModel',
     summary: 'Owns the default model selection independently of any Host or transport.',
-    description: 'Owns the default model selection independently of any Host or transport. Each operation reads the owning Config references.',
+    description: 'Owns the default model selection independently of any Host or transport. A configured provider and model win. Without them the default follows the first model of the first registered provider route, so a fresh install becomes usable as soon as the user adds one provider in Settings → Models.',
     methods: [
       {
-        signature: 'currentSelection(): ModelSelection',
-        description: 'Read the current default model selection.',
+        signature: 'currentSelection(): ModelSelection | undefined',
+        description: 'Read the current default model selection without waiting for the provider registry.',
         parameters: [],
-        returns: 'a detached provider, model, and optional reasoning selection.',
+        returns: 'the configured selection, else the last discovered fallback, else undefined.',
+      },
+      {
+        signature: 'async resolveSelection(): Promise<ModelSelection | undefined>',
+        description: 'Resolve the default model selection against the live provider registry. Entry points call this before creating an Agent or admitting a prompt, so a provider added since the last topology event is still found.',
+        parameters: [],
+        returns: 'the configured selection, else the first advertised model, else undefined.',
       },
       {
         signature: 'async saveSelection(next: ModelSelection): Promise<void>',
@@ -701,19 +707,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'computerUse',
-    summary: 'Owns one optional provider registration in the shared computer-use service.',
-    description: 'Owns one optional provider registration in the shared computer-use service.',
-    methods: [
-      {
-        signature: 'register(name: ComputerUseProviderName): () => Promise<void>',
-        description: 'Reserve the sole provider slot until the contribution is disposed. A second registration fails even when it repeats the current name. Providers must stop their tools and await owned work before releasing this registration.',
-        parameters: [{ name: 'name', description: 'provider-owned name used in registration diagnostics.' }],
-        returns: 'the effect disposer for this exact registration.',
-      },
-    ],
-  },
-  {
     key: 'configEditor',
     summary: 'Persist complete raw configs and apply them through the normal Loader path.',
     description: 'Persist complete raw configs and apply them through the normal Loader path.',
@@ -871,110 +864,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Remove one reference from a configuration surface.',
         parameters: [{ name: 'ref', description: 'reference name to remove.' }],
         throws: ['RemoteError when the request is invalid, no provider is mounted, or the provider refuses the write.'],
-      },
-    ],
-  },
-  {
-    key: 'deepseekAccount',
-    summary: 'Account operations; only Host consumers can obtain a request credential.',
-    description: 'Account operations; only Host consumers can obtain a request credential.',
-    methods: [
-      {
-        signature: 'abstract getState(): Promise<AccountView>',
-        description: 'Read stored-account presence and the latest login attempt.',
-        parameters: [],
-        returns: 'a snapshot without credentials or PKCE secrets.',
-      },
-      {
-        signature: 'abstract getProfile(client: AccountClientMetadata): Promise<AccountDetails[\'profile\'] | null>',
-        description: 'Query Platform profile independently of wallet balances. A ready result whose stable profile ID first becomes available or changes notifies watch consumers, so identity consumers re-read getPlatformSession; repeated IDs stay silent.',
-        parameters: [{ name: 'client', description: 'identity of the requesting UI for this call.' }],
-        returns: 'profile outcome, or null if signed out or the grant changed during the query.',
-      },
-      {
-        signature: 'abstract getBalance(client: AccountClientMetadata): Promise<AccountDetails[\'balance\'] | null>',
-        description: 'Query Platform recharge and bonus wallet balances independently of profile data.',
-        parameters: [{ name: 'client', description: 'identity of the requesting UI for this call.' }],
-        returns: 'balance outcome, or null if signed out or the grant changed during the query.',
-      },
-      {
-        signature: 'abstract getUnnotifiedBonuses(client: AccountClientMetadata): Promise<AccountBonusBatch | null>',
-        description: 'Query the granted bonuses Platform has not yet recorded as displayed.',
-        parameters: [{ name: 'client', description: 'identity of the requesting UI for this call; its language selects the server-authored message.' }],
-        returns: 'bonuses with their account, or null if signed out or the grant changed during the query.',
-      },
-      {
-        signature: 'abstract ackBonusNotified(accountId: AccountUserId, orderId: AccountBonusOrderId, client: AccountClientMetadata): Promise<boolean>',
-        description: 'Record one displayed bonus as notified for the account it belongs to.',
-        parameters: [{ name: 'accountId', description: 'account the notification was read for; a different current account is never acknowledged.' }, { name: 'orderId', description: 'granted bonus order the user saw.' }, { name: 'client', description: 'identity of the requesting UI for this call.' }],
-        returns: 'true once Platform records the acknowledgement; false if signed out or the account changed.',
-      },
-      {
-        signature: 'abstract startSignIn(client: AccountClientMetadata, callbackOrigin: string, loginSource: \'web\' | \'desktop\'): Promise<AccountView>',
-        description: 'Join an active attempt or start browser authorization.',
-        parameters: [{ name: 'client', description: 'identity of the requesting UI; a new attempt captures it, and joining retains the original attempt\'s identity.' }, { name: 'callbackOrigin', description: 'browser-accessible loopback HTTP origin, including any SSH local port.' }, { name: 'loginSource', description: 'initiating UI, used to return from a failed exchange.' }],
-        returns: 'the initial snapshot without waiting for browser approval.',
-      },
-      {
-        signature: 'abstract cancelSignIn(id: SignInAttemptId): Promise<AccountView>',
-        description: 'Cancel only the named attempt; committing attempts settle before returning.',
-        parameters: [{ name: 'id', description: 'attempt identity from this Host.' }],
-        returns: 'state after cancellation or an already-started commit.',
-      },
-      {
-        signature: 'abstract signOut(client: AccountClientMetadata): Promise<AccountView>',
-        description: 'Remove the local grant while retaining API keys; the provider revokes it in the background.',
-        parameters: [{ name: 'client', description: 'identity of the requesting UI, captured for the background revocation retries.' }],
-        returns: 'the signed-out state after local removal; remote failures never restore the grant.',
-      },
-      {
-        signature: 'abstract watch(signal: AbortSignal): AsyncIterable<AccountView>',
-        description: 'Subscribe to snapshots including a complete initial state.',
-        parameters: [{ name: 'signal', description: 'subscription lifetime; ending it never cancels login.' }],
-        returns: 'complete snapshots as account state changes.',
-      },
-      {
-        signature: 'abstract resolveToken(url: string): Promise<string | undefined>',
-        description: 'Resolve a credential only for the inference origin allowed by the provider.',
-        parameters: [{ name: 'url', description: 'actual request destination or API base URL.' }],
-        returns: 'stored token, or undefined for other origins or a signed-out account.',
-      },
-      {
-        signature: 'abstract rejectToken(token: string): Promise<void>',
-        description: 'Remove an inference-rejected token only while it still matches the stored login.',
-        parameters: [{ name: 'token', description: 'token captured by the rejected inference request.' }],
-        returns: 'after matching credentials are removed and the expiry notification is emitted.',
-      },
-      {
-        signature: 'abstract getPlatformSession(): Promise<PlatformSession | null>',
-        description: 'Read credentials for the configured Platform origin, bound to their issuing environment, and pair them with the account ID from the last successful profile read; no profile request is made.',
-        parameters: [],
-        returns: 'a Host-only snapshot, or null while signed out or when the credential changed during the read.',
-      },
-      {
-        signature: 'abstract getDeviceIdentity(): Promise<{ deviceId?: string; userId?: AccountUserId; osVersion: string }>',
-        description: 'Read existing login identity without creating a device or returning credentials.',
-        parameters: [],
-        returns: 'optional device/account identifiers and the provider\'s OS version string.',
-      },
-    ],
-  },
-  {
-    key: 'deepseekLlmApiExtensions',
-    summary: 'Registry of independently owned top-level fields for official DeepSeek requests.',
-    description: 'Registry of independently owned top-level fields for official DeepSeek requests.',
-    methods: [
-      {
-        signature: 'register<K extends keyof DeepSeekLlmApiExtensionMap>( field: K, provider: DeepSeekLlmApiExtensionProvider<DeepSeekLlmApiExtensionMap[K]>, ): () => Promise<void>',
-        description: 'Register the sole provider of one top-level request field. Registration is effect-scoped.',
-        parameters: [{ name: 'field', description: 'declaration-merged field owned by the provider.' }, { name: 'provider', description: 'request-time field preparation and optional acceptance behavior.' }],
-        returns: 'disposer that releases the field.',
-      },
-      {
-        signature: 'async prepare(request: DeepSeekLlmApiExtensionRequest): Promise<PreparedDeepSeekLlmApiExtensions>',
-        description: 'Prepare every currently registered field from one immutable base request. Preparation failures reject before HTTP dispatch. Field values are cloned and frozen; providers retain no mutable alias to the outgoing request.',
-        parameters: [{ name: 'request', description: 'exact serialized request facts before extension fields.' }],
-        returns: 'detached fields and their idempotent joint acceptance transaction.',
       },
     ],
   },
@@ -1536,37 +1425,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'officeToPdf',
-    summary: 'A provider lifetime owns all converters, queued calls, and temporary files.',
-    description: 'A provider lifetime owns all converters, queued calls, and temporary files.',
-    methods: [
-      {
-        signature: 'readonly generation: OfficeToPdfGeneration = OfficeToPdfGeneration(randomUUID())',
-        description: 'Changes whenever engine, font, or conversion configuration is replaced.',
-        parameters: [],
-      },
-      {
-        signature: 'convert(request: OfficeToPdfRequest, signal?: AbortSignal): Promise<OfficeToPdfResult>',
-        description: 'Convert Office bytes without modifying the source or writing Session events.',
-        parameters: [{ name: 'request', description: 'authorized metadata and deferred bounded source read.' }, { name: 'signal', description: 'caller cancellation; provider disposal also stops active work.' }],
-        returns: 'caller-owned PDF bytes after conversion and scratch cleanup settle; canceled readers reject independently.',
-        throws: ['{OfficeToPdfError} Invalid input, unusable output, or engine failure; cancellation rejects with its reason.'],
-      },
-      {
-        signature: '@Remote async render( workspaceFileScope: WorkspaceFileScope, path: string, priority: OfficeToPdfPriority, signal: AbortSignal, ): Promise<RenderedDocumentBytes>',
-        description: 'Read and convert one Office file using the Session\'s ordinary filesystem authorization.',
-        parameters: [{ name: 'workspaceFileScope', description: 'Session header lookup shared with workspaceFiles.' }, { name: 'path', description: 'absolute or workspace-relative Office path.' }, { name: 'priority', description: 'foreground preview or speculative background work.' }, { name: 'signal', description: 'Remote cancellation; disposal also cancels outstanding reads and conversions.' }],
-        returns: 'complete PDF bytes with original source identity and missing font families.',
-      },
-      {
-        signature: '@Remote(\'generation\') getGeneration(signal: AbortSignal): OfficeToPdfGeneration',
-        description: 'Read the current rendering generation before reusing a Client PDF.',
-        parameters: [{ name: 'signal', description: 'Remote caller cancellation.' }],
-        returns: 'provider lifetime, replaced with rendering, font, or engine configuration.',
-      },
-    ],
-  },
-  {
     key: 'otel',
     summary: 'Shared transport provider.',
     description: 'Shared transport provider. Mounting creates no queue, identity, or network connection.',
@@ -1743,8 +1601,8 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
   },
   {
     key: 'productAnalytics',
-    summary: 'Authenticated event intake; disabled instances do not inspect identity or accept new events.',
-    description: 'Authenticated event intake; disabled instances do not inspect identity or accept new events.',
+    summary: 'Anonymous event intake; disabled instances accept no new events.',
+    description: 'Anonymous event intake; disabled instances accept no new events.',
     methods: [
       {
         signature: '@Remote enabled(): boolean',
@@ -1759,8 +1617,8 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'current policy values until cancellation or service disposal.',
       },
       {
-        signature: '@Remote async report(event: ProductEvent): Promise<void>',
-        description: 'Submit selected Desktop fields; missing identity is omitted and never generated.',
+        signature: '@Remote report(event: ProductEvent): Promise<void>',
+        description: 'Submit selected Desktop fields. No account or device identity is attached.',
         parameters: [{ name: 'event', description: 'typed product event without message contents or credentials.' }],
         returns: 'after local submission; no delivery or warehouse acknowledgement.',
       },
@@ -1961,12 +1819,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Select one Session-local model after explicitly resuming the Session; save the default in the background.',
         parameters: [{ name: 'request', description: 'Session identity and requested model selection.' }],
         returns: 'the normalized selection installed for the Session, without waiting for default persistence.',
-      },
-      {
-        signature: '@Remote async initializeDefaultModel(): Promise<void>',
-        description: 'Select the first available account model after login when no provider API key is configured.',
-        parameters: [],
-        returns: 'after saving the first available model or retaining the existing default.',
       },
       {
         signature: '@Remote(\'modelCatalog\') modelCatalog(): Promise<ModelCatalog>',
@@ -4041,30 +3893,6 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'ref', description: 'the reference whose stored value changed.' }],
   },
   {
-    name: 'deepseek-account/model-sign-in-required',
-    mode: 'emit',
-    signature: '\'deepseek-account/model-sign-in-required\'(): void',
-    summary: 'An account model request requires the user to sign in.',
-    description: 'An account model request requires the user to sign in.',
-    parameters: [],
-  },
-  {
-    name: 'deepseek-account/session-expired',
-    mode: 'emit',
-    signature: '\'deepseek-account/session-expired\'(): void',
-    summary: 'Server rejection removed the current account credential; this notification is not replayed.',
-    description: 'Server rejection removed the current account credential; this notification is not replayed.',
-    parameters: [],
-  },
-  {
-    name: 'deepseek-account/signed-out',
-    mode: 'emit',
-    signature: '\'deepseek-account/signed-out\'(): void',
-    summary: 'Local grant removal has completed.',
-    description: 'Local grant removal has completed.',
-    parameters: [],
-  },
-  {
     name: 'domain/changed',
     mode: 'emit',
     signature: '\'domain/changed\'(change: DomainChanged): void',
@@ -4428,46 +4256,6 @@ export const EVENT_API: readonly EventApiEntry[] = [
 
 /** Shapes of every exported type the Service and Event signatures reference (transitively), sorted by name. */
 export const TYPE_API: readonly TypeApiEntry[] = [
-  {
-    name: 'AccountBonusBatch',
-    declaration: 'export interface AccountBonusBatch {\n    readonly accountId: AccountUserId;\n    readonly bonuses: readonly AccountBonusNotification[];\n}',
-  },
-  {
-    name: 'AccountBonusNotification',
-    declaration: 'export interface AccountBonusNotification {\n    readonly orderId: AccountBonusOrderId;\n    readonly campaign: string;\n    readonly amount: string;\n    readonly currency: \'CNY\' | \'USD\';\n    readonly grantedAt: string;\n    readonly expiresAt: string;\n    readonly message: string;\n}',
-  },
-  {
-    name: 'AccountBonusOrderId',
-    declaration: 'export type AccountBonusOrderId = Branded<\'AccountBonusOrderId\'>;',
-  },
-  {
-    name: 'AccountClientMetadata',
-    declaration: 'export interface AccountClientMetadata {\n    readonly version: string;\n    readonly locale: string;\n    readonly timezoneOffsetSeconds: number;\n}',
-  },
-  {
-    name: 'AccountDetails',
-    declaration: 'export interface AccountDetails {\n    readonly profile: {\n        readonly status: \'ready\';\n        readonly value: AccountProfile;\n    } | {\n        readonly status: \'failed\';\n    };\n    readonly balance: {\n        readonly status: \'ready\';\n        readonly value: readonly AccountWallet[];\n        readonly bonusWallets: readonly AccountWallet[];\n    } | {\n        readonly status: \'failed\';\n    };\n}',
-  },
-  {
-    name: 'AccountLinks',
-    declaration: 'export interface AccountLinks {\n    readonly usageUrl: string;\n    readonly topUpUrl: string;\n}',
-  },
-  {
-    name: 'AccountProfile',
-    declaration: 'export interface AccountProfile {\n    readonly id: AccountUserId | null;\n    readonly name: string | null;\n    readonly contact: string | null;\n    readonly avatarUrl?: string | null;\n}',
-  },
-  {
-    name: 'AccountUserId',
-    declaration: 'export type AccountUserId = Branded<\'AccountUserId\'>;',
-  },
-  {
-    name: 'AccountView',
-    declaration: 'export interface AccountView {\n    readonly status: \'signed-out\' | \'credential-stored\';\n    readonly links: AccountLinks;\n    readonly attempt: SignInAttemptView | null;\n}',
-  },
-  {
-    name: 'AccountWallet',
-    declaration: 'export interface AccountWallet {\n    readonly currency: \'CNY\' | \'USD\';\n    readonly balance: string;\n}',
-  },
   {
     name: 'AdapterRegistrationHandle',
     declaration: 'export interface AdapterRegistrationHandle {\n    (): void;\n    replace(providers: string[]): void;\n}',
@@ -4841,10 +4629,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type CompositionRowEnablement = boolean | \'conditional\';',
   },
   {
-    name: 'ComputerUseProviderName',
-    declaration: 'export type ComputerUseProviderName = Branded<\'ComputerUseProviderName\'>;',
-  },
-  {
     name: 'ConfinedArgv',
     declaration: 'export interface ConfinedArgv {\n    argv: string[];\n    enforcement: SandboxEnforcement;\n    denialSignatures: readonly string[];\n    runnerFailureRules: readonly RunnerFailureRule[];\n}',
   },
@@ -4907,6 +4691,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ConnectionTrustRequest',
     declaration: 'export interface ConnectionTrustRequest {\n    readonly headers: Headers | Readonly<Record<string, string | readonly string[] | undefined>>;\n}',
+  },
+  {
+    name: 'ContentBlock',
+    declaration: 'export type ContentBlock = ContentBlockMap[ContentBlockType];',
   },
   {
     name: 'ContentBlockMap',
@@ -5063,22 +4851,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'DailyScheduleRecord',
     declaration: 'export interface DailyScheduleRecord {\n    readonly id: ScheduleId;\n    readonly kind: \'daily\';\n    readonly title: string;\n    readonly prompt: string;\n    readonly time: string;\n    readonly timeZone: string;\n    readonly scheduledAt: string;\n}',
-  },
-  {
-    name: 'DeepSeekLlmApiExtensionMap',
-    declaration: 'export interface DeepSeekLlmApiExtensionMap {\n}',
-  },
-  {
-    name: 'DeepSeekLlmApiExtensionProvider',
-    declaration: 'export interface DeepSeekLlmApiExtensionProvider<T extends DeepSeekLlmApiJson> {\n    prepare(request: DeepSeekLlmApiExtensionRequest): PreparedDeepSeekLlmApiExtension<T> | undefined | Promise<PreparedDeepSeekLlmApiExtension<T> | undefined>;\n}',
-  },
-  {
-    name: 'DeepSeekLlmApiExtensionRequest',
-    declaration: 'export interface DeepSeekLlmApiExtensionRequest {\n    readonly body: Readonly<Record<string, DeepSeekLlmApiJson>>;\n    readonly sessionId?: string;\n    readonly purpose?: \'compaction\' | \'session-title\';\n    readonly signal: AbortSignal;\n}',
-  },
-  {
-    name: 'DeepSeekLlmApiJson',
-    declaration: 'export type DeepSeekLlmApiJson = null | boolean | number | string | DeepSeekLlmApiJson[] | {\n    [key: string]: DeepSeekLlmApiJson;\n};',
   },
   {
     name: 'DeliveryRetentionBounds',
@@ -5878,7 +5650,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'ModelCatalog',
-    declaration: 'export interface ModelCatalog {\n    readonly default: ModelSelection;\n    readonly routableProviders: readonly string[];\n    readonly groups: readonly ModelProviderGroup[];\n    readonly failures: readonly ModelCatalogFailure[];\n}',
+    declaration: 'export interface ModelCatalog {\n    readonly default?: ModelSelection;\n    readonly routableProviders: readonly string[];\n    readonly groups: readonly ModelProviderGroup[];\n    readonly failures: readonly ModelCatalogFailure[];\n}',
   },
   {
     name: 'ModelCatalogFailure',
@@ -5949,34 +5721,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type ObjectJsonSchema = JsonSchemaNode & {\n    type: \'object\';\n};',
   },
   {
-    name: 'OfficeExtension',
-    declaration: 'export type OfficeExtension = \'doc\' | \'docx\' | \'xls\' | \'xlsx\' | \'ppt\' | \'pptx\';',
-  },
-  {
-    name: 'OfficeSourceKey',
-    declaration: 'export type OfficeSourceKey = Branded<\'OfficeSourceKey\'>;',
-  },
-  {
-    name: 'OfficeToPdfGeneration',
-    declaration: 'export type OfficeToPdfGeneration = Branded<\'OfficeToPdfGeneration\'>;',
-  },
-  {
-    name: 'OfficeToPdfKey',
-    declaration: 'export type OfficeToPdfKey = Branded<\'OfficeToPdfKey\'>;',
-  },
-  {
-    name: 'OfficeToPdfPriority',
-    declaration: 'export type OfficeToPdfPriority = \'foreground\' | \'background\';',
-  },
-  {
-    name: 'OfficeToPdfRequest',
-    declaration: 'export interface OfficeToPdfRequest {\n    readonly extension: OfficeExtension;\n    readonly priority: OfficeToPdfPriority;\n    readonly source: {\n        readonly key: OfficeSourceKey;\n        readonly version: string;\n        readonly bytes?: number;\n        read(signal: AbortSignal, maxBytes: number): Promise<{\n            readonly bytes: Uint8Array;\n            readonly version: string;\n        }>;\n    };\n}',
-  },
-  {
-    name: 'OfficeToPdfResult',
-    declaration: 'export interface OfficeToPdfResult {\n    readonly pdf: Uint8Array;\n    readonly missingFonts: string[];\n    readonly cacheKey: OfficeToPdfKey;\n    readonly generation: OfficeToPdfGeneration;\n}',
-  },
-  {
     name: 'OnboardingPage',
     declaration: 'export type OnboardingPage = \'onboarding_welcome\' | \'onboarding_recharge\' | \'onboarding_use_case\' | \'onboarding_process\';',
   },
@@ -6027,10 +5771,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PermissionCatalog',
     declaration: 'export interface PermissionCatalog {\n    options: PresetOption[];\n    defaultOptions: PresetOption[];\n    defaultPreset: string;\n}',
-  },
-  {
-    name: 'PlatformSession',
-    declaration: 'export interface PlatformSession {\n    readonly origin: string;\n    readonly token: string;\n    readonly userId: AccountUserId | null;\n    readonly embeddedPageDist?: string;\n    readonly requestHeaders?: Readonly<Record<string, string>>;\n}',
   },
   {
     name: 'PluginChange',
@@ -6103,14 +5843,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PreparedAdapterCall',
     declaration: 'export interface PreparedAdapterCall {\n    readonly model: LlmResolvedModelInfo;\n    stream(options: GenerateOptions): AsyncIterable<StreamChunk>;\n}',
-  },
-  {
-    name: 'PreparedDeepSeekLlmApiExtension',
-    declaration: 'export interface PreparedDeepSeekLlmApiExtension<T extends DeepSeekLlmApiJson> {\n    readonly value: T;\n    accept?(): void | Promise<void>;\n}',
-  },
-  {
-    name: 'PreparedDeepSeekLlmApiExtensions',
-    declaration: 'export interface PreparedDeepSeekLlmApiExtensions {\n    readonly fields: Readonly<Partial<DeepSeekLlmApiExtensionMap>>;\n    accept(): Promise<void>;\n}',
   },
   {
     name: 'PreparedLlmCall',
@@ -6327,10 +6059,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RemoteEventHostInfo',
     declaration: 'export interface RemoteEventHostInfo {\n    readonly home: string;\n}',
-  },
-  {
-    name: 'RenderedDocumentBytes',
-    declaration: 'export interface RenderedDocumentBytes extends WorkspaceFileBytes {\n    readonly missingFonts: string[];\n    readonly generation: OfficeToPdfGeneration;\n}',
   },
   {
     name: 'ReplayEnvelope',
@@ -7193,18 +6921,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ShellSandboxInfo {\n    mode: SandboxMode;\n    denied: boolean;\n    enforcement?: SandboxEnforcement;\n    runnerFailed?: boolean;\n}',
   },
   {
-    name: 'SignInAttemptId',
-    declaration: 'export type SignInAttemptId = Branded<\'SignInAttemptId\'>;',
-  },
-  {
-    name: 'SignInAttemptView',
-    declaration: 'export interface SignInAttemptView {\n    readonly id: SignInAttemptId;\n    readonly phase: \'initializing\' | \'waiting-browser\' | \'exchanging\' | \'committing\' | \'succeeded\' | \'cancelled\' | \'expired\' | \'failed\';\n    readonly authorizeUrl?: string;\n    readonly expiresAt?: number;\n    readonly errorCode?: SignInErrorCode;\n}',
-  },
-  {
-    name: 'SignInErrorCode',
-    declaration: 'export type SignInErrorCode = \'no-response\' | \'network\' | \'protocol\' | \'expired\' | \'storage\';',
-  },
-  {
     name: 'SkillCandidate',
     declaration: 'export interface SkillCandidate extends SkillSummary {\n    readonly rank: number;\n    readonly locator: unknown;\n    readonly metadata?: Readonly<Record<string, unknown>>;\n}',
   },
@@ -7723,6 +7439,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'TerminalWaitReason',
     declaration: 'export type TerminalWaitReason = \'stdin_read\' | \'inferred_idle\' | \'timeout\' | \'session_exit\';',
+  },
+  {
+    name: 'TextBlock',
+    declaration: 'export interface TextBlock {\n    type: \'text\';\n    text: string;\n}',
   },
   {
     name: 'TextProps',

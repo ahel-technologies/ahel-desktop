@@ -9,7 +9,7 @@ kind: "package-group"
 
 ## 概述
 
-实验性原型的约定可能变更，且不提供支持承诺。新包默认发布；私有包还必须列入[私有例外列表](../../scripts/experimental-package-policy.ts)。所有当前包都以 `@deepseek-ai/dsh-experimental-*` 名称发布，包括显式启用的 Agent Teams 组合、Auto review、Cua Driver 提供方、浏览器操作后端、跨 realm Inspector、CPython PTC 后端与浏览器 worker 预览库。组外已发布产品不得依赖实验性包。dsh 安装将 Agent Teams、语音输入与 Auto review 包作为可选 bundle 一起发布，可从 Web 侧边栏“插件”页启用（[决策](../../.agents/notes/implemented/architecture/2026-09-21-experimental-capabilities-as-optional-bundles.zh.md)）；其余包是库或显式组合。
+实验性原型的约定可能变更，且不提供支持承诺。新包默认发布；私有包还必须列入[私有例外列表](../../scripts/experimental-package-policy.ts)。所有当前包都以 `@deepseek-ai/dsh-experimental-*` 名称发布，包括显式启用的 Agent Teams 组合、Auto review、浏览器操作后端、跨 realm Inspector、CPython PTC 后端与浏览器 worker 预览库。组外已发布产品不得依赖实验性包。dsh 安装将 Agent Teams、语音输入与 Auto review 包作为可选 bundle 一起发布，可从 Web 侧边栏“插件”页启用（[决策](../../.agents/notes/implemented/architecture/2026-09-21-experimental-capabilities-as-optional-bundles.zh.md)）；其余包是库或显式组合。
 
 ## 目录
 
@@ -36,8 +36,6 @@ kind: "package-group"
 | [`claude-code-mods`](claude-code-mods/README.zh.md) | 把 Claude Code 模组作为插件运行：钩子链落在 harness 扩展点上，并在提示框上方绘制横幅 | `ctx.claudeCodeMods` |
 | [`client-ui-claude-code-mods`](client-ui-claude-code-mods/README.zh.md) | 在提示框上方绘制模组树并把按钮点击发回的 Web 横幅 | — |
 | [`ptc-runtime-python`](ptc-runtime-python/README.zh.md) | PTC 执行 seam 的 CPython 子进程后端 | `ctx.ptcRuntime` |
-| [`computer-use-cua-driver-mcp`](computer-use-cua-driver-mcp/README.zh.md) | 通过 MCP 使用已安装的 Cua Driver | `ctx.computerUse` |
-| [`computer-use-cua-driver-native`](computer-use-cua-driver-native/README.zh.md) | 嵌入 Cua Driver 原生 npm 运行时 | `ctx.computerUse` |
 | [`browser-use-playwright-mcp`](browser-use-playwright-mcp/README.zh.md) | 通过 MCP 提供 Playwright 浏览器工具 | `ctx.browserUse` |
 | [`browser-use-chrome-devtools-mcp`](browser-use-chrome-devtools-mcp/README.zh.md) | 通过 MCP 提供 Chrome DevTools 检查与浏览器控制 | `ctx.browserUse` |
 | [`browser-use-stagehand-native`](browser-use-stagehand-native/README.zh.md) | Stagehand 浏览器操作与显式配置的原生模型 | `ctx.browserUse` |
@@ -55,7 +53,6 @@ kind: "package-group"
 ## 相关文档
 
 - [实验包发布说明](../../scripts/experimental-package-policy.ts)——默认公开与私有例外。
-- [计算机操作](../../docs/subsystems/computer-use.zh.md)——桌面提供方选择。
 - [浏览器操作](../../docs/subsystems/browser-use.zh.md)——浏览器提供方选择与 Session 所有权。
 - [Agent Teams 子系统](../../docs/subsystems/agent-team.zh.md)——持久 Team 类型与 `ctx.agentTeams` 服务 API。
 - [实验子树规则](AGENTS.md)——实验状态放宽了什么、不放宽什么。

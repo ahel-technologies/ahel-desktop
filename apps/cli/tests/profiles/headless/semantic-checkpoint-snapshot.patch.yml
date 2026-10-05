@@ -5,9 +5,6 @@
 - id: headless-runner
   disabled: true
 
-- id: llm-deepseek
-  disabled: true
-
 - id: session-persistence-jsonl
   config:
     root: './.sessions'
@@ -23,7 +20,3 @@
     # Publish the persisted agent before the driver selects the single root.
     - id: resumed-agent
       name: './tests/fixtures/semantic-checkpoint-agent.ts'
-
-- id: session-log-deepseek
-  config:
-    enabled: false

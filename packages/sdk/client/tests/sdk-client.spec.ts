@@ -562,7 +562,7 @@ describe('HarnessClient', () => {
 
     // A bare unbounded request with omitted params sends `{}` on the wire.
     const identity = await client.request('initialize') as { serverInfo: { name: string } }
-    expect(identity.serverInfo.name).toBe('deepseek-harness-sdk-runtime')
+    expect(identity.serverInfo.name).toBe('ahel-desktop-sdk-runtime')
 
     // Async iteration consumes queued items and then parks.
     const collected: string[] = []
