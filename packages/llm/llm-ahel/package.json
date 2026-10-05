@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-agent-default-model": "workspace:*",
     "@deepseek-ai/dsh-ahel-account": "workspace:*",
     "@deepseek-ai/dsh-credentials-local": "workspace:*",
     "@deepseek-ai/dsh-llm": "workspace:*",

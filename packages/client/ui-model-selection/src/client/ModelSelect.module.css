@@ -248,9 +248,15 @@
   background: transparent;
 }
 
-.option:disabled {
+.option:disabled,
+.unavailable {
   color: var(--dsw-alias-label-dimmed);
   cursor: default;
+}
+
+.unavailable .retry {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
 }
 
 .optionCopy {

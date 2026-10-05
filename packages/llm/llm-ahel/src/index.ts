@@ -3,9 +3,10 @@
  * shown as "Ahel") served by the `dsh-llm-pi-ai` adapter against
  * `https://ahel.ai/api/llm/v1`. The bearer is the signed-in ahel.ai account's
  * access token, read per request from `ctx.ahelAccount` (which refreshes it),
- * so no API key is stored for this route. The model list comes from
- * `GET <baseURL>/models` and is re-read on every account change; while that
- * endpoint is missing or unreadable, the configured fallback list serves.
+ * so no API key is stored for this route. The route exists only while signed
+ * in. The model list comes from `GET <baseURL>/models` (with the selected
+ * `?workspace=`) and is re-read on every account change; until it answers 200
+ * the menu shows one disabled "connecting" row and the read is retried.
  * Balance (402) and availability (403) refusals become readable errors.
  *
  * @module @deepseek-ai/dsh-llm-ahel
@@ -15,11 +16,13 @@ import type { Context } from '@deepseek-ai/cordis'
 import Schema from '@deepseek-ai/schemastery'
 import { LlmAdapter, LlmError, QUOTA_EXCEEDED_CODE } from '@deepseek-ai/dsh-llm'
 import type {
-  GenerateOptions, LlmFailure, LlmModelInfo, LlmProviderInfo, LlmResolvedModelInfo, PreparedAdapterCall, ResolvedRetryPolicy, StreamChunk,
+  AdapterRegistrationHandle, GenerateOptions, LlmFailure, LlmModelInfo, LlmProviderInfo, LlmResolvedModelInfo,
+  PreparedAdapterCall, ResolvedRetryPolicy, StreamChunk,
 } from '@deepseek-ai/dsh-llm'
 import { PiAiAdapter, resolveProfiles } from '@deepseek-ai/dsh-llm-pi-ai'
 import type { PiAiAdapterOptions, PiAiModelProfile, ResolvedPiAiProviderProfile } from '@deepseek-ai/dsh-llm-pi-ai'
 import type {} from '@deepseek-ai/dsh-ahel-account'
+import type {} from '@deepseek-ai/dsh-agent-default-model'
 
 /** Cordis plugin name. */
 export const name = 'llm-ahel'
@@ -48,16 +51,11 @@ export interface Config {
   displayName: string
   /** Deadline for the model-list request in milliseconds. */
   requestTimeoutMs: number
-  /** Models served while `GET <baseURL>/models` is missing or unreadable. */
-  fallbackModels: AhelModel[]
+  /** Wait between model-list reads while `GET <baseURL>/models` does not answer 200, in milliseconds. */
+  retryIntervalMs: number
+  /** Text of the one disabled model-menu row shown until the model list is read. */
+  connectingLabel: string
 }
-
-const Model: Schema<AhelModel> = Schema.object({
-  id: Schema.string().required(),
-  name: Schema.string().required(),
-  contextWindow: Schema.number().min(1024).required(),
-  maxTokens: Schema.number().min(1).required(),
-})
 
 /** Validated configuration. */
 export const Config = Schema.object({
@@ -65,11 +63,8 @@ export const Config = Schema.object({
   provider: Schema.string().pattern(/^[a-z][a-z0-9-]*$/).default('ahel'),
   displayName: Schema.string().default('Ahel'),
   requestTimeoutMs: Schema.number().min(1).max(120_000).default(30_000),
-  fallbackModels: Schema.array(Model).default([
-    { id: 'anthropic/claude-sonnet-5.5', name: 'Claude Sonnet 5.5', contextWindow: 1_000_000, maxTokens: 32_768 },
-    { id: 'openai/gpt-5.6', name: 'GPT-5.6', contextWindow: 400_000, maxTokens: 32_768 },
-    { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', contextWindow: 1_048_576, maxTokens: 32_768 },
-  ]),
+  retryIntervalMs: Schema.number().min(1_000).max(3_600_000).default(30_000),
+  connectingLabel: Schema.string().default('Ahel (connecting…)'),
 })
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -99,10 +94,18 @@ export function parseModelList(body: unknown): AhelModel[] | undefined {
 
 /**
  * Read `GET <baseURL>/models` with the account bearer.
+ * @param baseURL - proxy base URL.
+ * @param bearer - account access token.
+ * @param workspace - selected workspace id, sent as `?workspace=`.
+ * @param timeoutMs - request deadline.
  * @returns the listed models, or undefined when the endpoint is missing, refuses, or lists none.
  */
-async function fetchModels(baseURL: string, bearer: string, timeoutMs: number): Promise<AhelModel[] | undefined> {
-  const response = await fetch(`${baseURL}/models`, {
+async function fetchModels(
+  baseURL: string, bearer: string, workspace: string | undefined, timeoutMs: number,
+): Promise<AhelModel[] | undefined> {
+  const url = new URL(`${baseURL}/models`)
+  if (workspace !== undefined) url.searchParams.set('workspace', workspace)
+  const response = await fetch(url, {
     headers: { authorization: `Bearer ${bearer}`, accept: 'application/json' },
     redirect: 'error',
     signal: AbortSignal.timeout(timeoutMs),
@@ -169,16 +172,29 @@ async function* readableStream(stream: AsyncIterable<StreamChunk>): AsyncIterabl
   }
 }
 
-/** Delegates to the pi-ai adapter and rewrites Ahel refusals in its streams. */
+/** Delegates to the pi-ai adapter and rewrites Ahel refusals in its streams; refuses every call until the model list is read. */
 class AhelAdapter extends LlmAdapter {
-  constructor(private readonly inner: PiAiAdapter) { super() }
-  override providerInfo(provider: string): LlmProviderInfo { return this.inner.providerInfo(provider) }
+  constructor(
+    private readonly inner: PiAiAdapter,
+    private readonly displayName: string,
+    private readonly connecting: () => string | undefined,
+  ) { super() }
+  private ready(): void {
+    const label = this.connecting()
+    if (label !== undefined) throw new LlmError(label, 'PROVIDER_UNAVAILABLE')
+  }
+  override providerInfo(provider: string): LlmProviderInfo { return { id: provider, name: this.displayName } }
   override providerRetryPolicy(provider: string): ResolvedRetryPolicy | undefined { return this.inner.providerRetryPolicy(provider) }
-  override listModels(provider: string): Promise<readonly LlmModelInfo[]> { return this.inner.listModels(provider) }
-  override resolveModel(provider: string, model: string, signal?: AbortSignal): Promise<LlmResolvedModelInfo> {
+  override async listModels(provider: string): Promise<readonly LlmModelInfo[]> {
+    this.ready()
+    return this.inner.listModels(provider)
+  }
+  override async resolveModel(provider: string, model: string, signal?: AbortSignal): Promise<LlmResolvedModelInfo> {
+    this.ready()
     return this.inner.resolveModel(provider, model, signal)
   }
   override async prepareCall(provider: string, model: string, signal?: AbortSignal): Promise<PreparedAdapterCall> {
+    this.ready()
     const prepared = await this.inner.prepareCall(provider, model, signal)
     return { model: prepared.model, stream: options => readableStream(prepared.stream(options)) }
   }
@@ -200,23 +216,31 @@ const NO_AMBIENT_AUTH: PiAiAdapterOptions['auth'] = {
 }
 
 /**
- * Register the Ahel route and keep its model list current.
+ * Register the Ahel route while signed in and keep its model list current.
+ * Until `GET <baseURL>/models` answers 200 the route lists no model and the
+ * model menu shows one disabled "connecting" row; the read is retried every
+ * `retryIntervalMs`. Once models are listed and no default model is saved,
+ * the first Ahel model becomes the default unless another provider route
+ * (a bring-your-own key) is configured.
  * @param ctx - plugin context with `llm` and `ahelAccount`.
  * @param config - resolved configuration.
  */
 export function apply(ctx: Context, config: Config): void {
   const baseURL = config.baseURL.replace(/\/+$/, '')
-  const build = (models: readonly AhelModel[]): ReadonlyMap<string, ResolvedPiAiProviderProfile> => resolveProfiles({
+  let models: readonly AhelModel[] | undefined
+  let profiles: ReadonlyMap<string, ResolvedPiAiProviderProfile> = new Map()
+  type Profiles = ReadonlyMap<string, ResolvedPiAiProviderProfile>
+  const build = (list: readonly AhelModel[], workspace: string | undefined): Profiles => resolveProfiles({
     [config.provider]: {
       displayName: config.displayName,
       api: 'openai-completions',
       baseURL,
-      models: models.map((model): PiAiModelProfile => ({
+      ...workspace === undefined ? {} : { headers: { 'X-Ahel-Workspace': workspace } },
+      models: list.map((model): PiAiModelProfile => ({
         id: model.id, name: model.name, contextWindow: model.contextWindow, maxTokens: model.maxTokens,
       })),
     },
   })
-  let profiles = build(config.fallbackModels)
   const adapter = new AhelAdapter(new PiAiAdapter({
     profiles: () => profiles,
     resolveApiKey: async () => {
@@ -225,21 +249,72 @@ export function apply(ctx: Context, config: Config): void {
       return token
     },
     auth: NO_AMBIENT_AUTH,
-  }))
-  ctx.effect(() => ctx.llm.registerAdapter([config.provider], adapter), 'llm-ahel.route')
+  }), config.displayName, () => models === undefined ? config.connectingLabel : undefined)
+
+  let route: AdapterRegistrationHandle | undefined
+  let published = ''
+  /** Announce the route (or its absence) only when what the model menu shows changes. */
+  const publish = (signedIn: boolean): void => {
+    const shown = signedIn ? JSON.stringify(models?.map(model => model.id) ?? null) : ''
+    if (route === undefined || shown === published) return
+    published = shown
+    route.replace(signedIn ? [config.provider] : [])
+  }
+  ctx.effect(() => {
+    const handle = ctx.llm.registerAdapter([config.provider], adapter)
+    route = handle
+    published = 'null'
+    return () => { route = undefined; handle() }
+  }, 'llm-ahel.route')
+
+  const chooseDefault = async (list: readonly AhelModel[]): Promise<void> => {
+    const defaults = ctx.get('agentDefaultModel')
+    const first = list[0]
+    if (defaults === undefined || first === undefined || defaults.configuredSelection() !== undefined) return
+    if (ctx.llm.listProviders().some(provider => provider.id !== config.provider)) return
+    await defaults.saveSelection({ provider: config.provider, model: first.id })
+  }
 
   let generation = 0
+  let timer: ReturnType<typeof setTimeout> | undefined
   const refresh = async (): Promise<void> => {
     const current = ++generation
+    clearTimeout(timer)
+    timer = undefined
     const token = await ctx.ahelAccount.accessToken()
-    const listed = token === undefined ? undefined : await fetchModels(baseURL, token, config.requestTimeoutMs)
-    if (current === generation) profiles = build(listed ?? config.fallbackModels)
+    if (current !== generation) return
+    if (token === undefined) {
+      models = undefined
+      profiles = new Map()
+      publish(false)
+      return
+    }
+    const workspace = await ctx.ahelAccount.workspace()
+    let listed: AhelModel[] | undefined
+    try {
+      listed = await fetchModels(baseURL, token, workspace, config.requestTimeoutMs)
+    } finally {
+      if (current === generation && listed === undefined) {
+        models = undefined
+        profiles = new Map()
+        publish(true)
+        timer = setTimeout(refreshLogged, config.retryIntervalMs)
+      }
+    }
+    if (current !== generation || listed === undefined) return
+    models = listed
+    profiles = build(listed, workspace)
+    publish(true)
+    await chooseDefault(listed)
   }
   const refreshLogged = (): void => {
     refresh().catch((error: unknown) => {
-      ctx.logger.warn(`llm-ahel: model list unavailable, serving the fallback list: ${error instanceof Error ? error.message : String(error)}`)
+      ctx.logger.warn(`llm-ahel: model list unavailable, retrying in ${String(config.retryIntervalMs / 1000)} s: ${error instanceof Error ? error.message : String(error)}`)
     })
   }
-  ctx.on('ahel-account/changed', (view) => { if (view.attempt === null || view.attempt.phase === 'succeeded' || view.status === 'signed-out') refreshLogged() })
+  ctx.effect(() => () => { ++generation; clearTimeout(timer) }, 'llm-ahel.model-list')
+  ctx.on('ahel-account/changed', (view) => {
+    if (view.attempt === null || view.attempt.phase === 'succeeded' || view.status === 'signed-out') refreshLogged()
+  })
   refreshLogged()
 }

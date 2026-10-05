@@ -93,8 +93,11 @@ export class AgentDefaultModelConfig extends Service {
     })
   }
 
-  /** The configured selection, or undefined while provider or model is unset. */
-  private configuredSelection(): ModelSelection | undefined {
+  /**
+   * Read only the saved selection, ignoring the discovered fallback.
+   * @returns the configured selection, or undefined while provider or model is unset.
+   */
+  configuredSelection(): ModelSelection | undefined {
     const provider = this.config.provider.get()
     const model = this.config.model.get()
     if (provider === undefined || provider.length === 0 || model === undefined || model.length === 0) return undefined

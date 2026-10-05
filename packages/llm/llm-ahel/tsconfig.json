@@ -25,6 +25,9 @@
     },
     {
       "path": "../../credentials/ahel-account"
+    },
+    {
+      "path": "../../core/agent-default-model"
     }
   ]
 }

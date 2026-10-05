@@ -548,10 +548,15 @@ export function ModelSelect(
                 </div>
               )}
               {state.failures.map(failure => (
-                <div className={css.warning} key={failure.id}>
-                  <span>{t('warning.groupLoad', { name: failure.name, message: failure.message })}</span>
-                  <button type="button" className={css.retry} onClick={reload}>{t('retry')}</button>
-                </div>
+                <MenuGroup key={failure.id} label={failure.name}>
+                  <div className={clsx(css.option, css.modelOption, css.unavailable)} role="menuitem" aria-disabled="true"
+                    title={t('warning.groupLoad', { name: failure.name, message: failure.message })}>
+                    <span className={css.optionCopy}>
+                      <span className={css.modelName}>{failure.message}</span>
+                    </span>
+                    <button type="button" className={css.retry} onClick={reload}>{t('retry')}</button>
+                  </div>
+                </MenuGroup>
               ))}
               <div
                 ref={groupsRef}
