@@ -1,0 +1,62 @@
+{
+  "name": "@ahel/dsh-llm-local-cli",
+  "description": "Use what you already have: detect the Claude Code, Codex and Gemini CLIs installed on this computer and keep their enable state for Ahel Desktop",
+  "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/llm/llm-local-cli"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./types": {
+      "types": "./lib/types/types.d.ts",
+      "default": "./lib/types/types.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json",
+    "./typert": {
+      "types": "./lib/typert.host.d.ts",
+      "default": "./lib/typert.host.js"
+    },
+    "./remote": {
+      "types": "./lib/typert.remote-client.d.ts",
+      "default": "./lib/typert.remote-client.js"
+    }
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts",
+    "lib/typert.host.js",
+    "lib/typert.host.d.ts",
+    "lib/typert.remote-client.js",
+    "lib/typert.remote-client.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-subprocess": "workspace:*",
+    "@ahel/dsh-typert-protocol": "workspace:*"
+  },
+  "dependencies": {
+    "@ahel/schemastery": "workspace:~"
+  },
+  "devDependencies": {
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-config-editor": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-subprocess": "workspace:*",
+    "@ahel/dsh-typert-protocol": "workspace:*"
+  }
+}

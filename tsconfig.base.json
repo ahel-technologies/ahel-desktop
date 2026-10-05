@@ -47,6 +47,8 @@
       "@ahel/dsh-ahel-account": ["./packages/credentials/ahel-account/src/index.ts"],
       "@ahel/dsh-ahel-account/types": ["./packages/credentials/ahel-account/src/types.ts"],
       "@ahel/dsh-llm-ahel": ["./packages/llm/llm-ahel/src/index.ts"],
+      "@ahel/dsh-llm-local-cli": ["./packages/llm/llm-local-cli/src/index.ts"],
+      "@ahel/dsh-llm-local-cli/types": ["./packages/llm/llm-local-cli/src/types.ts"],
 
       "@ahel/dsh-experimental-claude-code-mods/types": ["./packages/experimental/claude-code-mods/src/types.ts"],
       // The example mods are source-only plugin entries; a source launch resolves the package subpath here.

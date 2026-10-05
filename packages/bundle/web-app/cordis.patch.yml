@@ -291,6 +291,11 @@
     - id: llm-ahel
       name: '@ahel/dsh-llm-ahel'
 
+    # Claude Code, Codex and Gemini CLIs the person installed and signed into
+    # themselves; detection and enable state only, the person's own vendor plan pays.
+    - id: llm-local-cli
+      name: '@ahel/dsh-llm-local-cli'
+
     # Sidebar account menu and the Ahel row in Settings > Models.
     - id: ui-ahel-account
       name: '@ahel/dsh-client-ui-ahel-account'

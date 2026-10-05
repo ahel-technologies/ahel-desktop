@@ -2495,6 +2495,9 @@ importers:
       '@ahel/dsh-llm-ahel':
         specifier: workspace:*
         version: link:../../llm/llm-ahel
+      '@ahel/dsh-llm-local-cli':
+        specifier: workspace:*
+        version: link:../../llm/llm-local-cli
       '@ahel/dsh-mcp-client':
         specifier: workspace:*
         version: link:../../mcp/mcp-client
@@ -9379,6 +9382,28 @@ importers:
       '@ahel/dsh-llm-pi-ai':
         specifier: workspace:*
         version: link:../llm-pi-ai
+
+  packages/llm/llm-local-cli:
+    dependencies:
+      '@ahel/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@ahel/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@ahel/dsh-config-editor':
+        specifier: workspace:*
+        version: link:../../boot/config-editor
+      '@ahel/dsh-llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@ahel/dsh-subprocess':
+        specifier: workspace:*
+        version: link:../../subprocess/subprocess
+      '@ahel/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
 
   packages/llm/llm-pi-ai:
     dependencies:
