@@ -49,6 +49,127 @@ export interface AhelAccountView {
   readonly reachable: boolean
 }
 
+/** One Discover listing query, as ahel.ai/discover reads it. */
+export interface CatalogBrowseQuery {
+  /** Search words; "" browses. */
+  readonly q: string
+  readonly kind: 'all' | 'app' | 'skill'
+  /** One of ahel.ai's Discover category keys, or null for every category. */
+  readonly category: string | null
+  /** Zero-based page of `pageSize` groups. */
+  readonly page: number
+}
+
+/** One part of a row's fact line, in display order; mirrors ahel's `FactPart`. */
+export type CatalogFactPart =
+  | { readonly key: 'provenance'; readonly text: 'Official' | 'Community'; readonly official: boolean }
+  | { readonly key: 'by'; readonly text: string }
+  | { readonly key: 'runs'; readonly text: string }
+  | { readonly key: 'tools'; readonly text: string; readonly reads: number; readonly writes: number }
+  | { readonly key: 'connect'; readonly text: string; readonly need: 'sign-in' | 'key' | 'none' }
+  | { readonly key: 'price'; readonly text: string; readonly source: 'ahel' | 'vendor' }
+
+/** The row's state control as ahel.ai computes it for a signed-out reader; mirrors `DiscoverRowState`. */
+export type CatalogRowState = 'connect' | 'add' | 'added' | 'on' | 'needs-setup' | 'install' | 'turn-on' | 'unavailable'
+
+/** The row's tile; mirrors `DiscoverRowTile`. */
+export interface CatalogRowTile {
+  /** One or two letters. */
+  readonly text: string
+  readonly tone: 'plain' | 'skill' | 'ahel'
+  /** Absolute https URL of a vendor mark on ahel.ai, or null. */
+  readonly mark: string | null
+}
+
+/** One listing row; mirrors ahel's `DiscoverRowData` with `href` and `tile.mark` made absolute. */
+export interface CatalogRow {
+  /** The catalog id, or "app:<service>" for an Actions app. */
+  readonly id: string
+  readonly name: string
+  readonly kind: 'app' | 'skill'
+  readonly kindLabel: 'App' | 'Skill'
+  readonly tile: CatalogRowTile
+  readonly facts: readonly CatalogFactPart[]
+  readonly chips: readonly string[]
+  readonly description: string | null
+  /** Absolute https URL of the item's public page on ahel.ai. */
+  readonly href: string
+  readonly state: CatalogRowState
+  readonly vendor: { readonly slug: string; readonly name: string } | null
+  readonly official: boolean
+}
+
+/** One listing group: a vendor's or a product's head row, its nested skills and folded copies. */
+export interface CatalogGroup {
+  /** Stable for the same query; `browsePart` fetches more of the nest by it. */
+  readonly key: string
+  readonly row: CatalogRow
+  readonly skills: { readonly vendorName: string; readonly count: number; readonly rows: readonly CatalogRow[] } | null
+  /** Community copies folded under this row; 0 for none. */
+  readonly copies: number
+}
+
+/** One page of the Discover listing. */
+export interface CatalogBrowsePage {
+  readonly total: number
+  readonly page: number
+  readonly pageSize: number
+  readonly groups: readonly CatalogGroup[]
+  /** Rows per kind under the other filters. */
+  readonly kinds: { readonly app: number; readonly skill: number }
+  /** Records per category key under the other filters; a category with none is absent. */
+  readonly categories: Readonly<Record<string, number>>
+}
+
+/** A further slice of one group's nested skills. */
+export interface CatalogPart {
+  readonly rows: readonly CatalogRow[]
+  /** Rows still held back after this slice. */
+  readonly remaining: number
+}
+
+/** One capability in the signed-in person's ahel.ai workspace, from the MCP `installed` tool. */
+export interface CatalogCapability {
+  readonly key: string
+  readonly name: string
+  readonly type: string | null
+  readonly servedBy?: string
+  readonly state: 'on' | 'off' | 'needs_setup' | 'unavailable' | 'available'
+  readonly needs: readonly string[]
+  readonly missingTypes?: readonly string[]
+  /** Catalog id the capability was installed from; matches `CatalogRow.id`. */
+  readonly itemId?: string | null
+  /** For a `needs_setup` app row: the ahel.ai page that finishes its sign-in. */
+  readonly signInUrl?: string
+  readonly reason: string | null
+}
+
+/** What the signed-in person has installed; empty while signed out. */
+export interface CatalogInstalled {
+  readonly signedIn: boolean
+  readonly rows: readonly CatalogCapability[]
+}
+
+/** The MCP `install` answer. `needs_setup` comes with a sign-in or key URL to open in the browser. */
+export interface CatalogInstallResult {
+  readonly key: string | null
+  readonly name: string
+  readonly type: string
+  readonly state: string
+  readonly needs: readonly string[]
+  readonly signInUrl?: string
+  readonly connectUrl?: string
+  readonly note: string
+  /** A first thing to ask the model, or null. */
+  readonly try: string | null
+}
+
+/** The MCP `switch` answer: the stored state after the write. */
+export interface CatalogSwitchResult {
+  readonly key: string
+  readonly state: string
+}
+
 declare module '@ahel/cordis' {
   interface Events {
     /**

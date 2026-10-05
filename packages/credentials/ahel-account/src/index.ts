@@ -8,7 +8,8 @@
  *
  * The Remote namespace `ahelAccount` exposes the view, sign-in, cancel,
  * sign-out, profile and watch; `accessToken()` and `setOpener()` stay
- * Host-only.
+ * Host-only. The child namespace `ahelCatalog` browses the ahel.ai catalog
+ * and reads and writes the person's installs with the same grant.
  *
  * @module @ahel/dsh-ahel-account
  */
@@ -24,12 +25,19 @@ import type { CredentialRef } from '@ahel/dsh-credentials'
 import { currentOAuthGrant, OAuthGrantError, readOAuthGrant, writeOAuthGrant } from '@ahel/dsh-mcp-client'
 import type { StoredOAuthGrant } from '@ahel/dsh-mcp-client'
 import { Remote, TypertRemoteService } from '@ahel/dsh-typert-protocol'
+import { AhelCatalog } from './catalog.ts'
 import {
   authorizeUrl, createPkce, discover, exchange, fetchProfile, randomState, register, revoke, SignInError, startLoopbackListener,
 } from './signin.ts'
 import type { HttpOptions, LoopbackListener } from './signin.ts'
 import type { AhelAccountView, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView } from './types.ts'
 
+export { AhelCatalog } from './catalog.ts'
+export type { CatalogConfig } from './catalog.ts'
+export type {
+  CatalogBrowsePage, CatalogBrowseQuery, CatalogCapability, CatalogFactPart, CatalogGroup, CatalogInstalled, CatalogInstallResult,
+  CatalogPart, CatalogRow, CatalogRowState, CatalogRowTile, CatalogSwitchResult,
+} from './types.ts'
 export type {
   AhelAccountView, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView, AhelSignInErrorCode, AhelWorkspace,
 } from './types.ts'
@@ -149,6 +157,7 @@ export class AhelAccount extends TypertRemoteService {
     this.signInTimeoutMs = resolved.signInTimeoutMs
     this.requestTimeoutMs = resolved.requestTimeoutMs
     this.refreshSkewMs = resolved.refreshSkewMs
+    ctx.plugin(AhelCatalog, { appOrigin: this.appOrigin, resource: this.resource })
     ctx.on('credentials/reference-updated', (ref) => { if (ref === this.ref) this.changed() })
     ctx.on('loader/volatile-update', () => {
       this.changed()

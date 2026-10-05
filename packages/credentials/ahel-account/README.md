@@ -26,6 +26,14 @@ The service is `ctx.ahelAccount`; the Remote namespace `ahelAccount` exposes `st
 
 Sign-in copies the `ahel` CLI flow: discovery, a loopback listener on `127.0.0.1:<random port>/callback`, a fresh dynamic client registration per sign-in (a fixed client id would stay revoked forever), PKCE S256, scopes `openid profile email offline_access`, then `GET /api/mcp/profile`. `signIn()` resolves once the authorize URL exists and returns it in `attempt.authorizeUrl`; the opener set with `setOpener` opens it, otherwise it is logged. Sign-out calls `POST /api/mcp/revoke`, then deletes the credential even if the revoke failed.
 
+## Catalog: the `ahelCatalog` namespace
+
+A child service, `ctx.ahelCatalog`, gives the desktop the ahel.ai Discover catalog and the person's installs. Its Remote namespace `ahelCatalog` exposes five methods.
+- `browse(query)` and `browsePart(query, groupKey, offset)` read the anonymous `GET /api/public/catalog-search?view=listing` that ahel.ai/discover reads. They work signed out. Row links and marks come back as absolute ahel.ai URLs.
+- `installed()`, `install(id)` and `setEnabled(key, on)` call the Ahel MCP gateway tools `installed`, `install` and `switch`. They use this account's bearer and the selected `?workspace=`, and refresh once after a 401. The desktop and ahel.ai therefore share one server state.
+- Failures are `RemoteError` codes: `ahel-catalog/busy` (HTTP 429), `ahel-catalog/unreachable`, `ahel-catalog/signed-out`, and `ahel-catalog/refused`, whose message is ahel.ai's own sentence.
+- The gateway has no uninstall tool, so removing an app is done on ahel.ai at `/app/apps`.
+
 ## Model Experience
 
 None. The package adds no tools, prompt text or session events.
