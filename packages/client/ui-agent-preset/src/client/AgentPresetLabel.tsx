@@ -38,7 +38,7 @@ export type AgentPresetLabelProps =
 /**
  * Render this session's agent-preset name beside its title.
  * @param props - composed slot props.
- * @returns the label, or null when the session records no preset.
+ * @returns the label, or null when the session records no preset or the roster offers one preset.
  */
 export function AgentPresetLabel({
   sessionId, useSessions, useAgentPresets, load, t,
@@ -55,7 +55,8 @@ export function AgentPresetLabel({
     if (preset !== undefined) void load()
   }, [preset, load])
 
-  if (preset === undefined) return null
+  // With one preset in the roster the label names no choice the person made.
+  if (preset === undefined || options.length <= 1) return null
 
   const option = options.find(entry => entry.id === preset)
   const text = option === undefined ? undefined : presetDisplayText(option, t)

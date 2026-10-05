@@ -7,7 +7,7 @@ import type { ConfigForm } from './config-form-types.ts'
 export class DeveloperToolsPreference {
   /** Accepted enablement, observable through renderer-bound hooks. */
   readonly enabled: ObservableSnapshot<boolean>
-  private readonly local = createSnapshotStore(true)
+  private readonly local = createSnapshotStore(false)
 
   /**
    * @param scope - settings-owned namespace controller.

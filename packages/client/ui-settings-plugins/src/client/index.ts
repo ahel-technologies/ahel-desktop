@@ -26,7 +26,7 @@ export type { PluginsSettingsSectionInjected, PluginsSettingsSectionProps } from
 const NS = 'settings.plugins'
 
 /** Required services (cordis fiber inject). */
-export const inject = ['slots', 'locale']
+export const inject = ['slots', 'locale', 'configForms']
 
 /**
  * Mount the built-in plugins section.
@@ -73,13 +73,31 @@ export function apply(ctx: ClientContext): void {
 
   // This package owns the one Built-in plugins navigation entry and the tab
   // chrome; feature plugins contribute pages without competing for Settings nav rows.
-  ctx.slots.inject('settings.section', () => ctx.slots.register({
-    name: 'settings.section',
-    id: 'plugins',
-    order: 15,
-    label: () => t('nav'),
-    locale: NS,
-    inject: sectionInjected,
-    children: { 'settings.plugins.tab': { kind: 'list', scope: 'root' } },
-  }, PluginsSettingsSection))
+  // The section is a developer surface, registered only while Developer tools are on.
+  const developerTools = ctx.configForms.developerTools.enabled
+  ctx.slots.inject('settings.section', () => {
+    let unregister: (() => void) | undefined
+    const sync = (): void => {
+      if (!developerTools.getSnapshot()) {
+        unregister?.()
+        unregister = undefined
+        return
+      }
+      unregister ??= ctx.slots.register({
+        name: 'settings.section',
+        id: 'plugins',
+        order: 15,
+        label: () => t('nav'),
+        locale: NS,
+        inject: sectionInjected,
+        children: { 'settings.plugins.tab': { kind: 'list', scope: 'root' } },
+      }, PluginsSettingsSection)
+    }
+    sync()
+    const stop = developerTools.subscribe(sync)
+    return () => {
+      stop()
+      unregister?.()
+    }
+  })
 }

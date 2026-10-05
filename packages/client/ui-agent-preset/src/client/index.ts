@@ -263,13 +263,30 @@ export function apply(ctx: ClientContext): void {
   })
 
   // Ordered after Models: choosing a model is routine, and composing an
-  // agent is the deployment-shaping act behind it.
-  ctx.slots.inject('settings.section', () => ctx.slots.register({
-    name: 'settings.section',
-    id: 'agent-presets',
-    order: 20,
-    label: () => ctx.locale.bind('settings.agentPreset')('nav'),
-    locale: 'settings.agentPreset',
-    inject: sectionInjected,
-  }, AgentPresetSection))
+  // agent is the deployment-shaping act behind it. The section is a developer
+  // surface: it is registered only while Developer tools are on.
+  ctx.slots.inject('settings.section', () => {
+    let unregister: (() => void) | undefined
+    const sync = (): void => {
+      if (!developerTools.getSnapshot()) {
+        unregister?.()
+        unregister = undefined
+        return
+      }
+      unregister ??= ctx.slots.register({
+        name: 'settings.section',
+        id: 'agent-presets',
+        order: 20,
+        label: () => ctx.locale.bind('settings.agentPreset')('nav'),
+        locale: 'settings.agentPreset',
+        inject: sectionInjected,
+      }, AgentPresetSection)
+    }
+    sync()
+    const stop = developerTools.subscribe(sync)
+    return () => {
+      stop()
+      unregister?.()
+    }
+  })
 }

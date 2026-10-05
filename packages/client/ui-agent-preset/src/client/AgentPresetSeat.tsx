@@ -159,9 +159,12 @@ export function AgentPresetSeat({
     )
     : label
 
+  // A roster with one choice offers nothing to pick, so the chip stays hidden.
+  const choosable = options.length > 1
+
   return (
     <>
-      {ready && <Menu
+      {ready && choosable && <Menu
         open={open && options.length > 0}
         onClose={() => { setOpen(false) }}
         items={options.map((option) => {

@@ -138,12 +138,31 @@ export function apply(ctx: ClientContext): void {
     })
     yield () => { void disposeNavigation() }
   })
-  ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
-    name: 'sidebar.panellist',
-    id: PANEL_ID,
-    order: 0,
-    label: () => t('panel'),
-    locale: NS,
-  }, PluginsPanelIcon))
+  // The sidebar entry is a developer surface, registered only while Developer tools are on.
+  const developerTools = ctx.configForms.developerTools.enabled
+  ctx.slots.inject('sidebar.panellist', () => {
+    let unregister: (() => void) | undefined
+    const sync = (): void => {
+      if (!developerTools.getSnapshot()) {
+        unregister?.()
+        unregister = undefined
+        if (ctx.layout.panelInfo.getSnapshot().activePanelId === PANEL_ID) ctx.layout.selectPanel(null)
+        return
+      }
+      unregister ??= ctx.slots.register({
+        name: 'sidebar.panellist',
+        id: PANEL_ID,
+        order: 0,
+        label: () => t('panel'),
+        locale: NS,
+      }, PluginsPanelIcon)
+    }
+    sync()
+    const stop = developerTools.subscribe(sync)
+    return () => {
+      stop()
+      unregister?.()
+    }
+  })
 
 }
