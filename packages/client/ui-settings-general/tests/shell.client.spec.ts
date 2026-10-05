@@ -42,10 +42,8 @@ const CHILD_NAMES = Object.keys(CHILD_SPECS) as Array<keyof typeof CHILD_SPECS>
  * adding a section changes this list.
  */
 const PRODUCT_SECTIONS: readonly string[] = ['general', 'models', 'plugins', 'agent-presets']
-/** Onboarding steps the web-app roster registers, in coordinator order; the one step comes from ui-settings-models. */
-const PRODUCT_ONBOARDING: readonly { id: string; order: number }[] = [
-  { id: 'welcome-notice', order: -100 },
-]
+/** Onboarding steps the web-app roster registers, in coordinator order. */
+const PRODUCT_ONBOARDING: readonly { id: string; order: number }[] = []
 
 describe('ui-settings-general shell', () => {
   it('shares one carrier subscription between both update locations and releases it on unload', async ({ start }) => {

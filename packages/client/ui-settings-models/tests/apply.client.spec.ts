@@ -1,6 +1,4 @@
 /** Models section registration: slot declaration injection, the locale-following label thunk, and HMR recovery. */
-import type { JsonValue } from '@ahel/dsh-util-values'
-import Schema from '@ahel/schemastery'
 import { Context } from '@ahel/cordis'
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { resolveSlotLabel } from '@ahel/dsh-client-ui-slots'
@@ -11,11 +9,7 @@ import { remoteDefaultResponses } from '@ahel/dsh-client-test-runtime/src/assemb
 import { ok, RemoteMock } from '@ahel/dsh-remote-mock'
 import { apply as settingsApply, inject as settingsInject } from '@ahel/dsh-client-ui-settings/client'
 import { apply, inject, refreshIfLoaded } from '@ahel/dsh-client-ui-settings-models/client'
-import {
-  WELCOME_NOTICE_ACK_FIELD, WELCOME_NOTICE_SETTINGS_NAMESPACE, WELCOME_NOTICE_VERSION,
-} from '../src/onboarding-copy.ts'
 import { ModelsSection } from '../src/client/ModelsSection.tsx'
-import { WelcomeNotice } from '../src/client/WelcomeNotice.tsx'
 import * as hostPlugin from '../src/index.ts'
 
 afterEach(() => { vi.unstubAllGlobals() })
@@ -65,30 +59,17 @@ function declare(slots: SlotRegistry): () => void {
 }
 
 describe('ui-settings-models apply', () => {
-  it('mounts a Host half with no Host behavior and registers only the Web preview notice', async () => {
+  it('mounts a Host half with no Host behavior and registers no onboarding step', async () => {
     const { ctx, slots } = await bench()
     declare(slots)
     try {
       expect(() => { hostPlugin.apply() }).not.toThrow()
       const plugin = ctx.plugin({ inject: [...inject], apply })
       await plugin.await()
-      expect(slots.entries('settings.onboarding').map(entry => entry.options.id)).toEqual(['welcome-notice'])
+      expect(slots.entries('settings.onboarding')).toEqual([])
       expect(slots.entries('settings.section').map(entry => entry.options.id)).toEqual(['models'])
       await plugin.dispose()
-      expect(slots.entries('settings.onboarding')).toEqual([])
-    } finally {
-      await ctx.fiber.dispose()
-    }
-  })
-
-  it('leaves the preview notice to the Desktop shell', async () => {
-    const { ctx, slots } = await bench()
-    declare(slots)
-    vi.stubGlobal('dshDesktop', {})
-    try {
-      await ctx.plugin({ inject: [...inject], apply }).await()
-      expect(slots.entries('settings.onboarding')).toEqual([])
-      expect(slots.entries('settings.section').map(entry => entry.options.id)).toEqual(['models'])
+      expect(slots.entries('settings.section')).toEqual([])
     } finally {
       await ctx.fiber.dispose()
     }
@@ -119,21 +100,13 @@ describe('ui-settings-models apply', () => {
     expect(typeof injected.controller.load).toBe('function')
     expect(injected.hooks.snapshot).toBe(injected.controller.store)
     expect(typeof injected.operations.writeSettings).toBe('function')
-    const onboarding = before.slots.entries('settings.onboarding')
-    expect(onboarding).toHaveLength(1)
-    expect(onboarding.find(entry => entry.options.id === 'welcome-notice')).toMatchObject({
-      component: WelcomeNotice,
-      options: { id: 'welcome-notice', order: -100 },
-    })
 
     const after = await bench()
     await after.ctx.plugin({ inject: [...inject], apply }).await()
     expect(after.slots.entries('settings.section')).toHaveLength(0)
-    expect(after.slots.entries('settings.onboarding')).toHaveLength(0)
     declare(after.slots)
     await Promise.resolve()
     expect(after.slots.entries('settings.section')[0]!.component).toBe(ModelsSection)
-    expect(after.slots.entries('settings.onboarding')).toHaveLength(1)
     // The self-inflicted ledger notifications hit the duplicate guard.
     expect(after.slots.entries('settings.section')).toHaveLength(1)
   })
@@ -168,11 +141,9 @@ describe('ui-settings-models apply', () => {
     // disposer variable goes stale.
     redeclare()
     expect(b.slots.entries('settings.section')).toHaveLength(0)
-    expect(b.slots.entries('settings.onboarding')).toHaveLength(0)
     declare(b.slots)
     await Promise.resolve()
     expect(b.slots.entries('settings.section')[0]!.component).toBe(ModelsSection)
-    expect(b.slots.entries('settings.onboarding')).toHaveLength(1)
     // The locale path also recovers through the same ledger re-check.
     b.locale.setLocale('en')
     expect(resolveSlotLabel(b.slots.entries('settings.section')[0]!.options.label)).toBe('Models')
@@ -209,26 +180,9 @@ describe('ui-settings-models apply', () => {
     expect(b.locale.bind('settings.models')('nav')).toBe('模型')
     await fiber.dispose()
     expect(b.slots.entries('settings.section')).toHaveLength(0)
-    expect(b.slots.entries('settings.onboarding')).toHaveLength(0)
     // The (ns, locale) seats are free again — the dictionary disposers ran.
     expect(() => b.locale.register('settings.models', 'zh', {})).not.toThrow()
     expect(() => b.locale.register('settings.models', 'en', {})).not.toThrow()
-  })
-
-  it('keeps remote-browser acknowledgement in process memory', async () => {
-    const b = await bench(false)
-    declare(b.slots)
-    await b.ctx.plugin({ inject: [...inject], apply }).await()
-    const entry = b.slots.entries('settings.onboarding')
-      .find(candidate => candidate.options.id === 'welcome-notice')!
-    const injected = (
-      entry.inject as unknown as () => import('../src/client/WelcomeNotice.tsx').WelcomeNoticeInjected
-    )()
-
-    await injected.controller.load()
-    expect(injected.controller.store.getSnapshot()).toEqual({
-      status: 'ready', acknowledged: false, error: null,
-    })
   })
 })
 
@@ -274,43 +228,6 @@ describe('pushed invalidations', () => {
     const load = vi.spyOn(injected.controller, 'load').mockResolvedValue()
     b.remote.emit('credentials/reference-updated', ['ANTHROPIC_API_KEY'])
     expect(load).toHaveBeenCalledTimes(1)
-  })
-
-  it('welcome state follows the shared mirror across document commits', async () => {
-    // The welcome notice derives from its settings scope: a document commit
-    // reaches it through the mirror's one refresh, with no routing here.
-    const mock = RemoteMock.create().load(remoteDefaultResponses)
-    const namespace = {
-      ns: WELCOME_NOTICE_SETTINGS_NAMESPACE,
-      schema: JSON.parse(JSON.stringify(Schema.object({ [WELCOME_NOTICE_ACK_FIELD]: Schema.string() }).toJSON())) as JsonValue,
-      value: {},
-      autoGenerate: true, applies: 'live' as const,
-      secrets: [],
-      revision: 0,
-    }
-    const document = { writable: true, hasDocument: false, namespaces: [namespace] }
-    mock.remote.settings.describe.mockResolvedValue(ok(document))
-    const b = await bench(true, mock)
-    declare(b.slots)
-    await b.ctx.plugin({ inject: [...inject], apply }).await()
-    const entry = b.slots.entries('settings.onboarding')
-      .find(candidate => candidate.options.id === 'welcome-notice')!
-    const injected = (
-      entry.inject as unknown as
-      () => import('../src/client/WelcomeNotice.tsx').WelcomeNoticeInjected
-    )()
-    await injected.controller.load()
-    await vi.waitFor(() => {
-      expect(injected.hooks.welcome.getSnapshot()).toMatchObject({ status: 'ready', acknowledged: false })
-    })
-    mock.remote.settings.describe.mockResolvedValue(ok({
-      ...document,
-      namespaces: [{ ...namespace, value: { [WELCOME_NOTICE_ACK_FIELD]: WELCOME_NOTICE_VERSION }, revision: 1 }],
-    }))
-    b.remote.emit('settings/document-updated', ['ui-settings-general', 1])
-    await vi.waitFor(() => {
-      expect(injected.hooks.welcome.getSnapshot()).toMatchObject({ status: 'ready', acknowledged: true })
-    })
   })
 
   it('joins the refreshed mirror view on a settings invalidation', async () => {

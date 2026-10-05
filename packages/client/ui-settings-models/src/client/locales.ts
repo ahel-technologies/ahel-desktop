@@ -102,10 +102,6 @@ export const en = {
   settingsPathUnresolvable: 'unresolvable settings path',
   create: 'Create provider',
   creating: 'Creating\u2026',
-  welcomeTitle: 'Preview Notice',
-  welcomeBody: 'Ahel Desktop is in preview. Some areas still need work, and features may change between releases. Your feedback helps us improve it.\n\nTo start, add a model provider with your own API key in Settings → Models. Anthropic and OpenAI-compatible providers are supported.',
-  welcomeContinue: 'Continue',
-  welcomeError: 'The acknowledgement could not be saved. Please try again.',
 }
 
 /** The settings.models namespace key union. */
@@ -213,8 +209,4 @@ export const zh: { [Key in keyof typeof en]: string } = {
   settingsPathUnresolvable: '无法解析设置路径',
   create: '创建提供商',
   creating: '创建中\u2026',
-  welcomeTitle: '预览版说明',
-  welcomeBody: 'Ahel Desktop 目前处于预览阶段，部分功能仍在完善，各版本之间可能会有变化。欢迎反馈意见，帮助我们改进。\n\n开始使用前，请在“设置 → 模型”中用你自己的 API 密钥添加模型提供商。支持 Anthropic 及兼容 OpenAI 协议的提供商。',
-  welcomeContinue: '继续',
-  welcomeError: '暂时无法保存确认状态，请重试。',
 }
