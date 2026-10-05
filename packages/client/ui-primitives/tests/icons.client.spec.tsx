@@ -135,15 +135,31 @@ describe('FishLogo', () => {
   })
 })
 
+describe('AhelTile', () => {
+  it('renders the logo tile in its fixed red and cream inks at the requested edge', () => {
+    const view = render(<primitives.AhelTile size={34} />)
+    const svg = view.container.querySelector('svg')!
+    expect(svg.getAttribute('width')).toBe('34')
+    expect(svg.getAttribute('height')).toBe('34')
+    expect(svg.getAttribute('viewBox')).toBe('195 228 157 157')
+    expect(view.container.querySelector('rect')?.getAttribute('fill')).toBe('#f6f1e7')
+    expect(view.container.querySelector('g')?.getAttribute('fill')).toBe('#e42238')
+    expect(view.container.innerHTML).not.toContain('currentColor')
+  })
+})
+
 describe('BrandWordmark', () => {
-  it('can render the name artwork with or without its leading mark', () => {
+  it('renders the lowercase wordmark in currentColor with or without the leading tile', () => {
     const view = render(<primitives.BrandWordmark />)
     const svg = view.container.querySelector('svg')!
-    expect(svg.getAttribute('width')).toBe('182')
-    expect(svg.getAttribute('viewBox')).toBe('0 0 182 24')
+    expect(Number(svg.getAttribute('width'))).toBeCloseTo(63.58, 2)
+    expect(svg.getAttribute('height')).toBe('24')
+    expect(svg.querySelector('svg[viewBox="195 228 157 157"]')).not.toBeNull()
+    expect(svg.lastElementChild?.getAttribute('fill')).toBe('currentColor')
 
-    view.rerender(<primitives.BrandWordmark includeMark={false} />)
-    expect(svg.getAttribute('width')).toBe('156')
-    expect(svg.getAttribute('viewBox')).toBe('26 0 156 24')
+    view.rerender(<primitives.BrandWordmark includeMark={false} size={12} />)
+    expect(Number(svg.getAttribute('width'))).toBeCloseTo(15.79, 2)
+    expect(svg.getAttribute('height')).toBe('12')
+    expect(svg.querySelector('svg')).toBeNull()
   })
 })

@@ -1,6 +1,9 @@
 /* Figma font-weight 510 (an SF Pro variable-font weight) always renders as
    font-weight: 500 in this UI — non-variable webfonts snap intermediate
    weights unpredictably across platforms. */
+/* Static palette (ui-theme owns the values; aliases below pick steps by role).
+ * neutral-bluish-* carries the Ahel Studio slate ramp and deepseek-* the Ahel
+ * red ramp (#e42238 at 500); the names stay so component CSS keeps resolving. */
 body {
   --dsw-static-amber-100: rgb(254, 245, 231);
   --dsw-static-amber-400: rgb(247, 173, 49);
@@ -19,18 +22,17 @@ body {
   --dsw-static-blue-800: rgb(30, 64, 175);
   --dsw-static-blue-900: rgb(14, 48, 116);
   --dsw-static-blue-950: rgb(23, 37, 84);
-  --dsw-static-deepseek-100: rgb(228, 237, 253);
-  --dsw-static-deepseek-200: rgb(211, 226, 255);
-  --dsw-static-deepseek-300: rgb(183, 200, 254);
-  /* Brightened from the platform rgb(103, 158, 254) at the designer's request: legibility on the dark toast surface. */
-  --dsw-static-deepseek-400: rgb(122, 170, 255);
-  --dsw-static-deepseek-450: rgb(86, 134, 254);
-  --dsw-static-deepseek-500: rgb(65, 118, 230);
-  --dsw-static-deepseek-50: rgb(237, 243, 254);
-  --dsw-static-deepseek-600: rgb(72, 104, 178);
-  --dsw-static-deepseek-700-delete: rgb(47, 76, 143);
-  --dsw-static-deepseek-800: rgb(52, 65, 91);
-  --dsw-static-deepseek-900: rgb(40, 49, 66);
+  --dsw-static-deepseek-100: rgb(251, 221, 225);
+  --dsw-static-deepseek-200: rgb(248, 196, 203);
+  --dsw-static-deepseek-300: rgb(242, 154, 166);
+  --dsw-static-deepseek-400: rgb(245, 130, 146);
+  --dsw-static-deepseek-450: rgb(234, 69, 89);
+  --dsw-static-deepseek-500: rgb(228, 34, 56);
+  --dsw-static-deepseek-50: rgb(253, 236, 238);
+  --dsw-static-deepseek-600: rgb(200, 30, 50);
+  --dsw-static-deepseek-700-delete: rgb(158, 24, 40);
+  --dsw-static-deepseek-800: rgb(77, 29, 39);
+  --dsw-static-deepseek-900: rgb(59, 20, 25);
   --dsw-static-green-100: rgb(230, 250, 237);
   --dsw-static-green-400: rgb(78, 209, 126);
   --dsw-static-green-500: rgb(34, 197, 94);
@@ -54,24 +56,24 @@ body {
   --dsw-static-neutral-850: rgb(33, 33, 35);
   --dsw-static-neutral-900: rgb(15, 15, 15);
   --dsw-static-neutral-bluish-00: rgb(255, 255, 255);
-  --dsw-static-neutral-bluish-1000: rgb(15, 17, 21);
-  --dsw-static-neutral-bluish-100: rgb(235, 238, 242);
-  --dsw-static-neutral-bluish-150: rgb(233, 236, 242);
-  --dsw-static-neutral-bluish-200: rgb(225, 229, 238);
-  --dsw-static-neutral-bluish-300: rgb(207, 211, 214);
-  --dsw-static-neutral-bluish-400: rgb(173, 178, 184);
-  --dsw-static-neutral-bluish-500: rgb(151, 157, 166);
-  --dsw-static-neutral-bluish-50: rgb(249, 250, 251);
-  --dsw-static-neutral-bluish-600: rgb(129, 133, 140);
-  --dsw-static-neutral-bluish-60: rgb(245, 246, 247);
-  --dsw-static-neutral-bluish-700: rgb(97, 102, 107);
-  --dsw-static-neutral-bluish-750: rgb(67, 69, 74);
-  --dsw-static-neutral-bluish-75: rgb(241, 243, 245);
-  --dsw-static-neutral-bluish-800: rgb(53, 54, 56);
-  --dsw-static-neutral-bluish-850: rgb(44, 44, 46);
-  --dsw-static-neutral-bluish-875: rgb(35, 35, 36);
-  --dsw-static-neutral-bluish-900: rgb(27, 27, 28);
-  --dsw-static-neutral-bluish-950: rgb(21, 21, 23);
+  --dsw-static-neutral-bluish-1000: rgb(27, 36, 51);
+  --dsw-static-neutral-bluish-100: rgb(229, 234, 241);
+  --dsw-static-neutral-bluish-150: rgb(221, 227, 235);
+  --dsw-static-neutral-bluish-200: rgb(211, 218, 228);
+  --dsw-static-neutral-bluish-300: rgb(184, 194, 207);
+  --dsw-static-neutral-bluish-400: rgb(164, 173, 186);
+  --dsw-static-neutral-bluish-500: rgb(135, 147, 163);
+  --dsw-static-neutral-bluish-50: rgb(244, 246, 249);
+  --dsw-static-neutral-bluish-600: rgb(107, 118, 136);
+  --dsw-static-neutral-bluish-60: rgb(247, 249, 251);
+  --dsw-static-neutral-bluish-700: rgb(91, 102, 120);
+  --dsw-static-neutral-bluish-750: rgb(61, 72, 89);
+  --dsw-static-neutral-bluish-75: rgb(237, 240, 244);
+  --dsw-static-neutral-bluish-800: rgb(42, 50, 66);
+  --dsw-static-neutral-bluish-850: rgb(33, 41, 56);
+  --dsw-static-neutral-bluish-875: rgb(27, 33, 48);
+  --dsw-static-neutral-bluish-900: rgb(23, 28, 37);
+  --dsw-static-neutral-bluish-950: rgb(35, 44, 61);
   --dsw-static-red-100: rgb(254, 226, 226);
   --dsw-static-red-400: rgb(242, 90, 90);
   --dsw-static-red-400-a12: rgb(242 90 90 / 12%);
@@ -100,18 +102,17 @@ body[data-ds-dark-theme] {
   --dsw-static-blue-800: rgb(30, 64, 175);
   --dsw-static-blue-900: rgb(14, 48, 116);
   --dsw-static-blue-950: rgb(23, 37, 84);
-  --dsw-static-deepseek-100: rgb(228, 237, 253);
-  --dsw-static-deepseek-200: rgb(211, 226, 255);
-  --dsw-static-deepseek-300: rgb(183, 200, 254);
-  /* Brightened from the platform rgb(103, 158, 254) at the designer's request: legibility on the dark toast surface. */
-  --dsw-static-deepseek-400: rgb(122, 170, 255);
-  --dsw-static-deepseek-450: rgb(86, 134, 254);
-  --dsw-static-deepseek-500: rgb(65, 118, 230);
-  --dsw-static-deepseek-50: rgb(237, 243, 254);
-  --dsw-static-deepseek-600: rgb(72, 104, 178);
-  --dsw-static-deepseek-700-delete: rgb(47, 76, 143);
-  --dsw-static-deepseek-800: rgb(52, 65, 91);
-  --dsw-static-deepseek-900: rgb(40, 49, 66);
+  --dsw-static-deepseek-100: rgb(251, 221, 225);
+  --dsw-static-deepseek-200: rgb(248, 196, 203);
+  --dsw-static-deepseek-300: rgb(242, 154, 166);
+  --dsw-static-deepseek-400: rgb(245, 130, 146);
+  --dsw-static-deepseek-450: rgb(234, 69, 89);
+  --dsw-static-deepseek-500: rgb(228, 34, 56);
+  --dsw-static-deepseek-50: rgb(253, 236, 238);
+  --dsw-static-deepseek-600: rgb(200, 30, 50);
+  --dsw-static-deepseek-700-delete: rgb(158, 24, 40);
+  --dsw-static-deepseek-800: rgb(77, 29, 39);
+  --dsw-static-deepseek-900: rgb(59, 20, 25);
   --dsw-static-green-100: rgb(230, 250, 237);
   --dsw-static-green-400: rgb(78, 209, 126);
   --dsw-static-green-500: rgb(34, 197, 94);
@@ -135,24 +136,24 @@ body[data-ds-dark-theme] {
   --dsw-static-neutral-850: rgb(33, 33, 35);
   --dsw-static-neutral-900: rgb(15, 15, 15);
   --dsw-static-neutral-bluish-00: rgb(255, 255, 255);
-  --dsw-static-neutral-bluish-1000: rgb(15, 17, 21);
-  --dsw-static-neutral-bluish-100: rgb(235, 238, 242);
-  --dsw-static-neutral-bluish-150: rgb(233, 236, 242);
-  --dsw-static-neutral-bluish-200: rgb(225, 229, 238);
-  --dsw-static-neutral-bluish-300: rgb(207, 211, 214);
-  --dsw-static-neutral-bluish-400: rgb(173, 178, 184);
-  --dsw-static-neutral-bluish-500: rgb(151, 157, 166);
-  --dsw-static-neutral-bluish-50: rgb(249, 250, 251);
-  --dsw-static-neutral-bluish-600: rgb(129, 133, 140);
-  --dsw-static-neutral-bluish-60: rgb(249, 250, 251);
-  --dsw-static-neutral-bluish-700: rgb(97, 102, 107);
-  --dsw-static-neutral-bluish-750: rgb(67, 69, 74);
-  --dsw-static-neutral-bluish-75: rgb(241, 243, 245);
-  --dsw-static-neutral-bluish-800: rgb(53, 54, 56);
-  --dsw-static-neutral-bluish-850: rgb(44, 44, 46);
-  --dsw-static-neutral-bluish-875: rgb(35, 35, 36);
-  --dsw-static-neutral-bluish-900: rgb(27, 27, 28);
-  --dsw-static-neutral-bluish-950: rgb(21, 21, 23);
+  --dsw-static-neutral-bluish-1000: rgb(20, 23, 29);
+  --dsw-static-neutral-bluish-100: rgb(225, 229, 236);
+  --dsw-static-neutral-bluish-150: rgb(211, 216, 224);
+  --dsw-static-neutral-bluish-200: rgb(193, 198, 207);
+  --dsw-static-neutral-bluish-300: rgb(193, 198, 207);
+  --dsw-static-neutral-bluish-400: rgb(164, 171, 184);
+  --dsw-static-neutral-bluish-500: rgb(138, 147, 163);
+  --dsw-static-neutral-bluish-50: rgb(241, 242, 245);
+  --dsw-static-neutral-bluish-600: rgb(107, 118, 136);
+  --dsw-static-neutral-bluish-60: rgb(241, 242, 245);
+  --dsw-static-neutral-bluish-700: rgb(74, 85, 104);
+  --dsw-static-neutral-bluish-750: rgb(49, 58, 74);
+  --dsw-static-neutral-bluish-75: rgb(233, 236, 241);
+  --dsw-static-neutral-bluish-800: rgb(40, 48, 65);
+  --dsw-static-neutral-bluish-850: rgb(33, 41, 56);
+  --dsw-static-neutral-bluish-875: rgb(27, 33, 48);
+  --dsw-static-neutral-bluish-900: rgb(24, 28, 37);
+  --dsw-static-neutral-bluish-950: rgb(20, 23, 29);
   --dsw-static-red-100: rgb(254, 226, 226);
   --dsw-static-red-400: rgb(242, 90, 90);
   --dsw-static-red-400-a12: rgb(242 90 90 / 12%);
@@ -188,7 +189,7 @@ body {
   --dsw-alias-border-l3: rgba(0, 0, 0, 0.12);
   --dsw-alias-border-l4: rgba(0, 0, 0, 0.16);
   --dsw-alias-brand-primary-invert: var(--dsw-static-neutral-bluish-1000);
-  --dsw-alias-brand-primary-new-colorprimary-new-color: rgb(65, 118, 230);
+  --dsw-alias-brand-primary-new-colorprimary-new-color: var(--dsw-static-deepseek-500);
   --dsw-alias-brand-primary: var(--dsw-static-neutral-bluish-1000);
   --dsw-alias-brand-text: var(--dsw-static-neutral-bluish-1000);
   --dsw-alias-button-contrast-fill: var(--dsw-static-neutral-bluish-700);
@@ -206,16 +207,16 @@ body {
   --dsw-alias-button-tool-bar-fill-invisible: rgba(31, 31, 31, 0.36);
   --dsw-alias-button-tool-bar-fill: rgba(84, 85, 87, 0.5);
   --dsw-alias-button-tool-bar-hover: rgba(84, 85, 87, 0.6);
-  --dsw-alias-interactive-bg-active: rgba(38, 49, 72, 0.1);
-  --dsw-alias-interactive-bg-hover-accent: rgba(38, 49, 72, 0.14);
+  --dsw-alias-interactive-bg-active: rgba(27, 36, 51, 0.1);
+  --dsw-alias-interactive-bg-hover-accent: rgba(27, 36, 51, 0.14);
   --dsw-alias-interactive-bg-hover-danger: rgba(236, 19, 19, 0.05);
   --dsw-alias-interactive-bg-hover-solid: var(--dsw-static-neutral-bluish-75);
-  --dsw-alias-interactive-bg-hover: rgba(38, 49, 72, 0.06);
+  --dsw-alias-interactive-bg-hover: rgba(27, 36, 51, 0.06);
   --dsw-alias-label-caption: var(--dsw-static-neutral-bluish-400);
-  --dsw-alias-label-deep-diving: color-mix(in srgb, var(--dsw-static-deepseek-500) 70%, var(--dsw-static-blue-950));
-  --dsw-alias-label-deep-diving-shimmer: color-mix(in srgb, var(--dsw-static-deepseek-500) 30%, var(--dsw-static-blue-950));
+  --dsw-alias-label-deep-diving: color-mix(in srgb, var(--dsw-static-deepseek-500) 70%, var(--dsw-static-neutral-bluish-1000));
+  --dsw-alias-label-deep-diving-shimmer: color-mix(in srgb, var(--dsw-static-deepseek-500) 30%, var(--dsw-static-neutral-bluish-1000));
   --dsw-alias-label-dimmed: var(--dsw-static-neutral-bluish-200);
-  --dsw-alias-label-primary-bluish: var(--dsw-static-blue-900);
+  --dsw-alias-label-primary-bluish: var(--dsw-static-deepseek-700-delete);
   --dsw-alias-label-primary-dimmed: var(--dsw-static-neutral-bluish-950);
   --dsw-alias-label-primary-foreground: var(--dsw-static-neutral-bluish-00);
   --dsw-alias-label-primary-inverted: var(--dsw-static-neutral-bluish-00);
@@ -224,7 +225,7 @@ body {
   --dsw-alias-label-shimmer: color-mix(in srgb, var(--dsw-static-neutral-1000) 30%, transparent);
   --dsw-alias-label-tertiary: var(--dsw-static-neutral-bluish-600);
   --dsw-alias-menu-icon: var(--dsw-static-neutral-bluish-800);
-  --dsw-alias-link: var(--dsw-static-deepseek-500);
+  --dsw-alias-link: var(--dsw-static-deepseek-600);
   --dsw-alias-markdown-citation: var(--dsw-static-neutral-bluish-100);
   --dsw-alias-markdown-code-block-banner: var(--dsw-static-neutral-bluish-50);
   --dsw-alias-markdown-code-block: var(--dsw-static-neutral-bluish-50);
@@ -264,12 +265,12 @@ body {
   --dsw-alias-tooltip-key-bg: color-mix(in srgb, var(--dsw-alias-tooltip-bg), white 18%);
   --dsw-alias-turn-trigger-bg: var(--dsw-alias-markdown-code-block);
   --dsw-alias-turn-trigger-bg-hover: var(--dsw-alias-interactive-bg-hover);
-  --dsw-specific-bubble-highlight: var(--dsw-static-deepseek-200);
-  --dsw-specific-bubble: var(--dsw-static-deepseek-50);
+  --dsw-specific-bubble-highlight: var(--dsw-static-neutral-bluish-100);
+  --dsw-specific-bubble: var(--dsw-static-neutral-bluish-75);
   --dsw-specific-input-major: var(--dsw-static-neutral-bluish-00);
   --dsw-specific-login-input: var(--dsw-static-neutral-bluish-50);
-  --dsw-menu-surface-fill: rgba(248, 249, 250, 0.58);
-  --dsw-alias-menu-group-header-fill: rgba(248, 249, 250, 0.94);
+  --dsw-menu-surface-fill: rgba(247, 249, 251, 0.58);
+  --dsw-alias-menu-group-header-fill: rgba(247, 249, 251, 0.94);
   --dsw-specific-menu: var(--dsw-menu-surface-fill);
   --dsw-specific-selector: var(--dsw-static-neutral-bluish-60);
   --dsw-specific-sidebar-fill: var(--dsw-static-neutral-bluish-50);
@@ -293,7 +294,7 @@ body[data-ds-dark-theme] {
   --dsw-alias-bg-mask-2: rgba(0, 0, 0, 0.2);
   --dsw-alias-bg-mask-3: rgba(0, 0, 0, 0.48);
   --dsw-alias-bg-mask-photo: rgba(0, 0, 0, 0.88);
-  --dsw-alias-bg-mask-drop: rgba(39, 39, 48, 0.7);
+  --dsw-alias-bg-mask-drop: rgba(20, 23, 29, 0.7);
   --dsw-alias-bg-module-platform: var(--dsw-static-neutral-bluish-800);
   --dsw-alias-bg-multi-select: var(--dsw-static-neutral-850);
   --dsw-alias-bg-overlay: var(--dsw-static-neutral-bluish-700);
@@ -331,7 +332,7 @@ body[data-ds-dark-theme] {
   --dsw-alias-interactive-bg-hover: rgba(255, 255, 255, 0.08);
   --dsw-alias-label-caption: var(--dsw-static-neutral-bluish-600);
   --dsw-alias-label-deep-diving: color-mix(in srgb, var(--dsw-static-deepseek-450) 55%, var(--dsw-static-neutral-bluish-400));
-  --dsw-alias-label-deep-diving-shimmer: color-mix(in srgb, var(--dsw-static-blue-300) 65%, var(--dsw-static-deepseek-400));
+  --dsw-alias-label-deep-diving-shimmer: color-mix(in srgb, var(--dsw-static-neutral-bluish-200) 65%, var(--dsw-static-deepseek-400));
   --dsw-alias-label-dimmed: var(--dsw-static-neutral-bluish-750);
   --dsw-alias-label-primary-bluish: var(--dsw-static-neutral-bluish-50);
   --dsw-alias-label-primary-dimmed: var(--dsw-static-neutral-bluish-100);
@@ -386,8 +387,8 @@ body[data-ds-dark-theme] {
   --dsw-specific-bubble: var(--dsw-static-neutral-bluish-850);
   --dsw-specific-input-major: var(--dsw-static-neutral-bluish-850);
   --dsw-specific-login-input: var(--dsw-static-neutral-bluish-900);
-  --dsw-menu-surface-fill: rgba(67, 69, 74, 0.45);
-  --dsw-alias-menu-group-header-fill: rgba(48, 49, 54, 0.94);
+  --dsw-menu-surface-fill: rgba(49, 58, 74, 0.45);
+  --dsw-alias-menu-group-header-fill: rgba(33, 41, 56, 0.94);
   --dsw-specific-menu: var(--dsw-menu-surface-fill);
   --dsw-specific-selector: var(--dsw-static-neutral-bluish-800);
   --dsw-specific-sidebar-fill: var(--dsw-static-neutral-bluish-900);
@@ -400,9 +401,9 @@ body[data-ds-dark-theme] {
 /* Overlays without MenuSurface's opaque backing cannot blur page content over
  * native vibrancy reliably, so their fill stays nearly opaque on macOS. */
 html[data-platform='darwin'] body {
-  --dsw-specific-menu: rgba(248, 249, 250, 0.94);
+  --dsw-specific-menu: rgba(247, 249, 251, 0.94);
 }
 
 html[data-platform='darwin'] body[data-ds-dark-theme] {
-  --dsw-specific-menu: rgba(48, 49, 54, 0.94);
+  --dsw-specific-menu: rgba(33, 41, 56, 0.94);
 }

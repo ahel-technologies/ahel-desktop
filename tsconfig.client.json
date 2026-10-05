@@ -91,7 +91,6 @@
     { "path": "./packages/client/ui-shortcuts" },
     { "path": "./packages/client/ui-layout" },
     { "path": "./packages/client/ui-sidebar" },
-    { "path": "./packages/client/ui-brand-official" },
     { "path": "./packages/client/ui-brand-ahel" },
     { "path": "./packages/client/ui-approval" },
     { "path": "./packages/client/ui-chat/tsconfig.client.json" },

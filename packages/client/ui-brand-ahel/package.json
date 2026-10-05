@@ -1,6 +1,6 @@
 {
-  "name": "@deepseek-ai/dsh-client-ui-brand-official",
-  "description": "Official DeepSeek Harness brand occupants for the Web client's sidebar slots",
+  "name": "@deepseek-ai/dsh-client-ui-brand-ahel",
+  "description": "Ahel brand occupants for the Web client's sidebar and conversation hero slots",
   "version": "0.2.1-alpha.1",
   "publishConfig": {
     "access": "public"
@@ -8,7 +8,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
-    "directory": "packages/client/ui-brand-official"
+    "directory": "packages/client/ui-brand-ahel"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -29,7 +29,8 @@
     "client": {
       "inject": [
         "@deepseek-ai/dsh-client-ui-renderer",
-        "@deepseek-ai/dsh-client-ui-sidebar"
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-conversation"
       ],
       "platform": "web"
     }
@@ -43,6 +44,7 @@
     "@deepseek-ai/cordis": "workspace:~"
   },
   "devDependencies": {
+    "@deepseek-ai/dsh-client-ui-conversation": "workspace:*",
     "@deepseek-ai/dsh-client-ui-primitives": "workspace:*",
     "@deepseek-ai/dsh-client-ui-renderer": "workspace:*",
     "@deepseek-ai/dsh-client-ui-sidebar": "workspace:*",
