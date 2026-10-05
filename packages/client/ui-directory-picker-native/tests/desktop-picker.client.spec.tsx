@@ -18,7 +18,12 @@ const test = createClientTest({ roster: ClientRoster.of([...webApp.rows, {
 }]) })
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
-test('the composed native flow cancels through Desktop without invoking the Host chooser', async ({ start, remote }) => {
+test('the composed native flow cancels through Desktop without invoking the Host chooser', async ({ start, remote, mock }) => {
+  // Folder Workspaces, and so their directory flow, show only with Developer tools on.
+  mock.unary('settings/describe', { ok: true, value: { writable: true, hasDocument: false, namespaces: [{
+    ns: 'ui-settings', schema: { type: 'object', dict: { enabled: { type: 'boolean' } } }, value: { enabled: true },
+    autoGenerate: false, applies: 'live', secrets: [], revision: 0,
+  }] } })
   const pick = vi.fn<() => Promise<string | null>>().mockResolvedValue(null)
   vi.stubGlobal('__DSH_DIRECTORY_PICKER__', { pick })
   const client = await start()
