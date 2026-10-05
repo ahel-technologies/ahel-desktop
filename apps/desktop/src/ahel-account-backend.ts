@@ -51,6 +51,7 @@ export function ahelAccountView(value: unknown): AhelAccountView {
   return {
     status: value.status,
     profile: parsedProfile,
+    workspace: typeof value.workspace === 'string' ? value.workspace : null,
     attempt: attempt === null ? null : {
       id: attempt.id as AhelSignInAttemptId,
       phase: attempt.phase as AhelSignInAttemptView['phase'],

@@ -43,6 +43,8 @@ export interface AhelAccountView {
   /** Profile captured at sign-in; null while signed out. */
   readonly profile: AhelProfile | null
   readonly attempt: AhelSignInAttemptView | null
+  /** Selected workspace id (one of `profile.workspaces`); null leaves the choice to ahel.ai. */
+  readonly workspace: string | null
 }
 
 declare module '@deepseek-ai/cordis' {

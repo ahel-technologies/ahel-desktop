@@ -15,7 +15,8 @@
 
 import { randomUUID } from 'node:crypto'
 import { hostname } from 'node:os'
-import type { Context } from '@deepseek-ai/cordis'
+import type { Context, Volatile } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-config-editor'
 import Schema from '@deepseek-ai/schemastery'
 import { brandString } from '@deepseek-ai/dsh-brand'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
@@ -55,6 +56,8 @@ export interface Config {
   requestTimeoutMs?: number
   /** Refresh the access token when it expires within this many milliseconds. */
   refreshSkewMs?: number
+  /** Selected ahel.ai workspace id, sent as `?workspace=` by the Ahel MCP server and models; unset uses the account default. */
+  workspace?: Volatile<string | undefined>
 }
 
 /** Validated configuration. */
@@ -66,6 +69,7 @@ export const Config = Schema.object({
   signInTimeoutMs: Schema.number().min(1).max(3_600_000).default(300_000),
   requestTimeoutMs: Schema.number().min(1).max(120_000).default(30_000),
   refreshSkewMs: Schema.number().min(0).max(3_600_000).default(60_000),
+  workspace: Schema.string().volatile(),
 })
 
 /** Opens the authorize URL in the person's browser (Electron `shell.openExternal`). */
@@ -110,6 +114,8 @@ export class AhelAccount extends TypertRemoteService {
   private readonly signInTimeoutMs: number
   private readonly requestTimeoutMs: number
   private readonly refreshSkewMs: number
+  private readonly workspaceRef: Volatile<string | undefined>
+  private readonly owner: Context
   private attempt: Attempt | undefined
   private opener: ExternalOpener | undefined
   private readonly listeners = new Set<() => void>()
@@ -121,7 +127,11 @@ export class AhelAccount extends TypertRemoteService {
    */
   constructor(ctx: Context, config: Config = {}) {
     super(ctx, 'ahelAccount')
-    const resolved = Config(config)
+    // The Loader hands a live volatile reference; parsing it again would replace it.
+    const { workspace, ...plain } = config
+    const resolved = Config(plain)
+    this.workspaceRef = workspace ?? resolved.workspace
+    this.owner = ctx
     this.appOrigin = secureOrigin(resolved.appOrigin, 'appOrigin')
     this.resource = new URL(resolved.resource).href
     this.ref = credentialRef(resolved.credentialRef)
@@ -130,6 +140,12 @@ export class AhelAccount extends TypertRemoteService {
     this.requestTimeoutMs = resolved.requestTimeoutMs
     this.refreshSkewMs = resolved.refreshSkewMs
     ctx.on('credentials/reference-updated', (ref) => { if (ref === this.ref) this.changed() })
+    ctx.on('loader/volatile-update', () => {
+      this.changed()
+      void this.mirrorWorkspace().catch((error: unknown) => {
+        this.ctx.logger.warn(`ahel-account: the workspace could not be applied: ${String(error)}`)
+      })
+    })
     ctx.effect(() => () => {
       this.closed = true
       this.attempt?.controller.abort()
@@ -144,11 +160,48 @@ export class AhelAccount extends TypertRemoteService {
   @Remote
   async state(): Promise<AhelAccountView> {
     const grant = await readOAuthGrant(this.ctx.credentials, this.ref)
+    const profile = grant !== undefined && isProfile(grant.profile) ? grant.profile : null
     return {
       status: grant === undefined ? 'signed-out' : 'signed-in',
-      profile: grant !== undefined && isProfile(grant.profile) ? grant.profile : null,
+      profile,
       attempt: this.attempt?.view ?? null,
+      workspace: profile === null ? null : this.selectedWorkspace(profile) ?? null,
     }
+  }
+
+  /**
+   * Choose the ahel.ai workspace the MCP server and Ahel models act in, and
+   * save it in settings.
+   * @param id - one of the profile's workspace ids, or null for the account default.
+   * @returns the view after the choice is applied.
+   */
+  @Remote
+  async selectWorkspace(id: string | null): Promise<AhelAccountView> {
+    const view = await this.state()
+    if (id !== null && view.profile?.workspaces.some(workspace => workspace.id === id) !== true) {
+      throw new Error('ahel-account: that workspace is not one of this account\'s workspaces')
+    }
+    const entry = this.owner.fiber.entry
+    const editor = this.ctx.get('configEditor')
+    if (entry === undefined || editor === undefined) throw new Error('ahel-account: choosing a workspace needs a profile-backed Host')
+    await editor.edit(entry, (current) => {
+      const next = { ...current }
+      if (id === null) Reflect.deleteProperty(next, 'workspace')
+      else next.workspace = id
+      return next
+    })
+    await this.mirrorWorkspace()
+    this.changed()
+    return this.state()
+  }
+
+  /**
+   * Host-only: the selected workspace id while it is one of the signed-in person's workspaces.
+   * @returns the id, or undefined for the account default.
+   */
+  async workspace(): Promise<string | undefined> {
+    const grant = await readOAuthGrant(this.ctx.credentials, this.ref)
+    return grant !== undefined && isProfile(grant.profile) ? this.selectedWorkspace(grant.profile) : undefined
   }
 
   /**
@@ -273,6 +326,23 @@ export class AhelAccount extends TypertRemoteService {
     return () => { if (this.opener === opener) this.opener = previous }
   }
 
+  private selectedWorkspace(profile: AhelProfile): string | undefined {
+    const id = this.workspaceRef.get()
+    return id !== undefined && profile.workspaces.some(workspace => workspace.id === id) ? id : undefined
+  }
+
+  /** Copy the selection into the stored grant, where the grant-authenticated MCP server reads it. */
+  private async mirrorWorkspace(): Promise<void> {
+    const grant = await readOAuthGrant(this.ctx.credentials, this.ref)
+    if (grant === undefined) return
+    const id = isProfile(grant.profile) ? this.selectedWorkspace(grant.profile) : undefined
+    if (grant.workspace === id) return
+    const next: StoredOAuthGrant = { ...grant }
+    if (id === undefined) delete next.workspace
+    else next.workspace = id
+    await writeOAuthGrant(this.ctx.credentials, this.ref, next)
+  }
+
   private async currentGrant(): Promise<StoredOAuthGrant | undefined> {
     try {
       const options = { refreshSkewMs: this.refreshSkewMs, requestTimeoutMs: this.requestTimeoutMs }
@@ -339,6 +409,8 @@ export class AhelAccount extends TypertRemoteService {
         profile,
         ...tokens.refresh_token === undefined ? {} : { refresh_token: tokens.refresh_token },
       }
+      const workspace = this.selectedWorkspace(profile)
+      if (workspace !== undefined) grant.workspace = workspace
       if (cancelled()) throw new SignInError('cancelled', 'sign-in cancelled')
       try {
         await writeOAuthGrant(this.ctx.credentials, this.ref, grant)

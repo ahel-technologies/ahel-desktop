@@ -16,6 +16,7 @@
         url: https://mcp.ahel.ai/mcp
         auth:
           credentialRef: AHEL_ACCOUNT
+          workspaceParam: workspace
         reconnect:
           enabled: true
           initialDelayMs: 2000

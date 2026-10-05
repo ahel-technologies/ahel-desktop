@@ -71,6 +71,10 @@ function register(ctx: Context): void {
       const result = await ctx.remote.ahelAccount.signOut()
       if (!result.ok) throw result.error
     },
+    selectWorkspace: async (id) => {
+      const result = await ctx.remote.ahelAccount.selectWorkspace(id)
+      if (!result.ok) throw result.error
+    },
     openLink,
     hooks: { account },
   }

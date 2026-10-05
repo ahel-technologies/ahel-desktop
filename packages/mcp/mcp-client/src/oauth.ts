@@ -36,6 +36,8 @@ export interface StoredOAuthGrant {
   resource?: string
   /** Owner-defined display data (the account plugin keeps the profile here); never read by this module. */
   profile?: unknown
+  /** Selected workspace id, sent by servers configured with `auth.workspaceParam`. */
+  workspace?: string
 }
 
 /** Options shared by grant reads that may refresh. */
@@ -87,7 +89,8 @@ export function parseOAuthGrant(text: string): StoredOAuthGrant | undefined {
     || !nonEmpty(value.client_id) || !nonEmpty(value.access_token)
     || typeof value.expires_at !== 'number' || !Number.isFinite(value.expires_at)
     || (value.refresh_token !== undefined && !nonEmpty(value.refresh_token))
-    || (value.resource !== undefined && !nonEmpty(value.resource))) {
+    || (value.resource !== undefined && !nonEmpty(value.resource))
+    || (value.workspace !== undefined && !nonEmpty(value.workspace))) {
     return undefined
   }
   return {
@@ -100,6 +103,7 @@ export function parseOAuthGrant(text: string): StoredOAuthGrant | undefined {
     ...value.refresh_token === undefined ? {} : { refresh_token: value.refresh_token },
     ...value.resource === undefined ? {} : { resource: value.resource },
     ...value.profile === undefined ? {} : { profile: value.profile },
+    ...value.workspace === undefined ? {} : { workspace: value.workspace },
   }
 }
 

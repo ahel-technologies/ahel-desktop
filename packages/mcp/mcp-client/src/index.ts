@@ -124,6 +124,8 @@ export interface GrantAuthConfig {
   refreshSkewMs: number
   /** Deadline for one token-refresh request in milliseconds. */
   refreshTimeoutMs: number
+  /** Query parameter that carries the grant's selected workspace; the server reconnects when the selection changes. */
+  workspaceParam?: string
 }
 
 /** Configuration for one stdio or Streamable HTTP MCP server. */
@@ -166,6 +168,7 @@ export const Config = z.union([
         credentialRef: z.string().required().pattern(/^[A-Za-z_][A-Za-z0-9_]*$/),
         refreshSkewMs: z.number().min(0).max(MAX_TIMER_DELAY_MS).default(60_000),
         refreshTimeoutMs: z.number().min(1).max(MAX_TIMER_DELAY_MS).default(30_000),
+        workspaceParam: z.string().pattern(/^[A-Za-z][A-Za-z0-9_-]*$/),
       }),
       z.const(undefined),
     ]),
@@ -211,16 +214,22 @@ function applyGrantGate(ctx: Context, config: StreamableHttpConfig, auth: GrantA
       requestTimeoutMs: auth.refreshTimeoutMs,
     })
     let session: Fiber | undefined
+    let sessionUrl: string | undefined
     let queue = Promise.resolve()
     const sync = (): void => {
       queue = queue.then(async () => {
-        const present = await readOAuthGrant(authCtx.credentials, ref) !== undefined
-        if (present && session === undefined) {
-          session = authCtx.plugin({ name: 'mcp-client-session', apply: (sessionCtx: Context) => connect(sessionCtx, config, reconnect, authProvider) })
-        } else if (!present && session !== undefined) {
+        const grant = await readOAuthGrant(authCtx.credentials, ref)
+        const url = grant === undefined ? undefined : endpointFor(config.url, auth.workspaceParam, grant.workspace)
+        if (session !== undefined && url !== sessionUrl) {
           const stopping = session
           session = undefined
+          sessionUrl = undefined
           await stopping.dispose()
+        }
+        if (url !== undefined && session === undefined) {
+          const sessionConfig = { ...config, url }
+          sessionUrl = url
+          session = authCtx.plugin({ name: 'mcp-client-session', apply: (sessionCtx: Context) => connect(sessionCtx, sessionConfig, reconnect, authProvider) })
         }
       }).catch((error: unknown) => {
         authCtx.logger.warn(`mcp-client(${config.serverName}): ${auth.credentialRef} could not be read: ${String(error)}`)
@@ -229,6 +238,20 @@ function applyGrantGate(ctx: Context, config: StreamableHttpConfig, auth: GrantA
     authCtx.on('credentials/reference-updated', (updated) => { if (updated === ref) sync() })
     sync()
   })
+}
+
+/**
+ * The server URL for one grant: the selected workspace rides as a query parameter when configured.
+ * @param base - configured server URL.
+ * @param param - query parameter name, or undefined to send none.
+ * @param workspace - the grant's selected workspace.
+ * @returns the URL to connect.
+ */
+function endpointFor(base: string, param: string | undefined, workspace: string | undefined): string {
+  if (param === undefined || workspace === undefined) return base
+  const url = new URL(base)
+  url.searchParams.set(param, workspace)
+  return url.href
 }
 
 /**

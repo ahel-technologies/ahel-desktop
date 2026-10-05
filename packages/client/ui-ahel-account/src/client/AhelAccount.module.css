@@ -154,3 +154,48 @@
 .rowButton:hover:not(:disabled) {
   background: var(--dsw-alias-interactive-bg-hover);
 }
+
+.section {
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--dsw-alias-settings-card-stroke);
+}
+
+.sectionLabel {
+  padding: 4px 8px 2px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.choiceName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.check {
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+}
+
+.hint {
+  padding: 2px 8px 4px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.separated {
+  margin-top: 4px;
+  border-top: 1px solid var(--dsw-alias-settings-card-stroke);
+  border-radius: 0 0 var(--dsw-radius-sm) var(--dsw-radius-sm);
+}

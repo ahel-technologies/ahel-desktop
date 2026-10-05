@@ -11,6 +11,8 @@ export interface AhelAccountInjected {
   signIn(): Promise<void>
   /** Revoke and remove the sign-in. */
   signOut(): Promise<void>
+  /** Choose the workspace the Ahel MCP server and models act in. @param id - workspace id, or null for the account default. */
+  selectWorkspace(id: string | null): Promise<void>
   /** Open a URL outside the app. @param url - absolute https URL. */
   openLink(url: string): void
   hooks: {

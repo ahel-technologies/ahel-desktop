@@ -1,15 +1,37 @@
-/** Sidebar footer entry for the ahel.ai account: identity, workspaces, sign-in and sign-out. */
+/** Sidebar footer entry for the ahel.ai account: identity, workspace choice, ahel.ai pages, sign-in and sign-out. */
 import { useEffect, useRef, useState } from 'react'
 import { AhelTile } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { AccountMenuProps } from './contract.ts'
+import type { AhelAccountKey } from './locales.ts'
 import css from './AhelAccount.module.css'
+
+/** ahel.ai pages the menu opens in the system browser. */
+const PAGES: readonly { key: AhelAccountKey; url: string }[] = [
+  { key: 'studio', url: 'https://ahel.ai/app/studio' },
+  { key: 'discover', url: 'https://ahel.ai/discover' },
+  { key: 'vault', url: 'https://ahel.ai/app/vault' },
+  { key: 'openAhel', url: 'https://ahel.ai/app' },
+]
+
+/**
+ * Carry the selected workspace to an ahel.ai page.
+ * @param url - page URL.
+ * @param workspace - selected workspace id, if any.
+ * @returns the URL to open.
+ */
+function pageUrl(url: string, workspace: string | null): string {
+  if (workspace === null) return url
+  const next = new URL(url)
+  next.searchParams.set('workspace', workspace)
+  return next.href
+}
 
 /**
  * Render the account entry above Settings and its menu.
  * @param props - composed slot props.
  * @returns the entry.
  */
-export function AccountMenu({ wide, signIn, signOut, openLink, useAccount, t }: AccountMenuProps) {
+export function AccountMenu({ wide, signIn, signOut, selectWorkspace, openLink, useAccount, t }: AccountMenuProps) {
   const view = useAccount(value => value)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -26,11 +48,12 @@ export function AccountMenu({ wide, signIn, signOut, openLink, useAccount, t }: 
 
   const profile = view?.status === 'signed-in' ? view.profile : null
   const signedIn = view?.status === 'signed-in'
+  const workspace = view?.workspace ?? null
   const label = profile?.name ?? profile?.email ?? (signedIn ? t('account') : t('signIn'))
   const waiting = view?.attempt?.phase === 'waiting-browser' || view?.attempt?.phase === 'exchanging'
-  const run = (action: () => Promise<void>): void => {
+  const run = (action: () => Promise<void>, close = true): void => {
     setBusy(true)
-    void action().finally(() => { setBusy(false); setOpen(false) })
+    void action().catch(() => undefined).finally(() => { setBusy(false); if (close) setOpen(false) })
   }
 
   return (
@@ -47,19 +70,33 @@ export function AccountMenu({ wide, signIn, signOut, openLink, useAccount, t }: 
           <div className={css.identity}>
             <div className={css.name}>{signedIn ? (profile?.name ?? profile?.email ?? t('account')) : t('signedOut')}</div>
             {profile !== null && profile.name !== null && <div className={css.caption}>{profile.email}</div>}
-            {profile !== null && profile.workspaces.length > 0 && (
-              <div className={css.caption}>{t('workspaces')}: {profile.workspaces.map(workspace => workspace.name).join(', ')}</div>
-            )}
             {view?.attempt?.phase === 'failed' && <div className={css.caption}>{t('failed')}</div>}
           </div>
-          <button type="button" role="menuitem" className={css.item} onClick={() => { openLink('https://ahel.ai/app'); setOpen(false) }}>
-            {t('openAhel')}
-          </button>
+          {profile !== null && profile.workspaces.length > 0 && (
+            <div className={css.section} role="group" aria-label={t('workspace')}>
+              <div className={css.sectionLabel}>{t('workspace')}</div>
+              {profile.workspaces.map(item => (
+                <button key={item.id} type="button" role="menuitemradio" aria-checked={item.id === workspace}
+                  className={`${css.item} ${css.choice}`} disabled={busy}
+                  onClick={() => { if (item.id !== workspace) run(() => selectWorkspace(item.id), false) }}>
+                  <span className={css.choiceName}>{item.name}</span>
+                  {item.id === workspace && <span className={css.check} aria-hidden="true">✓</span>}
+                </button>
+              ))}
+              {workspace === null && <div className={css.hint}>{t('workspaceDefault')}</div>}
+            </div>
+          )}
+          {PAGES.map(page => (
+            <button key={page.key} type="button" role="menuitem" className={css.item}
+              onClick={() => { openLink(pageUrl(page.url, workspace)); setOpen(false) }}>
+              {t(page.key)}
+            </button>
+          ))}
           {signedIn
-            ? <button type="button" role="menuitem" className={css.item} disabled={busy} onClick={() => { run(signOut) }}>
+            ? <button type="button" role="menuitem" className={`${css.item} ${css.separated}`} disabled={busy} onClick={() => { run(signOut) }}>
               {busy ? t('signingOut') : t('signOut')}
             </button>
-            : <button type="button" role="menuitem" className={css.item} disabled={busy || waiting} onClick={() => { run(signIn) }}>
+            : <button type="button" role="menuitem" className={`${css.item} ${css.separated}`} disabled={busy || waiting} onClick={() => { run(signIn) }}>
               {waiting ? t('signingIn') : t('signIn')}
             </button>}
         </div>
