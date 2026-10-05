@@ -2,14 +2,14 @@
 import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@ahel/dsh-client-ui-slots'
 import type {
   AhelAccountView, CatalogBrowsePage, CatalogBrowseQuery, CatalogInstalled, CatalogInstallResult, CatalogPart, CatalogRow,
-  CatalogSwitchResult,
+  CatalogSwitchResult, KnowledgeListing,
 } from '@ahel/dsh-ahel-account/types'
 import type {} from '@ahel/dsh-client-ui-layout/client'
 import type {} from '@ahel/dsh-client-ui-sidebar/client'
 import type {} from '../locales.ts'
 
 /** Main panels this package registers. */
-export type CatalogPanelId = 'ahel-discover' | 'ahel-apps'
+export type CatalogPanelId = 'ahel-discover' | 'ahel-knowledge' | 'ahel-apps'
 
 /**
  * Catalog reads and the person's own writes. Every method rejects with the
@@ -21,6 +21,8 @@ export interface DiscoverInjected {
   browse(query: CatalogBrowseQuery): Promise<CatalogBrowsePage>
   /** A further slice of one group's nested skills. */
   browsePart(query: CatalogBrowseQuery, groupKey: string, offset: number): Promise<CatalogPart>
+  /** The Knowledge products with their live sources; works signed out. @param q - search words. */
+  knowledge(q: string): Promise<KnowledgeListing>
   /** Install one catalog item, then re-read `installed`. @param id - `CatalogRow.id`. */
   install(id: string): Promise<CatalogInstallResult>
   /** Turn one installed capability on or off, then re-read `installed`. */

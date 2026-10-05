@@ -170,6 +170,41 @@ export interface CatalogSwitchResult {
   readonly state: string
 }
 
+/** One Knowledge source: a dataset row of ahel.ai's catalog (`kind: dataset`). */
+export interface KnowledgeSource {
+  /** The catalog id, such as `ahel.datasets/companies-ee`; `add` takes it. */
+  readonly id: string
+  readonly name: string
+  readonly description: string
+  /** Whether ahel.ai can serve it today; an unservable source has no Add. */
+  readonly servable: boolean
+  /** Absolute https URL of its ahel.ai page. */
+  readonly href: string
+}
+
+/** One Knowledge product as ahel.ai/knowledge sells it: a job, one price per query, its sources. */
+export interface KnowledgeProduct {
+  readonly id: string
+  readonly name: string
+  /** Whole cents per query, paid from the workspace balance. */
+  readonly cents: number
+  /** The one line under the name. */
+  readonly promise: string
+  readonly includes: string
+  /** An example question to ask once it is added. */
+  readonly ask: string
+  /** ahel.ai's glyph name: `building`, `shield-alert`, `gavel` or `bug`. */
+  readonly glyph: string
+  readonly sources: readonly KnowledgeSource[]
+}
+
+/** The Knowledge listing; with search words, `matches` holds the ids of the sources they found. */
+export interface KnowledgeListing {
+  readonly products: readonly KnowledgeProduct[]
+  /** Null when browsing without search words. */
+  readonly matches: readonly string[] | null
+}
+
 declare module '@ahel/cordis' {
   interface Events {
     /**

@@ -36,7 +36,9 @@ const LISTING_ACTION: Record<CatalogRow['state'], RowAction | null> = {
  * @returns the capability installed from the row, if any.
  */
 export function capabilityOf(row: CatalogRow, installed: CatalogInstalled | null): CatalogCapability | undefined {
-  return installed?.rows.find(item => item.itemId === row.id || item.key === row.id)
+  // A catalog item's stack key is its id slugged ("ahel.datasets/epss" is "ahel-datasets-epss").
+  const key = row.id.replace(/[^a-z0-9:]+/gi, '-').toLowerCase()
+  return installed?.rows.find(item => item.itemId === row.id || item.key === row.id || item.key === key)
 }
 
 /**
@@ -90,6 +92,8 @@ export type AppRowProps = Pick<CatalogFaceProps, 'install' | 'setEnabled' | 'sig
   readonly signedIn: boolean
   /** Opens the row; defaults to its ahel.ai page. */
   readonly onOpen?: OpenRow | undefined
+  /** Hide the kind and Official tags, for rows whose list already says what they are. */
+  readonly bare?: boolean
 }
 
 /**
@@ -97,7 +101,7 @@ export type AppRowProps = Pick<CatalogFaceProps, 'install' | 'setEnabled' | 'sig
  * @param props - the row, the person's installs and the catalog actions.
  * @returns the row.
  */
-export function AppRow({ row, installed, signedIn, onOpen, install, setEnabled, signIn, openLink, t }: AppRowProps) {
+export function AppRow({ row, installed, signedIn, onOpen, bare = false, install, setEnabled, signIn, openLink, t }: AppRowProps) {
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<{ text: string; error: boolean } | null>(null)
   const [pendingSetup, setPendingSetup] = useState<string | null>(null)
@@ -144,8 +148,8 @@ export function AppRow({ row, installed, signedIn, onOpen, install, setEnabled, 
           <span className={css.rowText}>
             <span className={css.rowHead}>
               <span className={css.rowName}>{row.name}</span>
-              <Tag tone="outline">{t(row.kind === 'app' ? 'tagApp' : 'tagSkill')}</Tag>
-              {row.official && <Tag tone="info">{t('official')}</Tag>}
+              {!bare && <Tag tone="outline">{t(row.kind === 'app' ? 'tagApp' : 'tagSkill')}</Tag>}
+              {!bare && row.official && <Tag tone="info">{t('official')}</Tag>}
             </span>
             {line !== '' && <span className={css.rowLine}>{line}</span>}
           </span>

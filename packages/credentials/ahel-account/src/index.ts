@@ -36,7 +36,7 @@ export { AhelCatalog } from './catalog.ts'
 export type { CatalogConfig } from './catalog.ts'
 export type {
   CatalogBrowsePage, CatalogBrowseQuery, CatalogCapability, CatalogFactPart, CatalogGroup, CatalogInstalled, CatalogInstallResult,
-  CatalogPart, CatalogRow, CatalogRowState, CatalogRowTile, CatalogSwitchResult,
+  CatalogPart, CatalogRow, CatalogRowState, CatalogRowTile, CatalogSwitchResult, KnowledgeListing, KnowledgeProduct, KnowledgeSource,
 } from './types.ts'
 export type {
   AhelAccountView, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView, AhelSignInErrorCode, AhelWorkspace,

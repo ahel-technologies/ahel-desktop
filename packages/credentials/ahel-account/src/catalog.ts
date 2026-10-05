@@ -11,8 +11,9 @@ import type { Context } from '@ahel/cordis'
 import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type {
   CatalogBrowsePage, CatalogBrowseQuery, CatalogCapability, CatalogGroup, CatalogInstalled, CatalogInstallResult, CatalogPart, CatalogRow,
-  CatalogSwitchResult,
+  CatalogSwitchResult, KnowledgeListing, KnowledgeSource,
 } from './types.ts'
+import { KNOWLEDGE_ID_PREFIX, knowledgeProducts } from './knowledge.ts'
 
 declare module '@ahel/cordis' {
   interface Context {
@@ -42,6 +43,12 @@ export interface CatalogConfig {
 }
 
 const TIMEOUT_MS = 15_000
+
+/** The full Knowledge source list is read again after this long. */
+const KNOWLEDGE_TTL_MS = 5 * 60_000
+
+/** Pages read per Knowledge search; ahel.ai answers 30 rows a page and lists under 40 sources. */
+const KNOWLEDGE_MAX_PAGES = 5
 
 interface JsonRpcAnswer {
   result?: { isError?: boolean; content?: readonly { type?: string; text?: string }[]; structuredContent?: Record<string, unknown> }
@@ -97,6 +104,7 @@ export class AhelCatalog extends TypertRemoteService {
   private readonly appOrigin: string
   private readonly resource: string
   private rpcId = 0
+  private knowledgeCache: { readonly at: number; readonly sources: readonly KnowledgeSource[] } | null = null
 
   /**
    * @param ctx - Host context carrying `ahelAccount`.
@@ -197,6 +205,50 @@ export class AhelCatalog extends TypertRemoteService {
   async setEnabled(key: string, on: boolean): Promise<CatalogSwitchResult> {
     const answer = await this.mcpCall('switch', { key, state: on ? 'on' : 'off' })
     return { key: text(answer.key) ?? key, state: text(answer.state) ?? (on ? 'on' : 'off') }
+  }
+
+  /**
+   * The Knowledge products with their live sources; works signed out.
+   * @param q - search words; "" browses.
+   * @returns the four products, and with search words the ids of the sources they found.
+   * @throws RemoteError `ahel-catalog/busy` or `ahel-catalog/unreachable`.
+   */
+  @Remote
+  async knowledge(q: string): Promise<KnowledgeListing> {
+    const words = q.trim().slice(0, 200)
+    if (this.knowledgeCache === null || Date.now() - this.knowledgeCache.at > KNOWLEDGE_TTL_MS) {
+      this.knowledgeCache = { at: Date.now(), sources: await this.knowledgeSources('') }
+    }
+    const products = knowledgeProducts(this.knowledgeCache.sources)
+    if (words === '') return { products, matches: null }
+    return { products, matches: (await this.knowledgeSources(words)).map(source => source.id) }
+  }
+
+  /** Every dataset row the public catalog search answers for `q`, across its pages. */
+  private async knowledgeSources(q: string): Promise<KnowledgeSource[]> {
+    const sources: KnowledgeSource[] = []
+    for (let page = 0; page < KNOWLEDGE_MAX_PAGES; page++) {
+      const url = new URL('/api/public/catalog-search', this.appOrigin)
+      url.searchParams.set('concept', 'knowledge')
+      if (q !== '') url.searchParams.set('q', q)
+      if (page > 0) url.searchParams.set('page', String(page))
+      const answer = record(await this.listing(url))
+      const items = Array.isArray(answer.items) ? answer.items.map(record) : []
+      for (const item of items) {
+        const id = text(item.id)
+        if (id === null || !id.startsWith(KNOWLEDGE_ID_PREFIX)) continue
+        sources.push({
+          id,
+          name: text(item.name) ?? id,
+          description: text(item.description) ?? '',
+          servable: item.servable !== false,
+          href: this.absolute(`/catalog/item/${id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`),
+        })
+      }
+      const pageSize = Number(answer.pageSize ?? items.length)
+      if (items.length === 0 || (page + 1) * pageSize >= Number(answer.total ?? 0)) break
+    }
+    return sources
   }
 
   private listingUrl(query: CatalogBrowseQuery): URL {

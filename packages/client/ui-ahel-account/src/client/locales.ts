@@ -1,4 +1,4 @@
-/** Locale-owned copy for the Ahel account menu, the Models row, and the Discover and Your apps panels. */
+/** Locale-owned copy for the Ahel account menu, the Models row, and the Discover, Knowledge and Your apps panels. */
 import type {} from '@ahel/dsh-client-ui-slots'
 
 /** Dictionary namespace. */
@@ -91,6 +91,18 @@ export const en = {
   switchOn: 'On',
   switchOff: 'Off',
   appsSignedOut: 'Signed out',
+  knowledgeTitle: 'Knowledge',
+  knowledgeLead: 'Reliable information your AI can query: company records, sanctions lists, tenders, exploited bugs. Add a product and ask in any chat.',
+  knowledgeSearchPlaceholder: 'Search a company register, a list or a country',
+  knowledgeSearchLabel: 'Search Knowledge',
+  knowledgeSources: '{count} sources',
+  knowledgeMatched: '{count} match',
+  knowledgeInside: 'Inside',
+  knowledgeAsk: 'Ask: {prompt}',
+  knowledgeCopyAsk: 'Copy the example question',
+  knowledgeAdded: 'Added. Try: {prompt}',
+  knowledgeAdding: 'Adding {done} of {of}',
+  knowledgeFootnote: 'Each query is paid from your ahel.ai workspace balance. No subscription, and a failed query is never charged.',
 }
 
 /** Dictionary keys. */
@@ -183,6 +195,18 @@ export const zh: Record<AhelAccountKey, string> = {
   switchOn: '开',
   switchOff: '关',
   appsSignedOut: '未登录',
+  knowledgeTitle: '知识',
+  knowledgeLead: 'AI 可直接查询的可靠信息：公司登记、制裁名单、招标、已被利用的漏洞。添加产品后即可在任意对话中提问。',
+  knowledgeSearchPlaceholder: '搜索公司登记、名单或国家',
+  knowledgeSearchLabel: '搜索知识',
+  knowledgeSources: '{count} 个来源',
+  knowledgeMatched: '{count} 个匹配',
+  knowledgeInside: '包含',
+  knowledgeAsk: '提问示例：{prompt}',
+  knowledgeCopyAsk: '复制示例问题',
+  knowledgeAdded: '已添加。试试：{prompt}',
+  knowledgeAdding: '正在添加 {done}/{of}',
+  knowledgeFootnote: '每次查询从你的 ahel.ai 工作区余额扣费。无需订阅，失败的查询不收费。',
 }
 
 declare module '@ahel/dsh-client-ui-slots' {
