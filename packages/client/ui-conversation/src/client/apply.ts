@@ -24,7 +24,7 @@ import type { ReferenceInsert } from './contract/draft-editor.ts'
 import { createConversationStore, readConversationViewPreference } from './stores.ts'
 import { formatFileMention } from '@ahel/dsh-file-reference/grammar'
 import { relativizeToCwd, workspaceTitleOf } from '@ahel/dsh-util-workspace-path'
-import { ConversationController, UnsupportedImageMediaTypeError, isImageMediaType } from './service.ts'
+import { ConversationController, UnsupportedImageMediaTypeError } from './service.ts'
 import type { IConversation } from './service.ts'
 import { ComposerBlockRegistry } from './input/blocks.ts'
 import type { ComposerBlock } from './contract/composer-blocks.ts'
@@ -95,8 +95,8 @@ const ABSENT_FILE_UPLOADS = {
 
 /**
  * Browser-shell bridge reporting the harness-host path of a picked file. The
- * Desktop preload exposes it on the application document; a served Web page
- * has none, so every non-image file uploads there.
+ * Desktop preload exposes it on the application document so folders become
+ * `@path` chips; a served Web page has none and refuses folders.
  */
 interface HostPathBridge {
   /** Absolute harness-host path of one picked file, or empty when the shell has none for it. */
@@ -473,23 +473,20 @@ export function apply(ctx: Context, config: Config = Config({})): void {
           const references: ReferenceInsert[] = []
           const cwd = sessions.list.getSnapshot().byId[sessionId]?.cwd
           for (const file of files) {
-            const directory = directories.has(file)
-            if (bridge === undefined && directory) return t('attachment.directoryDesktopOnly')
-            const path = bridge?.pathFor(file) ?? ''
-            if (directory && path === '') return t('attachment.pathUnavailable')
-            if (path === '' || (!directory && isImageMediaType(file.type))) {
+            // Every file uploads, so its extracted text reaches the model without file tools; only folders become @path chips.
+            if (!directories.has(file)) {
               uploads.push(file)
               continue
             }
+            if (bridge === undefined) return t('attachment.directoryDesktopOnly')
+            const path = bridge.pathFor(file)
+            if (path === '') return t('attachment.pathUnavailable')
             const relative = relativizeToCwd(path, cwd)
             // A completed directory chip needs closed quotes; the directory grammar keeps them open for drill.
-            const mention = formatFileMention({ path: directory ? `${relative}/` : relative, kind: 'file' }, false)
+            const mention = formatFileMention({ path: `${relative}/`, kind: 'file' }, false)
             if (mention === undefined) return t('attachment.pathUnsupported')
             const label = workspaceTitleOf(path) || file.name
-            references.push({
-              source: 'reference', ref: mention, label: directory ? `${label}/` : label,
-              appearance: directory ? 'folder' : 'file', clipboardText: mention,
-            })
+            references.push({ source: 'reference', ref: mention, label: `${label}/`, appearance: 'folder', clipboardText: mention })
           }
           try {
             const drafts = conversation.createDrafts(sessionId, uploads)

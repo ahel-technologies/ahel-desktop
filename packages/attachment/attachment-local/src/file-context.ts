@@ -144,7 +144,15 @@ async function attachmentTextMessage(
 ): Promise<UserMessage | undefined> {
   const files: { ref: FileAttachmentRef; result: FileAttachmentText }[] = []
   for (const ref of refs) {
-    const result = await store.readFileText(ref, signal)
+    let result: FileAttachmentText | undefined
+    try {
+      result = await store.readFileText(ref, signal)
+    } catch (error) {
+      signal.throwIfAborted()
+      // The model is told why the file is unreadable instead of seeing nothing.
+      const reason = (error instanceof Error ? error.message : String(error)).slice(0, 200)
+      result = { status: 'failed', text: '', truncated: false, reason }
+    }
     if (result !== undefined) files.push({ ref, result })
   }
   if (files.length === 0) return undefined

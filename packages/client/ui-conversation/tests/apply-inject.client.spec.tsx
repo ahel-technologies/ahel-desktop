@@ -404,7 +404,7 @@ describe('Conversation inject API', () => {
     await b.runtime.dispose()
   })
 
-  it('cites shell-named files and folders as @ references and refuses folders without the shell bridge', async () => {
+  it('uploads every file, cites shell-named folders as @ references, and refuses folders without the shell bridge', async () => {
     const browser = await bench()
     const folder = new File([], 'project')
     expect(browser.composerApi(ROOT).addFiles?.([folder], new Set([folder])))
@@ -422,11 +422,11 @@ describe('Conversation inject API', () => {
       const shot = new File([Uint8Array.of(2)], 'shot.png', { type: 'image/png' })
       const pasted = new File([Uint8Array.of(3)], 'pasted.bin', { type: 'application/octet-stream' })
       expect(composer.addFiles?.([folder, note, shot, pasted], new Set([folder]))).toBeNull()
-      // The folder and the file became references in the draft; the image and the pathless bytes stayed drafts.
-      expect(state.getSnapshot().draft).toBe('@"/Users/me/my project/" @/Users/me/notes.md ')
+      // Only the folder became a reference; every file, named by the shell or not, stayed a draft upload.
+      expect(state.getSnapshot().draft).toBe('@"/Users/me/my project/" ')
       const drafts = composer.resolveDraftAttachments?.(state.getSnapshot().attachmentIds) ?? []
-      expect(drafts.map(draft => draft.kind)).toEqual(['image', 'file'])
-      await vi.waitFor(() => { expect(desktop.rootUpload).toHaveBeenCalledOnce() })
+      expect(drafts.map(draft => draft.kind)).toEqual(['file', 'image', 'file'])
+      await vi.waitFor(() => { expect(desktop.rootUpload).toHaveBeenCalledTimes(2) })
       // A directory the shell cannot name is refused even with the bridge present.
       const nameless = new File([], 'nameless')
       expect(composer.addFiles?.([nameless], new Set([nameless])))
@@ -458,15 +458,16 @@ describe('Conversation inject API', () => {
     })
     onTestFinished(off)
     const folder = new File([], 'my project')
-    const files = [new File([], 'a.txt'), folder, new File([], 'b.txt')]
+    const other = new File([], 'docs')
+    const files = [folder, new File([], 'a.txt'), other]
     const event = new KeyboardEvent('paste', { cancelable: true })
     Object.defineProperty(event, 'clipboardData', { value: {
       items: files.map(file => ({
-        kind: 'file', getAsFile: () => file, webkitGetAsEntry: () => ({ isDirectory: file === folder }),
+        kind: 'file', getAsFile: () => file, webkitGetAsEntry: () => ({ isDirectory: file !== files[1] }),
       })), getData: () => '',
     } })
     editor.update(() => { editor.dispatchCommand(PASTE_COMMAND, event) }, { discrete: true })
-    expect(state.getSnapshot().draft).toBe('读取 @a.txt @"my project/" @b.txt ')
+    expect(state.getSnapshot().draft).toBe('读取 @"my project/" @docs/ ')
     const view = render(<div>{projectUserText(state.getSnapshot().draft, [])}</div>)
     expect(view.container.querySelector('[data-ref-chip="folder"]')?.textContent).toBe('my project')
     expect(view.container.querySelector('[data-ref-chip="folder"]')?.getAttribute('title')).toBe('@"my project/"')
@@ -480,8 +481,8 @@ describe('Conversation inject API', () => {
     const { state, actions } = b.inputApi(ROOT)
     actions.setDraft('keep this text')
     for (const name of ['bad"name', 'bad\nname']) {
-      const files = [new File([], 'good.txt'), new File([], name)]
-      expect(b.composerApi(ROOT).addFiles?.(files)).toBe('路径含有无法引用的字符，请改名后再试')
+      const files = [new File([], 'good'), new File([], name)]
+      expect(b.composerApi(ROOT).addFiles?.(files, new Set(files))).toBe('路径含有无法引用的字符，请改名后再试')
       expect(state.getSnapshot().draft).toBe('keep this text')
       expect(state.getSnapshot().attachmentIds).toEqual([])
       expect(b.rootUpload).not.toHaveBeenCalled()
