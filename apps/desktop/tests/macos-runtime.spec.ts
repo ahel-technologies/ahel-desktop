@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, expect, it, vi } from 'vitest'
-import { signMacOSRuntime } from '../scripts/macos-runtime.ts'
+import { runtimeEntitlementsFile, signMacOSRuntime } from '../scripts/macos-runtime.ts'
 import { signMacOSRuntimeCode, verifyMacOSRuntimeCode } from '../scripts/verify-macos-signature.mjs'
 
 vi.mock('../scripts/verify-macos-signature.mjs', () => ({ signMacOSRuntimeCode: vi.fn(), verifyMacOSRuntimeCode: vi.fn() }))
@@ -54,10 +54,23 @@ it.each(['arm64', 'x64'] as const)('selects %s Node entitlements and signs other
   const addon = join(path, 'addon.node')
   for (const file of [node, addon]) writeFileSync(file, Buffer.from('cffaedfe00000000', 'hex'))
   await signMacOSRuntime(path, 'com.example.app', identity, arch)
-  const nodePlist = join(import.meta.dirname, '../scripts', arch === 'x64' ? 'node-x64-entitlements.plist' : 'jit-entitlements.plist')
+  const nodePlist = join(import.meta.dirname, '../scripts', arch === 'x64' ? 'node-x64-entitlements.plist' : 'node-arm64-entitlements.plist')
   expect(signMacOSRuntimeCode).toHaveBeenCalledWith(node, expect.any(String), identity, nodePlist)
   const xml = readFileSync(nodePlist, 'utf8')
   expect(xml).toMatch(/<key>com\.apple\.security\.cs\.allow-jit<\/key>\s*<true\s*\/>/u)
   expect(/<key>com\.apple\.security\.cs\.allow-unsigned-executable-memory<\/key>\s*<true\s*\/>/u.test(xml)).toBe(arch === 'x64')
   expect(signMacOSRuntimeCode).toHaveBeenCalledWith(addon, expect.any(String), identity, undefined)
+})
+
+it('disables library validation only for the interpreters that load user-installed native extensions', () => {
+  expect(runtimeEntitlementsFile('dependencies/node/bin/node', 'arm64')).toBe('node-arm64-entitlements.plist')
+  for (const python of ['python', 'python3', 'python3.12']) {
+    expect(runtimeEntitlementsFile(`dependencies/python/bin/${python}`, 'arm64')).toBe('python-entitlements.plist')
+  }
+  expect(runtimeEntitlementsFile('dependencies/python/lib/python3.12/lib-dynload/_ssl.cpython-312-darwin.so', 'arm64')).toBeUndefined()
+  expect(runtimeEntitlementsFile('dependencies/python/bin/python3-config', 'arm64')).toBeUndefined()
+  for (const file of ['node-arm64-entitlements.plist', 'node-x64-entitlements.plist', 'python-entitlements.plist']) {
+    expect(readFileSync(join(import.meta.dirname, '../scripts', file), 'utf8')).toMatch(/<key>com\.apple\.security\.cs\.disable-library-validation<\/key>\s*<true\s*\/>/u)
+  }
+  expect(readFileSync(join(import.meta.dirname, '../scripts/python-entitlements.plist'), 'utf8')).not.toContain('allow-jit')
 })

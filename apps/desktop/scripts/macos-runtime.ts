@@ -19,6 +19,22 @@ function magic(path: string): string {
   } finally { closeSync(descriptor) }
 }
 
+const PYTHON_INTERPRETER = /^dependencies\/python\/bin\/python3?(?:\.\d+)?$/u
+
+/**
+ * Select hardened-runtime entitlements for one runtime Mach-O file.
+ * Node needs JIT for V8 (x64 also needs unsigned executable memory). Node and Python both load native
+ * extensions that users install into the copied runtime (npm addons, pip wheels); those carry other or
+ * ad-hoc signatures, so both interpreters disable library validation. Other files get no entitlements.
+ * @param path - Runtime-relative path with `/` separators.
+ * @param arch - Target runtime architecture.
+ * @returns Plist filename beside this script, or undefined for no entitlements.
+ */
+export function runtimeEntitlementsFile(path: string, arch: 'arm64' | 'x64'): string | undefined {
+  if (path === 'dependencies/node/bin/node') return arch === 'x64' ? 'node-x64-entitlements.plist' : 'node-arm64-entitlements.plist'
+  return PYTHON_INTERPRETER.test(path) ? 'python-entitlements.plist' : undefined
+}
+
 /**
  * Sign and verify every materialized Mach-O file, awaiting all signers on failure.
  * @param root - Self-contained production runtime without symlinks.
@@ -41,11 +57,8 @@ export async function signMacOSRuntime(
       const path = files[next++]
       if (path === undefined) return
       const identifier = `${appId}.runtime.${createHash('sha256').update(path).digest('hex')}`
-      const isNode = path === 'dependencies/node/bin/node'
-      const needsJit = isNode
-      const entitlementsFile = isNode && arch === 'x64'
-        ? 'node-x64-entitlements.plist' : 'jit-entitlements.plist'
-      const entitlements = needsJit ? join(import.meta.dirname, entitlementsFile) : undefined
+      const entitlementsFile = runtimeEntitlementsFile(path, arch)
+      const entitlements = entitlementsFile === undefined ? undefined : join(import.meta.dirname, entitlementsFile)
       const file = join(root, path)
       const thin = ['cefaedfe', 'cffaedfe', 'feedface', 'feedfacf'].includes(magic(file))
       if (cacheDirectory !== undefined && policy !== undefined && thin) {
