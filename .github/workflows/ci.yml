@@ -1,6 +1,10 @@
 # Verify Ahel Desktop on GitHub-hosted runners: typecheck, lint and the unit
 # suite for every pull request and every push to master. No self-hosted or
 # paid runner labels; public repositories get these minutes free.
+# Never move these jobs to the org's self-hosted Mac minis: this repository is
+# public and this workflow runs pull_request code from anyone, which would then
+# execute on machines that hold other work. Self-hosted runners serve only the
+# tag/dispatch-triggered desktop-release.yml.
 name: CI
 
 on:

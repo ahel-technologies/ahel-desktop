@@ -3,11 +3,29 @@
 # electron-updater.
 # macOS is signed and notarized when all five MAC_CERT_*/APPLE_* secrets are set
 # and unsigned otherwise; Windows is unsigned. See docs/phase3/RELEASE.md.
+#
+# macOS builds on the org's self-hosted Mac minis (labels self-hosted, macOS,
+# ARM64, macmini). This repository is public, so this workflow must only ever
+# run trusted code: it triggers on tag pushes and manual dispatch, never on
+# pull_request or pull_request_target. Do not add PR triggers here.
 name: Desktop release
 
 on:
   push:
     tags: ['v*']
+  # Manual run: from a branch it builds both platforms and uploads them as
+  # workflow artifacts only; from a v* tag with publish=true it also publishes.
+  workflow_dispatch:
+    inputs:
+      mac_runner:
+        description: macOS runner (macos-14 is the GitHub-hosted fallback, billed at 10x)
+        type: choice
+        options: [macmini, macos-14]
+        default: macmini
+      publish:
+        description: Publish the GitHub release (only takes effect when run from a v* tag)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -23,14 +41,18 @@ env:
 jobs:
   package:
     name: package / ${{ matrix.target }}
-    runs-on: ${{ matrix.os }}
+    # Tag pushes have no inputs, so they take the self-hosted Mac minis.
+    runs-on: ${{ matrix.os == 'mac' && (inputs.mac_runner == 'macos-14' && 'macos-14' || fromJSON('["self-hosted", "macOS", "ARM64", "macmini"]')) || matrix.os }}
     timeout-minutes: 120
+    env:
+      # The smallest mini (M1, 8 GB) also runs other agents; give V8 room without letting it take the box.
+      NODE_OPTIONS: ${{ matrix.os == 'mac' && '--max-old-space-size=4096' || '' }}
     strategy:
       # One platform failing must not cancel the other; publish ships what built.
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
+          - os: mac
             target: mac-arm64
             script: package:desktop:mac:arm64:dev
             installer: dmg
@@ -42,9 +64,29 @@ jobs:
       run:
         shell: bash
     steps:
+      # checkout's default clean (git clean -ffdx, reset --hard) already empties a reused workspace.
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+
+      # Self-hosted runners keep their work directory between jobs and share the machine with
+      # other work: drop build output left by an interrupted run, and keep every temporary file
+      # (including the signing keychain the package command creates) in this runner's own
+      # RUNNER_TEMP, which the runner empties per job.
+      - name: Prepare the self-hosted runner
+        if: runner.environment == 'self-hosted'
+        run: |
+          rm -rf apps/desktop/.desktop-build node_modules/.cache release-assets
+          {
+            echo "TMPDIR=$RUNNER_TEMP"
+            echo "COREPACK_HOME=$RUNNER_TOOL_CACHE/corepack"
+            echo "COREPACK_ENABLE_DOWNLOAD_PROMPT=0"
+          } >> "$GITHUB_ENV"
+          echo "runner=$RUNNER_NAME user=$(id -un) home=${HOME:-unset} temp=$RUNNER_TEMP tool_cache=$RUNNER_TOOL_CACHE"
+          sw_vers
+          xcode-select -p
+          df -h "$GITHUB_WORKSPACE" | tail -1
+          sysctl -n hw.memsize | awk '{ printf "memory: %.0f GB\n", $1 / 1073741824 }'
 
       - name: Enable Developer Mode (symlink support)
         if: runner.os == 'Windows'
@@ -53,19 +95,46 @@ jobs:
           reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock"
           /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
 
+      # Hosted runners start empty: pnpm from packageManager plus the Actions pnpm store cache.
       - uses: pnpm/action-setup@v4
+        if: runner.environment == 'github-hosted'
 
       - uses: actions/setup-node@v6
+        if: runner.environment == 'github-hosted'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
+      # Self-hosted: Node lands in the runner's tool cache once, corepack provides the
+      # packageManager pnpm, and pnpm's store stays on that runner between jobs (a per-runner
+      # cache that needs no upload or restore).
+      - uses: actions/setup-node@v6
+        if: runner.environment == 'self-hosted'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enable pnpm through corepack
+        if: runner.environment == 'self-hosted'
+        run: |
+          corepack enable
+          pnpm --version
+          echo "pnpm store: $(pnpm store path)"
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Set the product version from the tag
-        run: node apps/desktop/scripts/set-release-version.mjs "$GITHUB_REF_NAME"
+      # Tags set the release version; other refs build <current>-ci.<run number> and never publish.
+      - name: Set the product version
+        id: version
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$(node -p 'require("./package.json").version')-ci.$GITHUB_RUN_NUMBER"
+          fi
+          node apps/desktop/scripts/set-release-version.mjs "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       # Secrets cannot appear in `if:`; this step turns their presence into signed=true|false.
       - name: Select macOS signing
@@ -133,7 +202,7 @@ jobs:
           set -euo pipefail
           source="${{ steps.mode.outputs.source }}"
           app="$source/mac-arm64/Ahel Desktop.app"
-          dmg="$source/ahel-desktop-${GITHUB_REF_NAME#v}-${{ matrix.target }}.dmg"
+          dmg="$source/ahel-desktop-${{ steps.version.outputs.version }}-${{ matrix.target }}.dmg"
           codesign --verify --deep --strict --verbose=2 "$app"
           codesign --display --entitlements - --xml "$app" | plutil -p - || true
           spctl -a -vv "$app"
@@ -146,6 +215,7 @@ jobs:
         run: |
           rm -rf "$RUNNER_TEMP/ahel-macos-signing" apps/desktop/.env.macos
           # The package command deletes its keychain; this covers a cancelled or killed run.
+          # TMPDIR is this runner's RUNNER_TEMP on self-hosted, so only this job's keychain matches.
           for keychain in "${TMPDIR:-/tmp}"/dsh-macos-signing-*/signing.keychain-db; do
             [ -e "$keychain" ] || continue
             security delete-keychain "$keychain" || true
@@ -154,7 +224,7 @@ jobs:
 
       - name: Collect release assets
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${{ steps.version.outputs.version }}"
           source="${{ steps.mode.outputs.source }}"
           mkdir -p release-assets
           cp "$source"/*.${{ matrix.installer }} "$source"/*.blockmap "$source"/latest*.yml release-assets/
@@ -178,7 +248,8 @@ jobs:
     needs: package
     # Runs when a platform failed too: the release carries what built, and the
     # last step still fails the workflow so the broken platform stays visible.
-    if: ${{ !cancelled() }}
+    # Only tags publish: on push, or on a dispatch from the tag with publish=true.
+    if: ${{ !cancelled() && github.ref_type == 'tag' && (github.event_name == 'push' || inputs.publish) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
