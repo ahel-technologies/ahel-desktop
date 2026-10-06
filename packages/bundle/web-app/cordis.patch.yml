@@ -338,6 +338,10 @@
     - id: ui-workspace
       name: '@ahel/dsh-client-ui-workspace'
 
+    # Cmd+K / Ctrl+K palette over chats, panels, apps, models and settings, plus the chat and panel jump keys.
+    - id: ui-command-palette
+      name: '@ahel/dsh-client-ui-command-palette'
+
     # Input triggers: the '/' | '@' pipeline (ui-input-trigger), the command surface over
     # it (ui-commands), and the reference source (ui-reference).
     - id: ui-input-trigger

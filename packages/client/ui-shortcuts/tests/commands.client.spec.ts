@@ -36,6 +36,9 @@ describe('assembled shortcut command owners', () => {
     const ownedRows = () => shortcuts.catalog.getSnapshot().filter(row => ownerIds.includes(row.id))
     expect(ownedRows().map(row => row.id).sort()).toEqual(ownerIds)
     expect(ownedRows().filter(row => row.keys.length > 0).map(row => row.id)).toEqual(['shortcuts.open'])
+    const chatRows = shortcuts.catalog.getSnapshot().filter(row => row.id.startsWith('palette.chat.'))
+    expect(chatRows).toHaveLength(9)
+    expect(chatRows.filter(row => row.keys.length > 0)).toEqual([])
     const conversationIds = ['fixed.send', 'fixed.newline', 'fixed.complementary', 'fixed.slash', 'fixed.mention', 'response.stop']
     const fixedIds = () => shortcuts.fixedCatalog.getSnapshot().map(row => row.id)
     expect(fixedIds()).toEqual(expect.arrayContaining(conversationIds))

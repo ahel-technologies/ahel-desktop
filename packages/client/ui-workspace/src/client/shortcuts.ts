@@ -89,7 +89,7 @@ export function installWorkspaceShortcuts(
   }
   register('session.new', () => t('session.new'), ['new session', 'new chat'], 'KeyN', ['primary'], ['primary', 'alt'],
     () => ({ status: 'handled', run: () => { navigation.startSession() } }))
-  register('session.search', () => t('search.sessions.aria'), ['search sessions'], 'KeyK', ['primary'], ['primary', 'alt'],
+  register('session.search', () => t('search.sessions.aria'), ['search sessions'], 'KeyF', ['primary', 'shift'], ['primary', 'alt'],
     () => ({ status: 'handled', run: controls.search }))
   register('workspace.add', () => t('workspace.add'), ['add workspace', 'open folder'], 'KeyO', ['primary'], ['primary', 'alt'],
     () => {
