@@ -2381,6 +2381,9 @@ importers:
       '@ahel/dsh-client-ui-commands':
         specifier: workspace:*
         version: link:../../client/ui-commands
+      '@ahel/dsh-client-ui-computer-use':
+        specifier: workspace:*
+        version: link:../../client/ui-computer-use
       '@ahel/dsh-client-ui-conversation':
         specifier: workspace:*
         version: link:../../client/ui-conversation
@@ -2483,6 +2486,9 @@ importers:
       '@ahel/dsh-compaction-tool-result-pruner':
         specifier: workspace:*
         version: link:../../compaction/compaction-tool-result-pruner
+      '@ahel/dsh-computer-use-action-gate':
+        specifier: workspace:*
+        version: link:../../computer-use/action-gate
       '@ahel/dsh-cordis-client-runner':
         specifier: workspace:*
         version: link:../../extensions/cordis-client-runner
@@ -3397,6 +3403,70 @@ importers:
       react:
         specifier: ^18.2.0
         version: 18.3.1
+
+  packages/client/ui-computer-use:
+    dependencies:
+      '@ahel/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@ahel/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@ahel/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@ahel/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@ahel/dsh-client-shortcuts':
+        specifier: workspace:*
+        version: link:../shortcuts
+      '@ahel/dsh-client-ui-approval':
+        specifier: workspace:*
+        version: link:../ui-approval
+      '@ahel/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
+      '@ahel/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@ahel/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@ahel/dsh-client-ui-settings':
+        specifier: workspace:*
+        version: link:../ui-settings
+      '@ahel/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@ahel/dsh-computer-use-action-gate':
+        specifier: workspace:*
+        version: link:../../computer-use/action-gate
+      '@ahel/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
+      '@ahel/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@ahel/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      '@testing-library/react':
+        specifier: ^16.1.0
+        version: 16.3.2(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
 
   packages/client/ui-conversation:
     dependencies:
@@ -6624,6 +6694,49 @@ importers:
       '@ahel/dsh-token-meter':
         specifier: workspace:*
         version: link:../../llm/token-meter
+
+  packages/computer-use/action-gate:
+    dependencies:
+      '@ahel/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@ahel/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@ahel/cordis-plugin-loader':
+        specifier: workspace:~
+        version: link:../../../vendor/loader
+      '@ahel/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@ahel/dsh-agent-loop':
+        specifier: workspace:*
+        version: link:../../core/agent-loop
+      '@ahel/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
+      '@ahel/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@ahel/dsh-session-projection':
+        specifier: workspace:*
+        version: link:../../session/session-projection
+      '@ahel/dsh-settings':
+        specifier: workspace:*
+        version: link:../../settings/settings
+      '@ahel/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
+      '@ahel/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
+      '@ahel/dsh-user-approval':
+        specifier: workspace:*
+        version: link:../../interaction/user-approval
+      '@ahel/dsh-util-values':
+        specifier: workspace:*
+        version: link:../../util/values
 
   packages/context/agent-instructions:
     dependencies:

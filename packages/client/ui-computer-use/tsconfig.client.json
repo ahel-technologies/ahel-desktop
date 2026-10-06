@@ -1,0 +1,33 @@
+{
+  "extends": "../../../tsconfig.base.client.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "tsBuildInfoFile": "lib/tsconfig.client.tsbuildinfo"
+  },
+  "files": [
+    "src/css-modules.d.ts",
+    "src/client/ApprovalCard.tsx",
+    "src/client/Dock.tsx",
+    "src/client/SettingsRow.tsx",
+    "src/client/contract.ts",
+    "src/client/index.ts",
+    "src/client/locales.ts",
+    "src/client/register.ts",
+    "src/client/view.ts"
+  ],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../api/remotes/tsconfig.client.json" },
+    { "path": "../../computer-use/action-gate" },
+    { "path": "../../typert/protocol" },
+    { "path": "../locale/tsconfig.client.json" },
+    { "path": "../shortcuts/tsconfig.client.json" },
+    { "path": "../ui-approval" },
+    { "path": "../ui-conversation/tsconfig.client.json" },
+    { "path": "../ui-primitives" },
+    { "path": "../ui-renderer" },
+    { "path": "../ui-settings/tsconfig.client.json" },
+    { "path": "../ui-slots" }
+  ]
+}

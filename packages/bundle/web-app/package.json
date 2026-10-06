@@ -141,6 +141,8 @@
     "@ahel/dsh-experimental-speech-to-text-ahel": "workspace:*",
     "@ahel/dsh-experimental-api-speech-to-text": "workspace:*",
     "@ahel/dsh-experimental-client-ui-voice-input": "workspace:*"
+    "@ahel/dsh-computer-use-action-gate": "workspace:*",
+    "@ahel/dsh-client-ui-computer-use": "workspace:*"
   },
   "peerDependencies": {
     "@ahel/cordis": "workspace:~",

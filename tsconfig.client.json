@@ -97,6 +97,7 @@
     { "path": "./packages/client/ui-brand-ahel" },
     { "path": "./packages/client/ui-ahel-account" },
     { "path": "./packages/client/ui-issues" },
+    { "path": "./packages/client/ui-computer-use/tsconfig.client.json" },
     { "path": "./packages/client/ui-local-cli" },
     { "path": "./packages/client/ui-notifications" },
     { "path": "./packages/client/ui-command-palette" },
