@@ -1,0 +1,40 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-notifications/README.md
+/:
+  en: 777fe110f06f4185
+  zh: dbcc0cfa32edd413
+/ahel-dsh-client-ui-notifications:
+  en: caf078a9beba88e3
+  zh: 47074882ff871b6c
+/ahel-dsh-client-ui-notifications/summary:
+  en: ced191d8c5d28d74
+  zh: fdb425f10b507e16
+/ahel-dsh-client-ui-notifications/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 725b47765ee8f30b
+/ahel-dsh-client-ui-notifications/use-this-package:
+  en: 2d1b94696b52ed6a
+  zh: 923708520ad9b169
+/ahel-dsh-client-ui-notifications/use-this-package/what-to-expect:
+  en: a058a15d3fc3c539
+  zh: 4c97c3977d42ad90
+/ahel-dsh-client-ui-notifications/understand-the-implementation:
+  en: 3889b94244429441
+  zh: 0359e86ca4c01fff
+/ahel-dsh-client-ui-notifications/further-exploration:
+  en: c3a181847722249d
+  zh: 89b057075c8ba99c
+/ahel-dsh-client-ui-notifications/model-experience:
+  en: bc419f580c5bfa99
+  zh: 2fbd34107f452de6
+/ahel-dsh-client-ui-notifications/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: f57cc48a1b5cbfa9
+/ahel-dsh-client-ui-notifications/known-limitations-and-deferred-work:
+  en: de3fef804440b5be
+  zh: 55f23ba8a2323dbb
+/ahel-dsh-client-ui-notifications/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: b532016223ceceef
