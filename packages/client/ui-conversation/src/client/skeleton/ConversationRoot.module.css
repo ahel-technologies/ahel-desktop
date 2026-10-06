@@ -148,6 +148,10 @@ button.crumb:hover {
 }
 
 .crumbCurrent {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* The open chat's title takes the row's free width; it ellipsizes only when the row is full. */
+  max-width: none;
   font-weight: 500;
   color: var(--dsw-alias-label-primary);
   cursor: default;

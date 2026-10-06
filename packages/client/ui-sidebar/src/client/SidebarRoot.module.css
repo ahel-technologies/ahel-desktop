@@ -489,8 +489,10 @@
 }
 
 /* Panel entries share the New Session bar's 12px radius and 2px inset, the
-   session rows' hover/selected surface, and the primary ink. */
+   session rows' hover/selected surface, and the primary ink. The row is the
+   positioning box for a trailing count an icon occupant draws. */
 .panelRow {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;

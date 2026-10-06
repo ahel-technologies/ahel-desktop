@@ -46,11 +46,12 @@ export function AppsPanelIcon({ size }: PropsRuntime<'sidebar.panellist'>): Reac
 
 /**
  * Render the Approvals shield-and-check glyph with the count of held calls
- * waiting for a yes; the badge hides at zero and caps at 9+.
+ * waiting for a yes; the badge hides at zero and caps at 9+. In the wide column
+ * it is a pill at the row's trailing edge, in the rail it rides the glyph's corner.
  * @param props - the sidebar's icon share and the Approvals face.
  * @returns the decorative glyph and badge.
  */
-export function ApprovalsPanelIcon({ size, useSummary }: ApprovalsPanelIconProps): ReactNode {
+export function ApprovalsPanelIcon({ size, wide, useSummary }: ApprovalsPanelIconProps): ReactNode {
   const count = useSummary(value => value.summary?.approvals?.rows.length ?? 0)
   return (
     <span className={team.glyph}>
@@ -59,18 +60,18 @@ export function ApprovalsPanelIcon({ size, useSummary }: ApprovalsPanelIconProps
         <path d="M8 2.2 13 4v4c0 2.9-2.1 5-5 5.8C5.1 13 3 10.9 3 8V4z" />
         <path d="m5.8 8 1.5 1.5 3-3" />
       </svg>
-      {count > 0 && <span className={team.badge}>{count > 9 ? '9+' : count}</span>}
+      {count > 0 && <span className={wide === true ? team.trailingBadge : team.badge}>{count > 9 ? '9+' : count}</span>}
     </span>
   )
 }
 
 /**
  * Render the Inbox tray glyph with the count of unread handoffs; the badge
- * hides at zero and caps at 9+.
+ * hides at zero, caps at 9+ and sits like the Approvals badge.
  * @param props - the sidebar's icon share and the Inbox face.
  * @returns the decorative glyph and badge.
  */
-export function InboxPanelIcon({ size, useSummary }: InboxPanelIconProps): ReactNode {
+export function InboxPanelIcon({ size, wide, useSummary }: InboxPanelIconProps): ReactNode {
   const count = useSummary(value => value.summary?.inbox?.unread ?? 0)
   return (
     <span className={team.glyph}>
@@ -79,7 +80,7 @@ export function InboxPanelIcon({ size, useSummary }: InboxPanelIconProps): React
         <path d="M2.5 9.5 4.2 4a1.4 1.4 0 0 1 1.3-1h5a1.4 1.4 0 0 1 1.3 1l1.7 5.5V12a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 12z" />
         <path d="M2.5 9.5h3l1 1.5h3l1-1.5h3" />
       </svg>
-      {count > 0 && <span className={team.badge}>{count > 9 ? '9+' : count}</span>}
+      {count > 0 && <span className={wide === true ? team.trailingBadge : team.badge}>{count > 9 ? '9+' : count}</span>}
     </span>
   )
 }

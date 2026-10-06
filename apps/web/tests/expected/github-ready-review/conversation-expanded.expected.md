@@ -32,4 +32,4 @@
 - 'button "Access mode, current: Read Only"': Read Only
 - button "Select model, current github-webhook-review-test/reply": github-webhook-review-test/reply
 - button "Send message" [disabled]
-- button "1 turns 1 steps"
+- button "1 turn · 1 step"

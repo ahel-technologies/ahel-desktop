@@ -241,7 +241,10 @@ export const ActivityPill = memo(function ActivityPill({ useChat, useProjection,
   const icon = <IconGaugeOutlineRegular />
   if (mode === 'compact') return speed === null ? null : <PlainPill stat="activity" icon={icon} label={speed} />
   if (stats.steps === 0) return null
-  const counts = t('stats.counts', { turns: stats.turns, steps: stats.steps })
+  const counts = t('stats.counts', {
+    turns: t(stats.turns === 1 ? 'stats.turnsOne' : 'stats.turns', { n: stats.turns }),
+    steps: t(stats.steps === 1 ? 'stats.stepsOne' : 'stats.steps', { n: stats.steps }),
+  })
   const content: PillContent = { stat: 'activity', icon, label: joined(counts, speed) }
   // A window without one timed figure has no dialog rows to show, so the pill
   // stays a plain reading instead of a button opening an empty dialog.

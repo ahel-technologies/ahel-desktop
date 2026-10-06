@@ -30,6 +30,28 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* In the wide column the count is a pill at the row's trailing edge, clear of
+   the glyph and the title; the sidebar's panel row is its positioning box. */
+.trailingBadge {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-state-error-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  transform: translateY(-50%);
+}
+
 .head { padding: 28px 0 24px; }
 
 .list {

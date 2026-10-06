@@ -4,9 +4,13 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { makeTranslate } from '@ahel/dsh-client-test-runtime'
 import type { AhelAccountView, DesktopSummary } from '@ahel/dsh-ahel-account/types'
+import { HeroGreeting } from '../src/client/HeroGreeting.tsx'
+import type { HeroGreetingProps } from '../src/client/contract.ts'
+import { InboxPanelIcon } from '../src/client/catalog/PanelIcons.tsx'
 import { HandOffButton, type HandOffButtonProps } from '../src/client/team/ShareHandoff.tsx'
-import { TeamHeader, TeamStrip } from '../src/client/team/TeamGlance.tsx'
-import type { TeamHeaderProps, TeamStripProps, TeamSummaryState } from '../src/client/team/contract.ts'
+import { TeamHeader, TeamStrip, initials } from '../src/client/team/TeamGlance.tsx'
+import type { InboxPanelIconProps, TeamHeaderProps, TeamStripProps, TeamSummaryState } from '../src/client/team/contract.ts'
+import team from '../src/client/team/Team.module.css'
 import { en } from '../src/client/locales.ts'
 
 const t = makeTranslate(en)
@@ -57,6 +61,29 @@ describe('team at a glance', () => {
     expect([...view.container.querySelectorAll('[aria-hidden="true"] > span')].map(item => item.textContent)).toEqual(['KS', 'P', 'R', '+3'])
     fireEvent.click(screen.getByRole('button'))
     expect(props.openMembers).toHaveBeenCalledOnce()
+  })
+
+  it('tells same-first-name teammates apart by the first letters of their first two words', () => {
+    expect(initials({ id: 'a', name: 'Karl Soone', email: 'karl@ahel.ai' })).toBe('KS')
+    expect(initials({ id: 'b', name: 'Karl Hendrik Saar', email: 'kh@ahel.ai' })).toBe('KH')
+  })
+
+  it('greets by the live display name the account row shows, not the one stored at sign-in', () => {
+    const stored: AhelAccountView = { ...account, profile: { ...account.profile!, name: 'Admin' } }
+    const props = {
+      greet: (name?: string) => `Hello, ${name ?? 'there'}`,
+      useAccount: select => select(stored),
+      useSummary,
+    } as HeroGreetingProps
+    const view = render(<HeroGreeting {...props} />)
+    expect(view.container.textContent).toBe('Hello, Karl')
+  })
+
+  it('draws the unread count as a trailing pill in the wide sidebar row', () => {
+    const props = { size: 16, active: false, wide: true, useSummary } as unknown as InboxPanelIconProps
+    const view = render(<InboxPanelIcon {...props} />)
+    const badge = view.getByText('2')
+    expect(badge.className).toBe(team.trailingBadge)
   })
 
   it('shows quiet tiles on the welcome screen, each opening its panel', () => {
