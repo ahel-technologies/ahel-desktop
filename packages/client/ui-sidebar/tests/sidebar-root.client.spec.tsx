@@ -66,6 +66,7 @@ function mountShell({ collapsed = false, width = 300, shortcuts = [] }: {
           settingsOwner = owner
           return <div data-testid="settings-seat" data-wide={owner.wide} />
         }
+        if (key === 'sidebar.header') return <div data-testid="header-seat" data-wide={owner.wide} />
         if (key === 'sidebar.footer.action') {
           footerActionOwner = owner
           return <div data-testid="footer-action-seat" data-wide={owner.wide} />
@@ -132,6 +133,14 @@ describe('SidebarRoot shell', () => {
     expect(b.startSession).toHaveBeenCalledTimes(2)
     fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
     expect(b.toggleSidebar).toHaveBeenCalledOnce()
+  })
+
+  it('seats the header entries under the brand row, above New Session', () => {
+    mountShell()
+    const header = screen.getByTestId('header-seat')
+    expect(header.dataset.wide).toBe('true')
+    const newSession = screen.getAllByRole('button', { name: 'New chat' }).at(-1)!
+    expect(header.compareDocumentPosition(newSession) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('renders generic brand fallbacks when no package fills the slots', () => {

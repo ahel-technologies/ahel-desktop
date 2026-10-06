@@ -5281,8 +5281,12 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type DesktopCredits = {\n    readonly visible: false;\n} | {\n    readonly visible: true;\n    readonly balanceCents: number;\n    readonly workspaceSpentTodayCents: number;\n    readonly low: boolean;\n    readonly lowThresholdCents: number;\n    readonly canTopUp: boolean;\n    readonly topUpUrl: string;\n};',
   },
   {
+    name: 'DesktopMember',
+    declaration: 'export interface DesktopMember {\n    readonly id: string;\n    readonly name: string | null;\n    readonly email: string;\n}',
+  },
+  {
     name: 'DesktopSummary',
-    declaration: 'export interface DesktopSummary {\n    readonly workspace: {\n        readonly id: string;\n        readonly name: string;\n        readonly role: string;\n    };\n    readonly approvals: {\n        readonly rows: readonly ApprovalRow[];\n    } | null;\n    readonly inbox: {\n        readonly unread: number;\n    } | null;\n    readonly credits: DesktopCredits | null;\n    readonly at: string;\n}',
+    declaration: 'export interface DesktopSummary {\n    readonly workspace: {\n        readonly id: string;\n        readonly name: string;\n        readonly role: string;\n    };\n    readonly approvals: {\n        readonly rows: readonly ApprovalRow[];\n    } | null;\n    readonly inbox: {\n        readonly unread: number;\n    } | null;\n    readonly credits: DesktopCredits | null;\n    readonly me?: DesktopMember | null;\n    readonly members?: {\n        readonly total: number;\n        readonly rows: readonly DesktopMember[];\n    } | null;\n    readonly apps?: {\n        readonly installed: number;\n    } | null;\n    readonly at: string;\n}',
   },
   {
     name: 'DeveloperMessage',

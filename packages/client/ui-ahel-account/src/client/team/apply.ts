@@ -2,8 +2,10 @@
  * Team assembly: the `ahel-approvals` main panel, its sidebar row for
  * owners and team leads with the pending-count badge, and a system
  * notification when a new held call arrives; the `ahel-inbox` main panel and
- * its sidebar row with the unread badge, whose Open seeds a new session; and
- * the session menu's "Share with teammate" with its dialog.
+ * its sidebar row with the unread badge, whose Open seeds a new session; the
+ * team header at the top of the sidebar and the team strip under the welcome
+ * greeting; and "Share with teammate" in the session menu and as the chat
+ * header's Hand off button, with its dialog.
  */
 import type { Context } from '@ahel/cordis'
 import type { AhelAccountView, HandoffSessionDraft } from '@ahel/dsh-ahel-account/types'
@@ -21,8 +23,11 @@ import { NS } from '../locales.ts'
 import { ApprovalsPanelIcon, InboxPanelIcon } from '../catalog/PanelIcons.tsx'
 import { ApprovalsPage } from './ApprovalsPage.tsx'
 import { InboxPage } from './InboxPage.tsx'
-import { ShareHandoffDialog, ShareHandoffMenuItem, type ShareHandoffInjected, type ShareRequest } from './ShareHandoff.tsx'
-import type { ApprovalsInjected, InboxAnswer, InboxInjected, InboxLoad, TeamSummary, TeamSummaryState } from './contract.ts'
+import { HandOffButton, ShareHandoffDialog, ShareHandoffMenuItem, type ShareHandoffInjected, type ShareRequest } from './ShareHandoff.tsx'
+import { TeamHeader, TeamStrip } from './TeamGlance.tsx'
+import type {
+  ApprovalsInjected, InboxAnswer, InboxInjected, InboxLoad, TeamGlanceInjected, TeamGlanceTarget, TeamSummary, TeamSummaryState,
+} from './contract.ts'
 
 /** Main panel and sidebar row id of the Approvals page. */
 const APPROVALS_ID = 'ahel-approvals' as MainPanelId
@@ -35,6 +40,16 @@ const INBOX_ID = 'ahel-inbox' as MainPanelId
 
 /** ahel.ai's handoffs page. */
 const WEB_HANDOFFS = 'https://ahel.ai/app/handoffs'
+
+/** ahel.ai's organization settings, where members are invited and managed. */
+const WEB_TEAM = 'https://ahel.ai/app/settings/organization'
+
+/** The panel each team tile opens. */
+const GLANCE_PANELS: Readonly<Record<TeamGlanceTarget, MainPanelId>> = {
+  approvals: APPROVALS_ID,
+  inbox: INBOX_ID,
+  apps: 'ahel-apps' as MainPanelId,
+}
 
 /** Roles that answer held calls on ahel.ai (`canManageOrg`). */
 const MANAGER_ROLES: ReadonlySet<string> = new Set(['OWNER', 'ADMIN'])
@@ -121,6 +136,7 @@ export function registerTeam(ctx: Context, account: AhelAccountInjected, summary
   })
 
   ctx.effect(() => watchNewApprovals(ctx, account, summary), 'ui-ahel-account: approval notifications')
+  registerGlance(ctx, account, summary)
   registerShare(ctx, account, summary)
   // Only the Inbox needs the session navigation; Approvals do not wait for it.
   ctx.inject(['uiWorkspace'], (inner) => { registerInbox(inner, account, summary) })
@@ -220,27 +236,61 @@ function registerInbox(ctx: Context, account: AhelAccountInjected, summary: Team
     name: 'main', key: INBOX_ID, locale: NS, inject: () => face,
   }, InboxPage))
 
-  ctx.slots.inject('sidebar.panellist', () => {
-    let dispose: (() => void) | undefined
-    const reconcile = (): void => {
-      const show = account.hooks.account.getSnapshot()?.status === 'signed-in'
-      if (show && dispose === undefined) {
-        dispose = ctx.slots.register({
-          name: 'sidebar.panellist', id: INBOX_ID, order: -4, locale: NS, label: () => t('inbox'), inject: () => face,
-        }, InboxPanelIcon)
-      } else if (!show && dispose !== undefined) {
-        dispose()
-        dispose = undefined
-      }
-    }
-    reconcile()
-    const off = account.hooks.account.subscribe(reconcile)
-    return () => {
-      off()
-      dispose?.()
+  ctx.slots.inject('sidebar.panellist', () => whileSignedIn(account, () => ctx.slots.register({
+    name: 'sidebar.panellist', id: INBOX_ID, order: -4, locale: NS, label: () => t('inbox'), inject: () => face,
+  }, InboxPanelIcon)))
+}
+
+/**
+ * Register the team header at the top of the sidebar and the team strip under the welcome greeting;
+ * both render nothing while signed out or before the first summary.
+ * @param ctx - Client context with `slots` and `layout`.
+ * @param account - the account face.
+ * @param summary - the shared summary poll.
+ */
+function registerGlance(ctx: Context, account: AhelAccountInjected, summary: TeamSummary): void {
+  const face: TeamGlanceInjected = {
+    openPanel: (target) => { ctx.layout.selectPanel(GLANCE_PANELS[target]) },
+    openMembers: () => {
+      const url = webUrl(WEB_TEAM, account, summary)
+      if (url !== null) account.openLink(url)
+    },
+    hooks: { account: account.hooks.account, summary: summary.state },
+  }
+  ctx.slots.inject('sidebar.header', () => ctx.slots.register({
+    name: 'sidebar.header', id: 'ahel-team', order: 0, locale: NS, inject: () => face,
+  }, TeamHeader))
+  ctx.slots.inject('conversation.hero.subhead', () => ctx.slots.register({
+    name: 'conversation.hero.subhead', id: 'ahel-team', order: 0, locale: NS, inject: () => face,
+  }, TeamStrip))
+}
+
+/**
+ * Keep one slot entry registered exactly while signed in.
+ * @param account - the account face.
+ * @param register - registers the entry and returns its disposer.
+ * @param onSignedOut - runs after a sign-out withdraws the entry.
+ * @returns the disposer for the whole watch.
+ */
+function whileSignedIn(account: AhelAccountInjected, register: () => () => void, onSignedOut?: () => void): () => void {
+  let dispose: (() => void) | undefined
+  const reconcile = (): void => {
+    const show = account.hooks.account.getSnapshot()?.status === 'signed-in'
+    if (show && dispose === undefined) {
+      dispose = register()
+    } else if (!show && dispose !== undefined) {
+      dispose()
       dispose = undefined
+      onSignedOut?.()
     }
-  })
+  }
+  reconcile()
+  const off = account.hooks.account.subscribe(reconcile)
+  return () => {
+    off()
+    dispose?.()
+    dispose = undefined
+  }
 }
 
 /** Prefill when the chat could not be read. */
@@ -288,28 +338,13 @@ function registerShare(ctx: Context, account: AhelAccountInjected, summary: Team
     hooks: { shareRequest },
   }
 
-  ctx.slots.inject('sidebar.workspaces.session.menu.item', () => {
-    let dispose: (() => void) | undefined
-    const reconcile = (): void => {
-      const show = account.hooks.account.getSnapshot()?.status === 'signed-in'
-      if (show && dispose === undefined) {
-        dispose = ctx.slots.register({
-          name: 'sidebar.workspaces.session.menu.item', id: 'ahel-share', order: 350, locale: NS, inject: () => face,
-        }, ShareHandoffMenuItem)
-      } else if (!show && dispose !== undefined) {
-        dispose()
-        dispose = undefined
-        setRequest(null)
-      }
-    }
-    reconcile()
-    const off = account.hooks.account.subscribe(reconcile)
-    return () => {
-      off()
-      dispose?.()
-      dispose = undefined
-    }
-  })
+  ctx.slots.inject('sidebar.workspaces.session.menu.item', () => whileSignedIn(account, () => ctx.slots.register({
+    name: 'sidebar.workspaces.session.menu.item', id: 'ahel-share', order: 350, locale: NS, inject: () => face,
+  }, ShareHandoffMenuItem), () => { setRequest(null) }))
+  // Left of the header's other utilities (open-in-app -10, schedule -5).
+  ctx.slots.inject('conversation.session.header.utilities', () => whileSignedIn(account, () => ctx.slots.register({
+    name: 'conversation.session.header.utilities', id: 'ahel-hand-off', order: -20, locale: NS, inject: () => face,
+  }, HandOffButton)))
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
     name: 'shell.overlay', id: 'ahel-share', locale: NS, inject: () => face,
   }, ShareHandoffDialog))

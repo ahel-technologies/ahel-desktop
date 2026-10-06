@@ -7,8 +7,10 @@
  * prompts below the blank-session composer, the rows for Ahel model
  * refusals in the transcript, the Discover panel over the Host's
  * `ahelCatalog` namespace, and over `ahelTeam`'s summary the balance line
- * and the Approvals panel with its badge and notifications, and the Inbox
- * of teammate handoffs with its unread badge.
+ * and the Approvals panel with its badge and notifications, the Inbox
+ * of teammate handoffs with its unread badge, the team header at the top of
+ * the sidebar, the team strip under the welcome greeting, and the chat
+ * header's Hand off button.
  */
 import type { Context } from '@ahel/cordis'
 import type { HostObservable } from '@ahel/dsh-client-ui-slots'
@@ -38,7 +40,7 @@ export type { AhelAccountKey } from './locales.ts'
 export type { CatalogPanelId, DiscoverInjected, DiscoverPageProps } from './catalog/contract.ts'
 export type {
   ApprovalAnswer, ApprovalsInjected, ApprovalsPageProps, ApprovalsPanelIconProps, InboxAnswer, InboxInjected, InboxLoad, InboxPageProps,
-  InboxPanelIconProps, TeamSummary, TeamSummaryState,
+  InboxPanelIconProps, TeamGlanceInjected, TeamGlanceTarget, TeamHeaderProps, TeamStripProps, TeamSummary, TeamSummaryState,
 } from './team/contract.ts'
 
 /** Required services: the Remote mount, slots, dictionaries and the main-panel layout. */

@@ -267,6 +267,17 @@ export const en = {
   conceptEmpty: '{label} arrive with the next catalog update.',
   conceptEmptyUntil: 'Until then,',
   conceptEmptyBrowse: 'browse the Discover',
+  team: 'Team',
+  teamMembers: '{n} members',
+  teamMembersOne: '1 member',
+  teamSettings: 'Team settings on ahel.ai',
+  tileApprovals: 'open approvals',
+  tileApprovalsOne: 'open approval',
+  tileInbox: 'in your inbox',
+  tileApps: 'apps connected',
+  tileAppsOne: 'app connected',
+  handOff: 'Hand off',
+  handOffHint: 'Hand off this chat to a teammate',
 }
 
 /** Dictionary keys. */
@@ -535,6 +546,17 @@ export const zh: Record<AhelAccountKey, string> = {
   conceptEmpty: '{label}将在下次目录更新时上线。',
   conceptEmptyUntil: '在此之前，',
   conceptEmptyBrowse: '浏览 Discover',
+  team: '团队',
+  teamMembers: '{n} 位成员',
+  teamMembersOne: '1 位成员',
+  teamSettings: '在 ahel.ai 打开团队设置',
+  tileApprovals: '项待批准',
+  tileApprovalsOne: '项待批准',
+  tileInbox: '条在收件箱',
+  tileApps: '个应用已连接',
+  tileAppsOne: '个应用已连接',
+  handOff: '转交',
+  handOffHint: '把这个对话转交给队友',
 }
 
 declare module '@ahel/dsh-client-ui-slots' {

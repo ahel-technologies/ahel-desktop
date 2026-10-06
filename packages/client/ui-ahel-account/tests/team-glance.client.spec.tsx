@@ -1,0 +1,79 @@
+// @vitest-environment jsdom
+
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { makeTranslate } from '@ahel/dsh-client-test-runtime'
+import type { AhelAccountView, DesktopSummary } from '@ahel/dsh-ahel-account/types'
+import { HandOffButton, type HandOffButtonProps } from '../src/client/team/ShareHandoff.tsx'
+import { TeamHeader, TeamStrip } from '../src/client/team/TeamGlance.tsx'
+import type { TeamHeaderProps, TeamStripProps, TeamSummaryState } from '../src/client/team/contract.ts'
+import { en } from '../src/client/locales.ts'
+
+const t = makeTranslate(en)
+
+afterEach(() => { cleanup() })
+
+const account: AhelAccountView = {
+  status: 'signed-in',
+  profile: { email: 'karl@ahel.ai', name: 'Karl Soone', workspaces: [{ id: 'w1', name: 'Ahel', slug: 'ahel', role: 'OWNER' }] },
+  attempt: null,
+  workspace: 'w1',
+  reachable: true,
+}
+
+const summary: DesktopSummary = {
+  workspace: { id: 'w1', name: 'Ahel', role: 'OWNER' },
+  approvals: { rows: [] },
+  inbox: { unread: 2 },
+  credits: null,
+  me: { id: 'u1', name: 'Karl Soone', email: 'karl@ahel.ai' },
+  members: {
+    total: 6,
+    rows: [
+      { id: 'u1', name: 'Karl Soone', email: 'karl@ahel.ai' },
+      { id: 'u2', name: 'Pets', email: 'pets@ahel.ai' },
+      { id: 'u3', name: null, email: 'ria@ahel.ai' },
+    ],
+  },
+  apps: { installed: 1 },
+  at: '2026-10-07T00:00:00Z',
+}
+
+const state: TeamSummaryState = { summary, outdated: false, error: null }
+
+const useAccount: TeamHeaderProps['useAccount'] = select => select(account)
+const useSummary: TeamHeaderProps['useSummary'] = select => select(state)
+
+function face() {
+  return { openPanel: vi.fn(), openMembers: vi.fn(), useAccount, useSummary, t }
+}
+
+describe('team at a glance', () => {
+  it('heads the sidebar with the workspace, its faces and the member count, and opens the team settings', () => {
+    const props = { ...face(), wide: true } as TeamHeaderProps
+    const view = render(<TeamHeader {...props} />)
+    expect(screen.getByText('Ahel')).toBeTruthy()
+    expect(screen.getByText('6 members')).toBeTruthy()
+    expect([...view.container.querySelectorAll('[aria-hidden="true"] > span')].map(item => item.textContent)).toEqual(['KS', 'P', 'R', '+3'])
+    fireEvent.click(screen.getByRole('button'))
+    expect(props.openMembers).toHaveBeenCalledOnce()
+  })
+
+  it('shows quiet tiles on the welcome screen, each opening its panel', () => {
+    const props = face() as TeamStripProps
+    render(<TeamStrip {...props} />)
+    const tiles = screen.getAllByRole('button').map(tile => tile.textContent)
+    expect(tiles).toEqual(['KSPR+3Ahel6 members', '0open approvals', '2in your inbox', '1app connected'])
+    fireEvent.click(screen.getByText('in your inbox'))
+    expect(props.openPanel).toHaveBeenCalledWith('inbox')
+  })
+
+  it('hands the open chat off through the share dialog', () => {
+    const requestShare = vi.fn()
+    const useSession: HandOffButtonProps['useSession'] = select => select({ openState: 'open' } as Parameters<typeof select>[0])
+    const props = { sessionId: 's1' as HandOffButtonProps['sessionId'], requestShare, t, useSession } as HandOffButtonProps
+    render(<HandOffButton {...props} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Hand off' }))
+    expect(requestShare).toHaveBeenCalledWith('s1', '')
+  })
+})

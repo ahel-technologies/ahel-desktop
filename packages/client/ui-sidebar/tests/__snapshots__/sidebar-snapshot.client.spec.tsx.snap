@@ -35,6 +35,10 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
         />
       </button>
     </div>
+    <div
+      data-slot="sidebar.header"
+      style="display: contents;"
+    />
     <button
       aria-label="New chat"
       class="newSession"
@@ -172,6 +176,10 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
         />
       </button>
     </div>
+    <div
+      data-slot="sidebar.header"
+      style="display: contents;"
+    />
     <button
       aria-label="New chat"
       class="newSession"
@@ -285,6 +293,10 @@ exports[`sidebar shell snapshots > renders the collapsed rail after the crossfad
         />
       </button>
     </div>
+    <div
+      data-slot="sidebar.header"
+      style="display: contents;"
+    />
     <button
       aria-label="New chat"
       class="newSession"
@@ -422,6 +434,10 @@ exports[`sidebar shell snapshots > renders the expanded column (wordmark, capsul
         />
       </button>
     </div>
+    <div
+      data-slot="sidebar.header"
+      style="display: contents;"
+    />
     <button
       aria-label="New chat"
       class="newSession"
@@ -564,6 +580,10 @@ exports[`sidebar shell snapshots > renders the expanded column in the default lo
         />
       </button>
     </div>
+    <div
+      data-slot="sidebar.header"
+      style="display: contents;"
+    />
     <button
       aria-label="新对话"
       class="newSession"

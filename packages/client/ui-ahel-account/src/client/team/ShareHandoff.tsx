@@ -12,9 +12,11 @@ import type {
 } from '@ahel/dsh-ahel-account/types'
 import type {} from '@ahel/dsh-client-ui-workspace/client'
 import type {} from '@ahel/dsh-client-ui-layout/client'
+import type {} from '@ahel/dsh-client-ui-conversation/client'
 import type { InboxLoad } from './contract.ts'
 import type {} from '../locales.ts'
 import css from './ShareHandoff.module.css'
+import glance from './TeamGlance.module.css'
 
 /** One open request for the dialog; `nonce` starts a fresh draft for each menu press. */
 export interface ShareRequest {
@@ -53,6 +55,10 @@ export interface ShareHandoffInjected {
 export type ShareHandoffMenuItemProps =
   PropsRuntime<'sidebar.workspaces.session.menu.item'> & PropsLocale<'ahel-account'> & InjectFace<ShareHandoffInjected>
 
+/** Props of the chat header's Hand off button. */
+export type HandOffButtonProps =
+  PropsRuntime<'conversation.session.header.utilities'> & PropsLocale<'ahel-account'> & InjectFace<ShareHandoffInjected>
+
 /** Props of the `shell.overlay` dialog entry. */
 export type ShareHandoffDialogProps =
   PropsRuntime<'shell.overlay'>
@@ -82,6 +88,22 @@ export function ShareHandoffMenuItem({ sessionId, displayTitle, useMenuOpenState
     >
       {t('shareMenu')}
     </MenuItemButton>
+  )
+}
+
+/**
+ * Chat header button: open the share dialog for the open chat. The dialog takes the chat's own title.
+ * @param props - the header's session and the share face.
+ * @returns the button, or null until the chat has opened.
+ */
+export function HandOffButton({ sessionId, useSession, requestShare, t }: HandOffButtonProps) {
+  const open = useSession(snapshot => snapshot.openState === 'open')
+  if (!open) return null
+  return (
+    <button type="button" className={glance.handOff} title={t('handOffHint')} onClick={() => { requestShare(sessionId, '') }}>
+      <IconShareOutlineRegular size={14} />
+      <span>{t('handOff')}</span>
+    </button>
   )
 }
 

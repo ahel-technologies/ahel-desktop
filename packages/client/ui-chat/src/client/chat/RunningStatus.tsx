@@ -30,9 +30,12 @@ function basename(path: string): string {
  * Name what the running Turn is doing from its latest open process group.
  * @param data - the last process group's data, or absence before any group exists.
  * @param t - Chat locale seat.
- * @returns "Thinking" without a live tool, "Reading {file}" for a file read, otherwise the live category copy.
+ * @param awaitingApproval - whether the Turn is blocked on the person's approval card.
+ * @returns "Waiting for your approval" while blocked, "Thinking" without a live tool,
+ * "Reading {file}" for a file read, otherwise the live category copy.
  */
-export function runningStepLabel(data: ProcessGroupData | undefined, t: Translate): string {
+export function runningStepLabel(data: ProcessGroupData | undefined, t: Translate, awaitingApproval: boolean): string {
+  if (awaitingApproval) return t('chat.running.approval')
   const running = data?.closed === false ? data.summary.running : undefined
   if (running === undefined) return t('chat.running.thinking')
   if (data?.summary.preparing === true) return t(`message.stepProcess.prepare.${running}`)
