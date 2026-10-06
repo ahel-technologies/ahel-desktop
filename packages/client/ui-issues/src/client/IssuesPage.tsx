@@ -108,7 +108,7 @@ export function IssuesPage(props: IssuesPageView & { composeOnOpen?: boolean }) 
 
   return (
     <div className={`${css.tokens} ${css.page}`}>
-      <div className={css.top} data-window-drag />
+      <div className={css.top} />
       <div className={css.wrap}>
         <header className={css.head}>
           <div>
