@@ -1040,6 +1040,86 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'computerUseApproval',
+    summary: 'Remote namespace `computerUseApproval`.',
+    description: 'Remote namespace `computerUseApproval`.',
+    methods: [
+      {
+        signature: '@Remote card(callId: string): ComputerUseCard | null',
+        description: 'The approval card for one pending write.',
+        parameters: [{ name: 'callId', description: 'the tool call waiting for approval.' }],
+        returns: 'the card, or null when the call is no longer waiting.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async *watch(signal: AbortSignal): AsyncIterable<ComputerUseView>',
+        description: 'Subscribe to the complete computer-use state, starting with the current one.',
+        parameters: [{ name: 'signal', description: 'subscription lifetime.' }],
+        returns: 'views as the state changes.',
+      },
+      {
+        signature: '@Remote async stop(): Promise<void>',
+        description: 'Kill switch: cancel every turn using computer use and turn it off.',
+        parameters: [],
+      },
+      {
+        signature: '@Remote setPaused(sessionId: string, paused: boolean): void',
+        description: 'Pause or resume computer use in one session.',
+        parameters: [{ name: 'sessionId', description: 'the session.' }, { name: 'paused', description: 'the new state.' }],
+      },
+      {
+        signature: '@Remote async setBlockedApps(apps: string[]): Promise<void>',
+        description: 'Replace the user\'s own block list.',
+        parameters: [{ name: 'apps', description: 'app names or bundle ids.' }],
+      },
+    ],
+  },
+  {
+    key: 'computerUseGate',
+    summary: 'Computer-use gate service.',
+    description: 'Computer-use gate service.',
+    methods: [
+      {
+        signature: 'blockedApps(): string[]',
+        description: 'The app names and bundle ids this person added to the block list, on top of the built-in one.',
+        parameters: [],
+        returns: 'the user\'s own block list.',
+      },
+      {
+        signature: 'card(callId: string): ComputerUseCard | null',
+        description: 'The card for one pending write.',
+        parameters: [{ name: 'callId', description: 'the tool call.' }],
+        returns: 'the card, or null when the call is not waiting.',
+      },
+      {
+        signature: 'view(): ComputerUseView',
+        description: 'Everything the card, the dock and the Settings row show: the switch, every session\'s run state and activity, and the block lists.',
+        parameters: [],
+        returns: 'the complete state for the UI.',
+      },
+      {
+        signature: 'subscribe(listener: () => void): () => void',
+        description: 'Observe state changes.',
+        parameters: [{ name: 'listener', description: 'called after every change.' }],
+        returns: 'disposer.',
+      },
+      {
+        signature: 'setPaused(sessionId: string, paused: boolean): void',
+        description: 'Pause or resume computer use in one session. Paused calls are denied.',
+        parameters: [{ name: 'sessionId', description: 'the session.' }, { name: 'paused', description: 'the new state.' }],
+      },
+      {
+        signature: 'async setBlockedApps(apps: readonly string[]): Promise<void>',
+        description: 'Replace the user\'s block list and save it.',
+        parameters: [{ name: 'apps', description: 'app names or bundle ids.' }],
+      },
+      {
+        signature: 'async stop(): Promise<void>',
+        description: 'Kill switch: turn computer use off now, cancel every turn that is using it, and save the switch as off.',
+        parameters: [],
+      },
+    ],
+  },
+  {
     key: 'configEditor',
     summary: 'Persist complete raw configs and apply them through the normal Loader path.',
     description: 'Persist complete raw configs and apply them through the normal Loader path.',
@@ -5145,6 +5225,34 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'CompositionRowEnablement',
     declaration: 'export type CompositionRowEnablement = boolean | \'conditional\';',
+  },
+  {
+    name: 'ComputerUseActivityRow',
+    declaration: 'export interface ComputerUseActivityRow {\n    readonly callId: string;\n    readonly time: number;\n    readonly action: string;\n    readonly summary: string;\n    readonly app: string | null;\n    readonly status: ComputerUseStatus;\n    readonly reason: string | null;\n}',
+  },
+  {
+    name: 'ComputerUseCard',
+    declaration: 'export interface ComputerUseCard {\n    readonly callId: string;\n    readonly sessionId: string;\n    readonly action: string;\n    readonly summary: string;\n    readonly app: string | null;\n    readonly bundleId: string | null;\n    readonly window: string | null;\n    readonly element: ComputerUseElement | null;\n    readonly text: string | null;\n    readonly keys: string | null;\n    readonly point: {\n        readonly x: number;\n        readonly y: number;\n    } | null;\n    readonly crop: ComputerUseCrop | null;\n    readonly args: string;\n}',
+  },
+  {
+    name: 'ComputerUseCrop',
+    declaration: 'export interface ComputerUseCrop {\n    readonly mimeType: string;\n    readonly data: string;\n    readonly imageWidth: number | null;\n    readonly imageHeight: number | null;\n    readonly x: number;\n    readonly y: number;\n    readonly width: number;\n    readonly height: number;\n}',
+  },
+  {
+    name: 'ComputerUseElement',
+    declaration: 'export interface ComputerUseElement {\n    readonly role: string;\n    readonly label: string | null;\n}',
+  },
+  {
+    name: 'ComputerUseSessionView',
+    declaration: 'export interface ComputerUseSessionView {\n    readonly sessionId: string;\n    readonly running: boolean;\n    readonly paused: boolean;\n    readonly activity: readonly ComputerUseActivityRow[];\n}',
+  },
+  {
+    name: 'ComputerUseStatus',
+    declaration: 'export type ComputerUseStatus = \'read\' | \'asked\' | \'approved\' | \'done\' | \'failed\' | \'rejected\' | \'denied\' | \'blocked\';',
+  },
+  {
+    name: 'ComputerUseView',
+    declaration: 'export interface ComputerUseView {\n    readonly enabled: boolean;\n    readonly blockedApps: readonly string[];\n    readonly builtInBlocked: readonly string[];\n    readonly sessions: readonly ComputerUseSessionView[];\n}',
   },
   {
     name: 'ConfinedArgv',

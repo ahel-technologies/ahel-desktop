@@ -25,7 +25,6 @@
   --ahel-radius-card: 12px;
   --ahel-shadow-rest: 0 12px 26px -24px rgba(27, 36, 51, 0.45);
   --ahel-shadow-cta: 0 10px 24px -12px rgba(228, 34, 56, 0.6);
-  --ahel-focus: 2px solid #e42238;
   color: var(--ahel-ink);
 }
 
@@ -45,7 +44,6 @@
   --ahel-line-tile: #626d80;
   --ahel-shadow-rest: 0 12px 26px -24px rgba(0, 0, 0, 0.6);
   --ahel-shadow-cta: 0 10px 24px -12px rgba(228, 34, 56, 0.5);
-  --ahel-focus: 2px solid #f26b7e;
 }
 
 /* ── approval card (composer takeover) ─────────────────────────────────── */
@@ -84,6 +82,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--ahel-red);
 }
 
@@ -174,7 +173,7 @@
   font-size: 13px;
 }
 
-.args summary:focus-visible { outline: var(--ahel-focus); outline-offset: 2px; }
+.args summary:focus-visible { outline-offset: 2px; }
 
 .args pre {
   margin: 8px 0 0;
@@ -220,7 +219,7 @@
   cursor: pointer;
 }
 
-.btn:focus-visible { outline: var(--ahel-focus); outline-offset: 3px; }
+.btn:focus-visible { outline-offset: 3px; }
 .btnPrimary { background: var(--ahel-red); border-color: var(--ahel-red); color: #fff; box-shadow: var(--ahel-shadow-cta); }
 .btnPrimary:hover:not(:disabled) { background: var(--ahel-red-hover); border-color: var(--ahel-red-hover); }
 .btnSecondary { background: var(--ahel-card); border-color: var(--ahel-line-tile); color: var(--ahel-ink); }
@@ -238,7 +237,7 @@
   cursor: pointer;
 }
 
-.stopLink:focus-visible { outline: var(--ahel-focus); outline-offset: 2px; }
+.stopLink:focus-visible { outline-offset: 2px; }
 
 /* ── composer dock ─────────────────────────────────────────────────────── */
 
@@ -275,7 +274,7 @@
   cursor: pointer;
 }
 
-.toggle:focus-visible { outline: var(--ahel-focus); outline-offset: 2px; }
+.toggle:focus-visible { outline-offset: 2px; }
 
 .stop {
   display: inline-flex;
@@ -293,14 +292,14 @@
 }
 
 .stop:hover { background: var(--ahel-red-hover); border-color: var(--ahel-red-hover); }
-.stop:focus-visible { outline: var(--ahel-focus); outline-offset: 2px; }
+.stop:focus-visible { outline-offset: 2px; }
 
 .log summary {
   cursor: pointer;
   color: var(--ahel-muted);
 }
 
-.log summary:focus-visible { outline: var(--ahel-focus); outline-offset: 2px; }
+.log summary:focus-visible { outline-offset: 2px; }
 
 .rows {
   display: flex;
@@ -394,9 +393,11 @@
   width: 100%;
   min-height: 64px;
   padding: 8px 10px;
-  border: 1px solid var(--dsw-alias-border-l1);
-  border-radius: var(--dsw-radius-md, 8px);
+  border: 0.5px solid var(--dsw-alias-border-l1);
+  border-radius: var(--dsw-radius-md);
   background: var(--dsw-specific-input-major, transparent);
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
   color: var(--dsw-alias-label-primary);
   font: 13px/1.5 var(--ds-font-family-code, monospace);
   resize: vertical;

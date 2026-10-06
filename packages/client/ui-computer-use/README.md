@@ -15,6 +15,14 @@ The browser face of computer use. It reads the action gate (`@ahel/dsh-computer-
 
 The stop shortcut is Cmd/Ctrl + Option/Alt + Shift + Period while the Ahel window has focus.
 
+## Table of Contents
+
+- [Use this package](#use-this-package)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+<a id="use-this-package"></a>
 ## Use this package
 
 ```yaml
@@ -36,3 +44,13 @@ None.
 
 - The stop shortcut works only while the Ahel window is focused. An OS-wide shortcut needs Electron `globalShortcut` in the desktop main process.
 - While the approval card holds the composer, the dock is hidden; the card's own Stop link covers that time.
+
+<a id="dev-note"></a>
+## Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>

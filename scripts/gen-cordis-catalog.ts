@@ -50,6 +50,8 @@ export { REGION_BEGIN, REGION_END }
  * errors, so the partition can never silently drift from the service API.
  */
 export const SERVICE_PAGE: Record<string, string> = {
+  computerUseGate: 'computer-use.md',
+  computerUseApproval: 'computer-use.md',
   speechToText: 'voice-input.md',
   speechController: 'voice-input.md',
   otel: 'otel.md',
@@ -847,6 +849,9 @@ export const FOUNDATION_TYPE_NAMES: ReadonlySet<string> = new Set([
 /** Project types deliberately documented outside the subsystems catalog. */
 export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   ProductEvent: 'Desktop event fields are owned by packages/client/product-analytics/README.md and src/events.ts',
+  // Computer-use card and view shapes are owned by the action gate's types module.
+  ComputerUseCard: 'owned by packages/computer-use/action-gate/src/types.ts',
+  ComputerUseView: 'owned by packages/computer-use/action-gate/src/types.ts',
   // Ahel account, catalog and team Remote shapes mirror ahel.ai's API; packages/credentials/ahel-account owns them.
   AhelAccountView: 'ahel.ai account view is owned by packages/credentials/ahel-account/src/types.ts',
   AhelProfile: 'owned by packages/credentials/ahel-account/src/types.ts',

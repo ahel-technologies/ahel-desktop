@@ -9,6 +9,14 @@ kind: "package-reference"
 
 The gate sits in the Host tools pipeline (`tools/pre-execute`) in front of the Cua Driver MCP server `ahel-computer`, whose tools reach the model as `mcp__ahel-computer__<tool>`. Reads run without asking. Every write is checked against the hard-block list first, then asks the person through `ctx.approval` (`ask` decision) and runs only after a click on the approval card. Any other tool name is denied. While `computerUse.enabled` is off, or the `computerUse` switch service of `@ahel/dsh-computer-use` is not composed, every call is denied with one line the model sees. The approval card, stop control and activity log are drawn by `@ahel/dsh-client-ui-computer-use`.
 
+## Table of Contents
+
+- [Use this package](#use-this-package)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+<a id="use-this-package"></a>
 ## Use this package
 
 ```yaml
@@ -59,3 +67,13 @@ None. The gate adds no prompt text.
 - The activity log, pause state and approval cards live in Host memory. A Host restart clears them; the tool calls and approval audit events stay in the session log.
 - `press_key` and `hotkey` into a focused field are not checked against the field's role unless the latest observation reported it.
 - Approval is per action. There is no "allow this app for this turn".
+
+<a id="dev-note"></a>
+## Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>

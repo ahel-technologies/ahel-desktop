@@ -172,7 +172,10 @@ export class ComputerUseGate extends Service {
     return isSwitch(service) ? service : undefined
   }
 
-  /** @returns the user's own block list. */
+  /**
+   * The app names and bundle ids this person added to the block list, on top of the built-in one.
+   * @returns the user's own block list.
+   */
   blockedApps(): string[] {
     return [...this.blockedRef.get() ?? []]
   }
@@ -186,7 +189,10 @@ export class ComputerUseGate extends Service {
     return this.pending.get(callId)?.card ?? null
   }
 
-  /** @returns the complete state for the UI. */
+  /**
+   * Everything the card, the dock and the Settings row show: the switch, every session's run state and activity, and the block lists.
+   * @returns the complete state for the UI.
+   */
   view(): ComputerUseView {
     const sessions: ComputerUseSessionView[] = []
     for (const [sessionId, state] of this.sessions) {
