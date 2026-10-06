@@ -24,6 +24,7 @@ function fakeContext() {
   let pending = new Map<string, { running: boolean; pendingInteraction: unknown; completionUnread: boolean }>()
   const ctx = {
     effect: (body: () => (() => void) | undefined) => { const dispose = body(); if (dispose) disposers.push(dispose) },
+    inject: (_deps: readonly string[], body: (inner: unknown) => void) => { body(ctx) },
     locale: {
       register: () => () => undefined,
       bind: () => (key: keyof typeof en, params: Record<string, string> = {}) =>

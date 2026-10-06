@@ -111,33 +111,46 @@ export function apply(ctx: ClientContext): void {
     const offWaits = ctx.uiSession.sessionStatus.subscribe(reconcileWaits)
     reconcileWaits()
 
-    const read = inboxReader(ctx.remote)
-    const inbox = read === undefined ? undefined : new InboxNotifications({
-      read,
-      handoff: from => t('note.handoff', { from: from === '' ? t('note.someone') : from }),
-      post,
-    })
-    const attention = (): void => {
-      if (inbox === undefined) return
-      if (windowFocused()) inbox.foreground()
-      else if (normalizeSettings(settings.getSnapshot()).enabled) inbox.background()
-    }
-    const page = typeof window === 'undefined' ? undefined : window
-    page?.addEventListener('focus', attention)
-    page?.addEventListener('blur', attention)
-    page?.document.addEventListener('visibilitychange', attention)
-    attention()
-
     return () => {
-      page?.removeEventListener('focus', attention)
-      page?.removeEventListener('blur', attention)
-      page?.document.removeEventListener('visibilitychange', attention)
-      inbox?.dispose()
       offStatus()
       offError()
       offWaits()
       offClick()
       sessions.dispose()
     }
-  }, 'ui-notifications: Session and Inbox watchers')
+  }, 'ui-notifications: Session watcher')
+
+  // Handoffs need the Ahel account's team namespace. A Client without it (no
+  // Ahel account plugin, or an older Host) still gets the Session
+  // notifications above: the Remote namespace is read only inside this scope,
+  // never on the root context, which refuses undeclared namespaces.
+  ctx.inject(['remote.ahelTeam'], (inner) => {
+    inner.effect(() => {
+      const read = inboxReader(inner.remote)
+      if (read === undefined) return () => undefined
+      const inbox = new InboxNotifications({
+        read,
+        handoff: from => t('note.handoff', { from: from === '' ? t('note.someone') : from }),
+        post: (note) => {
+          if (!normalizeSettings(settings.getSnapshot()).enabled || windowFocused()) return
+          platformNotifier(globalThis).show(note)
+        },
+      })
+      const attention = (): void => {
+        if (windowFocused()) inbox.foreground()
+        else if (normalizeSettings(settings.getSnapshot()).enabled) inbox.background()
+      }
+      const page = typeof window === 'undefined' ? undefined : window
+      page?.addEventListener('focus', attention)
+      page?.addEventListener('blur', attention)
+      page?.document.addEventListener('visibilitychange', attention)
+      attention()
+      return () => {
+        page?.removeEventListener('focus', attention)
+        page?.removeEventListener('blur', attention)
+        page?.document.removeEventListener('visibilitychange', attention)
+        inbox.dispose()
+      }
+    }, 'ui-notifications: Inbox watcher')
+  })
 }

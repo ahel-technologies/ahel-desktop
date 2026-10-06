@@ -42,6 +42,8 @@ export const remoteDefaultResponses: RemoteTable = {
     'account/ackBonusNotified': ok(true),
     // ui-ahel-account installed-apps read at apply, before the account stream answers.
     'ahelCatalog/installed': ok({ signedIn: false, rows: [] }),
+    // ui-notifications Inbox watcher: jsdom has no focus, so the background poll reads the Inbox once at apply.
+    'ahelTeam/inbox': ok({ view: 'handoff_list', scope: 'received', received: [], sent: [], detail: '' }),
   },
   // Stream endpoints the roster opens later than boot; declared so a spec that forgets the script gets a stream miss.
   streams: [
