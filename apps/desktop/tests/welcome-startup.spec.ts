@@ -89,6 +89,7 @@ vi.mock('electron', () => ({
     handle: (name: string, callback: (...args: unknown[]) => unknown) => { state.handlers.set(name, callback) },
     on: (name: string, callback: (...args: unknown[]) => void) => { state.listeners.set(name, callback) },
   },
+  globalShortcut: { register: vi.fn(() => true), unregister: vi.fn() },
   dialog: { showErrorBox: vi.fn(), showMessageBox: vi.fn() },
   Menu: { buildFromTemplate: state.menu, setApplicationMenu: vi.fn() },
   nativeImage: { createFromPath: (path: string) => ({ path }) },

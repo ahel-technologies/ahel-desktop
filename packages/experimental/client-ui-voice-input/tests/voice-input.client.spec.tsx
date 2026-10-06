@@ -13,25 +13,27 @@ import { RecordingError, Recording } from '../src/client/audio.ts'
 import type { SpeechReadiness } from '../src/client/readiness.ts'
 import { zh } from '../src/client/locales.ts'
 import { captureFixture } from './audio-fixture.client.ts'
+import { DictationToggles } from '../src/client/hotkey.ts'
 
 beforeEach(() => { vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1)); vi.stubGlobal('cancelAnimationFrame', vi.fn()) })
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals() })
 const id = 'sensevoice-local' as SpeechProviderId
 const transcript: Transcript = { text: '检查 TypeScript 类型', audioSeconds: 2, inferenceSeconds: 0.4 }
-function fixture(recording?: Recording) {
+function fixture(recording?: Recording, location: 'host-local' | 'cloud' = 'host-local') {
   const capture = Object.assign(new Recording(() => {}), { start: vi.fn<Recording['start']>(async () => {}), stop: vi.fn(async () => new Uint8Array(48)),
     amplitude: () => 0, dispose: vi.fn(async () => {}) })
   const inputActions = { notify: vi.fn(), captureInsertion: vi.fn(() => ({ start: 3, end: 3, draftRev: 1 })), insertText: vi.fn(() => true),
     setDraft: vi.fn(), persistDraft: vi.fn(), addAttachments: vi.fn(() => true), removeAttachment: vi.fn(),
     pruneAttachments: vi.fn(), submit: vi.fn() }
   const readiness = createSnapshotStore<SpeechReadiness>({ connected: true, error: null, catalog: {
-    providers: [{ id, name: 'SenseVoiceSmall', location: 'host-local', languages: ['auto', 'zh', 'en', 'ja'], preparation: { phase: 'ready' } }],
+    providers: [{ id, name: 'SenseVoiceSmall', location, languages: ['auto', 'zh', 'en', 'ja'], preparation: { phase: 'ready' } }],
     selection: { providerId: id, language: 'auto' }, maxAudioBytes: 100, maxDurationSeconds: 120,
   } })
   const transcribe = vi.fn<(request: unknown, signal: AbortSignal) => Promise<RemoteResult<Transcript>>>(
     async () => ({ ok: true, value: transcript }))
   const props: VoiceInputProps = { sessionId: 'one' as SessionId, inputActions, transcribe, locked: false, onActiveChange: vi.fn(),
-    openSettings: vi.fn(), prepare: vi.fn(async () => {}), cancelPreparation: vi.fn(async () => {}), configure: vi.fn(async () => {}),
+    openSettings: vi.fn(), toggles: new DictationToggles(),
+    prepare: vi.fn(async () => {}), cancelPreparation: vi.fn(async () => {}), configure: vi.fn(async () => {}),
     useSpeechReadiness: bindSnapshotSelector(readiness), createRecording: () => recording ?? capture,
     t: makeTranslate(zh, commonZh) }
   const view = render(<VoiceInput {...props} />)
@@ -380,4 +382,29 @@ it.each(['later', 'escape', 'ready', 'session'])('dismisses unavailable recognit
     open()
     expect(screen.getByRole('dialog')).toBeTruthy()
   }
+})
+
+it('answers the push-to-talk shortcut: one press records, the next transcribes into the draft without sending', async () => {
+  const b = fixture()
+  // jsdom lays nothing out; the shortcut goes to the composer that is on screen.
+  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList)
+  act(() => { b.props.toggles.press() })
+  await screen.findByRole('button', { name: zh.stop })
+  expect(b.capture.start).toHaveBeenCalledOnce()
+  act(() => { b.props.toggles.press() })
+  await waitFor(() => { expect(b.inputActions.insertText).toHaveBeenCalledWith(transcript.text, { start: 3, end: 3, draftRev: 1 }) })
+  expect(b.inputActions.submit).not.toHaveBeenCalled()
+})
+
+it('labels a cloud recognizer: the tooltip and the transcribing status say ahel.ai', async () => {
+  const b = fixture(undefined, 'cloud')
+  fireEvent.mouseEnter(screen.getByRole('button', { name: zh.start }).parentElement!)
+  expect(screen.getByRole('tooltip').textContent).toBe(zh.dictateCloud)
+  const pending = Promise.withResolvers<RemoteResult<Transcript>>()
+  b.transcribe.mockReturnValueOnce(pending.promise)
+  await start()
+  stop()
+  expect((await screen.findByRole('status')).textContent).toContain(zh.transcribingCloud)
+  pending.resolve({ ok: true, value: transcript })
+  await waitFor(() => { expect(b.inputActions.insertText).toHaveBeenCalled() })
 })

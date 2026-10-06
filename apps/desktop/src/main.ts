@@ -51,6 +51,7 @@ import { readDesktopLoginShellEnvironment, resolveDesktopLoginShellConfig } from
 import { desktopClientVersion } from './client-version.ts'
 import { DesktopUpdateDialog, type UpdateDialogOptions } from './update-dialog.ts'
 import { installDesktopShortcuts } from './keyboard.ts'
+import { installDictationHotkey } from './dictation-hotkey.ts'
 import { DesktopUpdateOverlays } from './update-overlay.ts'
 import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
@@ -617,6 +618,17 @@ async function main(): Promise<void> {
   const shortcuts = installDesktopShortcuts(() => mainWindow, app.getPath('userData'),
     process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux', () => { refreshApplicationMenu() }, window => updateOverlays.input(window))
   app.on('will-quit', () => { shortcuts.dispose() })
+  // Push-to-talk: the global shortcut brings the workspace forward, then the composer starts or stops dictation.
+  const dictation = installDictationHotkey(app.getPath('userData'), () => {
+    if (quitting) return
+    focusPrimaryWindow()
+    if (process.platform === 'darwin') app.focus({ steal: true })
+    const window = mainWindow
+    if (window === undefined || window.isDestroyed() || !enteredWorkspace
+      || !window.webContents.mainFrame.url.startsWith('ahel-app://app/')) return
+    window.webContents.send(DESKTOP_IPC.dictationToggle)
+  }, assertProductSender)
+  app.on('will-quit', () => { dictation.dispose() })
 
   ipcMain.handle(DESKTOP_IPC.boot, async (event) => {
     assertDesktopSender(event, ['app'])

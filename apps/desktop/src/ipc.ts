@@ -30,6 +30,9 @@ export const DESKTOP_IPC = {
   windowsAppearance: 'dsh-desktop:windows-appearance',
   windowsMenu: 'dsh-desktop:windows-menu',
   accountChanged: 'dsh-desktop:account-changed',
+  dictationGet: 'dsh-desktop:dictation-get',
+  dictationSet: 'dsh-desktop:dictation-set',
+  dictationToggle: 'dsh-desktop:dictation-toggle',
 } as const
 
 /** Desktop release update state rendered by desktop-owned UI. */
@@ -67,6 +70,14 @@ export interface DesktopUpdatePresentation {
   readonly failure?: DesktopUpdateFailureKind
 }
 
+/** The push-to-talk shortcut as the product window sees it. */
+export interface DesktopDictationState {
+  /** Electron accelerator, or null while the shortcut is off. */
+  readonly accelerator: string | null
+  /** False when another application holds the accelerator. */
+  readonly registered: boolean
+}
+
 /** Product documents cannot supply update versions, package URLs, or installation authorization. */
 export interface DshDesktopProductApi {
   readonly protocolVersion: 1
@@ -85,6 +96,13 @@ export interface DshDesktopProductApi {
      * @returns once the shell has acted on the Host's account state.
      */
     changed(reason?: 'signed-out' | 'ended'): Promise<void>
+  }
+  /** The push-to-talk shortcut of Settings > General > Dictation. */
+  readonly dictation: {
+    get(): Promise<DesktopDictationState>
+    set(accelerator: string | null): Promise<DesktopDictationState>
+    /** @returns a disposer; the listener runs on every press of the shortcut. */
+    onToggle(listener: () => void): () => void
   }
   readonly updates: {
     status(): Promise<DesktopUpdatePresentation>

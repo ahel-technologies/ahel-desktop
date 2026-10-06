@@ -48,7 +48,8 @@
     "@ahel/dsh-experimental-speech-to-text": "workspace:*",
     "@ahel/dsh-api-gateway": "workspace:*",
     "@ahel/dsh-client-store": "workspace:*",
-    "@ahel/dsh-client-ui-plugin-manager": "workspace:*"
+    "@ahel/dsh-client-ui-plugin-manager": "workspace:*",
+    "@ahel/dsh-client-ui-settings": "workspace:*"
   },
   "devDependencies": {
     "@ahel/cordis": "workspace:~",
@@ -71,7 +72,9 @@
     "@testing-library/react": "^16.1.0",
     "@ahel/dsh-api-gateway": "workspace:*",
     "@ahel/dsh-client-store": "workspace:*",
-    "@ahel/dsh-client-ui-plugin-manager": "workspace:*"
+    "@ahel/dsh-client-ui-plugin-manager": "workspace:*",
+    "@ahel/dsh-client-ui-settings": "workspace:*",
+    "@ahel/dsh-experimental-speech-to-text-ahel": "workspace:*"
   },
   "dsh": {
     "client": {
@@ -82,7 +85,8 @@
         "@ahel/dsh-client-ui-conversation",
         "@ahel/dsh-client-ui-primitives",
         "@ahel/dsh-api-gateway",
-        "@ahel/dsh-client-ui-plugin-manager"
+        "@ahel/dsh-client-ui-plugin-manager",
+        "@ahel/dsh-client-ui-settings"
       ],
       "platform": "web",
       "external": [

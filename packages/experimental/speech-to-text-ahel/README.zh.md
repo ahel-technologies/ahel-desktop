@@ -1,0 +1,30 @@
+---
+description: "通过已登录的 ahel.ai 账户进行云端听写。"
+kind: "package"
+---
+
+# @ahel/dsh-experimental-speech-to-text-ahel
+
+[English](README.md) | 中文
+
+## 摘要
+
+语音输入的 `cloud` 识别服务。它把一段完成的录音（16 kHz 单声道 PCM16 WAV，最长 60 秒）连同已登录 Ahel 账户的令牌和所选工作区，发送到 ahel.ai 的计费接口 `POST https://ahel.ai/api/llm/v1/audio/transcriptions`。ahel.ai 用支持音频的模型转写，并从工作区余额扣费。录音不会被保存。界面标注“通过 ahel.ai 转写”。
+
+## 使用此包
+
+Ahel Desktop 在 `@ahel/dsh-web-app` 中挂载它作为默认识别服务（`ahel-cloud`）。点击模型选择器与发送按钮之间的麦克风，或按下按键说话快捷键（macOS 为 Cmd+Shift+Space，Windows 为 Ctrl+Shift+Space；设置 > 通用 > 听写）。转写文字进入输入框，不会自动发送。仅在登录 Ahel 时可用。
+
+| 配置 | 默认值 | 含义 |
+|---|---|---|
+| `providerId` | `ahel-cloud` | 识别服务 id |
+| `baseURL` | `https://ahel.ai/api/llm/v1` | 计费代理地址 |
+| `requestTimeoutMs` | `90000` | 单次转写时限 |
+
+## 限制与失败
+
+令牌被拒时刷新一次。402（余额或每日上限）、403（工作区未开启）或 429（限流）会在输入框中显示一句说明。不会回退到其他识别服务。
+
+## 模型体验
+
+无：转写文字只填入草稿，是否发送由用户决定。

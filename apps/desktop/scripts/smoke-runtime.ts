@@ -73,6 +73,22 @@ async function runTurn(ctx, cwd) {
     await new Promise(done => setTimeout(done, 100))
   }
 }
+// Dictation wiring: the ahel.ai provider is the only recognizer (no local engine), recordings are capped at
+// 60 s, and a WAV reaches the provider through the real speech controller (signed out, it asks to sign in).
+async function dictation(ctx) {
+  const speech = ctx.get('speechController')
+  if (speech === undefined) throw new Error('speechController is not mounted')
+  const catalog = speech.catalog()
+  const samples = 8000, wav = Buffer.alloc(44 + samples * 2)
+  wav.write('RIFF', 0); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVEfmt ', 8); wav.writeUInt32LE(16, 16)
+  wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22); wav.writeUInt32LE(16000, 24); wav.writeUInt32LE(32000, 28)
+  wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(samples * 2, 40)
+  let refusal = null
+  try { await speech.transcribe({ audioBase64: wav.toString('base64') }, AbortSignal.timeout(30_000)) }
+  catch (error) { refusal = String(error?.message ?? error) }
+  return { providers: catalog.providers.map(p => [p.id, p.location, p.preparation.phase].join(':')),
+    selected: catalog.selection.providerId, maxDurationSeconds: catalog.maxDurationSeconds, refusal }
+}
 export function apply(ctx) {
   if (!(ctx instanceof Context)) throw new Error('desktop runtime: external plugin loaded another Cordis instance')
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke',
@@ -80,6 +96,12 @@ export function apply(ctx) {
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-turn',
     handler(_request, response) {
       runTurn(ctx, ${JSON.stringify(workspace)}).then(
+        result => response.end(JSON.stringify(result)),
+        error => response.end(JSON.stringify({ error: String(error?.stack ?? error) })))
+    } }))
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/desktop-smoke-dictation',
+    handler(_request, response) {
+      dictation(ctx).then(
         result => response.end(JSON.stringify(result)),
         error => response.end(JSON.stringify({ error: String(error?.stack ?? error) })))
     } }))
@@ -133,6 +155,18 @@ export function apply(ctx) {
     if (outcome.error !== undefined || outcome.reason?.kind !== 'completed' || outcome.text !== REPLAY_ANSWER) {
       throw new Error(`desktop runtime: chat turn smoke failed: ${JSON.stringify(outcome)}`)
     }
+    const dictation = await (await fetch(new URL('/desktop-smoke-dictation', ready.url), { headers: { cookie } })).json() as {
+      providers?: string[]
+      selected?: string
+      maxDurationSeconds?: number
+      refusal?: string | null
+      error?: string
+    }
+    if (dictation.error !== undefined || JSON.stringify(dictation.providers) !== JSON.stringify(['ahel-cloud:cloud:failed'])
+      || dictation.selected !== 'ahel-cloud' || dictation.maxDurationSeconds !== 60
+      || dictation.refusal?.includes('Sign in to Ahel') !== true) {
+      throw new Error(`desktop runtime: dictation smoke failed: ${JSON.stringify(dictation)}`)
+    }
     // The Session lock's flock addon must come from this runtime: a build tree inside the
     // repository can otherwise resolve the workspace's copy and hide a missing platform package.
     if (runtime.platform !== 'win32') {
@@ -142,7 +176,7 @@ export function apply(ctx) {
         throw new Error(`desktop runtime: session lock addon was not loaded from the packaged runtime: ${String(flock)}`)
       }
     }
-    console.log('desktop runtime: Host, frontend, external plugin route and one chat turn passed')
+    console.log('desktop runtime: Host, frontend, external plugin route, one chat turn and dictation wiring passed')
   } finally {
     clearTimeout(timer)
     await host.stop()

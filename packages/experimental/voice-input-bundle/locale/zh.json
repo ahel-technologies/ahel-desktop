@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "语音输入",
-    "description": "在本机使用 SenseVoice 转写录音，首次使用需安装依赖。"
+    "title": "本地语音引擎",
+    "description": "在本机使用 SenseVoice 转写（中文、英语、日语、韩语、粤语）；首次使用需下载约 239 MB"
   }
 }

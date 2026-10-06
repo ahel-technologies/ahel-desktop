@@ -1,6 +1,6 @@
 {
   "name": "@ahel/dsh-experimental-voice-input-bundle",
-  "description": "Experimental voice input with local SenseVoice; downloads its runtime on first use",
+  "description": "Optional local voice engine: SenseVoice on this computer; downloads its model on first use",
   "version": "0.1.2",
   "icon": "./icon.svg",
   "publishConfig": {
@@ -33,10 +33,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@ahel/dsh-experimental-speech-to-text": "workspace:*",
-    "@ahel/dsh-experimental-speech-to-text-sensevoice": "workspace:*",
-    "@ahel/dsh-experimental-api-speech-to-text": "workspace:*",
-    "@ahel/dsh-experimental-client-ui-voice-input": "workspace:*"
+    "@ahel/dsh-experimental-speech-to-text-sensevoice": "workspace:*"
   },
   "peerDependencies": {
     "@ahel/cordis": "workspace:~"
