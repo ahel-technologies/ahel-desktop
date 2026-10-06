@@ -401,6 +401,7 @@
     { "path": "./packages/web/web-search-perplexity" },
     { "path": "./packages/web/web-fetch-http" },
     { "path": "./packages/web/tool-web" },
+    { "path": "./packages/web/web-search-ahel" },
     { "path": "./packages/spill/spill" },
     { "path": "./packages/spill/spill-local" },
     { "path": "./packages/spill/spill-policy" },

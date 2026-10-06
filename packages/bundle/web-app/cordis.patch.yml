@@ -298,6 +298,25 @@
     - id: llm-ahel
       name: '@ahel/dsh-llm-ahel'
 
+    # Web search on by default: web_search and web_fetch run on ahel.ai's
+    # read-only Web Search app with the Ahel account's bearer, metered by
+    # ahel.ai. web-search-ahel mounts dsh-tool-web as a child only while an
+    # Ahel account is signed in, so signed out both tools are absent.
+    - id: web
+      name: '@ahel/dsh-web'
+      config:
+        searchProvider: ahel
+        fetchProvider: ahel
+
+    - id: web-search-ahel
+      name: '@ahel/dsh-web-search-ahel'
+      config:
+        requestTimeoutMs: 45000
+        tools:
+          searchMaxQueries: 3
+          searchTimeoutMs: 60000
+          fetchTimeoutMs: 60000
+
     # Claude Code, Codex and Gemini CLIs the person installed and signed into
     # themselves; detection and enable state only, the person's own vendor plan pays.
     # Local child processes for the llm-local-cli probes and CLI turns; the
@@ -353,6 +372,10 @@
 
     - id: ui-settings-agent-loop
       name: '@ahel/dsh-client-ui-settings-agent-loop'
+
+    # Settings > General > Web search: Ahel Web Search status and its on switch.
+    - id: ui-settings-web-search
+      name: '@ahel/dsh-client-ui-settings-web-search'
 
     - id: ui-user-questions
       name: '@ahel/dsh-client-ui-user-questions'

@@ -127,7 +127,11 @@
     "@ahel/dsh-llm-local-cli": "workspace:*",
     "@ahel/dsh-client-ui-ahel-account": "workspace:*",
     "@ahel/dsh-client-ui-local-cli": "workspace:*",
-    "@ahel/dsh-mcp-client": "workspace:*"
+    "@ahel/dsh-mcp-client": "workspace:*",
+    "@ahel/dsh-web": "workspace:*",
+    "@ahel/dsh-tool-web": "workspace:*",
+    "@ahel/dsh-web-search-ahel": "workspace:*",
+    "@ahel/dsh-client-ui-settings-web-search": "workspace:*"
   },
   "peerDependencies": {
     "@ahel/cordis": "workspace:~",

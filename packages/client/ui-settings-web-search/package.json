@@ -1,6 +1,6 @@
 {
   "name": "@ahel/dsh-client-ui-settings-web-search",
-  "description": "Placeholder for the removed web-search provider settings page; registers nothing",
+  "description": "Settings > General > Web search: Ahel Web Search status and its on switch",
   "version": "0.1.0",
   "publishConfig": {
     "access": "public"
@@ -27,7 +27,12 @@
   },
   "dsh": {
     "client": {
-      "inject": [],
+      "inject": [
+        "@ahel/dsh-api-remotes",
+        "@ahel/dsh-client-locale",
+        "@ahel/dsh-client-ui-settings",
+        "@ahel/dsh-client-ui-ahel-account"
+      ],
       "platform": "web"
     }
   },
@@ -40,7 +45,18 @@
     "@ahel/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@ahel/cordis": "workspace:~"
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-ahel-account": "workspace:*",
+    "@ahel/dsh-api-remotes": "workspace:*",
+    "@ahel/dsh-client-locale": "workspace:*",
+    "@ahel/dsh-client-ui-ahel-account": "workspace:*",
+    "@ahel/dsh-client-ui-primitives": "workspace:*",
+    "@ahel/dsh-client-ui-renderer": "workspace:*",
+    "@ahel/dsh-client-ui-settings": "workspace:*",
+    "@ahel/dsh-client-ui-slots": "workspace:*",
+    "@types/react": "~18.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "files": [
     "lib/index.js",

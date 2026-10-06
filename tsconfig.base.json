@@ -497,6 +497,7 @@
       "@ahel/dsh-web": ["./packages/web/web/src"],
       "@ahel/dsh-web-app": ["./packages/bundle/web-app/src"],
       "@ahel/dsh-web-fetch-http": ["./packages/web/web-fetch-http/src"],
+      "@ahel/dsh-web-search-ahel": ["./packages/web/web-search-ahel/src"],
       "@ahel/dsh-web-search-exa": ["./packages/web/web-search-exa/src"],
       "@ahel/dsh-web-search-perplexity": ["./packages/web/web-search-perplexity/src"],
       "@ahel/dsh-webhook": ["./packages/webhook/webhook/src"],

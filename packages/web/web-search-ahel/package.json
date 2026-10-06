@@ -1,0 +1,50 @@
+{
+  "name": "@ahel/dsh-web-search-ahel",
+  "description": "Ahel Web Search for the web capability seam (ctx.web): web_search and web_fetch through the signed-in ahel.ai account",
+  "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/web/web-search-ahel"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-ahel-account": "workspace:*",
+    "@ahel/dsh-tool-web": "workspace:*",
+    "@ahel/dsh-web": "workspace:*"
+  },
+  "dependencies": {
+    "@ahel/schemastery": "workspace:~"
+  },
+  "devDependencies": {
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-ahel-account": "workspace:*",
+    "@ahel/dsh-credentials": "workspace:*",
+    "@ahel/dsh-credentials-local": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-mcp-client": "workspace:*",
+    "@ahel/dsh-system-prompt": "workspace:*",
+    "@ahel/dsh-tool-web": "workspace:*",
+    "@ahel/dsh-tools": "workspace:*",
+    "@ahel/dsh-web": "workspace:*"
+  }
+}

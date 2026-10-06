@@ -3,35 +3,35 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-settings-web-search/README.md
 /:
-  en: eff9af22a9850194
-  zh: 58b875260fa46398
+  en: a4293ba57eb1c090
+  zh: 89bdee50d8cffa3e
 /ahel-dsh-client-ui-settings-web-search:
   en: 5806d752ff3f86c6
   zh: 7446314044f9f5bc
 /ahel-dsh-client-ui-settings-web-search/summary:
-  en: 274a2946fd70f3ff
-  zh: 9c914c3f5852143a
+  en: 6a639d4864a1840b
+  zh: 54eccb772da6d6c3
 /ahel-dsh-client-ui-settings-web-search/table-of-contents:
-  en: d152484eb41ac6b4
-  zh: 09388d293f9be9cb
+  en: b563e4ec4727d0de
+  zh: 44ebe7ceeda3dff6
 /ahel-dsh-client-ui-settings-web-search/use-this-package:
-  en: 861539e21f7837e5
-  zh: cd6e177abaa15a0a
+  en: 182f64719e700a90
+  zh: 10743c696b66f977
 /ahel-dsh-client-ui-settings-web-search/understand-the-implementation:
-  en: a33b941d91e21943
-  zh: c5b0296ea5dda2da
+  en: 4485121d4b754b94
+  zh: 2c0f06dd4f009fb8
 /ahel-dsh-client-ui-settings-web-search/further-exploration:
-  en: 0f5a43380a4f1029
-  zh: ab6641e5de19784e
+  en: c4956c40c1d6c992
+  zh: e3fc2ecb8dcdc1fd
 /ahel-dsh-client-ui-settings-web-search/model-experience:
   en: e12a218d52c2c72b
-  zh: d27c384eec054445
+  zh: cba28e9b46b8c9e6
 /ahel-dsh-client-ui-settings-web-search/model-experience/kv-cache-effect:
   en: ca75c51c89c2c9b0
-  zh: 6e1c9a8fdde89577
+  zh: f57cc48a1b5cbfa9
 /ahel-dsh-client-ui-settings-web-search/known-limitations-and-deferred-work:
-  en: f39732a7b6d94bd2
-  zh: 3761b69b9fdda382
+  en: 305f4ef3b12f730e
+  zh: 7b2d99b43aaa2a15
 /ahel-dsh-client-ui-settings-web-search/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
-  zh: e88aeb617ffb74ea
+  zh: 8ec3e73528ddb1a6

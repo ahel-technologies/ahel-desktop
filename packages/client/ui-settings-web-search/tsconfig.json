@@ -8,8 +8,13 @@
     "src"
   ],
   "references": [
-    {
-      "path": "../../../vendor/cordis"
-    }
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../api/remotes/tsconfig.client.json" },
+    { "path": "../../credentials/ahel-account" },
+    { "path": "../locale/tsconfig.client.json" },
+    { "path": "../ui-primitives" },
+    { "path": "../ui-renderer" },
+    { "path": "../ui-settings/tsconfig.client.json" },
+    { "path": "../ui-slots" }
   ]
 }

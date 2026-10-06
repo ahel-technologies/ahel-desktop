@@ -371,6 +371,15 @@ export class AhelAccount extends TypertRemoteService {
   }
 
   /**
+   * Host-only: the Ahel MCP gateway URL this grant's bearer is bound to; Host
+   * callers send the bearer to this URL and nowhere else.
+   * @returns the configured `resource`.
+   */
+  gateway(): string {
+    return this.resource
+  }
+
+  /**
    * Host-only: after ahel.ai refused the current bearer, refresh it once. A
    * refresh ahel.ai rejects signs the account out, like `accessToken()`.
    */

@@ -1,7 +1,6 @@
 /**
- * Web-search settings page, node half. The empty apply exists so the plugin
- * appears in the host cordis.yml / Loader; the browser half registers nothing
- * because Ahel Desktop ships no search provider this page could edit.
+ * Web search settings row, node half. The browser half reads the Ahel account
+ * namespaces the Host already serves, so this half adds no Host behavior.
  */
 
 /** Host plugin body — no host-side behavior for this surface plugin. */
