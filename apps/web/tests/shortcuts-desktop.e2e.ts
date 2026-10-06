@@ -264,7 +264,7 @@ it.each([
         await page.reload({ waitUntil: 'load' })
         await page.getByText('DONE', { exact: true }).waitFor()
         await openReference()
-        await dialog.getByRole('searchbox').fill('New Session')
+        await dialog.getByRole('searchbox').fill('New chat')
         const row = dialog.getByRole('listitem')
         await expect.poll(() => row.count()).toBe(1)
         await compareOrRefreshGolden(join(expected, `${platform}-copy-override.expected.md`), await row.ariaSnapshot(), mode)
@@ -282,7 +282,7 @@ it.each([
         await page.getByRole('treeitem').nth(1).click()
         await page.getByText('DONE', { exact: true }).waitFor()
         await openReference()
-        await dialog.getByRole('searchbox').fill('New Session')
+        await dialog.getByRole('searchbox').fill('New chat')
         for (const code of ['a', 'F1', 'ArrowLeft', 'Tab']) {
           await dialog.getByRole('button', { name: 'Edit shortcut for New Session', exact: true }).click()
           const recorder = dialog.getByRole('button', { name: 'Press a shortcut', exact: true })

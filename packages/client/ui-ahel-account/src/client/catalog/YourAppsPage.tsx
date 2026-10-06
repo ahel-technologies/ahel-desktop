@@ -1,7 +1,8 @@
 /**
  * The Your apps main panel in ahel.ai's design: what the person's workspace has
- * installed, each with an On/Off switch, its connection status, the in-app
- * Connect sheet for setup and, for owners and team leads, Disconnect.
+ * installed: tile, name, type chip and state line, with an On/Off switch and
+ * a "…" menu (Remove on ahel.ai and, for owners and team leads, Disconnect).
+ * The in-app Connect sheet handles setup.
  */
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -245,24 +246,23 @@ function YourAppRow({ capability, signIn, canManage, onSetup, setEnabled, refres
               {t('connectSignInAgain')}
             </button>
           )}
-          <button type="button" className={`${css.btn} ${css.btnGhost}`}
-            onClick={() => { openLink(new URL('/app/apps', APP_ORIGIN).href) }}>
-            {t('removeOnAhel')}
-          </button>
           <Switch checked={pending ?? capability.state === 'on'} disabled={pending !== null || locked}
             label={capability.name}
             onChange={toggle} />
-          {canDisconnect && (
-            <Menu open={menuOpen} onClose={() => { setMenuOpen(false) }} align="end" portal dense
-              anchor={(
-                <Button size="sm" aria-label={t('moreFor', { name: capability.name })} title={t('moreFor', { name: capability.name })}
-                  aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => { setMenuOpen(open => !open) }}>
-                  <IconEllipsisOutlineRegular />
-                </Button>
-              )}>
+          <Menu open={menuOpen} onClose={() => { setMenuOpen(false) }} align="end" portal dense
+            anchor={(
+              <Button size="sm" aria-label={t('moreFor', { name: capability.name })} title={t('moreFor', { name: capability.name })}
+                aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => { setMenuOpen(open => !open) }}>
+                <IconEllipsisOutlineRegular />
+              </Button>
+            )}>
+            <MenuItemButton onSelect={() => { setMenuOpen(false); openLink(new URL('/app/apps', APP_ORIGIN).href) }}>
+              {t('removeOnAhel')}
+            </MenuItemButton>
+            {canDisconnect && (
               <MenuItemButton danger onSelect={() => { setMenuOpen(false); setConfirming(true) }}>{t('disconnect')}</MenuItemButton>
-            </Menu>
-          )}
+            )}
+          </Menu>
         </div>
       </div>
       {note !== null && (

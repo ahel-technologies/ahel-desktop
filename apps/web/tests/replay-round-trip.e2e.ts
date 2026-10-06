@@ -185,11 +185,11 @@ describe('web e2e: fresh round trip through the real assembly', () => {
         expect(hostSummary).toMatchObject({ blank: true, running: false })
         await row.getByText('2d', { exact: true }).waitFor()
         expect(await row.getAttribute('draggable')).toBe('true')
-        expect(await row.getByText('New Session', { exact: true }).count()).toBe(0)
+        expect(await row.getByText('New chat', { exact: true }).count()).toBe(0)
         expect(sessionEvents.some(event => event.type === 'turn/start')).toBe(false)
         const checkpoint = [
           `selected sidebar rows: ${await row.count()}`,
-          `new-session labels: ${await row.getByText('New Session', { exact: true }).count()}`,
+          `new-session labels: ${await row.getByText('New chat', { exact: true }).count()}`,
           `row draggable: ${await row.getAttribute('draggable')}`,
           `host history blank: ${hostSummary?.blank}`,
           `composer: ${JSON.stringify(await input.textContent())}`,

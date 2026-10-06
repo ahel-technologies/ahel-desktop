@@ -50,7 +50,7 @@ describe('navigation without a selected Session', () => {
       expect(await sessionHeader.count()).toBe(0)
       expect(await header.evaluate(element => element.getBoundingClientRect().height)).toBe(platform === 'darwin' ? 40 : 0)
       if (platform === 'darwin') {
-        expect(await page.locator('[data-shell-leading]').getByRole('button', { name: 'New session', exact: true }).isVisible()).toBe(true)
+        expect(await page.locator('[data-shell-leading]').getByRole('button', { name: 'New chat', exact: true }).isVisible()).toBe(true)
       }
       // The open label precedes both the column slide and the rail's mount animation.
       // Reverse the pointer action only after the rendered sidebar has settled.

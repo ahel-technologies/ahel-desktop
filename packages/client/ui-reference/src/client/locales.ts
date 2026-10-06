@@ -40,7 +40,7 @@ declare module '@ahel/dsh-client-ui-slots' {
 export const en = {
   'section.files': 'Files & folders',
   'section.subagents': 'Subagents',
-  'section.sessions': 'Sessions',
+  'section.sessions': 'Chats',
   'candidate.noCwd': '(no cwd)',
   'crumb.root': 'Workspace',
   'time.now': 'now',

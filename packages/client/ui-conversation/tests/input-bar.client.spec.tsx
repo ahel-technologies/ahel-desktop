@@ -1175,7 +1175,7 @@ describe('running and lock semantics', () => {
   it('disabled (session removed) locks the textarea and chrome', () => {
     const { textarea, view } = bench({ disabled: true })
     expect(textarea.getAttribute('aria-disabled')).toBe('true')
-    expect(placeholderOf(view.container)).toBe('会话不可用')
+    expect(placeholderOf(view.container)).toBe('对话不可用')
     expect((view.getByLabelText('添加文件或调用指令') as HTMLButtonElement).disabled).toBe(true)
   })
 
@@ -1290,7 +1290,7 @@ describe('running and lock semantics', () => {
   })
 
   it('disabled state shows the unavailable placeholder; custom placeholder wins', () => {
-    expect(bench({ disabled: true }).placeholder).toBe('会话不可用')
+    expect(bench({ disabled: true }).placeholder).toBe('对话不可用')
     const live = bench()
     expect(live.placeholder).toBe('给 Ahel 发消息')
     const custom = bench({ placeholder: 'Custom placeholder' })

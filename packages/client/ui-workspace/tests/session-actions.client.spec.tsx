@@ -122,7 +122,7 @@ describe('pin action', () => {
     const { state, setMenuOpen } = openMenu()
     const pin = pinShare()
     render(<PinSessionMenuItem {...menuRow(state)} {...pin} />)
-    fireEvent.click(screen.getByRole('menuitem', { name: '置顶会话' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '置顶对话' }))
     expect(pin.pinSession).toHaveBeenCalledWith(sid('one'))
     expect(pin.unpinSession).not.toHaveBeenCalled()
     expect(setMenuOpen).toHaveBeenCalledWith(false)
@@ -143,7 +143,7 @@ describe('pin action', () => {
   it('row button toggles the pin', () => {
     const pin = pinShare()
     const view = render(<PinSessionRowButton {...actionRow} {...pin} />)
-    fireEvent.click(screen.getByRole('button', { name: '置顶会话' }))
+    fireEvent.click(screen.getByRole('button', { name: '置顶对话' }))
     expect(pin.pinSession).toHaveBeenCalledWith(sid('one'))
     expect(pin.unpinSession).not.toHaveBeenCalled()
 
@@ -176,7 +176,7 @@ describe('archive action', () => {
     const { state, setMenuOpen } = openMenu()
     const archive = archiveShare()
     render(<ArchiveSessionMenuItem {...menuRow(state)} {...archive} />)
-    const row = screen.getByRole('menuitem', { name: '归档会话' })
+    const row = screen.getByRole('menuitem', { name: '归档对话' })
     // Archive is not destructive (log and accounting slot remain): no danger styling.
     expect(row.className).not.toMatch(/danger/)
     fireEvent.click(row)
@@ -200,7 +200,7 @@ describe('archive action', () => {
   it('row button archives and restores', () => {
     const archive = archiveShare()
     const view = render(<ArchiveSessionRowButton {...actionRow} {...archive} />)
-    fireEvent.click(screen.getByRole('button', { name: '归档会话' }))
+    fireEvent.click(screen.getByRole('button', { name: '归档对话' }))
     expect(archive.archiveSession).toHaveBeenCalledWith(sid('one'))
     view.rerender(<ArchiveSessionRowButton {...actionRow} {...archive} useArchived={hook(idSet('one'))} />)
     fireEvent.click(screen.getByRole('button', { name: '取消归档' }))
@@ -214,7 +214,7 @@ describe('fork and rename rows', () => {
     const { state, setMenuOpen } = openMenu()
     const forkSession = vi.fn()
     render(<ForkSessionMenuItem {...menuRow(state)} forkSession={forkSession} />)
-    fireEvent.click(screen.getByRole('menuitem', { name: '分叉会话' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '分叉对话' }))
     expect(forkSession).toHaveBeenCalledWith(sid('one'))
     expect(setMenuOpen).toHaveBeenCalledWith(false)
     expect(callOrder(setMenuOpen)).toBeLessThan(callOrder(forkSession))
@@ -265,7 +265,7 @@ describe('SessionRenameDialog', () => {
     composer.setSelectionRange(5, 9)
 
     ask('one', 'Session title')
-    const firstInput = screen.getByLabelText<HTMLInputElement>('会话名称')
+    const firstInput = screen.getByLabelText<HTMLInputElement>('对话名称')
     expect(document.activeElement).toBe(firstInput)
     expect([firstInput.selectionStart, firstInput.selectionEnd]).toEqual([0, 'Session title'.length])
     fireEvent.keyDown(firstInput, { key: 'Escape' })
@@ -275,7 +275,7 @@ describe('SessionRenameDialog', () => {
     expect(renameSession).not.toHaveBeenCalled()
 
     ask('one', 'Session title')
-    const secondInput = screen.getByLabelText<HTMLInputElement>('会话名称')
+    const secondInput = screen.getByLabelText<HTMLInputElement>('对话名称')
     expect(document.activeElement).toBe(secondInput)
     fireEvent.change(secondInput, { target: { value: 'Renamed session' } })
     await act(async () => { fireEvent.keyDown(secondInput, { key: 'Enter' }) })
@@ -291,8 +291,8 @@ describe('SessionRenameDialog', () => {
     const renameSession = vi.fn(() => pending.promise)
     const { settleSessionRename, ask } = renameDialog(renameSession)
     ask('one', '旧标题')
-    expect(screen.getByRole('dialog', { name: '重命名会话' })).toBeTruthy()
-    const input = screen.getByLabelText<HTMLInputElement>('会话名称')
+    expect(screen.getByRole('dialog', { name: '重命名对话' })).toBeTruthy()
+    const input = screen.getByLabelText<HTMLInputElement>('对话名称')
     expect(input.value).toBe('旧标题')
     // Confirming the current title is allowed (that gesture pins an automatic
     // title); a blank draft is not, by button or by Enter.
@@ -318,7 +318,7 @@ describe('SessionRenameDialog', () => {
     const renameSession = vi.fn(async () => {})
     const { ask } = renameDialog(renameSession)
     ask('one', 'Old')
-    const input = screen.getByLabelText<HTMLInputElement>('会话名称')
+    const input = screen.getByLabelText<HTMLInputElement>('对话名称')
     fireEvent.change(input, { target: { value: 'New' } })
     // Enter that commits a composition must not submit.
     fireEvent.compositionStart(input)
@@ -336,7 +336,7 @@ describe('SessionRenameDialog', () => {
       .mockRejectedValueOnce('denied')
     const { settleSessionRename, ask } = renameDialog(renameSession)
     ask('one', 'Old')
-    const input = screen.getByLabelText<HTMLInputElement>('会话名称')
+    const input = screen.getByLabelText<HTMLInputElement>('对话名称')
     fireEvent.change(input, { target: { value: 'New' } })
     fireEvent.click(screen.getByRole('button', { name: '重命名' }))
     await waitFor(() => { expect(screen.getByRole('alert').textContent).toBe('title write failed') })
@@ -346,14 +346,14 @@ describe('SessionRenameDialog', () => {
     expect(screen.queryByRole('alert')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '重命名' }))
     await waitFor(() => { expect(screen.getByRole('alert').textContent).toBe('denied') })
-    expect(screen.getByRole('dialog', { name: '重命名会话' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: '重命名对话' })).toBeTruthy()
   })
 
   it('Cancel, Escape, and Close settle without renaming; a request for another Session starts a fresh draft', () => {
     const renameSession = vi.fn(async () => {})
     const { settleSessionRename, ask } = renameDialog(renameSession)
     ask('one', 'Old')
-    fireEvent.change(screen.getByLabelText('会话名称'), { target: { value: 'Draft' } })
+    fireEvent.change(screen.getByLabelText('对话名称'), { target: { value: 'Draft' } })
     fireEvent.click(screen.getByRole('button', { name: '取消' }))
     expect(settleSessionRename).toHaveBeenCalledOnce()
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -366,9 +366,9 @@ describe('SessionRenameDialog', () => {
     expect(renameSession).not.toHaveBeenCalled()
 
     ask('one', 'First')
-    fireEvent.change(screen.getByLabelText('会话名称'), { target: { value: 'Edited' } })
+    fireEvent.change(screen.getByLabelText('对话名称'), { target: { value: 'Edited' } })
     ask('two', 'Second')
-    expect(screen.getByLabelText<HTMLInputElement>('会话名称').value).toBe('Second')
+    expect(screen.getByLabelText<HTMLInputElement>('对话名称').value).toBe('Second')
   })
 })
 
@@ -407,7 +407,7 @@ describe('SessionArchiveConfirmDialog', () => {
       { kind: 'job', items: [{ id: 'bash-1', label: 'pnpm run build' }] },
       { kind: 'schedule', items: [{ id: 'schedule-1', label: 'check the build' }] },
     ])
-    const dialog = screen.getByRole('dialog', { name: '停止并归档此会话？' })
+    const dialog = screen.getByRole('dialog', { name: '停止并归档此对话？' })
     expect(dialog.textContent).toContain('“Busy session”仍有正在进行的工作')
     const lines = [...screen.getByRole('list', { name: '将被停止的工作' }).querySelectorAll('li')].map(li => li.textContent)
     expect(lines).toEqual([
@@ -529,7 +529,7 @@ describe('RowActionToast', () => {
   it('the stopped-and-archived notice offers the same undo and filter actions under its own wording', () => {
     const { undoArchive, notify } = toastSurface()
     notify({ kind: 'stoppedAndArchived', sessionId: sid('one') })
-    expect(screen.getByRole('alert').textContent).toBe('已停止并归档，可撤销或筛选已归档会话')
+    expect(screen.getByRole('alert').textContent).toBe('已停止并归档，可撤销或筛选已归档对话')
     fireEvent.click(screen.getByRole('button', { name: '撤销' }))
     expect(undoArchive).toHaveBeenCalledWith(sid('one'))
   })
@@ -537,7 +537,7 @@ describe('RowActionToast', () => {
   it('the archived notice takes itself down, then undoes the archive or shows the archived rows', () => {
     const { dismissToast, undoArchive, showArchived, notify } = toastSurface()
     notify({ kind: 'archived', sessionId: sid('one') })
-    expect(screen.getByRole('alert').textContent).toBe('会话已归档，可撤销或筛选已归档会话')
+    expect(screen.getByRole('alert').textContent).toBe('对话已归档，可撤销或筛选已归档对话')
     fireEvent.click(screen.getByRole('button', { name: '撤销' }))
     expect(dismissToast).toHaveBeenCalledOnce()
     expect(undoArchive).toHaveBeenCalledWith(sid('one'))
@@ -546,7 +546,7 @@ describe('RowActionToast', () => {
     expect(screen.queryByRole('alert')).toBeNull()
 
     notify({ kind: 'archived', sessionId: sid('two') })
-    fireEvent.click(screen.getByRole('button', { name: '筛选已归档会话' }))
+    fireEvent.click(screen.getByRole('button', { name: '筛选已归档对话' }))
     expect(dismissToast).toHaveBeenCalledTimes(2)
     expect(showArchived).toHaveBeenCalledOnce()
     expect(callOrder(dismissToast, 1)).toBeLessThan(callOrder(showArchived))
@@ -557,14 +557,14 @@ describe('RowActionToast', () => {
   it('treats a view without a persisted filter as the hidden default and keeps the filter action', () => {
     const { notify } = toastSurface({})
     notify({ kind: 'archived', sessionId: sid('one') })
-    expect(screen.getByRole('alert').textContent).toBe('会话已归档，可撤销或筛选已归档会话')
+    expect(screen.getByRole('alert').textContent).toBe('对话已归档，可撤销或筛选已归档对话')
   })
 
   it.each(['show', 'only'] as const)('omits the filter action while the %s filter already shows archived rows', (archivedFilter) => {
     const { notify } = toastSurface({ archivedFilter })
     notify({ kind: 'archived', sessionId: sid('one') })
-    expect(screen.getByRole('alert').textContent).toBe('会话已归档，可撤销')
-    expect(screen.queryByRole('button', { name: '筛选已归档会话' })).toBeNull()
+    expect(screen.getByRole('alert').textContent).toBe('对话已归档，可撤销')
+    expect(screen.queryByRole('button', { name: '筛选已归档对话' })).toBeNull()
     expect(screen.getByRole('button', { name: '撤销' })).toBeTruthy()
   })
 
@@ -595,7 +595,7 @@ describe('RowActionToast', () => {
       const { dismissToast, notify } = toastSurface()
       notify({ kind: 'createFailed', message: 'agent-preset/invalid: agent-presets: preset "broken" failed to mount' })
       const alert = screen.getByRole('alert')
-      expect(alert.textContent).toBe('新建会话失败：agent-preset/invalid: agent-presets: preset "broken" failed to mount')
+      expect(alert.textContent).toBe('新建对话失败：agent-preset/invalid: agent-presets: preset "broken" failed to mount')
       expect(alert.querySelector('button')).toBeNull()
       act(() => { vi.advanceTimersByTime(4000) })
       expect(dismissToast).not.toHaveBeenCalled()
@@ -649,8 +649,8 @@ it('shows effective Session shortcuts while menu clicks keep the row target', ()
   expect(screen.getAllByRole('menuitem').map(item => item.getAttribute('aria-keyshortcuts')))
     .toEqual(['Alt+Meta+R', 'Alt+Meta+F', 'Shift+Meta+A'])
   fireEvent.click(screen.getByRole('menuitem', { name: '重命名' }))
-  fireEvent.click(screen.getByRole('menuitem', { name: '分叉会话' }))
-  fireEvent.click(screen.getByRole('menuitem', { name: '归档会话' }))
+  fireEvent.click(screen.getByRole('menuitem', { name: '分叉对话' }))
+  fireEvent.click(screen.getByRole('menuitem', { name: '归档对话' }))
   expect(requestSessionRename).toHaveBeenCalledWith(ROW.sessionId, ROW.displayTitle)
   expect(forkSession).toHaveBeenCalledWith(ROW.sessionId)
   expect(archiveSession).toHaveBeenCalledWith(ROW.sessionId)

@@ -58,7 +58,7 @@ describe('web e2e: blank New Session folding quota', () => {
     await workspaceRow.hover()
     await page.getByRole('button', { name: `New session in ${workspaceTitle}` }).click()
     await page.getByRole('tree', { name: 'Sessions' })
-      .getByText('New Session', { exact: true }).waitFor({ timeout: 15_000 })
+      .getByText('New chat', { exact: true }).waitFor({ timeout: 15_000 })
   }, 120_000)
 
   afterAll(async () => {
@@ -70,7 +70,7 @@ describe('web e2e: blank New Session folding quota', () => {
     onTestFailed(() => saveFailureShot(page, 'web-e2e-workspace-new-session-folding'))
     const sidebar = page.getByRole('tree', { name: 'Sessions' })
     await expect.poll(() => sidebar.getByRole('treeitem').count(), { timeout: 15_000 }).toBe(7)
-    expect(await sidebar.getByText('New Session', { exact: true }).count()).toBe(1)
+    expect(await sidebar.getByText('New chat', { exact: true }).count()).toBe(1)
     expect(await sidebar.getByText('Untitled', { exact: true }).count()).toBe(5)
     const showMore = sidebar.getByRole('button', { name: 'Show 11 more sessions' })
     await showMore.waitFor({ timeout: 15_000 })

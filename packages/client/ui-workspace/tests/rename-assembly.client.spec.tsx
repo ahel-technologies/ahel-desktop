@@ -121,10 +121,10 @@ describe('session rename through the assembled browser', () => {
     const view = runtime.renderRoot()
 
     const row = (await view.findByText('Persisted title')).closest('[role="treeitem"]')!
-    const trigger = within(row as HTMLElement).getByLabelText('会话“Persisted title”的操作')
+    const trigger = within(row as HTMLElement).getByLabelText('对话“Persisted title”的操作')
     fireEvent.click(trigger)
     expect(view.getAllByRole('menuitem').map(item => item.textContent)).toEqual([
-      '置顶会话', '重命名', '分叉会话', '归档会话', 'Export action', 'Last action',
+      '置顶对话', '重命名', '分叉对话', '归档对话', 'Export action', 'Last action',
     ])
     expect(view.getAllByRole('separator')).toHaveLength(1)
     const last = view.getByRole('menuitem', { name: 'Last action' })
@@ -162,13 +162,13 @@ describe('session rename through the assembled browser', () => {
 
     // The current session's group auto-expands; open the row's action menu.
     const row = (await view.findByText('旧标题')).closest('[role="treeitem"]')!
-    fireEvent.click(within(row as HTMLElement).getByLabelText('会话“旧标题”的操作'))
+    fireEvent.click(within(row as HTMLElement).getByLabelText('对话“旧标题”的操作'))
     fireEvent.click(view.getByRole('menuitem', { name: '重命名', hidden: true }))
     // The rename row dismissed the menu; the dialog lives in the overlay list.
     expect(view.queryByRole('menu')).toBeNull()
 
     // The dialog seeds from the current title; submit a padded value.
-    const input = await view.findByLabelText('会话名称') as HTMLInputElement
+    const input = await view.findByLabelText('对话名称') as HTMLInputElement
     expect(input.value).toBe('旧标题')
     fireEvent.change(input, { target: { value: '  分叉  实验记录  ' } })
     fireEvent.click(view.getByRole('button', { name: '重命名' }))
@@ -177,7 +177,7 @@ describe('session rename through the assembled browser', () => {
     // (the dialog trims edges; interior normalization is host-side).
     await waitFor(() => { expect(rename).toHaveBeenCalledWith('分叉  实验记录') })
     // Acceptance closes the dialog without any push-frame wait.
-    await waitFor(() => { expect(view.queryByLabelText('会话名称')).toBeNull() })
+    await waitFor(() => { expect(view.queryByLabelText('对话名称')).toBeNull() })
     // The manager lands the unary echo in the list store (its own package
     // tests own that hop); the row re-labels from list state alone.
     await runtime.sessions.updateSummary(SID, { displayTitle: '分叉 实验记录', title: '分叉 实验记录' })
@@ -204,9 +204,9 @@ describe('session rename through the assembled browser', () => {
     await runtime.flush()
 
     const row = (await view.findByText('旧标题')).closest('[role="treeitem"]')!
-    fireEvent.click(within(row as HTMLElement).getByLabelText('会话“旧标题”的操作'))
+    fireEvent.click(within(row as HTMLElement).getByLabelText('对话“旧标题”的操作'))
     fireEvent.click(view.getByRole('menuitem', { name: '重命名', hidden: true }))
-    const input = await view.findByLabelText('会话名称')
+    const input = await view.findByLabelText('对话名称')
     fireEvent.change(input, { target: { value: '新名' } })
     fireEvent.click(view.getByRole('button', { name: '重命名' }))
 
@@ -214,7 +214,7 @@ describe('session rename through the assembled browser', () => {
     // stays open with the alert and the row keeps its title.
     const alert = await view.findByRole('alert')
     expect(alert.textContent).toContain('title write failed')
-    expect(view.getByLabelText('会话名称')).toBeTruthy()
+    expect(view.getByLabelText('对话名称')).toBeTruthy()
     expect(view.getByText('旧标题')).toBeTruthy()
     await runtime.dispose()
   })

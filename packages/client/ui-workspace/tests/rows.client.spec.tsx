@@ -153,8 +153,8 @@ describe('workspace browser rows', () => {
         keys: ['Ctrl', 'N'], aria: 'Control+N', modified: true, conflicts: [], issue: null }} />)
 
     expect(screen.getByRole('treeitem').getAttribute('aria-expanded')).toBe('true')
-    expect(screen.getByRole('button', { name: '在“Project”中新建会话' }).getAttribute('aria-keyshortcuts')).toBe('Control+N')
-    fireEvent.click(screen.getByRole('button', { name: '在“Project”中新建会话' }))
+    expect(screen.getByRole('button', { name: '在“Project”中新建对话' }).getAttribute('aria-keyshortcuts')).toBe('Control+N')
+    fireEvent.click(screen.getByRole('button', { name: '在“Project”中新建对话' }))
     expect(onCreate).toHaveBeenCalledOnce()
     expect(onToggle).not.toHaveBeenCalled()
     fireEvent.click(screen.getByText('Project'))
@@ -491,7 +491,7 @@ describe('workspace browser rows', () => {
       }
       render(<ProjectRowItem group={group} onToggle={vi.fn()} onCreate={vi.fn()} t={t} />)
       const row = screen.getByRole('treeitem')
-      const create = screen.getByRole('button', { name: '在“Project”中新建会话' })
+      const create = screen.getByRole('button', { name: '在“Project”中新建对话' })
       fireEvent.pointerEnter(row.parentElement as HTMLElement)
       act(() => { vi.advanceTimersByTime(800) })
       expect(screen.getByText('/projects/project')).toBeTruthy()
@@ -503,7 +503,7 @@ describe('workspace browser rows', () => {
         fireEvent.keyDown(document, { key: 'Tab' })
         fireEvent.focus(create)
       }
-      expect(screen.getByRole('tooltip').textContent).toBe('新会话')
+      expect(screen.getByRole('tooltip').textContent).toBe('新对话')
       expect(screen.queryByText('/projects/project')).toBeNull()
 
       if (trigger === 'hover') fireEvent.mouseLeave(create, { relatedTarget: row })
@@ -524,11 +524,11 @@ describe('workspace browser rows', () => {
       }
       render(<ProjectRowItem group={group} onToggle={vi.fn()} onCreate={vi.fn()} t={t} />)
       const row = screen.getByRole('treeitem')
-      const create = screen.getByRole('button', { name: '在“Project”中新建会话' })
+      const create = screen.getByRole('button', { name: '在“Project”中新建对话' })
       fireEvent.pointerEnter(row.parentElement as HTMLElement)
       fireEvent.mouseEnter(create)
       act(() => { vi.advanceTimersByTime(1000) })
-      expect(screen.getByRole('tooltip').textContent).toBe('新会话')
+      expect(screen.getByRole('tooltip').textContent).toBe('新对话')
       expect(screen.queryByText('/projects/project')).toBeNull()
 
       fireEvent.mouseLeave(create, { relatedTarget: row })
@@ -623,7 +623,7 @@ describe('workspace browser rows', () => {
       const wrapper = screen.getByRole('treeitem').parentElement as HTMLElement
       fireEvent.pointerEnter(wrapper)
       act(() => { vi.advanceTimersByTime(800) })
-      expect(screen.getAllByText('新会话').length).toBeGreaterThanOrEqual(2)
+      expect(screen.getAllByText('新对话').length).toBeGreaterThanOrEqual(2)
       expect(screen.getByText('空闲')).toBeTruthy()
       expect(screen.queryByText('刚刚')).toBeNull()
       expect(screen.getByText('空闲').closest('[role="button"]')).toBeNull()
@@ -639,7 +639,7 @@ describe('workspace browser rows', () => {
       runningSubagentCount: 0, completed: false, updatedAt: 0, pinned: false, archived: false,
     }
     render(<SessionNodeItem node={node} currentId={undefined} now={0} onOpen={onOpen} t={t} />)
-    const trigger = screen.getByRole('button', { name: '会话“One”的操作' })
+    const trigger = screen.getByRole('button', { name: '对话“One”的操作' })
     fireEvent.click(trigger)
     expect(screen.getByRole('menu')).toBeTruthy()
     expect(onOpen).not.toHaveBeenCalled()
@@ -690,7 +690,7 @@ describe('workspace browser rows', () => {
       'sidebar.workspaces.session.row.action', { sessionId: node.id, displayTitle: 'One' }, undefined,
     )
     expect(screen.queryByRole('menuitem')).toBeNull()
-    const trigger = screen.getByRole('button', { name: '会话“One”的操作' })
+    const trigger = screen.getByRole('button', { name: '对话“One”的操作' })
     trigger.focus()
     fireEvent.click(trigger)
     expect(screen.getAllByRole('menuitem').map(item => item.textContent)).toEqual(['Export'])
@@ -719,7 +719,7 @@ describe('workspace browser rows', () => {
       runningSubagentCount: 0, completed: false, updatedAt: 0, pinned: false, archived: false,
     }
     render(<SessionNodeItem node={node} currentId={undefined} now={0} onOpen={onOpen} renderSlot={renderSlot} t={t} />)
-    const trigger = screen.getByRole('button', { name: '会话“One”的操作' })
+    const trigger = screen.getByRole('button', { name: '对话“One”的操作' })
     const quick = screen.getByRole('button', { name: 'Quick action' })
     const actionsArea = trigger.closest('[class*="rowActions"]')
     expect(actionsArea).not.toBeNull()
@@ -747,7 +747,7 @@ describe('workspace browser rows', () => {
       expect(screen.getAllByText('进行中')).toHaveLength(2)
       fireEvent.pointerLeave(wrapper)
       // Menu open (disabled=true) suppresses the card for the same hover.
-      fireEvent.click(screen.getByRole('button', { name: '会话“Hovered”的操作' }))
+      fireEvent.click(screen.getByRole('button', { name: '对话“Hovered”的操作' }))
       fireEvent.pointerEnter(wrapper)
       act(() => { vi.advanceTimersByTime(1000) })
       expect(screen.queryByText('1分钟前')).toBeNull()
@@ -957,7 +957,7 @@ describe('workspace browser rows', () => {
     // A blank placeholder has no content to rename: double-click is inert.
     view.rerender(<SessionNodeItem node={{ ...node, blank: true }} currentId={undefined} now={0}
       onOpen={onOpen} onRenameRequest={onRenameRequest} t={t} />)
-    fireEvent.doubleClick(screen.getByText('新会话'))
+    fireEvent.doubleClick(screen.getByText('新对话'))
     expect(onRenameRequest).toHaveBeenCalledOnce()
   })
 

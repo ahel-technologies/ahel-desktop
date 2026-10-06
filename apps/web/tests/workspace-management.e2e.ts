@@ -266,11 +266,11 @@ describe('web e2e: workspace management (create / rename / grouping / hover affo
     // is the nearest groupSection ancestor, not the immediate parent.
     const groupSection = groupRow.locator('xpath=ancestor::*[contains(@class, "groupSection")][1]')
     if (await groupRow.getAttribute('aria-expanded') !== 'true') await groupRow.click()
-    const blankRow = groupSection.getByRole('treeitem', { name: 'New Session', exact: true })
+    const blankRow = groupSection.getByRole('treeitem', { name: 'New chat', exact: true })
     await expect.poll(() => blankRow.getAttribute('aria-selected'), { timeout: 10_000 }).toBe('true')
     // The seed is this account's only non-blank Session; its title changes on resume.
     const seededRow = groupSection.locator('[role="treeitem"][aria-selected]')
-      .filter({ hasNot: page.getByText('New Session', { exact: true }) })
+      .filter({ hasNot: page.getByText('New chat', { exact: true }) })
     await expect.poll(() => releaseAttachment, { timeout: 10_000 }).toBeDefined()
     expect(await seededRow.count()).toBe(0)
     const deliverAttachment = releaseAttachment!
@@ -787,12 +787,12 @@ describe('web e2e: New Session after an outdated blank cache', () => {
       await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
       await page.getByRole('tab', { name: 'Chat', exact: true }).waitFor()
       const selected = page.locator('[role="treeitem"][aria-selected="true"]')
-      await expect.poll(() => selected.innerText()).not.toBe('New Session')
+      await expect.poll(() => selected.innerText()).not.toBe('New chat')
       const previous = (await selected.innerText()).split('\n')[0]!
       const before = await captureStableAria(page, '[role="tree"]', scaffold.workspaceCwd)
 
-      await page.getByRole('button', { name: 'New session', exact: true }).last().click()
-      await expect.poll(() => selected.innerText()).toBe('New Session')
+      await page.getByRole('button', { name: 'New chat', exact: true }).last().click()
+      await expect.poll(() => selected.innerText()).toBe('New chat')
       await page.getByRole('tab', { name: 'Chat', exact: true }).waitFor({ state: 'hidden' })
       await expect.poll(() => workspace.sessionIds.length).toBe(2)
       expect(workspace.sessionIds).toContain(id)
