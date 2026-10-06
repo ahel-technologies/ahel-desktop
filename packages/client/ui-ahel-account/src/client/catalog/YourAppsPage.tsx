@@ -42,14 +42,14 @@ function signInOf(signIns: readonly VaultSignIn[], capability: CatalogCapability
 }
 
 /**
- * One or two initials of a capability name.
+ * The letters tile ahel.ai's listing draws for a row without a known tile (`tileFor` in row-data.ts).
  * @param name - display name.
- * @returns the first letters of its first two words, or the first letter of one word.
+ * @param skill - whether the row is a skill.
+ * @returns a skill's first two letters, else the name's first letter.
  */
-function initials(name: string): string {
-  const words = name.split(/[\s\-_.:/]+/).filter(word => word !== '')
-  const letters = words.length > 1 ? `${words[0]?.[0] ?? ''}${words[1]?.[0] ?? ''}` : (words[0]?.[0] ?? '?')
-  return letters.toUpperCase()
+function lettersTile(name: string, skill: boolean): CatalogRowTile {
+  if (skill) return { text: name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2) || '?', tone: 'skill', mark: null }
+  return { text: name.charAt(0).toUpperCase() || '?', tone: 'plain', mark: null }
 }
 
 /**
@@ -173,7 +173,7 @@ function YourAppRow({ capability, signIn, canManage, onSetup, setEnabled, refres
   const [confirming, setConfirming] = useState(false)
   const [removing, setRemoving] = useState(false)
   const skill = capability.type === 'Skill'
-  const tile: CatalogRowTile = { text: initials(capability.name), tone: skill ? 'skill' : 'plain', mark: null }
+  const tile: CatalogRowTile = capability.tile ?? lettersTile(capability.name, skill)
   const locked = capability.state === 'unavailable' || capability.state === 'needs_setup'
   const expired = capability.state === 'on' && signIn?.expired === true
   const target = targetOf(capability, setupUrl(APP_ORIGIN, capability))

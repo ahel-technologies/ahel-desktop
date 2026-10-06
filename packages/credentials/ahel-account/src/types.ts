@@ -163,6 +163,8 @@ export interface CatalogCapability {
   /** For a `needs_setup` app row: the ahel.ai page that finishes its sign-in. */
   readonly signInUrl?: string
   readonly reason: string | null
+  /** The tile ahel.ai's Your apps draws for it, mark made absolute; absent when neither `installed` nor the listing had one. */
+  readonly tile?: CatalogRowTile
 }
 
 /** What the signed-in person has installed; empty while signed out. */

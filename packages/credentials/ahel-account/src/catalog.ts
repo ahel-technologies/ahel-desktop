@@ -11,7 +11,7 @@ import type { Context } from '@ahel/cordis'
 import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type {
   CatalogBrowsePage, CatalogBrowseQuery, CatalogCapability, CatalogGroup, CatalogInstalled, CatalogInstallResult, CatalogPart, CatalogRow,
-  CatalogConcept, CatalogSwitchResult, KnowledgeProduct,
+  CatalogConcept, CatalogRowTile, CatalogSwitchResult, KnowledgeProduct,
 } from './types.ts'
 
 declare module '@ahel/cordis' {
@@ -42,6 +42,15 @@ export interface CatalogConfig {
 }
 
 const TIMEOUT_MS = 15_000
+
+/** Budget of one listing lookup for an installed row's tile; a slow lookup leaves the letters. */
+const TILE_LOOKUP_MS = 4_000
+
+/** How long a looked-up tile, or the finding that the listing has none, is reused. */
+const TILE_TTL_MS = 10 * 60_000
+
+/** Listing lookups run at once for one `installed` read. */
+const TILE_LOOKUPS_PARALLEL = 4
 
 /** ahel.ai's concept key per section slug (`CONCEPTS` in src/lib/catalog/concepts.ts). */
 const CONCEPT_KEY: Record<CatalogConcept, string> = {
@@ -97,12 +106,19 @@ function capability(value: unknown): CatalogCapability {
   }
 }
 
+/** A catalog id or stack key reduced the way ahel.ai slugs ids into stack keys. */
+function slug(id: string): string {
+  return id.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 /** Child service of `AhelAccount`; the Remote namespace `ahelCatalog`. */
 export class AhelCatalog extends TypertRemoteService {
   static inject = ['ahelAccount']
   private readonly appOrigin: string
   private readonly resource: string
   private rpcId = 0
+  /** Tiles found in the public listing for installed rows `installed` sent without one, by stack key. */
+  private readonly tiles = new Map<string, { readonly tile: CatalogRowTile | null; readonly at: number }>()
 
   /**
    * @param ctx - Host context carrying `ahelAccount`.
@@ -177,7 +193,57 @@ export class AhelCatalog extends TypertRemoteService {
     if (await this.ctx.ahelAccount.accessToken() === undefined) return { signedIn: false, rows: [] }
     const answer = await this.mcpCall('installed', {})
     const capabilities = Array.isArray(answer.capabilities) ? answer.capabilities : []
-    return { signedIn: true, rows: capabilities.map(capability) }
+    const rows = capabilities.map((value) => {
+      const row = capability(value)
+      const tile = record(record(value).tile)
+      if (typeof tile.text !== 'string') return row
+      const mark = text(tile.mark)
+      return { ...row, tile: { ...tile as unknown as CatalogRowTile, mark: mark === null ? null : this.absolute(mark) } }
+    })
+    return { signedIn: true, rows: await this.withListedTiles(rows) }
+  }
+
+  /**
+   * Give rows that `installed` sent without a tile the one their public listing row wears.
+   * An ahel.ai whose `installed` carries no tiles still shows vendor marks; a failed lookup leaves the row as it came.
+   */
+  private async withListedTiles(rows: readonly CatalogCapability[]): Promise<CatalogCapability[]> {
+    const now = Date.now()
+    const fresh = (key: string): boolean => {
+      const hit = this.tiles.get(key)
+      return hit !== undefined && now - hit.at < TILE_TTL_MS
+    }
+    const missing = rows.filter(row => row.tile === undefined && row.key !== '' && !fresh(row.key))
+    for (let start = 0; start < missing.length; start += TILE_LOOKUPS_PARALLEL) {
+      await Promise.all(missing.slice(start, start + TILE_LOOKUPS_PARALLEL).map(async (row) => {
+        const tile = await this.listedTile(row).catch(() => undefined)
+        if (tile !== undefined) this.tiles.set(row.key, { tile, at: Date.now() })
+      }))
+    }
+    return rows.map((row) => {
+      const listed = row.tile === undefined ? this.tiles.get(row.key)?.tile ?? null : null
+      return listed === null ? row : { ...row, tile: listed }
+    })
+  }
+
+  /** The listing row an installed capability stands for, searched by its name: its tile, or null when no row matches. */
+  private async listedTile(row: CatalogCapability): Promise<CatalogRowTile | null> {
+    const url = new URL('/api/public/catalog-search', this.appOrigin)
+    url.searchParams.set('view', 'listing')
+    url.searchParams.set('q', row.name)
+    const response = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(TILE_LOOKUP_MS) })
+    if (!response.ok) {
+      await response.body?.cancel()
+      throw new Error(`HTTP ${response.status}`)
+    }
+    const page = record(await response.json())
+    const groups = Array.isArray(page.groups) ? page.groups.map(group => this.group(group)) : []
+    const listed = groups.flatMap(group => [group.row, ...group.skills?.rows ?? []])
+    const key = slug(row.key)
+    const name = row.name.trim().toLowerCase()
+    const match = listed.find(item => item.id === row.key || (row.itemId != null && item.id === row.itemId) || slug(item.id) === key)
+      ?? listed.find(item => item.name.trim().toLowerCase() === name)
+    return match?.tile ?? null
   }
 
   /**
