@@ -242,6 +242,18 @@ export class AhelIssues extends TypertRemoteService {
     return await this.projects()
   }
 
+  /**
+   * Mark one issue row of the Inbox read.
+   * @param id - `IssueInboxItem.id`.
+   * @returns how many rows changed.
+   * @throws RemoteError `ahel-issues/*`.
+   */
+  @Remote
+  async readItem(id: string): Promise<number> {
+    const answer = fields(await this.call('POST', '/api/desktop/handoffs', { operation: 'item_read', id }))
+    return typeof answer.updated === 'number' ? answer.updated : 0
+  }
+
   /** Call one route with the account's bearer; one refresh after the route's own 401. */
   private async call(method: Method, path: string, payload?: unknown): Promise<unknown> {
     const url = new URL(path, this.origin)

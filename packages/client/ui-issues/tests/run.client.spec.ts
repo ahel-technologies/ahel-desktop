@@ -65,7 +65,7 @@ it('seeds a new chat with the issue and reports running, waiting_approval, runni
   const seed = chat.send.mock.calls[0]![0]
   expect(seed).toContain('AHEL-137')
   expect(seed).toContain(issue.title)
-  expect(seed).toContain('issue_get')
+  expect(seed).toContain('https://ahel.ai/app/issues/AHEL-137')
   expect(seed).toContain('When you are done, summarise what you did and ask for review.')
 
   chat.setRunning(true)

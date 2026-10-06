@@ -86,6 +86,8 @@ export interface IssuesInjected {
   openSession(sessionId: string): void
   /** Show the Issues panel. */
   showBoard(): void
+  /** Open the issue's page on ahel.ai, in the selected workspace. */
+  viewOnWeb(key: string): void
   /** Open an https link outside the app. */
   openLink(url: string): void
   hooks: {

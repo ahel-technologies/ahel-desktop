@@ -319,6 +319,14 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
  * @throws RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.
  */
 @Remote async createProject(name: string): Promise<readonly IssueProject[]>
+
+/**
+ * Mark one issue row of the Inbox read.
+ * @param id - `IssueInboxItem.id`.
+ * @returns how many rows changed.
+ * @throws RemoteError `ahel-issues/*`.
+ */
+@Remote async readItem(id: string): Promise<number>
 ```
 
 Source: [`packages/credentials/ahel-account/src/issues.ts`](../../packages/credentials/ahel-account/src/issues.ts)

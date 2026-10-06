@@ -2,6 +2,21 @@
 import type { Issue, IssueActivity, IssuePriority, IssueRun, IssueRunState, IssueStatus } from '@ahel/dsh-ahel-account/types'
 import type { IssuesKey } from './locales.ts'
 
+/** ahel.ai's Issues page; one issue's detail is `<this>/<key>`. */
+export const WEB_ISSUES = 'https://ahel.ai/app/issues'
+
+/**
+ * One issue's page on ahel.ai.
+ * @param key - the issue key.
+ * @param workspace - the selected workspace, carried as `?workspace=` like the Inbox's links.
+ * @returns the URL.
+ */
+export function issueUrl(key: string, workspace?: string | null): string {
+  const url = new URL(`${WEB_ISSUES}/${encodeURIComponent(key)}`)
+  if (workspace !== undefined && workspace !== null) url.searchParams.set('workspace', workspace)
+  return url.href
+}
+
 /** Board columns, left to right. */
 export const BOARD_STATUSES: readonly IssueStatus[] = ['backlog', 'todo', 'in_progress', 'in_review', 'blocked', 'done']
 
@@ -113,7 +128,7 @@ export function ago(iso: string, now: number, t: Translate): string {
  */
 export function runSeed(issue: Issue, t: Translate): string {
   const description = issue.description.trim() === '' ? t('runSeedNoDescription') : issue.description.trim()
-  return t('runSeed', { key: issue.key, title: issue.title, description })
+  return t('runSeed', { key: issue.key, title: issue.title, description, link: issueUrl(issue.key) })
 }
 
 /** Split a comma-separated labels field. */

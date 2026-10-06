@@ -1,6 +1,7 @@
 /** Client-safe Ahel account state; no token, verifier or code crosses this projection. */
 import type {} from '@ahel/cordis'
 import type { Branded } from '@ahel/dsh-brand'
+import type { IssueInboxItem } from './issues-types.ts'
 
 /** Identity of one local sign-in attempt. */
 export type AhelSignInAttemptId = Branded<'AhelSignInAttemptId'>
@@ -446,6 +447,8 @@ export interface HandoffList {
   readonly received: readonly HandoffReceivedRow[]
   readonly sent: readonly HandoffSentRow[]
   readonly detail: string
+  /** Issue rows (assigned, mentioned, run finished or failed), newest first; null when ahel.ai could not read them. */
+  readonly items?: readonly IssueInboxItem[] | null
 }
 
 /** One opened handoff; opening marks it read. */

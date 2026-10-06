@@ -25,7 +25,9 @@ export interface IssueDetailProps {
   readonly role: string | null
   readonly now: number
   readonly t: Translate
-  readonly actions: Pick<IssuesInjected, 'detail' | 'update' | 'remove' | 'comment' | 'run' | 'openSession' | 'createProject' | 'openLink'>
+  readonly actions: Pick<
+    IssuesInjected, 'detail' | 'update' | 'remove' | 'comment' | 'run' | 'openSession' | 'createProject' | 'openLink' | 'viewOnWeb'
+  >
   readonly close: () => void
 }
 
@@ -125,6 +127,8 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, no
               <button type="button" className={`${css.btn} ${css.btnPrimary}`} disabled={busy || runningHere}
                 onClick={() => { write(() => actions.run(issue)) }}>{t('runWithAhel')}</button>
             )}
+            <button type="button" className={`${css.btn} ${css.btnGhost}`}
+              onClick={() => { actions.viewOnWeb(issue.key) }}>{t('viewOnWeb')}</button>
             <button type="button" className={`${css.btn} ${css.btnSecondary}`} disabled={busy}
               onClick={() => { setHandOff(handOff === null ? { to: members[0]?.value ?? 'member:me', note: '' } : null) }}>{t('handOff')}</button>
             <button type="button" className={`${css.btn} ${css.btnGhost}`} onClick={close}>{t('close')}</button>

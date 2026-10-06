@@ -33,7 +33,7 @@ async function mount() {
   const feed = createIssuesFeed(backend, () => Promise.resolve({ signedIn: true, role: 'OWNER' }))
   await feed.reload()
   const face: Omit<IssuesInjected, 'hooks'> = {
-    ...feed, run: vi.fn(), openSession: vi.fn(), showBoard: vi.fn(), openLink: vi.fn(), refresh: () => undefined,
+    ...feed, run: vi.fn(), openSession: vi.fn(), showBoard: vi.fn(), openLink: vi.fn(), viewOnWeb: vi.fn(), refresh: () => undefined,
   }
   const useIssues = ((selector: (state: ReturnType<typeof feed.state.getSnapshot>) => unknown) => {
     return useSyncExternalStore(listener => feed.state.subscribe(listener), () => selector(feed.state.getSnapshot()))

@@ -23,6 +23,7 @@ import { NS } from '../locales.ts'
 import { ApprovalsPanelIcon, InboxPanelIcon } from '../catalog/PanelIcons.tsx'
 import { ApprovalsPage } from './ApprovalsPage.tsx'
 import { InboxPage } from './InboxPage.tsx'
+import { openIssueItem } from './issue-items.ts'
 import { HandOffButton, ShareHandoffDialog, ShareHandoffMenuItem, type ShareHandoffInjected, type ShareRequest } from './ShareHandoff.tsx'
 import { TeamHeader, TeamStrip } from './TeamGlance.tsx'
 import type {
@@ -215,6 +216,11 @@ function registerInbox(ctx: Context, account: AhelAccountInjected, summary: Team
       })
       return { ok: true }
     },
+    openIssue: item => openIssueItem({
+      show: (key) => { ctx.emit('ahel-issues/open', key) },
+      markRead: id => ctx.remote.ahelIssues.readItem(id),
+      refresh: () => { summary.refresh() },
+    }, item),
     markDone: async (id) => {
       const result = await ctx.remote.ahelTeam.markHandoffDone(id)
       summary.refresh()

@@ -23,7 +23,7 @@ import type { IssuesInjected } from './contract.ts'
 import { createIssuesFeed, type IssuesAccount } from './feed.ts'
 import { IssuesPage, NewIssuePage } from './IssuesPage.tsx'
 import { IssuesPanelIcon, NewIssuePanelIcon } from './PanelIcons.tsx'
-import { runSeed } from './model.ts'
+import { issueUrl, runSeed } from './model.ts'
 import { startRun, type RunHost, type RunSession } from './run.ts'
 import { en, NS, zh } from './locales.ts'
 
@@ -35,7 +35,11 @@ export type { IssuesKey } from './locales.ts'
 
 declare module '@ahel/cordis' {
   interface Events {
-    /** Show the Issues panel with one issue's detail open, for example from an Inbox row. */
+    /**
+     * Show the desktop Issues panel with one issue's detail open, for example from an Inbox row.
+     * @mode emit
+     * @param key - the issue key, for example `AHEL-137`.
+     */
     'ahel-issues/open'(key: string): void
   }
 }
@@ -125,6 +129,8 @@ function register(ctx: Context): void {
     subscribeWaiting: listener => ctx.uiSession.sessionStatus.subscribe(listener),
   }
 
+  const openLink = (url: string): void => { if (/^https?:\/\//.test(url)) window.open(url, '_blank', 'noopener,noreferrer') }
+
   const face: IssuesInjected = {
     refresh: feed.refresh,
     setFilter: feed.setFilter,
@@ -149,7 +155,12 @@ function register(ctx: Context): void {
     },
     openSession: (sessionId) => { ctx.uiWorkspace.openSession(sessionId as SessionId) },
     showBoard: () => { ctx.layout.selectPanel(ISSUES_ID) },
-    openLink: (url) => { if (/^https?:\/\//.test(url)) window.open(url, '_blank', 'noopener,noreferrer') },
+    openLink,
+    viewOnWeb: (key) => {
+      void ctx.remote.ahelAccount.state().then((result) => {
+        openLink(issueUrl(key, result.ok ? result.value.workspace : null))
+      }).catch(() => { openLink(issueUrl(key)) })
+    },
     hooks: { issues: feed.state },
   }
 

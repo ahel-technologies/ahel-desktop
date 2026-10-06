@@ -54,7 +54,7 @@ const RUN_STATUS: Partial<Record<IssueRunReport['state'], IssueStatus>> = {
 }
 
 /** The feed and the face actions it backs. */
-export type IssuesFeed = Omit<IssuesInjected, 'run' | 'openSession' | 'showBoard' | 'openLink' | 'hooks'> & {
+export type IssuesFeed = Omit<IssuesInjected, 'run' | 'openSession' | 'showBoard' | 'openLink' | 'viewOnWeb' | 'hooks'> & {
   readonly state: HostObservable<IssuesState>
   /** Record a run report locally and send it. */
   report(key: string, report: IssueRunReport): void

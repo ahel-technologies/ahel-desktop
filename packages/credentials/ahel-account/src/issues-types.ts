@@ -178,11 +178,13 @@ export interface IssueAssignees {
 export interface IssueInboxItem {
   readonly id: string
   readonly type: 'assigned' | 'mentioned' | 'run_finished' | 'run_failed'
-  readonly issueKey: string
-  readonly issueTitle: string
+  /** Null when the issue is gone. */
+  readonly issueKey: string | null
+  readonly issueTitle: string | null
   readonly actorType: IssueActorType
   readonly actorName: string
-  readonly body: string
+  /** The comment text of a mention; null for the other kinds. */
+  readonly body: string | null
   readonly unread: boolean
   readonly createdAt: string
 }

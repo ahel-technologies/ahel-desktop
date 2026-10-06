@@ -36,6 +36,9 @@ async function mockIssuesApi() {
       if (url.pathname === '/api/desktop/issues/AHEL-137/run' && request.method === 'POST') {
         json(200, { ...issue, status: 'in_progress', run: { ...JSON.parse(body) as object, updatedAt: '2026-10-06T09:00:00.000Z' } }); return
       }
+      if (url.pathname === '/api/desktop/handoffs' && request.method === 'POST') {
+        json(200, { updated: 1 }); return
+      }
       json(404, {})
     })
   })
@@ -44,7 +47,7 @@ async function mockIssuesApi() {
   return { origin: `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`, seen }
 }
 
-it('lists, patches, reports a run, and carries ahel.ai\'s reason on a role refusal', async () => {
+it('lists, patches, reports a run, marks an Inbox row read, and carries ahel.ai\'s reason on a role refusal', async () => {
   const api = await mockIssuesApi()
   const ctx = new Context()
   ctx.provide('ahelAccount', {
@@ -72,4 +75,7 @@ it('lists, patches, reports a run, and carries ahel.ai\'s reason on a role refus
   const ran = await issues.run('AHEL-137', { sessionId: 's1', state: 'running', steps: 0, totalSteps: null })
   expect(ran.issue).toMatchObject({ status: 'in_progress', run: { sessionId: 's1', state: 'running' } })
   expect(JSON.parse(api.seen.at(-1)!.body)).toEqual({ sessionId: 's1', state: 'running', steps: 0, totalSteps: null })
+
+  expect(await issues.readItem('n1')).toBe(1)
+  expect(JSON.parse(api.seen.at(-1)!.body)).toEqual({ operation: 'item_read', id: 'n1' })
 })

@@ -624,6 +624,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the projects after the create.',
         throws: ['RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.'],
       },
+      {
+        signature: '@Remote async readItem(id: string): Promise<number>',
+        description: 'Mark one issue row of the Inbox read.',
+        parameters: [{ name: 'id', description: '`IssueInboxItem.id`.' }],
+        returns: 'how many rows changed.',
+        throws: ['RemoteError `ahel-issues/*`.'],
+      },
     ],
   },
   {
@@ -5689,7 +5696,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'HandoffList',
-    declaration: 'export interface HandoffList {\n    readonly view: \'handoff_list\';\n    readonly scope: \'all\' | \'received\' | \'sent\';\n    readonly received: readonly HandoffReceivedRow[];\n    readonly sent: readonly HandoffSentRow[];\n    readonly detail: string;\n}',
+    declaration: 'export interface HandoffList {\n    readonly view: \'handoff_list\';\n    readonly scope: \'all\' | \'received\' | \'sent\';\n    readonly received: readonly HandoffReceivedRow[];\n    readonly sent: readonly HandoffSentRow[];\n    readonly detail: string;\n    readonly items?: readonly IssueInboxItem[] | null;\n}',
   },
   {
     name: 'HandoffRead',
@@ -5894,6 +5901,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'IssueDraft',
     declaration: 'export interface IssueDraft {\n    readonly title: string;\n    readonly description: string;\n    readonly status: IssueStatus;\n    readonly priority: IssuePriority;\n    readonly assigneeType: IssueActorType | null;\n    readonly assigneeId: string | null;\n    readonly project: string | null;\n}',
+  },
+  {
+    name: 'IssueInboxItem',
+    declaration: 'export interface IssueInboxItem {\n    readonly id: string;\n    readonly type: \'assigned\' | \'mentioned\' | \'run_finished\' | \'run_failed\';\n    readonly issueKey: string | null;\n    readonly issueTitle: string | null;\n    readonly actorType: IssueActorType;\n    readonly actorName: string;\n    readonly body: string | null;\n    readonly unread: boolean;\n    readonly createdAt: string;\n}',
   },
   {
     name: 'IssuePage',
