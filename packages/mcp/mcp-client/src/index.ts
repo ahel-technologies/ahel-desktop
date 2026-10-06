@@ -22,6 +22,7 @@ import { DEFAULT_MAX_INSTRUCTION_BYTES, RECONNECT_DEFAULTS, resolveReconnectPoli
 import type { ReconnectConfig, ResolvedReconnectPolicy } from './connection.ts'
 import { registerServerContext } from './server-context.ts'
 import { oauthGrantAuthProvider, readOAuthGrant } from './oauth.ts'
+import { assertTransportAllowed } from './transport.ts'
 import type { AuthProvider } from '@modelcontextprotocol/client'
 // Side-effect type import: declaration-merges `ctx.tools` onto Context.
 import type {} from '@ahel/dsh-tools'
@@ -35,6 +36,7 @@ export {
   currentOAuthGrant, oauthGrantAuthProvider, OAuthGrantError, parseOAuthGrant, readOAuthGrant, refreshOAuthGrant, writeOAuthGrant,
 } from './oauth.ts'
 export type { OAuthGrantOptions, StoredOAuthGrant } from './oauth.ts'
+export { assertTransportAllowed, McpTransportRefusedError, STDIO_POLICY_ENV } from './transport.ts'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'mcp-client'
@@ -194,6 +196,8 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   // construction that bypassed Schemastery) rejects THIS instance before any
   // effect registers.
   const reconnect = resolveReconnectPolicy(config.reconnect, `mcp-client(${config.serverName}): reconnect`)
+  // A refused transport fails activation once instead of entering the reconnect loop.
+  assertTransportAllowed(config)
   if (config.transport === 'streamable-http' && config.auth !== undefined) {
     applyGrantGate(ctx, config, config.auth, reconnect)
     return

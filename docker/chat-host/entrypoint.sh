@@ -5,6 +5,11 @@
 # Extra arguments are passed to the web app after the image's own flags.
 set -eu
 
+# The hosted chat runs no program the person names: mcp-client refuses stdio
+# servers (packages/mcp/mcp-client/src/transport.ts). Set here, after the pod
+# environment, so nothing the person can configure turns it back on.
+export DSH_MCP_STDIO=off
+
 mkdir -p "$DSH_HOME/workspaces"
 cd "$DSH_HOME/workspaces"
 
