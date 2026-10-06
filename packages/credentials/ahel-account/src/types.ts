@@ -286,7 +286,23 @@ export interface DesktopSummary {
   /** Received handoffs that are unread and not done. */
   readonly inbox: { readonly unread: number } | null
   readonly credits: DesktopCredits | null
+  /** The caller as ahel.ai names them now; absent from an older ahel.ai. */
+  readonly me?: DesktopMember | null
+  /**
+   * Active seats: `rows` has the caller first, then by join date, at most 8;
+   * `total` counts them all. Absent from an older ahel.ai.
+   */
+  readonly members?: { readonly total: number; readonly rows: readonly DesktopMember[] } | null
+  /** Switched-on rows of the Your apps inventory; absent from an older ahel.ai. */
+  readonly apps?: { readonly installed: number } | null
   readonly at: string
+}
+
+/** One workspace seat in the summary. */
+export interface DesktopMember {
+  readonly id: string
+  readonly name: string | null
+  readonly email: string
 }
 
 /** The stored answer to one held call. Approve opens a one-hour window for the requester to repeat the exact call. */

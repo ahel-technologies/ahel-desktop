@@ -80,13 +80,18 @@ describe('RunningStatus', () => {
     expect(view.container.querySelector('[data-brand-pulse-dot]')).not.toBeNull()
   })
 
+  it('names the approval wait over any live step', () => {
+    expect(runningStepLabel(group({ running: 'webSearch' }), tEn, true)).toBe('Waiting for your approval')
+    expect(runningStepLabel(undefined, t, true)).toBe('等待你的批准')
+  })
+
   it('names the live step from the open process group', () => {
-    expect(runningStepLabel(undefined, tEn)).toBe('Thinking')
-    expect(runningStepLabel(group({ running: 'webSearch', runningDetail: 'ahel pricing' }), tEn)).toBe('Searching the web')
-    expect(runningStepLabel(group({ running: 'read', runningDetail: '/tmp/uploads/ahel-test.pdf' }), tEn))
+    expect(runningStepLabel(undefined, tEn, false)).toBe('Thinking')
+    expect(runningStepLabel(group({ running: 'webSearch', runningDetail: 'ahel pricing' }), tEn, false)).toBe('Searching the web')
+    expect(runningStepLabel(group({ running: 'read', runningDetail: '/tmp/uploads/ahel-test.pdf' }), tEn, false))
       .toBe('Reading ahel-test.pdf')
-    expect(runningStepLabel(group({ running: 'webFetch', preparing: true }), tEn)).toBe('Preparing to visit web pages')
-    expect(runningStepLabel(group({ running: 'webSearch' }, true), tEn)).toBe('Thinking')
-    expect(runningStepLabel(group({ running: 'read', runningDetail: 'C:\\docs\\plan.md' }), t)).toBe('正在读取 plan.md')
+    expect(runningStepLabel(group({ running: 'webFetch', preparing: true }), tEn, false)).toBe('Preparing to visit web pages')
+    expect(runningStepLabel(group({ running: 'webSearch' }, true), tEn, false)).toBe('Thinking')
+    expect(runningStepLabel(group({ running: 'read', runningDetail: 'C:\\docs\\plan.md' }), t, false)).toBe('正在读取 plan.md')
   })
 })

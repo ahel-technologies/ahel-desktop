@@ -66,7 +66,9 @@ export function AccountMenu({
   const profile = view?.status === 'signed-in' ? view.profile : null
   const signedIn = view?.status === 'signed-in'
   const workspace = view?.workspace ?? null
-  const label = profile?.name ?? profile?.email ?? (signedIn ? t('account') : t('signIn'))
+  // ahel.ai's current display name wins over the one captured at sign-in.
+  const name = (signedIn ? team.summary?.me?.name : null) ?? profile?.name ?? null
+  const label = name ?? profile?.email ?? (signedIn ? t('account') : t('signIn'))
   const credits = signedIn ? team.summary?.credits ?? null : null
   const waiting = view?.attempt?.phase === 'waiting-browser' || view?.attempt?.phase === 'exchanging'
   const run = (action: () => Promise<void>, close = true): void => {
@@ -86,15 +88,15 @@ export function AccountMenu({
       <button type="button" className={`${css.trigger} ${wide ? '' : css.rail}`} aria-haspopup="menu" aria-expanded={open}
         title={label} onClick={() => { setOpen(value => !value) }}>
         {signedIn
-          ? <span className={css.avatar} aria-hidden="true">{(profile?.name ?? profile?.email ?? 'A').charAt(0).toUpperCase()}</span>
+          ? <span className={css.avatar} aria-hidden="true">{(name ?? profile?.email ?? 'A').charAt(0).toUpperCase()}</span>
           : <AhelTile size={wide ? 18 : 20} />}
         {wide && <span className={css.label}>{label}</span>}
       </button>
       {open && (
         <div className={css.menu} role="menu">
           <div className={css.identity}>
-            <div className={css.name}>{signedIn ? (profile?.name ?? profile?.email ?? t('account')) : t('signedOut')}</div>
-            {profile !== null && profile.name !== null && <div className={css.caption}>{profile.email}</div>}
+            <div className={css.name}>{signedIn ? (name ?? profile?.email ?? t('account')) : t('signedOut')}</div>
+            {profile !== null && name !== null && <div className={css.caption}>{profile.email}</div>}
             {view?.attempt?.phase === 'failed' && <div className={css.caption}>{t('failed')}</div>}
             {signedIn && team.outdated && <div className={css.caption}>{t('updateAhel')}</div>}
             {credits?.visible === true && (

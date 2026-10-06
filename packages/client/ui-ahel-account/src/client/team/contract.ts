@@ -3,6 +3,8 @@ import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@ahe
 import type { AhelAccountView, DesktopSummary, HandoffList, HandoffReceivedRow } from '@ahel/dsh-ahel-account/types'
 import type {} from '@ahel/dsh-client-ui-layout/client'
 import type {} from '@ahel/dsh-client-ui-sidebar/client'
+import type {} from '@ahel/dsh-client-ui-workspace/client'
+import type {} from '@ahel/dsh-client-ui-conversation/client'
 import type {} from '../locales.ts'
 
 /** What the latest `ahelTeam.summary()` read left. */
@@ -104,3 +106,27 @@ export type InboxPageProps = PropsRuntime<'main'> & InjectFace<InboxInjected> & 
 
 /** Props of the Inbox sidebar glyph with its unread badge. */
 export type InboxPanelIconProps = PropsRuntime<'sidebar.panellist'> & InjectFace<InboxInjected>
+
+/** Where a team-at-a-glance tile leads. */
+export type TeamGlanceTarget = 'approvals' | 'inbox' | 'apps'
+
+/** Face of the sidebar team header and the welcome screen's team strip. */
+export interface TeamGlanceInjected {
+  /**
+   * Select one of this package's panels.
+   * @param target - the tile's panel.
+   */
+  openPanel(target: TeamGlanceTarget): void
+  /** Open the workspace's team settings on ahel.ai in the browser. */
+  openMembers(): void
+  hooks: {
+    account: HostObservable<AhelAccountView | null>
+    summary: HostObservable<TeamSummaryState>
+  }
+}
+
+/** Props of the team header above the sidebar's workspace list. */
+export type TeamHeaderProps = PropsRuntime<'sidebar.workspaces.header'> & InjectFace<TeamGlanceInjected> & PropsLocale<'ahel-account'>
+
+/** Props of the team strip below the blank-session composer. */
+export type TeamStripProps = PropsRuntime<'conversation.hero.dock'> & InjectFace<TeamGlanceInjected> & PropsLocale<'ahel-account'>

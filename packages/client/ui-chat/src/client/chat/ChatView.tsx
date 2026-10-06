@@ -114,8 +114,9 @@ const ChatNodeList = memo(function ChatNodeList({ entries, useChatGroup, pending
  * ordered business Node crosses the keyed renderer seat.
  */
 export function ChatView({
-  useSession, useChat, useChatNode, useChatNodeProcess, useChatGroup, useConversation, useSessions, useStore, actions, renderSlot,
-  sessionId, openFile, openSkill, openExternalLink, loadOlder, loadThrough, loadImage, inspectCall, chatScroll, forkAt, fileMentions,
+  useSession, useChat, useChatNode, useChatNodeProcess, useChatGroup, useConversation, useSessions, useSessionStatus, useStore, actions,
+  renderSlot, sessionId, openFile, openSkill, openExternalLink, loadOlder, loadThrough, loadImage, inspectCall, chatScroll, forkAt,
+  fileMentions,
   usePresentation, useProjection, t,
 }: ChatViewSlotProps) {
   const order = useChat(s => s.order)
@@ -148,7 +149,9 @@ export function ChatView({
   )
   const lastGroupKey = useMemo(() => entries.findLast(entry => entry.kind === 'group')?.key ?? '', [entries])
   const lastGroup = useChatGroup(lastGroupKey, group => group?.data)
-  const runningStep = runningStepLabel(lastGroup?.turn === runningTurn ? lastGroup : undefined, t)
+  // The approval card takes over the composer; the status line names the wait.
+  const awaitingApproval = useSessionStatus(statuses => statuses.get(sessionId)?.pendingInteraction?.kind === 'approval')
+  const runningStep = runningStepLabel(lastGroup?.turn === runningTurn ? lastGroup : undefined, t, awaitingApproval)
   // Host-computed whole-log outline; the merge is view-layer only (the
   // conversation snapshot never carries projection values).
   const turnOutline = useProjection('turnOutline')

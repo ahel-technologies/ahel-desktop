@@ -182,7 +182,19 @@ declare module '@ahel/dsh-client-ui-slots' {
      * handling to keep the row from opening.
      */
     'sidebar.workspaces.session.row.action': { kind: 'list'; scope: 'root'; owner: SessionRowOwnerProps }
+    /**
+     * Entries above the browsing region's section header, in ascending
+     * `order`, for example the signed-in team's name and members. Each entry
+     * receives the column state and renders nothing it has no room for.
+     */
+    'sidebar.workspaces.header': { kind: 'list'; scope: 'root'; owner: WorkspacesHeaderOwnerProps }
   }
+}
+
+/** Owner share of one `sidebar.workspaces.header` entry. */
+export interface WorkspacesHeaderOwnerProps {
+  /** Whether the sidebar renders wide content (false = 56px rail). */
+  readonly wide: boolean
 }
 
 /** The two directory-flow holes; a flow package's client half registers its one component into both. */
@@ -457,6 +469,7 @@ export type WorkspaceBrowserProps =
   PropsRuntime<'sidebar.workspaces'>
   & PropsRenderSlots<
     | 'sidebar.workspaces.directoryFlow'
+    | 'sidebar.workspaces.header'
     | 'sidebar.workspaces.session.menu.item'
     | 'sidebar.workspaces.session.row.action'
     | 'sidebar.session.row.leading'

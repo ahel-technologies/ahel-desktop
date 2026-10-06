@@ -45,9 +45,10 @@ export type {
   KnowledgeSource,
 } from './types.ts'
 export type {
-  AhelIcon, AhelJson, ApprovalDecision, ApprovalRow, DesktopCredits, DesktopSummary, HandoffDraft, HandoffEvidence, HandoffList,
-  HandoffRead, HandoffReceivedRow, HandoffReview, HandoffSectionId, HandoffSectionRow, HandoffSections, HandoffSent, HandoffSentRow,
-  HandoffShare, KeyConnectAnswer, KeyConnectField, KeyConnectSaved, KeyConnectView, VaultDisconnected, VaultSignIn, VaultSignInList,
+  AhelIcon, AhelJson, ApprovalDecision, ApprovalRow, DesktopCredits, DesktopMember, DesktopSummary, HandoffDraft,
+  HandoffEvidence, HandoffList, HandoffRead, HandoffReceivedRow, HandoffReview, HandoffSectionId, HandoffSectionRow,
+  HandoffSections, HandoffSent, HandoffSentRow, HandoffShare, KeyConnectAnswer, KeyConnectField, KeyConnectSaved, KeyConnectView,
+  VaultDisconnected, VaultSignIn, VaultSignInList,
 } from './types.ts'
 export type {
   AhelAccountView, AhelHostedPages, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView, AhelSignInErrorCode, AhelWorkspace,
