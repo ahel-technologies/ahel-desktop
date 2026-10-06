@@ -1,0 +1,25 @@
+# Build from a clean tree: no local installs, build outputs, secrets or git data.
+.git
+**/node_modules
+**/lib
+**/dist
+**/*.tsbuildinfo
+**/.env*
+!**/.env*.example
+**/.credentials*
+**/*.pem
+**/*.p12
+**/coverage
+**/.cache
+**/.pnpm-store
+**/__pycache__
+.dsh-build
+.artifacts
+.worktrees
+worktrees
+.agents/worktrees
+.claude
+apps/desktop/.desktop-build
+python/sdk-runtime/src/deepseek_harness_runtime/runtime
+native/system/test/bin
+tmp

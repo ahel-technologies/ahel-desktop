@@ -106,6 +106,8 @@ function register(ctx: Context): void {
 
   const injected: AhelAccountInjected = {
     signIn: async () => {
+      // A Host the hosted chat launched cannot run a loopback sign-in; reloading ahel.ai's chat page brings a fresh grant.
+      if (view?.hosted) { window.location.assign(view.hosted.signInUrl); return }
       const result = await ctx.remote.ahelAccount.signIn()
       if (!result.ok) throw result.error
       const url = result.value.attempt?.authorizeUrl
@@ -113,6 +115,8 @@ function register(ctx: Context): void {
       if (url !== undefined && result.value.attempt?.phase === 'waiting-browser') openLink(url)
     },
     signOut: async () => {
+      // The hosted chat's sign-in is the person's ahel.ai session; it ends on ahel.ai.
+      if (view?.hosted) { openLink(view.hosted.signOutUrl); return }
       signingOut = true
       try {
         const result = await ctx.remote.ahelAccount.signOut()

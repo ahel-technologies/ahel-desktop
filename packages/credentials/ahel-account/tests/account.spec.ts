@@ -123,3 +123,39 @@ it('signs in through the browser, refreshes on demand, and signs out with a revo
   expect(await ctx.credentials.resolve(credentialRef('AHEL_ACCOUNT'))).toBeUndefined()
   expect(await account.accessToken()).toBeUndefined()
 })
+
+async function launchAccount(origin: string, token: string) {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-ahel-account-'))
+  cleanups.push(() => rm(home, { recursive: true, force: true }))
+  const ctx = new Context()
+  const credentials = ctx.plugin(LocalCredentialProvider, { path: join(home, 'credentials.yaml'), watch: false })
+  await credentials
+  process.env.DSH_TEST_LAUNCH_TOKEN = token
+  const plugin = ctx.plugin(AhelAccount, { appOrigin: origin, launchTokenEnv: 'DSH_TEST_LAUNCH_TOKEN' })
+  await plugin
+  cleanups.push(async () => { await plugin.dispose(); await credentials.dispose() })
+  return ctx
+}
+
+it('adopts a launch token from the environment once, by one refresh', async () => {
+  const ahel = await fakeAhel()
+  const ctx = await launchAccount(ahel.origin, JSON.stringify({ client_id: 'ahel-web-chat', refresh_token: 'launch-refresh' }))
+  expect(process.env.DSH_TEST_LAUNCH_TOKEN).toBeUndefined()
+  expect(await ctx.ahelAccount.state()).toMatchObject({ status: 'signed-in', profile: { email: 'person@example.test' } })
+  expect(ahel.seen.registrations).toHaveLength(0)
+  expect(ahel.seen.tokenForms[0]?.get('grant_type')).toBe('refresh_token')
+  expect(ahel.seen.tokenForms[0]?.get('client_id')).toBe('ahel-web-chat')
+  expect(ahel.seen.tokenForms[0]?.get('refresh_token')).toBe('launch-refresh')
+  expect(parseOAuthGrant((await ctx.credentials.resolve(credentialRef('AHEL_ACCOUNT')))!.value))
+    .toMatchObject({ client_id: 'ahel-web-chat', access_token: 'access-1', refresh_token: 'refresh-1' })
+  expect((await ctx.ahelAccount.state()).hosted).toEqual({ signInUrl: `${ahel.origin}/chat/`, signOutUrl: `${ahel.origin}/app/settings` })
+  await expect(ctx.ahelAccount.signOut()).rejects.toThrow(/on ahel\.ai/)
+})
+
+it('refuses a malformed launch token and stays signed out', async () => {
+  const ahel = await fakeAhel()
+  const ctx = await launchAccount(ahel.origin, '{"refresh_token":"no-client"}')
+  expect(process.env.DSH_TEST_LAUNCH_TOKEN).toBeUndefined()
+  expect((await ctx.ahelAccount.state()).status).toBe('signed-out')
+  expect(ahel.seen.tokenForms).toHaveLength(0)
+})

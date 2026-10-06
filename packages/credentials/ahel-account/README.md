@@ -37,10 +37,19 @@ The ahel.ai account for Ahel Desktop. One browser sign-in stores one OAuth grant
 | `healthPath` | `/api/health/live` | Read on `appOrigin` to tell whether ahel.ai is reachable (`reachable` in the view) |
 | `reachableIntervalMs` | `60000` | Wait between reachability reads while ahel.ai answers |
 | `unreachableIntervalMs` | `5000` | Wait between reachability reads while it does not |
+| `launchTokenEnv` | `AHEL_LAUNCH_TOKEN` | Environment variable holding a launch grant from ahel.ai's hosted chat; empty disables it |
+| `hostedSignInPath` | `/chat/` | Path on `appOrigin` a launched Host's Sign in reloads |
+| `hostedSignOutPath` | `/app/settings` | Path on `appOrigin` a launched Host's Sign out opens |
 
 The service is `ctx.ahelAccount`; the Remote namespace `ahelAccount` exposes `state()`, `signIn()`, `cancelSignIn(id)`, `signOut()`, `profile()` and the `watch` stream. Host code also has `accessToken()` (refreshes on demand), `revalidate()` (forces one refresh after a 401) and `setOpener(fn)`.
 
 Sign-in copies the `ahel` CLI flow: discovery, a loopback listener on `127.0.0.1:<random port>/callback`, a fresh dynamic client registration per sign-in (a fixed client id would stay revoked forever), PKCE S256, scopes `openid profile email offline_access`, then `GET /api/mcp/profile`. `signIn()` resolves once the authorize URL exists and returns it in `attempt.authorizeUrl`; the opener set with `setOpener` opens it, otherwise it is logged. Sign-out calls `POST /api/mcp/revoke`, then deletes the credential even if the revoke failed.
+
+### Launch grant (hosted chat)
+
+ahel.ai's hosted chat starts one Host per person and hands it the person's sign-in through `AHEL_LAUNCH_TOKEN`: JSON `{"client_id": "...", "refresh_token": "..."}` for a first-party client ahel.ai minted. At load the plugin removes the variable from `process.env`, redeems the refresh token once at the discovered token endpoint (with `resource`), reads the profile and stores the result under `AHEL_ACCOUNT`, replacing a grant an earlier pod left on the volume. ahel.ai rotates refresh tokens, so the copy in the process environment stops working after that first refresh. `state()` and every bearer read wait for this step. A malformed or refused token is logged without its value and leaves the account signed out.
+
+A Host launched this way reports `hosted: { signInUrl, signOutUrl }` in the view. `signIn()` and `signOut()` refuse, because the person's ahel.ai session owns the grant; the client sends Sign in to `signInUrl` (a fresh launch) and Sign out to `signOutUrl`. Hosts started without the variable report `hosted: null`.
 
 ## Catalog: the `ahelCatalog` namespace
 

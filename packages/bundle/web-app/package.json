@@ -24,6 +24,7 @@
     },
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./presets/*.patch.yml": "./presets/*.patch.yml",
+    "./hosted/*.patch.yml": "./hosted/*.patch.yml",
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
@@ -32,6 +33,7 @@
     "lib/startup.js",
     "cordis.patch.yml",
     "presets/standard.patch.yml",
+    "hosted/chat.patch.yml",
     "lib/public-url-*.js",
     "lib/types/**/*.d.ts"
   ],

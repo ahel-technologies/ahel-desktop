@@ -24,7 +24,7 @@ import Schema from '@ahel/schemastery'
 import { brandString } from '@ahel/dsh-brand'
 import { credentialRef } from '@ahel/dsh-credentials'
 import type { CredentialRef } from '@ahel/dsh-credentials'
-import { currentOAuthGrant, OAuthGrantError, readOAuthGrant, writeOAuthGrant } from '@ahel/dsh-mcp-client'
+import { currentOAuthGrant, OAuthGrantError, readOAuthGrant, refreshOAuthGrant, writeOAuthGrant } from '@ahel/dsh-mcp-client'
 import type { StoredOAuthGrant } from '@ahel/dsh-mcp-client'
 import { Remote, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import { AhelCatalog } from './catalog.ts'
@@ -33,7 +33,7 @@ import {
   authorizeUrl, createPkce, discover, exchange, fetchProfile, randomState, register, revoke, SignInError, startLoopbackListener,
 } from './signin.ts'
 import type { HttpOptions, LoopbackListener } from './signin.ts'
-import type { AhelAccountView, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView } from './types.ts'
+import type { AhelAccountView, AhelHostedPages, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView } from './types.ts'
 
 export { AhelCatalog } from './catalog.ts'
 export type { CatalogConfig } from './catalog.ts'
@@ -50,7 +50,7 @@ export type {
   HandoffShare, KeyConnectAnswer, KeyConnectField, KeyConnectSaved, KeyConnectView, VaultDisconnected, VaultSignIn, VaultSignInList,
 } from './types.ts'
 export type {
-  AhelAccountView, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView, AhelSignInErrorCode, AhelWorkspace,
+  AhelAccountView, AhelHostedPages, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView, AhelSignInErrorCode, AhelWorkspace,
 } from './types.ts'
 
 declare module '@ahel/cordis' {
@@ -83,6 +83,15 @@ export interface Config {
   reachableIntervalMs?: number
   /** Wait between reachability reads while ahel.ai does not answer, in milliseconds. */
   unreachableIntervalMs?: number
+  /**
+   * Environment variable read once at load for a launch grant handed over by
+   * ahel.ai's hosted chat: JSON `{"client_id", "refresh_token"}`. Empty disables it.
+   */
+  launchTokenEnv?: string
+  /** Path on `appOrigin` a launched Host's Sign in reloads for a fresh grant. */
+  hostedSignInPath?: string
+  /** Path on `appOrigin` a launched Host's Sign out opens. */
+  hostedSignOutPath?: string
 }
 
 /** Validated configuration. */
@@ -98,6 +107,9 @@ export const Config = Schema.object({
   healthPath: Schema.string().pattern(/^\//).default('/api/health/live'),
   reachableIntervalMs: Schema.number().min(1_000).max(3_600_000).default(60_000),
   unreachableIntervalMs: Schema.number().min(1_000).max(3_600_000).default(5_000),
+  launchTokenEnv: Schema.string().pattern(/^([A-Za-z_][A-Za-z0-9_]*)?$/).default('AHEL_LAUNCH_TOKEN'),
+  hostedSignInPath: Schema.string().pattern(/^\//).default('/chat/'),
+  hostedSignOutPath: Schema.string().pattern(/^\//).default('/app/settings'),
 })
 
 /** Opens the authorize URL in the person's browser (Electron `shell.openExternal`). */
@@ -125,6 +137,32 @@ function secureOrigin(value: string, field: string): string {
   return url.origin
 }
 
+/** The hosting gateway's launch grant: a refresh token minted for a first-party client. */
+interface LaunchGrant {
+  client_id: string
+  refresh_token: string
+}
+
+/**
+ * Parse a launch grant without echoing its text into an error.
+ * @param text - the environment value.
+ * @returns the client id and refresh token.
+ */
+function parseLaunchGrant(text: string): LaunchGrant {
+  let value: unknown
+  try {
+    value = JSON.parse(text)
+  } catch (_notJson) {
+    // The value is a secret; the error names only its shape.
+    throw new Error('ahel-account: the launch token is not JSON')
+  }
+  const record = typeof value === 'object' && value !== null ? value as Partial<Record<keyof LaunchGrant, unknown>> : {}
+  if (typeof record.client_id !== 'string' || record.client_id === '' || typeof record.refresh_token !== 'string' || record.refresh_token === '') {
+    throw new Error('ahel-account: the launch token needs client_id and refresh_token')
+  }
+  return { client_id: record.client_id, refresh_token: record.refresh_token }
+}
+
 function isProfile(value: unknown): value is AhelProfile {
   if (typeof value !== 'object' || value === null) return false
   const profile = value as Partial<Record<keyof AhelProfile, unknown>>
@@ -149,6 +187,10 @@ export class AhelAccount extends TypertRemoteService {
   private readonly listeners = new Set<() => void>()
   private closed = false
   private reachable = true
+  /** Settles once a launch grant from the environment was stored or refused. */
+  private launched: Promise<void> = Promise.resolve()
+  /** ahel.ai's pages when the hosted chat launched this Host. */
+  private hosted: AhelHostedPages | null = null
 
   /**
    * @param ctx - Host context with the credentials service.
@@ -168,6 +210,18 @@ export class AhelAccount extends TypertRemoteService {
     this.signInTimeoutMs = resolved.signInTimeoutMs
     this.requestTimeoutMs = resolved.requestTimeoutMs
     this.refreshSkewMs = resolved.refreshSkewMs
+    const launchToken = resolved.launchTokenEnv === '' ? undefined : process.env[resolved.launchTokenEnv]
+    if (launchToken !== undefined && launchToken !== '') {
+      // Read once: later loads and child processes never see the token.
+      Reflect.deleteProperty(process.env, resolved.launchTokenEnv)
+      this.hosted = {
+        signInUrl: new URL(resolved.hostedSignInPath, this.appOrigin).href,
+        signOutUrl: new URL(resolved.hostedSignOutPath, this.appOrigin).href,
+      }
+      this.launched = this.adoptLaunchGrant(launchToken).catch((error: unknown) => {
+        this.ctx.logger.warn(`ahel-account: the launch token was not accepted: ${error instanceof Error ? error.message : String(error)}`)
+      })
+    }
     ctx.plugin(AhelCatalog, { appOrigin: this.appOrigin, resource: this.resource })
     ctx.plugin(AhelTeam, { appOrigin: this.appOrigin })
     ctx.on('credentials/reference-updated', (ref) => { if (ref === this.ref) this.changed() })
@@ -214,6 +268,7 @@ export class AhelAccount extends TypertRemoteService {
    */
   @Remote
   async state(): Promise<AhelAccountView> {
+    await this.launched
     const grant = await readOAuthGrant(this.ctx.credentials, this.ref)
     const profile = grant !== undefined && isProfile(grant.profile) ? grant.profile : null
     return {
@@ -222,6 +277,7 @@ export class AhelAccount extends TypertRemoteService {
       attempt: this.attempt?.view ?? null,
       workspace: profile === null ? null : this.selectedWorkspace(profile) ?? null,
       reachable: this.reachable,
+      hosted: this.hosted,
     }
   }
 
@@ -256,6 +312,7 @@ export class AhelAccount extends TypertRemoteService {
    * @returns the id, or undefined for the account default.
    */
   async workspace(): Promise<string | undefined> {
+    await this.launched
     const grant = await readOAuthGrant(this.ctx.credentials, this.ref)
     return grant !== undefined && isProfile(grant.profile) ? this.selectedWorkspace(grant.profile) : undefined
   }
@@ -268,6 +325,7 @@ export class AhelAccount extends TypertRemoteService {
    */
   @Remote
   async signIn(): Promise<AhelAccountView> {
+    this.refuseHosted()
     const running = this.attempt
     if (running !== undefined && ['starting', 'waiting-browser', 'exchanging'].includes(running.view.phase)) return this.state()
     let ready!: () => void
@@ -307,6 +365,7 @@ export class AhelAccount extends TypertRemoteService {
    */
   @Remote
   async signOut(): Promise<AhelAccountView> {
+    this.refuseHosted()
     const attempt = this.attempt
     if (attempt !== undefined) await this.cancelSignIn(attempt.view.id)
     const grant = await readOAuthGrant(this.ctx.credentials, this.ref)
@@ -404,6 +463,11 @@ export class AhelAccount extends TypertRemoteService {
     return () => { if (this.opener === opener) this.opener = previous }
   }
 
+  /** A launched Host's grant belongs to the person's ahel.ai session, which only ahel.ai starts and ends. */
+  private refuseHosted(): void {
+    if (this.hosted !== null) throw new Error('ahel-account: the hosted chat signs in and out on ahel.ai')
+  }
+
   private selectedWorkspace(profile: AhelProfile): string | undefined {
     const id = this.workspaceRef.get()
     return id !== undefined && profile.workspaces.some(workspace => workspace.id === id) ? id : undefined
@@ -422,6 +486,7 @@ export class AhelAccount extends TypertRemoteService {
   }
 
   private async currentGrant(): Promise<StoredOAuthGrant | undefined> {
+    await this.launched
     try {
       const options = { refreshSkewMs: this.refreshSkewMs, requestTimeoutMs: this.requestTimeoutMs }
       return await currentOAuthGrant(this.ctx.credentials, this.ref, options)
@@ -429,6 +494,33 @@ export class AhelAccount extends TypertRemoteService {
       if (error instanceof OAuthGrantError && error.rejected) return undefined
       throw error
     }
+  }
+
+  /**
+   * Exchange a gateway-minted refresh token once and store the result as this
+   * account's grant, replacing any grant the volume kept from an earlier pod.
+   * The exchange rotates the token, so the environment copy dies with it.
+   */
+  private async adoptLaunchGrant(text: string): Promise<void> {
+    const launch = parseLaunchGrant(text)
+    const http = this.http()
+    const discovery = await discover(this.appOrigin, http)
+    const refreshed = await refreshOAuthGrant({
+      version: 1,
+      issuer: this.appOrigin,
+      token_endpoint: discovery.token_endpoint,
+      client_id: launch.client_id,
+      access_token: '',
+      expires_at: 0,
+      refresh_token: launch.refresh_token,
+      resource: this.resource,
+    }, { requestTimeoutMs: this.requestTimeoutMs })
+    const profile = await fetchProfile(this.appOrigin, refreshed.access_token, http)
+    const grant: StoredOAuthGrant = { ...refreshed, profile }
+    const workspace = this.selectedWorkspace(profile)
+    if (workspace !== undefined) grant.workspace = workspace
+    await writeOAuthGrant(this.ctx.credentials, this.ref, grant)
+    this.changed()
   }
 
   private http(signal?: AbortSignal): HttpOptions {

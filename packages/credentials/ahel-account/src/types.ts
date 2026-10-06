@@ -47,6 +47,19 @@ export interface AhelAccountView {
   readonly workspace: string | null
   /** Whether ahel.ai answered the latest reachability read. */
   readonly reachable: boolean
+  /**
+   * Set when ahel.ai's hosted chat launched this Host with its grant; sign-in
+   * and sign-out then happen on ahel.ai. Absent or null elsewhere.
+   */
+  readonly hosted?: AhelHostedPages | null
+}
+
+/** ahel.ai pages that own sign-in and sign-out for a Host launched by the hosted chat. */
+export interface AhelHostedPages {
+  /** Reloading this page gets a fresh grant from ahel.ai. */
+  readonly signInUrl: string
+  /** ahel.ai page with the Sign out button. */
+  readonly signOutUrl: string
 }
 
 /** One Discover listing query, as ahel.ai/discover reads it. */

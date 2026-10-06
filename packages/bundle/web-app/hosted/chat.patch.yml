@@ -1,0 +1,51 @@
+# The hosted chat at ahel.ai/chat: one person per Host process, behind ahel.ai's
+# chat gateway. The ahel-chat-host image boots the `chat` profile (created from
+# the shipped web template) with this file as a --patch overlay, so these rows
+# win over the profile's own layer:
+#
+#   dsh --profile chat --patch <this file> --no-open \
+#     --public-url https://ahel.ai/chat/ --trusted-host ahel.ai
+#
+# The gateway owns TLS, the /chat/ prefix, the person's ahel.ai session and
+# the launch grant the ahel-account row reads from AHEL_LAUNCH_TOKEN. See
+# docs/phase4/HOSTED-CHAT.md.
+#
+# A patch replaces the targeted row's whole `config`, so each row restates
+# every key it owns. The ahel-account row is deliberately not patched here:
+# the person's workspace choice is saved in the profile layer, which an
+# overlay on that row would block. Its defaults already read the launch grant
+# from AHEL_LAUNCH_TOKEN, and a Host launched with one hands Sign in and Sign
+# out to ahel.ai (`hosted` in the account view).
+
+# Listen on every pod interface: the pod NetworkPolicy admits only the gateway.
+# The CLI refuses --host 0.0.0.0, so the bind comes from this row.
+- id: webserver
+  inject: [webStartup]
+  config:
+    host: 0.0.0.0
+    port: !!js ctx.webStartup.port ?? 3080
+    compression: gzip
+    compressionLevel: 1
+    compressionThresholdBytes: 1024
+
+# The Workspace lives on the person's volume, next to their Sessions.
+- id: workspace-controller
+  config:
+    workspacesDirectory: !!js dshHomePath('workspaces')
+
+# No local machine in the browser: no folder picker, no local CLIs, no child
+# processes, no plugin page.
+- id: directory-picker
+  disabled: true
+
+- id: subprocess
+  disabled: true
+
+- id: llm-local-cli
+  disabled: true
+
+- id: ui-local-cli
+  disabled: true
+
+- id: ui-plugin-manager
+  disabled: true
