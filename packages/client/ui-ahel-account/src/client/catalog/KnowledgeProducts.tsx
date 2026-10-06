@@ -11,6 +11,10 @@ import { AppRow, capabilityOf, failureOf, LOOK_CLASS } from './AppRow.tsx'
 import { KnowledgeTile } from './KnowledgeTile.tsx'
 import css from './Catalog.module.css'
 
+/** Typed row facts AppRow translates itself; the literals are data, not copy. */
+const KIND_APP: CatalogRow['kindLabel'] = 'App'
+const PROVENANCE_OFFICIAL: Extract<CatalogRow['facts'][number], { key: 'provenance' }>['text'] = 'Official'
+
 /** Where "Add money to your balance" goes. */
 const BILLING_URL = 'https://ahel.ai/billing'
 
@@ -18,19 +22,20 @@ const BILLING_URL = 'https://ahel.ai/billing'
  * A source as a Discover row, priced like ahel.ai's dataset rows.
  * @param source - the source.
  * @param price - its product's price line.
+ * @param t - the directory's translator.
  * @returns the row.
  */
-function sourceRow(source: KnowledgeSource, price: string): CatalogRow {
+function sourceRow(source: KnowledgeSource, price: string, t: KnowledgeProductsProps['t']): CatalogRow {
   return {
     id: source.id,
     name: source.name,
     kind: 'app',
-    kindLabel: 'App',
+    kindLabel: KIND_APP,
     tile: { text: source.name.slice(0, 1).toUpperCase(), tone: 'ahel', mark: null },
     facts: [
-      { key: 'provenance', text: 'Official', official: true },
-      { key: 'by', text: 'by ahel' },
-      { key: 'runs', text: 'Hosted by ahel' },
+      { key: 'provenance', text: PROVENANCE_OFFICIAL, official: true },
+      { key: 'by', text: t('byAhel') },
+      { key: 'runs', text: t('hostedByAhel') },
       { key: 'price', text: price, source: 'ahel' },
     ],
     chips: [],
@@ -85,7 +90,7 @@ function ProductCard(props: KnowledgeProductsProps & { readonly product: Knowled
   const { product, installed, signedIn, install, signIn, t } = props
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<{ text: string; error: boolean } | null>(null)
-  const rows = product.sources.map(source => sourceRow(source, product.price))
+  const rows = product.sources.map(source => sourceRow(source, product.price, t))
   const servable = rows.filter(row => row.state !== 'unavailable')
   const missing = servable.filter(row => capabilityOf(row, installed) === undefined)
   const allOn = servable.length > 0 && servable.every(row => capabilityOf(row, installed)?.state === 'on')
