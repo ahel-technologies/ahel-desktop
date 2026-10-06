@@ -569,8 +569,8 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['RemoteError `ahel-issues/forbidden` with ahel.ai\'s reason when the role may not edit it.'],
       },
       {
-        signature: '@Remote async remove(key: string): Promise<IssueWriteAnswer>',
-        description: 'Delete one issue; ahel.ai allows it for owners only.',
+        signature: '@Remote async deleteIssue(key: string): Promise<IssueWriteAnswer>',
+        description: 'Delete one issue; ahel.ai allows it for owners only. (`remove` is reserved by the Remote namespace service.)',
         parameters: [{ name: 'key', description: 'the issue.' }],
         returns: 'nothing.',
         throws: ['RemoteError `ahel-issues/forbidden` with ahel.ai\'s reason.'],

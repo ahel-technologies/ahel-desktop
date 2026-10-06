@@ -256,12 +256,12 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
 @Remote async update(key: string, patch: IssuePatch): Promise<IssueWriteAnswer>
 
 /**
- * Delete one issue; ahel.ai allows it for owners only.
+ * Delete one issue; ahel.ai allows it for owners only. (`remove` is reserved by the Remote namespace service.)
  * @param key - the issue.
  * @returns nothing.
  * @throws RemoteError `ahel-issues/forbidden` with ahel.ai's reason.
  */
-@Remote async remove(key: string): Promise<IssueWriteAnswer>
+@Remote async deleteIssue(key: string): Promise<IssueWriteAnswer>
 
 /**
  * The comments on one issue, oldest first.

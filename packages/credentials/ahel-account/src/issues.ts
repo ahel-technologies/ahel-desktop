@@ -141,13 +141,13 @@ export class AhelIssues extends TypertRemoteService {
   }
 
   /**
-   * Delete one issue; ahel.ai allows it for owners only.
+   * Delete one issue; ahel.ai allows it for owners only. (`remove` is reserved by the Remote namespace service.)
    * @param key - the issue.
    * @returns nothing.
    * @throws RemoteError `ahel-issues/forbidden` with ahel.ai's reason.
    */
   @Remote
-  async remove(key: string): Promise<IssueWriteAnswer> {
+  async deleteIssue(key: string): Promise<IssueWriteAnswer> {
     await this.call('DELETE', issuePath(key))
     return { issue: null }
   }

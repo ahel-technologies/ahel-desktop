@@ -20,7 +20,7 @@ export interface IssuesBackend {
   create(draft: IssueDraft): Promise<RemoteResult<IssueWriteAnswer>>
   get(key: string): Promise<RemoteResult<IssueWriteAnswer>>
   update(key: string, patch: IssuePatch): Promise<RemoteResult<IssueWriteAnswer>>
-  remove(key: string): Promise<RemoteResult<IssueWriteAnswer>>
+  deleteIssue(key: string): Promise<RemoteResult<IssueWriteAnswer>>
   comments(key: string): Promise<RemoteResult<readonly IssueComment[]>>
   comment(key: string, body: string, authorType: IssueActorType): Promise<RemoteResult<readonly IssueComment[]>>
   assignees(): Promise<RemoteResult<IssueAssignees>>
@@ -198,7 +198,7 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
     },
     update,
     remove: async (key) => {
-      const result = await backend.remove(key)
+      const result = await backend.deleteIssue(key)
       if (result.ok) set({ issues: value.issues.filter(row => row.key !== key), open: value.open === key ? null : value.open })
       return answer(result)
     },

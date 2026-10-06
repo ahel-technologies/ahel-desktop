@@ -40,7 +40,7 @@ export const PAGE: IssuePage = {
 export function backendOf(methods: Partial<IssuesBackend>): IssuesBackend {
   const unused = (): Promise<never> => Promise.reject(new Error('not used by this spec'))
   return {
-    list: unused, create: unused, get: unused, update: unused, remove: unused, comments: unused, comment: unused, assignees: unused,
+    list: unused, create: unused, get: unused, update: unused, deleteIssue: unused, comments: unused, comment: unused, assignees: unused,
     activity: unused, run: unused, projects: unused, createProject: unused, ...methods,
   }
 }

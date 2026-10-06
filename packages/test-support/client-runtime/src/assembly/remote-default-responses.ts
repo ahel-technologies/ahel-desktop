@@ -44,6 +44,8 @@ export const remoteDefaultResponses: RemoteTable = {
     'ahelCatalog/installed': ok({ signedIn: false, rows: [] }),
     // ui-notifications Inbox watcher: jsdom has no focus, so the background poll reads the Inbox once at apply.
     'ahelTeam/inbox': ok({ view: 'handoff_list', scope: 'received', received: [], sent: [], detail: '' }),
+    // ui-issues reads the account at apply; signed out, it reads no issues.
+    'ahelAccount/state': ok({ status: 'signed-out', profile: null, attempt: null, workspace: null, reachable: true }),
   },
   // Stream endpoints the roster opens later than boot; declared so a spec that forgets the script gets a stream miss.
   streams: [
