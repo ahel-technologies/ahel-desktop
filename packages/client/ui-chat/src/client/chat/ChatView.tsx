@@ -8,7 +8,7 @@ import type {
 import type { InboxState } from '@ahel/dsh-agent/types'
 import type { PendingSubmission } from '@ahel/dsh-api-session-controller/client'
 import {
-  Button, IconChevronDownOutlineRegular, MarkdownDelegateProvider, Modal,
+  BrandPulseDot, Button, IconChevronDownOutlineRegular, MarkdownDelegateProvider, Modal,
 } from '@ahel/dsh-client-ui-primitives'
 import type { ChatViewSlotProps, OpenFileOptions } from '../contract/slots.ts'
 import type { ChatSnapshot } from '../contract/snapshot.ts'
@@ -18,7 +18,8 @@ import { ChatGroupSeat } from './ChatGroupSeat.tsx'
 import { chatRenderKey } from './render-entry.ts'
 import { assertNever } from '@ahel/dsh-util-values'
 import { TurnNavigator } from './TurnNavigator.tsx'
-import { RunningStatus } from './RunningStatus.tsx'
+import { RunningStatus, runningStepLabel } from './RunningStatus.tsx'
+import { assistantStepReading } from '../contract/turn-metrics.ts'
 import { mergeTurnRailItems } from './turn-rail-items.ts'
 import { useChatScroll } from './use-chat-scroll.ts'
 import { fileMediaUrl, resolveWorkspacePath } from '@ahel/dsh-util-workspace-path'
@@ -28,6 +29,20 @@ import css from './ChatView.module.css'
 function openFailureMessage(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : String(error)
   return message === '' ? fallback : message
+}
+
+/**
+ * Sum provider-reported output tokens over one Turn's settled assistant steps.
+ * @param nodes - settled conversation nodes.
+ * @param turn - the running Turn number.
+ * @returns the output-token total; zero when no step reported usage yet.
+ */
+function turnOutputTokens(nodes: ChatSnapshot['legacy']['nodes'], turn: number): number {
+  let total = 0
+  for (const node of nodes) {
+    if (node.kind === 'assistant' && node.turn === turn) total += assistantStepReading(node).outputTokens ?? 0
+  }
+  return total
 }
 
 /**
@@ -119,6 +134,21 @@ export function ChatView({
       ? location.turn.status === 'open' ? location.turn.start?.time : undefined
       : undefined
   })
+  const runningTurn = useChatNode(latestTurnAnchor ?? '', (node) => {
+    const location = node?.location
+    return (location?.kind === 'turn' || location?.kind === 'step') && location.turn.status === 'open'
+      ? location.turn.turn : undefined
+  })
+  // Settled output tokens of the running Turn; the streaming step joins when it settles.
+  // The settled list keeps its identity across stream deltas, so the sum reruns only on a settle.
+  const settledNodes = useChat(s => s.legacy.nodes)
+  const runningTokens = useMemo(
+    () => runningTurn === undefined ? undefined : turnOutputTokens(settledNodes, runningTurn),
+    [settledNodes, runningTurn],
+  )
+  const lastGroupKey = useMemo(() => entries.findLast(entry => entry.kind === 'group')?.key ?? '', [entries])
+  const lastGroup = useChatGroup(lastGroupKey, group => group?.data)
+  const runningStep = runningStepLabel(lastGroup?.turn === runningTurn ? lastGroup : undefined, t)
   // Host-computed whole-log outline; the merge is view-layer only (the
   // conversation snapshot never carries projection values).
   const turnOutline = useProjection('turnOutline')
@@ -137,6 +167,10 @@ export function ChatView({
     },
   }), [cwd, t])
   const running = useSession(s => s.running)
+  const pulseMark = useMemo(
+    () => running ? renderSlot('conversation.brand.pulse', { size: 14 }, { fallback: <BrandPulseDot /> }) : null,
+    [running, renderSlot],
+  )
   const openState = useSession(s => s.openState)
   const openError = useSession(s => s.openError)
   const hasMore = useSession(s => s.hasMore)
@@ -277,7 +311,10 @@ export function ChatView({
                 t={t}
               />
             </MarkdownDelegateProvider>
-            {running && <RunningStatus startTime={runningStartTime} t={t} />}
+            {running && (
+              <RunningStatus startTime={runningStartTime} step={runningStep} tokens={runningTokens}
+                mark={pulseMark} t={t} />
+            )}
             {/* No pending placeholders: questions (ui-user-questions) and approvals
                 (ApprovalPanel) both take over the composer, so a flow card would
                 double-render the same wait. */}

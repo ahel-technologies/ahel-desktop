@@ -99,9 +99,9 @@ Clicking Load older anchors the first visible content item below that button in 
 
 Paging adds older content above the retained anchor without jumping to the new top. A capped group absorbs the displacement within its scroll range; the outer transcript absorbs the remainder, including when the group first reaches its cap. If the available scroll range is insufficient, compensation stops at the actual limit without adding bottom space. Later content growth keeps the same anchor until a reading gesture or explicit navigation releases it. Typing or clicking within the composer and non-scrolling transcript keys retain the anchor. If the reader scrolls while a page is loading, scrolling takes priority and its settled reading position becomes the new paging anchor.
 
-While the Session runs, Chat appends a Session-level indicator at the bottom of the current transcript, after pending submission or steering rows: a whale tail beside shimmering elapsed time. Before the current Turn start time arrives, the indicator shows status text without a duration. The clock updates in whole seconds, starts at one second, and uses hours from 60 minutes. When the Session stops running, the indicator disappears; the closed Turn process control shows the fixed duration, cancellation, or failure status. Lifecycle changes have a polite announcement; clock ticks do not. The whale is hidden from assistive technology and remains static under reduced motion.
+While the Session runs, Chat appends a Session-level indicator at the bottom of the current transcript, after pending submission or steering rows: a breathing brand mark beside one grey line of elapsed time, settled output tokens, and the current step, joined by middle dots. Before the current Turn start time arrives, the indicator shows the step without a duration. The clock updates in whole seconds and uses hours from 60 minutes. When the Session stops running, the indicator disappears; the closed Turn process control shows the fixed duration, cancellation, or failure status. Lifecycle changes have a polite announcement; clock ticks do not. The mark is hidden from assistive technology and holds still under reduced motion.
 
-The top duration/status control and trigger title use the group-title font size and follow the font-size setting. Completed duration digits use the code font with tabular numerals; running and completed minutes and seconds have no leading zero. The timed running label ends with a space and “···”; completion shows “Completed in”.
+The top duration/status control and trigger title use the group-title font size and follow the font-size setting. Completed duration digits use the code font with tabular numerals; running and completed minutes and seconds have no leading zero. Completion shows “Completed in”.
 
 Automatic collapse keeps the process open if hiding it would hide keyboard focus. Manual closing focuses the process control before hiding its members. Closing a whole Turn resets its groups and inner reasoning/tool disclosures; it does not reset unrelated renderer state. Browser find can reveal searchable hidden content.
 
@@ -140,7 +140,7 @@ The labels below describe recorded activity, not successful outcomes. For exampl
 
 | Category | Running label | Closed label |
 |---|---|---|
-| No live category / no counted categories | Analyzing the request | Analysis completed |
+| No live category / no counted categories | Thinking | Analysis completed |
 | `read` | Reading files | Read files |
 | `readImage` | Reading images | Read images |
 | `search` | Searching code | Searched code |

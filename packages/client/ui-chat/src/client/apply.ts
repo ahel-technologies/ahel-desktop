@@ -185,6 +185,7 @@ export function apply(ctx: Context): void {
       children: {
         'conversation.chat.node': { kind: 'keyed', scope: 'session', inject: CHAT_NODE_INJECT },
         'conversation.message.images': { kind: 'single', scope: 'session' },
+        'conversation.brand.pulse': { kind: 'single', scope: 'root' },
       },
       store: chatStore,
       inject: (sessionId: SessionId): ChatViewInjected => {

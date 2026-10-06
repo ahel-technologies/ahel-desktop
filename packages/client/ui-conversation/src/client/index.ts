@@ -63,7 +63,7 @@ export type {
   ComposerFileAttachment, ComposerImageAttachment, DraftFileUpload, DraftFileUploads,
   ComposerBarInjected, ComposerBarOwnerProps, ComposerBarProps, ComposerChainProps,
   ConversationHeaderActionOwnerProps, ConversationHeaderCornerOwnerProps, ConversationHeaderLineageOwnerProps,
-  ConversationContentInputProps, ConversationContentProps,
+  BrandPulseMarkOwnerProps, ConversationContentInputProps, ConversationContentProps,
   ConversationInjected, ConversationSessionHeaderInjected, ConversationSessionHeaderSlotProps,
   ConversationSessionInjected, ConversationSessionSlotProps, ConversationSlotProps, ConversationViewsProps,
   ConversationWidthControlsInputProps, ConversationWidthControlsProps,

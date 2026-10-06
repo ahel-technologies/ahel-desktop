@@ -1,0 +1,38 @@
+/* The tile box; the clip is wider than the tile and spills past it centered. */
+.mark {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tile {
+  display: block;
+}
+
+.clip {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* The clip's alpha carries a dark fringe at the glow edge that reads as a grey
+   halo on light grounds, so only the dark theme plays it. The owner's CSS
+   breathing stops while the clip carries the motion. */
+@media (prefers-reduced-motion: no-preference) {
+  body[data-ds-dark-theme] .clip {
+    display: block;
+  }
+
+  body[data-ds-dark-theme] .clip + .tile {
+    visibility: hidden;
+  }
+
+  body[data-ds-dark-theme] [data-brand-pulse]:has(.clip) {
+    animation: none;
+  }
+}

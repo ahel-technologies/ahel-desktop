@@ -1,0 +1,47 @@
+/* A fixed square box; the mark scales inside it so the row never reflows. */
+.root {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--brand-pulse-size, 14px);
+  height: var(--brand-pulse-size, 14px);
+  transform-origin: 50% 50%;
+}
+
+/* Slot anchors are display: contents, so the mark may sit a level deeper.
+   Raster and video marks fill the box; svg marks carry their own size. */
+.root :is(img, video) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.dot {
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  background: var(--dsw-alias-label-tertiary);
+}
+
+/* Breathing: a slight shrink and fade, back to rest, once per 1.2s. */
+@keyframes brand-pulse-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(0.84);
+    opacity: 0.62;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .root[data-brand-pulse='active'] {
+    animation: brand-pulse-breathe 1.2s ease-in-out infinite;
+  }
+}

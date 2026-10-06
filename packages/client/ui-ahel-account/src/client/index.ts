@@ -2,7 +2,7 @@
  * Browser face of the Ahel account: mounts the Host's `ahelAccount` Remote
  * namespace, keeps one live account view from its `watch` stream, and fills
  * the sidebar footer (account menu, offline banner), the blank-session
- * greeting's first name, the Settings > Models
+ * greeting's first name, the running-status pulse mark, the Settings > Models
  * footer (the Ahel row beside bring-your-own-key providers), the starter
  * prompts below the blank-session composer, the rows for Ahel model
  * refusals in the transcript, the Discover panel over the Host's
@@ -24,6 +24,7 @@ import { AhelQuotaNotice, AhelTurnError, claimAhelFailure } from './AhelNotices.
 import { ModelsRow } from './ModelsRow.tsx'
 import { StarterPrompts } from './StarterPrompts.tsx'
 import { HeroGreeting } from './HeroGreeting.tsx'
+import { BrandPulseMark } from './BrandPulseMark.tsx'
 import { registerCatalog } from './catalog/apply.ts'
 import { registerTeam } from './team/apply.ts'
 import { registerTeamSummary } from './team/summary.ts'
@@ -155,6 +156,9 @@ function register(ctx: Context): void {
   ctx.slots.inject('conversation.hero.greeting', () => ctx.slots.register({
     name: 'conversation.hero.greeting', inject: () => injected,
   }, HeroGreeting))
+  ctx.slots.inject('conversation.brand.pulse', () => ctx.slots.register({
+    name: 'conversation.brand.pulse',
+  }, BrandPulseMark))
   ctx.slots.inject('conversation.chat.turnError', () => ctx.slots.register({
     name: 'conversation.chat.turnError', locale: NS, inject: () => injected, select: claimAhelFailure,
   }, AhelTurnError))

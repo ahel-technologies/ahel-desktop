@@ -122,19 +122,6 @@ describe('product icon set', () => {
   })
 })
 
-describe('FishLogo', () => {
-  it('renders the fish path in currentColor at the native ratio', () => {
-    const { container } = render(<primitives.FishLogo />)
-    const svg = container.querySelector('svg')!
-    expect(svg.getAttribute('width')).toBe('24')
-    expect(Number(svg.getAttribute('height'))).toBeCloseTo(17.66, 1)
-    expect(svg.getAttribute('viewBox')).toBe('0 0 23.16 17.04')
-    expect(container.querySelectorAll('path')).toHaveLength(1)
-    expect(container.innerHTML).toContain('currentColor')
-    expect(container.innerHTML).not.toContain('M0 0L23.16')
-  })
-})
-
 describe('AhelTile', () => {
   it('renders the logo tile in its fixed red and cream inks at the requested edge', () => {
     const view = render(<primitives.AhelTile size={34} />)

@@ -270,7 +270,7 @@ export interface ChatViewInjected {
 /** Full Chat view props. */
 export type ChatViewSlotProps =
   PropsRuntime<'conversation.view'>
-  & PropsRenderSlots<'conversation.chat.node' | 'conversation.message.images'>
+  & PropsRenderSlots<'conversation.chat.node' | 'conversation.message.images' | 'conversation.brand.pulse'>
   & PropsStore<ChatStore>
   & InjectFace<ChatViewInjected>
   & PropsLocale<'chat'>

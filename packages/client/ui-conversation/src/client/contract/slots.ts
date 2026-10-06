@@ -189,6 +189,12 @@ declare module '@ahel/dsh-client-ui-slots' {
     'conversation.hero.workspace': { kind: 'single'; scope: 'root'; owner: EmptyWorkspaceOwnerProps }
     /** Brand mark shown before the blank-session headline. */
     'conversation.hero.brand.mark': { kind: 'single'; scope: 'root'; owner: HeroBrandMarkOwnerProps }
+    /**
+     * Brand mark inside the activity pulse shown while a Session runs. The owner
+     * animates the box; the occupant draws the mark at the requested edge.
+     * Without an occupant the pulse shows a neutral dot.
+     */
+    'conversation.brand.pulse': { kind: 'single'; scope: 'root'; owner: BrandPulseMarkOwnerProps }
     /** Names the signed-in person in the blank-session greeting headline. */
     'conversation.hero.greeting': { kind: 'single'; scope: 'root'; owner: HeroGreetingOwnerProps }
     /** Agent-preset control staged for a New Session. */
@@ -465,6 +471,12 @@ export interface HeroBrandMarkOwnerProps {
   size: number
   /** Host class preserving the surrounding mark geometry. */
   className?: string | undefined
+}
+
+/** Presentation props supplied to the activity-pulse brand mark. */
+export interface BrandPulseMarkOwnerProps {
+  /** Requested square edge in pixels. */
+  size: number
 }
 
 /** Full props of the resident optional-Session Conversation shell. */

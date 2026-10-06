@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package gives the client the Ahel tile and the lowercase "ahel" wordmark in the sidebar, and the tile beside the blank-session headline. Every build that mounts it shows the Ahel brand; the build profile does not gate it. Without it, the sidebar falls back to the shell's tile and local-build label, and the hero keeps its animated fallback mark. It has no runtime state and does not affect model requests.
+This package gives the client the Ahel tile and the lowercase "ahel" wordmark in the sidebar, and the tile beside the blank-session headline. Every build that mounts it shows the Ahel brand; the build profile does not gate it. Without it, the sidebar falls back to the shell's tile and local-build label, and the hero shows a neutral dot. It has no runtime state and does not affect model requests.
 
 ## Table of Contents
 
@@ -78,7 +78,7 @@ These limits define how brand presentation is supplied. They are current package
 
 - **One occupant set** — alternative presentation belongs in another Cordis package occupying the same slots.
 - **The browser title is independent** — `DSH_CLIENT_TITLE` selects title text at build time rather than through a UI slot.
-- **The hero mark is static** — the tile does not animate on hover the way the fallback mark does.
+- **The running-status mark lives elsewhere** — `@ahel/dsh-client-ui-ahel-account` fills `conversation.brand.pulse` with the breathing tile clip; the hero tile only breathes on hover through the conversation package's pulse.
 
 <a id="dev-note"></a>
 ### Dev Note
