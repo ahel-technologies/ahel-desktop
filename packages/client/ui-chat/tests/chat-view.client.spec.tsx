@@ -918,6 +918,28 @@ describe('ChatView', () => {
     expect(top).toBe(300)
   })
 
+  it('places an empty card dock right after each process group, outside its collapsible body', () => {
+    const snapshot = chatSnapshotFixture({ nodes: [user(1, 'inside')] })
+    const h = makeHarness({}, {}, snapshot)
+    const key = 'docked-process' as GroupKey
+    const groups = new ConversationGroupStore<ProcessGroupData>()
+    const group: GroupSnapshot<ProcessGroupData> = {
+      key, members: [{ kind: 'node', key: snapshot.order[0] as NodeKey }],
+      data: { turn: 1, closed: true, summary: { counts: [], running: undefined, runningDetail: '' } },
+    }
+    groups.prepareAndInstall({
+      entries: [{ kind: 'group', key }],
+      groups: { kind: 'replace', snapshots: [group] },
+    }, key => snapshot.nodes.get(key))
+    h.setGrouped(groups)
+    const view = render(<h.ChatView {...h.props} />)
+    const root = view.container.querySelector<HTMLElement>(`[data-chat-group-key="${key}"]`)!
+    const dock = root.nextElementSibling
+    expect(dock?.hasAttribute('data-step-process-cards')).toBe(true)
+    expect(dock?.getAttribute('data-chat-turn')).toBe('1')
+    expect(dock?.childElementCount).toBe(0)
+  })
+
   it('does not recalculate settled group titles when work-details mode changes', () => {
     const snapshot = chatSnapshotFixture({ nodes: Array.from({ length: 41 }, (_, index) => user(index + 1, `member ${index}`)) })
     const h = makeHarness({}, {}, snapshot)

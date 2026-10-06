@@ -12,6 +12,7 @@ export const zh = {
   tooLarge: '结果过大，无法显示卡片，已改为显示文本结果',
   navigated: '卡片已离开其页面，已停止与其通信',
   structured: '结构化结果',
+  showCard: '显示卡片',
 }
 
 /** Dictionary keys. */
@@ -25,11 +26,12 @@ export const en: Record<McpAppKey, string> = {
   tooLarge: 'The result is too large for a card, so the text result is shown instead.',
   navigated: 'The card left its page, so the host stopped talking to it.',
   structured: 'Structured result',
+  showCard: 'Show card',
 }
 
 declare module '@ahel/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
-    /** MCP Apps card frame, loading, and fallback copy. */
+    /** MCP Apps card frame, loading, fallback, and show-card copy. */
     'mcp-app': McpAppKey
   }
 }

@@ -132,6 +132,16 @@
 .content > :not([hidden]):not(:empty) ~ :not([hidden]):not(:empty) {
   margin-top: var(--dsh-chat-flow-gap, 6px);
 }
+.cards {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cards:empty {
+  display: none;
+}
+
 .expandedBody {
   max-height: none;
   overflow: visible;

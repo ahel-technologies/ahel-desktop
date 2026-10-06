@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package renders MCP Apps cards (`io.modelcontextprotocol/ui`, protocol 2026-01-26). When a settled MCP tool call carries an `mcpApp` record in its persisted result metadata, the card reads the tool's `ui://` resource from the same server, mounts it in a sandboxed frame below the call's row, and runs the host side of the MCP Apps JSON-RPC bridge: the `ui/initialize` handshake, tool input and result notifications, host-proxied `tools/call` and `resources/read`, `ui/open-link`, size changes, and theme updates. A card that cannot load shows the call's text and structured result instead.
+This package renders MCP Apps cards (`io.modelcontextprotocol/ui`, protocol 2026-01-26). When a settled MCP tool call carries an `mcpApp` record in its persisted result metadata, the card reads the tool's `ui://` resource from the same server, mounts it in a sandboxed frame that stays open beside the call's collapsible row, and runs the host side of the MCP Apps JSON-RPC bridge: the `ui/initialize` handshake, tool input and result notifications, host-proxied `tools/call` and `resources/read`, `ui/open-link`, size changes, and theme updates. A card that cannot load shows the call's text and structured result instead.
 
 ## Table of Contents
 
@@ -36,7 +36,7 @@ Mount one row in a Web or Desktop composition that also mounts `@ahel/dsh-mcp-cl
 
 | Field | Default | Meaning |
 |---|---|---|
-| `maxHeight` | `640` | Largest card height in CSS pixels; taller app content scrolls inside the card |
+| `maxHeight` | `640` | Largest card height in CSS pixels, and never above 70% of the window height; taller app content scrolls inside the card. A confirm card waiting for the user is never capped |
 
 A server declares a card by setting `_meta.ui.resourceUri` to a `ui://` URI on a tool in `tools/list` and serving that URI with MIME type `text/html;profile=mcp-app`. `@ahel/dsh-mcp-client` persists the record; this package needs no per-server configuration.
 
@@ -54,6 +54,8 @@ The Host plugin provides `ctx.mcpApps` and the Remote namespace `mcpApps` with t
 
 The Client registers the `tool.call.app` occupant declared by `@ahel/dsh-client-ui-tool`. The card validates the record, reads the resource, and prepends the MCP Apps content security policy, built from the resource's declared domains, as the first element of the document head. The frame uses `sandbox="allow-scripts allow-forms"` without `allow-same-origin`, so the app runs in an opaque origin with no access to the host page, its storage, or its cookies, and cannot open popups or navigate the top window. The page's message listener accepts only messages whose source is the card's own frame window and whose origin is `null`. A second frame `load` event means the frame navigated; the bridge then stops and the card shows its fallback.
 
+A call row inside a Chat process group (`[data-step-process]`) can be collapsed, height-capped, or folded with the whole Turn process. The group therefore renders an always-visible sibling dock (`[data-step-process-cards]`); the card portals itself into that dock, open by default, and leaves a "Show card" link in the row that scrolls to it and focuses it. Outside a group the card stays under the row. While the call's live result `_meta` holds an `ai.ahel/pressToken` and no card action has succeeded yet, the card waits for a decision: it shows an Ahel-red left rule and grows to its reported height without a cap.
+
 The bridge holds tool input and result notifications until the app sends `ui/notifications/initialized`, then sends them in that order. Host context carries the theme's color scheme, inline display mode, the height cap, locale, time zone, platform, and style variables mapped from the current design tokens; a theme change sends only the changed fields.
 
 | File | Role |
@@ -64,7 +66,7 @@ The bridge holds tool input and result notifications until the app sends `ui/not
 | [`src/client/bridge.ts`](src/client/bridge.ts) | Host end of the MCP Apps JSON-RPC bridge |
 | [`src/client/document.ts`](src/client/document.ts) | Content security policy and frame sandbox |
 | [`src/client/record.ts`](src/client/record.ts) | Card record and resource validation |
-| [`src/client/McpAppCard.tsx`](src/client/McpAppCard.tsx) | Card component: loading, frame, fallback |
+| [`src/client/McpAppCard.tsx`](src/client/McpAppCard.tsx) | Card component: placement, loading, frame, fallback |
 | [`src/client/register.ts`](src/client/register.ts) | Slot registration and injected Session-bound server access |
 
 </details>

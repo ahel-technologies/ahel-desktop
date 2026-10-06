@@ -127,7 +127,7 @@ const ProcessGroupHeader = memo(function ProcessGroupHeader({ groupKey, useChatG
   )
 })
 
-/** Render a process group with local disclosure and the existing outer-Turn visibility. */
+/** Render a process group with local disclosure, the existing outer-Turn visibility, and its always-visible card dock. */
 export const ChatGroupSeat = memo(function ChatGroupSeat({ groupKey, useChatGroup, ...props }: ChatGroupSeatProps) {
   const members = useChatGroup(groupKey, group => group?.members)
   const turn = useChatGroup(groupKey, group => group?.data.turn)
@@ -171,21 +171,26 @@ export const ChatGroupSeat = memo(function ChatGroupSeat({ groupKey, useChatGrou
   const classes = [css.body, !grouped ? css.expandedBody : '',
     grouped && edges.canScrollUp ? css.fadeTop : '', grouped && edges.canScrollDown ? css.fadeBottom : '']
   return (
-    <div ref={rootRef} className={css.root} data-chat-group-key={groupKey}
-      data-chat-flow-key={groupKey} data-chat-anchor-key={`group:${groupKey}`} data-chat-turn={turn}
-      data-chat-paging-anchor={grouped && !open || undefined}
-      data-step-process data-group-expanded-mode={!grouped || undefined}>
-      <div hidden={!grouped}>
-        <ProcessGroupHeader groupKey={groupKey} useChatGroup={useChatGroup}
-          usePresentation={props.usePresentation} t={props.t} open={open} bodyId={bodyId} toggle={toggle} />
-      </div>
-      <div ref={bodyRef} id={bodyId} className={classes.join(' ')} data-step-process-body
-        data-scroll-up={edges.canScrollUp || undefined} data-scroll-down={edges.canScrollDown || undefined}
-        {...events}>
-        <div ref={contentRef} className={css.content} data-step-process-content data-chat-flow="">
-          <GroupMembers {...props} members={members} />
+    <>
+      <div ref={rootRef} className={css.root} data-chat-group-key={groupKey}
+        data-chat-flow-key={groupKey} data-chat-anchor-key={`group:${groupKey}`} data-chat-turn={turn}
+        data-chat-paging-anchor={grouped && !open || undefined}
+        data-step-process data-group-expanded-mode={!grouped || undefined}>
+        <div hidden={!grouped}>
+          <ProcessGroupHeader groupKey={groupKey} useChatGroup={useChatGroup}
+            usePresentation={props.usePresentation} t={props.t} open={open} bodyId={bodyId} toggle={toggle} />
+        </div>
+        <div ref={bodyRef} id={bodyId} className={classes.join(' ')} data-step-process-body
+          data-scroll-up={edges.canScrollUp || undefined} data-scroll-down={edges.canScrollDown || undefined}
+          {...events}>
+          <div ref={contentRef} className={css.content} data-step-process-content data-chat-flow="">
+            <GroupMembers {...props} members={members} />
+          </div>
         </div>
       </div>
-    </div>
+      {/* Card dock: MCP Apps cards of member calls portal here, so they stay
+          open and whole while the rows above collapse, cap, or fold. */}
+      <div className={css.cards} data-step-process-cards="" data-chat-turn={turn} />
+    </>
   )
 })

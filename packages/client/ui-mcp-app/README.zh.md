@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-本包渲染 MCP Apps 卡片（`io.modelcontextprotocol/ui`，协议 2026-01-26）。当一个已结束的 MCP 工具调用在持久化结果元数据中带有 `mcpApp` 记录时，卡片会从同一服务器读取该工具的 `ui://` 资源，把它挂载到该调用行下方的沙箱框架中，并运行 MCP Apps JSON-RPC 桥接的宿主端：`ui/initialize` 握手、工具输入与结果通知、由宿主代理的 `tools/call` 和 `resources/read`、`ui/open-link`、尺寸变化以及主题更新。无法加载的卡片改为显示该调用的文本结果和结构化结果。
+本包渲染 MCP Apps 卡片（`io.modelcontextprotocol/ui`，协议 2026-01-26）。当一个已结束的 MCP 工具调用在持久化结果元数据中带有 `mcpApp` 记录时，卡片会从同一服务器读取该工具的 `ui://` 资源，把它挂载到一个在该调用的可折叠行旁始终展开的沙箱框架中，并运行 MCP Apps JSON-RPC 桥接的宿主端：`ui/initialize` 握手、工具输入与结果通知、由宿主代理的 `tools/call` 和 `resources/read`、`ui/open-link`、尺寸变化以及主题更新。无法加载的卡片改为显示该调用的文本结果和结构化结果。
 
 ## 目录
 
@@ -36,7 +36,7 @@ kind: "package-reference"
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `maxHeight` | `640` | 卡片最大高度（CSS 像素）；更高的应用内容在卡片内部滚动 |
+| `maxHeight` | `640` | 卡片最大高度（CSS 像素），且不超过窗口高度的 70%；更高的应用内容在卡片内部滚动。等待用户决定的确认卡片不受此上限限制 |
 
 服务器在 `tools/list` 中把工具的 `_meta.ui.resourceUri` 设为一个 `ui://` URI，并以 MIME 类型 `text/html;profile=mcp-app` 提供该 URI，即声明了一张卡片。`@ahel/dsh-mcp-client` 负责持久化记录；本包不需要按服务器配置。
 
@@ -54,6 +54,8 @@ Host 插件提供 `ctx.mcpApps` 以及包含两个方法的 Remote 命名空间 
 
 Client 注册由 `@ahel/dsh-client-ui-tool` 声明的 `tool.call.app` 占位组件。卡片校验记录、读取资源，并把依据资源声明的域构建的 MCP Apps 内容安全策略作为文档 head 的第一个元素插入。框架使用 `sandbox="allow-scripts allow-forms"` 且不带 `allow-same-origin`，因此应用运行在不透明源中，无法访问宿主页面、其存储或 Cookie，也无法打开弹窗或导航顶层窗口。页面的消息监听器只接受来源为该卡片自身框架窗口且源为 `null` 的消息。框架第二次触发 `load` 事件表示它发生了导航；此时桥接停止，卡片显示回退内容。
 
+Chat 过程分组（`[data-step-process]`）内的调用行可能被折叠、限制高度，或随整个 Turn 过程一起收起。因此分组会渲染一个始终可见的同级停靠区（`[data-step-process-cards]`）；卡片通过 portal 把自身放入该停靠区并默认展开，同时在调用行中留下“显示卡片”链接，点击后滚动到卡片并聚焦。分组之外，卡片仍位于调用行下方。当调用的实时结果 `_meta` 带有 `ai.ahel/pressToken` 且尚无卡片操作成功时，卡片处于等待决定状态：显示 Ahel 红色左边线，并按其报告的高度增长、不设上限。
+
 桥接会暂存工具输入和结果通知，直到应用发送 `ui/notifications/initialized`，再按该顺序发送。宿主上下文包含主题的配色方案、内联显示模式、高度上限、语言区域、时区、平台，以及从当前设计令牌映射的样式变量；主题变化时只发送变化的字段。
 
 | 文件 | 作用 |
@@ -64,7 +66,7 @@ Client 注册由 `@ahel/dsh-client-ui-tool` 声明的 `tool.call.app` 占位组�
 | [`src/client/bridge.ts`](src/client/bridge.ts) | MCP Apps JSON-RPC 桥接的宿主端 |
 | [`src/client/document.ts`](src/client/document.ts) | 内容安全策略与框架沙箱 |
 | [`src/client/record.ts`](src/client/record.ts) | 卡片记录与资源校验 |
-| [`src/client/McpAppCard.tsx`](src/client/McpAppCard.tsx) | 卡片组件：加载、框架、回退 |
+| [`src/client/McpAppCard.tsx`](src/client/McpAppCard.tsx) | 卡片组件：放置、加载、框架、回退 |
 | [`src/client/register.ts`](src/client/register.ts) | 插槽注册以及注入的、绑定 Session 的服务器访问 |
 
 </details>

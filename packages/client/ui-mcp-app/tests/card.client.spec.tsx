@@ -3,7 +3,7 @@
 /** MCP Apps card: sandboxed frame, CSP, bridge wiring through the frame window, and the text fallback. */
 
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
-import { act, cleanup, render, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { McpAppCard } from '../src/client/McpAppCard.tsx'
 import { en } from '../src/client/locales.ts'
 import type { McpAppCallResult } from '../src/types.ts'
@@ -105,5 +105,49 @@ describe('McpAppCard', () => {
     const view = render(<McpAppCard {...cardProps(cardNode(truncated), { readResource })} />)
     expect(readResource).not.toHaveBeenCalled()
     expect(view.container.textContent).toContain(en.tooLarge)
+  })
+})
+
+describe('McpAppCard in a process group', () => {
+  it('opens in the group card dock, leaves a Show card link in the row, and never clips a waiting confirm card', async () => {
+    const callTool = vi.fn(async (): Promise<McpAppCallResult> => ({ content: [{ type: 'text', text: 'done' }] }))
+    callTool.mockResolvedValueOnce({ content: [{ type: 'text', text: 'expired' }], isError: true })
+    const props = cardProps(cardNode(RECORD), { resultMeta: liveMeta, callTool, maxHeight: 300 })
+    const view = render(
+      <div>
+        <div data-step-process="">
+          <div data-step-process-body="" hidden><McpAppCard {...props} /></div>
+        </div>
+        <div data-step-process-cards="" />
+      </div>,
+    )
+    const dock = view.container.querySelector<HTMLElement>('[data-step-process-cards]')!
+    const frame = await waitFor(() => {
+      const element = dock.querySelector('iframe')
+      if (element === null) throw new Error('card frame not docked yet')
+      return element
+    })
+    const row = view.container.querySelector('[data-step-process-body]')!
+    expect(row.querySelector('iframe')).toBeNull()
+    const show = row.querySelector<HTMLButtonElement>('[data-mcp-app-show]')!
+    expect(show.textContent).toBe(en.showCard)
+    const card = dock.querySelector<HTMLElement>('[data-mcp-app]')!
+    const scrollIntoView = vi.fn()
+    card.scrollIntoView = scrollIntoView
+    fireEvent.click(show)
+    expect(scrollIntoView).toHaveBeenCalledOnce()
+    expect(document.activeElement).toBe(card)
+    expect(card.hasAttribute('data-mcp-app-awaiting')).toBe(true)
+    fromFrame(frame, { jsonrpc: '2.0', method: 'ui/notifications/size-changed', params: { height: 900 } })
+    expect(frame.style.height).toBe('900px')
+    const posted = vi.fn()
+    frame.contentWindow!.postMessage = posted
+    const press = { name: 'run_action', arguments: { press_token: 'token-a1' } }
+    fromFrame(frame, { jsonrpc: '2.0', id: 7, method: 'tools/call', params: press })
+    await waitFor(() => { expect(postedTo(posted).some(message => message.id === 7)).toBe(true) })
+    expect(card.hasAttribute('data-mcp-app-awaiting')).toBe(true)
+    fromFrame(frame, { jsonrpc: '2.0', id: 8, method: 'tools/call', params: press })
+    await waitFor(() => { expect(card.hasAttribute('data-mcp-app-awaiting')).toBe(false) })
+    expect(frame.style.height).toBe('300px')
   })
 })

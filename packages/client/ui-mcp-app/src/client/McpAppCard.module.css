@@ -13,6 +13,8 @@
 .frame {
   display: block;
   width: 100%;
+  /* Taller app content scrolls inside the frame. */
+  max-height: 70vh;
   border: 0;
   background: transparent;
   color-scheme: normal;
@@ -59,4 +61,39 @@
   margin: 6px 0 0;
   font-family: var(--ds-font-family-code, monospace);
   white-space: pre-wrap;
+}
+
+/* A confirm card waiting for the user: a subtle Ahel-red rule, never clipped. */
+.awaiting {
+  border-left: 3px solid var(--ahel-red, #e42238);
+}
+
+.awaiting .frame {
+  max-height: none;
+}
+
+.card:focus,
+.frameless:focus,
+.loading:focus,
+.fallback:focus {
+  outline: none;
+}
+
+/* Left in the collapsed call row when the card moved to the group's dock. */
+.showCard {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: var(--dsh-content-font-size-secondary, 13px);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.showCard:hover,
+.showCard:focus-visible {
+  color: var(--dsw-alias-label-primary);
 }

@@ -1,5 +1,6 @@
-/** Interactive MCP Apps card rendered under a settled MCP tool call. */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+/** Interactive MCP Apps card rendered under a settled MCP tool call or in its process group's card dock. */
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { StateDot } from '@ahel/dsh-client-ui-primitives'
 import type { JsonValue } from '@ahel/dsh-util-values'
 import type { McpAppJsonObject } from '../types.ts'
@@ -14,6 +15,21 @@ const INITIAL_FRAME_HEIGHT = 120
 
 /** Longest wait for the app's teardown answer; unmount does not wait. */
 const TEARDOWN_TIMEOUT_MS = 500
+
+/** Result `_meta` key of an Ahel confirm card's one-use press token. */
+const PRESS_TOKEN_META_KEY = 'ai.ahel/pressToken'
+
+/**
+ * Find the card dock of the process group that contains `anchor`. A process
+ * group (`[data-step-process]`) may collapse or fold its rows, so it offers
+ * an always-visible sibling (`[data-step-process-cards]`) for cards.
+ * @param anchor - an element rendered where the call's row places the card.
+ * @returns the dock, or `null` outside a process group that offers one.
+ */
+export function processCardDock(anchor: Element | null): HTMLElement | null {
+  const dock = anchor?.closest('[data-step-process]')?.nextElementSibling
+  return dock instanceof HTMLElement && dock.hasAttribute('data-step-process-cards') ? dock : null
+}
 
 type CardState =
   | { readonly kind: 'loading' }
@@ -79,15 +95,43 @@ function styleVariables(): { [name: string]: string } {
 export function McpAppCard(props: McpAppCardProps) {
   const record = useMemo(() => readAppRecord(props.block.meta), [props.block.meta])
   if (record === null) return null
-  return <McpAppFrame {...props} record={record} />
+  return <McpAppPlacement {...props} record={record} />
+}
+
+/**
+ * Place the card: in its process group's dock, open and outside the collapsed
+ * call rows, with a "Show card" link left in the row; otherwise under the row.
+ */
+function McpAppPlacement(props: McpAppCardProps & { record: McpAppRecord }) {
+  const anchorRef = useRef<HTMLSpanElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  // `undefined` until the first layout pass has looked for a dock.
+  const [dock, setDock] = useState<HTMLElement | null | undefined>(undefined)
+  useLayoutEffect(() => { setDock(processCardDock(anchorRef.current)) }, [])
+  if (dock === undefined) return <span ref={anchorRef} hidden />
+  if (dock === null) return <McpAppFrame {...props} cardRef={cardRef} />
+  const show = (): void => {
+    const card = cardRef.current
+    card?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    card?.focus({ preventScroll: true })
+  }
+  return (
+    <>
+      <button type="button" className={css.showCard} data-mcp-app-show onClick={show}>{props.t('showCard')}</button>
+      {createPortal(<McpAppFrame {...props} cardRef={cardRef} />, dock)}
+    </>
+  )
 }
 
 function McpAppFrame({
-  block, toolName, record, readResource, resultMeta, callTool, updateModelContext, openLink, maxHeight, platform, useColorScheme, t,
-}: McpAppCardProps & { record: McpAppRecord }) {
+  block, toolName, record, readResource, resultMeta, callTool, updateModelContext, openLink, maxHeight, platform,
+  useColorScheme, t, cardRef,
+}: McpAppCardProps & { record: McpAppRecord; cardRef: RefObject<HTMLDivElement> }) {
   const colorScheme = useColorScheme(scheme => scheme)
   const [state, setState] = useState<CardState>(record.truncated ? { kind: 'failed', reason: 'tooLarge' } : { kind: 'loading' })
   const [height, setHeight] = useState(INITIAL_FRAME_HEIGHT)
+  // A card action that succeeded settles the decision a confirm card waits for.
+  const [decided, setDecided] = useState(false)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const bridgeRef = useRef<McpAppBridge | null>(null)
   const { server, resourceUri, truncated } = record
@@ -141,7 +185,11 @@ function McpAppFrame({
       hostInfo: { name: 'ahel-desktop', version: '1' },
       hostContext: hostContextRef.current,
       handlers: {
-        callTool: (name, args, signal) => callTool(server, name, args, signal),
+        callTool: async (name, args, signal) => {
+          const outcome = await callTool(server, name, args, signal)
+          if (outcome.isError !== true) setDecided(true)
+          return outcome
+        },
         readResource: (uri, signal) => readResource(server, uri, signal),
         openLink,
         hasUserActivation: () => navigator.userActivation.isActive,
@@ -191,7 +239,7 @@ function McpAppFrame({
   if (state.kind === 'failed') {
     const text = resultText(block.content)
     return (
-      <div className={css.fallback} data-mcp-app-fallback={state.reason}>
+      <div ref={cardRef} tabIndex={-1} className={css.fallback} data-mcp-app-fallback={state.reason}>
         <p className={css.notice}>{t(state.reason)}</p>
         {text === '' ? null : <div className={css.fallbackText}>{text}</div>}
         {record.structuredContent === undefined ? null : (
@@ -205,13 +253,18 @@ function McpAppFrame({
   }
   if (state.kind === 'loading') {
     return (
-      <div className={css.loading} role="status" aria-label={t('loading')} data-mcp-app-loading>
+      <div ref={cardRef} tabIndex={-1} className={css.loading} role="status" aria-label={t('loading')} data-mcp-app-loading>
         <StateDot state="ongoing" size={14} />
       </div>
     )
   }
+  // A confirm card holds a one-use press token until the user acts on it; it
+  // is never clipped, so its controls always show whole.
+  const awaiting = !decided && typeof state.resultMeta?.[PRESS_TOKEN_META_KEY] === 'string'
+  const classes = [state.prefersBorder === false ? css.frameless : css.card, awaiting ? css.awaiting : '']
   return (
-    <div className={state.prefersBorder === false ? css.frameless : css.card} data-mcp-app={record.resourceUri}>
+    <div ref={cardRef} tabIndex={-1} className={classes.join(' ')} data-mcp-app={record.resourceUri}
+      data-mcp-app-awaiting={awaiting || undefined}>
       <iframe
         ref={frameRef}
         className={css.frame}
@@ -219,7 +272,7 @@ function McpAppFrame({
         sandbox={APP_FRAME_SANDBOX}
         srcDoc={state.srcDoc}
         referrerPolicy="no-referrer"
-        style={{ height: Math.min(height, maxHeight) }}
+        style={{ height: awaiting ? height : Math.min(height, maxHeight) }}
       />
     </div>
   )
