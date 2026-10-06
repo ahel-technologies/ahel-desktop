@@ -85,7 +85,7 @@ describe('workspace shortcut ownership', () => {
     expect(b.registry.catalog.getSnapshot().every(row => row.keys.length > 0)).toBe(true)
     const web = await bench('web')
     expect(web.registry.catalog.getSnapshot().map(row => row.aria)).toEqual([
-      'Alt+Meta+N', 'Alt+Meta+K', 'Alt+Meta+O', 'Alt+Meta+G', 'Shift+Meta+F', 'Alt+Meta+A',
+      'Alt+Meta+N', 'Alt+Meta+F', 'Alt+Meta+O', 'Alt+Meta+G', 'Shift+Meta+F', 'Alt+Meta+A',
     ])
     await b.fiber.dispose()
     expect(b.registry.catalog.getSnapshot()).toEqual([])
@@ -134,7 +134,7 @@ describe('workspace shortcut ownership', () => {
     expect(b.registry.dispatch(key('KeyN'), { ...context, modal: 'settings' }, consume).status).toBe('handled')
     expect(b.registry.dispatch(key('KeyN'), { ...context, region: 'terminal' }, consume).status).toBe('handled')
     expect(b.navigation.startSession).toHaveBeenCalledTimes(3)
-    b.registry.dispatch(key('KeyK'), context, consume)
+    b.registry.dispatch(key('KeyF', { shift: true }), context, consume)
     expect(b.controls.state.getSnapshot().searchRequest).toBe(1)
     b.registry.dispatch(key('KeyO'), context, consume)
     expect(b.controls.state.getSnapshot().addRequested).toBe(true)

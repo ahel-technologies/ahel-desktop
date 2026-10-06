@@ -98,6 +98,7 @@
     { "path": "./packages/client/ui-ahel-account" },
     { "path": "./packages/client/ui-local-cli" },
     { "path": "./packages/client/ui-notifications" },
+    { "path": "./packages/client/ui-command-palette" },
     { "path": "./packages/client/ui-approval" },
     { "path": "./packages/client/ui-chat/tsconfig.client.json" },
     { "path": "./packages/client/ui-conversation/tsconfig.client.json" },

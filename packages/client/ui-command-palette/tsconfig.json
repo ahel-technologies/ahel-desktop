@@ -1,0 +1,30 @@
+{
+  "extends": "../../../tsconfig.base.client.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../api/remotes/tsconfig.client.json" },
+    { "path": "../../api/session-controller/tsconfig.client.json" },
+    { "path": "../../core/session" },
+    { "path": "../../credentials/ahel-account" },
+    { "path": "../../typert/protocol" },
+    { "path": "../locale/tsconfig.client.json" },
+    { "path": "../shortcuts/tsconfig.client.json" },
+    { "path": "../store" },
+    { "path": "../ui-layout" },
+    { "path": "../ui-model-selection" },
+    { "path": "../ui-primitives" },
+    { "path": "../ui-renderer" },
+    { "path": "../ui-settings/tsconfig.client.json" },
+    { "path": "../ui-sidebar" },
+    { "path": "../ui-slots" },
+    { "path": "../ui-theme/tsconfig.client.json" },
+    { "path": "../ui-workspace" }
+  ]
+}

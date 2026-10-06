@@ -245,6 +245,7 @@
       "@ahel/dsh-client-ui-ahel-account": ["./packages/client/ui-ahel-account/src"],
       "@ahel/dsh-client-ui-local-cli": ["./packages/client/ui-local-cli/src"],
       "@ahel/dsh-client-ui-notifications": ["./packages/client/ui-notifications/src"],
+      "@ahel/dsh-client-ui-command-palette": ["./packages/client/ui-command-palette/src"],
       "@ahel/dsh-client-ui-mcp-app": ["./packages/client/ui-mcp-app/src"],
       "@ahel/dsh-client-ui-approval": ["./packages/client/ui-approval/src"],
       "@ahel/dsh-client-ui-approval/client": ["./packages/client/ui-approval/src/client/index.ts"],
