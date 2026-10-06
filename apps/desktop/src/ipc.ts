@@ -33,6 +33,11 @@ export const DESKTOP_IPC = {
   dictationGet: 'dsh-desktop:dictation-get',
   dictationSet: 'dsh-desktop:dictation-set',
   dictationToggle: 'dsh-desktop:dictation-toggle',
+  windowCaptureShortcut: 'dsh-desktop:window-capture-shortcut',
+  windowCaptureSetShortcut: 'dsh-desktop:window-capture-set-shortcut',
+  windowCaptureNow: 'dsh-desktop:window-capture-now',
+  windowCaptureTake: 'dsh-desktop:window-capture-take',
+  windowCaptured: 'dsh-desktop:window-captured',
 } as const
 
 /** Desktop release update state rendered by desktop-owned UI. */

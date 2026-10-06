@@ -1,0 +1,41 @@
+{
+  "name": "@ahel/dsh-window-capture",
+  "description": "Front-window capture for Ahel Desktop: the window's PNG, app name, title and visible text, plus the composer attachment files built from them",
+  "version": "0.1.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/capture/window-capture"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./protocol": {
+      "types": "./lib/types/protocol.d.ts",
+      "default": "./lib/types/protocol.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts",
+    "LICENSE-t3code"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ahel/cordis": "workspace:~"
+  },
+  "devDependencies": {
+    "@ahel/cordis": "workspace:~"
+  }
+}

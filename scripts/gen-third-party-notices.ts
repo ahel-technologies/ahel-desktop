@@ -656,6 +656,10 @@ ${patchedLines.join('\n')}
 
 The optional experimental Inspector distributes a locally compiled copy of [chrome-devtools-frontend ${DEVTOOLS_NPM_VERSION}](https://www.npmjs.com/package/chrome-devtools-frontend/v/${DEVTOOLS_NPM_VERSION}), from upstream revision [${DEVTOOLS_SOURCE_REVISION}](https://chromium.googlesource.com/devtools/devtools-frontend/+/${DEVTOOLS_SOURCE_REVISION}). The build includes the Chromium [BSD-3-Clause license](packages/experimental/inspector/assets/devtools/LICENSE) and the third-party license and notice files supplied by the npm source. The Chromium root license does not replace those dependencies' licenses.
 
+## Adapted source
+
+[\`packages/capture/window-capture/src/mac.ts\`](packages/capture/window-capture/src/mac.ts) adapts the macOS front-window lookup script and the \`screencapture\` arguments of [T3 Code](https://github.com/pingdotgg/t3code) (\`apps/desktop/src/snapShot/ActiveWindow.ts\` and \`MacSnapShot.ts\` at revision f21d6da51c9aa78ea12e7f13a378f55f1e63cb38), Copyright (c) 2026 T3 Tools Inc., used under the MIT License. Its copyright notice and permission notice are kept in [\`packages/capture/window-capture/LICENSE-t3code\`](packages/capture/window-capture/LICENSE-t3code).
+
 ${sharpRuntime ? `
 ## LGPL image library (libvips)
 

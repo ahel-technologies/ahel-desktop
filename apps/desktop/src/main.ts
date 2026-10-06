@@ -52,6 +52,7 @@ import { desktopClientVersion } from './client-version.ts'
 import { DesktopUpdateDialog, type UpdateDialogOptions } from './update-dialog.ts'
 import { installDesktopShortcuts } from './keyboard.ts'
 import { installDictationHotkey } from './dictation-hotkey.ts'
+import { installDesktopWindowCapture } from './window-capture.ts'
 import { DesktopUpdateOverlays } from './update-overlay.ts'
 import { DesktopQuitConfirmation } from './quit-confirmation.ts'
 import { DesktopTray } from './tray.ts'
@@ -629,6 +630,9 @@ async function main(): Promise<void> {
     window.webContents.send(DESKTOP_IPC.dictationToggle)
   }, assertProductSender)
   app.on('will-quit', () => { dictation.dispose() })
+  const windowCapture = installDesktopWindowCapture({ getWindow: () => mainWindow, focus: () => { focusPrimaryWindow() }, userData: app.getPath('userData') })
+  app.on('will-quit', () => { void windowCapture.then((capture) => { capture.dispose() }, () => undefined) })
+  windowCapture.catch((error: unknown) => { console.error('dsh desktop: window capture unavailable:', error) })
 
   ipcMain.handle(DESKTOP_IPC.boot, async (event) => {
     assertDesktopSender(event, ['app'])

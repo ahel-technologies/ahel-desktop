@@ -360,6 +360,12 @@
     - id: ui-local-cli
       name: '@ahel/dsh-client-ui-local-cli'
 
+    # Window capture: composer button, global-shortcut row in Settings >
+    # General, and the captured window's image and text as draft attachments.
+    # Registers nothing outside Ahel Desktop, whose preload supplies the bridge.
+    - id: ui-window-capture
+      name: '@ahel/dsh-client-ui-window-capture'
+
     - id: ui-workspace
       name: '@ahel/dsh-client-ui-workspace'
 
