@@ -383,6 +383,12 @@
     - id: ui-trajectory
       name: '@ahel/dsh-client-ui-trajectory'
 
+    # System notifications when a reply is ready, a chat waits for the person,
+    # or a teammate hands over a chat, while the window is not focused; the
+    # switch is in Settings > General.
+    - id: ui-notifications
+      name: '@ahel/dsh-client-ui-notifications'
+
 # The preset selection registry. The shipped preset declarations follow as
 # separate patch files under `presets/`, listed after this file in
 # `package.json` `dsh.bundle.patch`.

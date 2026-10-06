@@ -7,6 +7,7 @@ import { markDocumentPlatform, syncWindowFullscreen } from './preload-platform.t
 import { syncNativeTheme } from './preload-theme.ts'
 import { syncWindowsAppearance } from './preload-windows.ts'
 import { createDesktopBrowserBridge } from './preload-browser.ts'
+import './preload-notifications.ts'
 
 function createProductApi(): DshDesktopProductApi {
   return {

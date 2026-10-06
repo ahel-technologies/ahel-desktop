@@ -129,6 +129,7 @@
     "@ahel/dsh-llm-local-cli": "workspace:*",
     "@ahel/dsh-client-ui-ahel-account": "workspace:*",
     "@ahel/dsh-client-ui-local-cli": "workspace:*",
+    "@ahel/dsh-client-ui-notifications": "workspace:*",
     "@ahel/dsh-mcp-client": "workspace:*",
     "@ahel/dsh-web": "workspace:*",
     "@ahel/dsh-tool-web": "workspace:*",
