@@ -215,6 +215,114 @@ Child service of `AhelAccount`; the Remote namespace `ahelCatalog`.
 
 Source: [`packages/credentials/ahel-account/src/catalog.ts`](../../packages/credentials/ahel-account/src/catalog.ts)
 
+<a id="ctxahelissues--ahelissues"></a>
+
+### `ctx.ahelIssues` — `AhelIssues`
+
+Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
+
+```ts cordis-catalog
+/**
+ * One page of issues with per-status counts and the number of agents at work.
+ * @param query - filters; `assigneeId: 'me'` is the signed-in person.
+ * @returns the page.
+ * @throws RemoteError `ahel-issues/*`.
+ */
+@Remote async list(query: IssueQuery): Promise<IssuePage>
+
+/**
+ * Create an issue.
+ * @param draft - its fields.
+ * @returns the stored issue.
+ * @throws RemoteError `ahel-issues/refused` for invalid fields.
+ */
+@Remote async create(draft: IssueDraft): Promise<IssueWriteAnswer>
+
+/**
+ * Read one issue.
+ * @param key - for example `AHEL-137`.
+ * @returns the issue.
+ * @throws RemoteError `ahel-issues/refused` for an unknown key.
+ */
+@Remote async get(key: string): Promise<IssueWriteAnswer>
+
+/**
+ * Change some fields of one issue.
+ * @param key - the issue.
+ * @param patch - only the fields to change.
+ * @returns the issue after the change.
+ * @throws RemoteError `ahel-issues/forbidden` with ahel.ai's reason when the role may not edit it.
+ */
+@Remote async update(key: string, patch: IssuePatch): Promise<IssueWriteAnswer>
+
+/**
+ * Delete one issue; ahel.ai allows it for owners only.
+ * @param key - the issue.
+ * @returns nothing.
+ * @throws RemoteError `ahel-issues/forbidden` with ahel.ai's reason.
+ */
+@Remote async remove(key: string): Promise<IssueWriteAnswer>
+
+/**
+ * The comments on one issue, oldest first.
+ * @param key - the issue.
+ * @returns the comments.
+ * @throws RemoteError `ahel-issues/*`.
+ */
+@Remote async comments(key: string): Promise<readonly IssueComment[]>
+
+/**
+ * Post a comment as the signed-in person, or for the Ahel agent (a run's summary).
+ * @param key - the issue.
+ * @param body - markdown.
+ * @param authorType - `agent` shows the comment as Ahel's; the person still owns it.
+ * @returns the comments after the post.
+ * @throws RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.
+ */
+@Remote async comment(key: string, body: string, authorType: IssueActorType): Promise<readonly IssueComment[]>
+
+/**
+ * The activity log of one issue, oldest first.
+ * @param key - the issue.
+ * @returns the activity lines.
+ * @throws RemoteError `ahel-issues/*`.
+ */
+@Remote async activity(key: string): Promise<readonly IssueActivity[]>
+
+/**
+ * Report the state of the desktop chat that works on one issue; ahel.ai moves the issue's status with it.
+ * @param key - the issue.
+ * @param report - the session, its state and the steps so far.
+ * @returns the issue after the report.
+ * @throws RemoteError `ahel-issues/*`.
+ */
+@Remote async run(key: string, report: IssueRunReport): Promise<IssueWriteAnswer>
+
+/**
+ * Who issues can be assigned to: the workspace's seats and the Ahel agent with its model.
+ * @returns the members and agents.
+ * @throws RemoteError `ahel-issues/*`.
+ */
+@Remote async assignees(): Promise<IssueAssignees>
+
+/**
+ * The workspace's projects.
+ * @returns the projects.
+ * @throws RemoteError `ahel-issues/*`.
+ */
+@Remote async projects(): Promise<readonly IssueProject[]>
+
+/**
+ * Create a project.
+ * @param name - its name.
+ * @returns the projects after the create.
+ * @throws RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.
+ */
+@Remote async createProject(name: string): Promise<readonly IssueProject[]>
+```
+
+Source: [`packages/credentials/ahel-account/src/issues.ts`](../../packages/credentials/ahel-account/src/issues.ts)
+
 <a id="ctxahelteam--ahelteam"></a>
 
 ### `ctx.ahelTeam` — `AhelTeam`

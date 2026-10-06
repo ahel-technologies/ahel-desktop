@@ -1,0 +1,169 @@
+/**
+ * Run with Ahel: open a new chat in the most recent folder, send the issue as
+ * its first message, and report the chat's state to ahel.ai as the issue's
+ * run. The turn ending normally reports `finished`, an error `failed`, a
+ * pending approval or question `waiting_approval`, and its answer `running`
+ * again. Steps are the tool calls made so far; the expected total stays
+ * unknown because the goal package keeps rounds, not steps.
+ */
+import type { IssueRunReport, IssueRunState } from '@ahel/dsh-ahel-account/types'
+import type { RemoteResult } from '@ahel/dsh-typert-protocol'
+import type {} from '@ahel/dsh-api-session-controller/client'
+
+declare module '@ahel/dsh-api-session-controller/client' {
+  interface SessionReferenceSourceMap {
+    /** A Run with Ahel chat, held until its first turn settles. */
+    issueRun: unknown
+  }
+}
+
+/** One chat event a run reads: tool calls count as steps, the last assistant message is the summary. */
+export interface RunEntry {
+  readonly event: { readonly type: string; readonly data?: unknown }
+}
+
+/** The part of a chat a run reads and drives. */
+export interface RunSession {
+  readonly session: {
+    getSnapshot(): { readonly running: boolean; readonly lastAgentError: string | null; readonly promptError: object | null }
+    subscribe(listener: () => void): () => void
+  }
+  readonly eventSource: {
+    getSnapshot(): {
+      readonly entries: readonly RunEntry[]
+      readonly change: { readonly kind: string; readonly entries?: readonly RunEntry[] }
+    }
+    subscribe(listener: () => void): () => void
+  }
+  /** Queue one user message, echoed in the chat like a typed one. */
+  send(text: string): Promise<RemoteResult<{ accepted: true }>>
+}
+
+/** What a run needs from the Client: a new chat and whether it waits for the person. */
+export interface RunHost {
+  /**
+   * Open a new chat and hold it.
+   * @returns its id, the binding and the release, or null without a folder to open it in.
+   */
+  openChat(): Promise<{ sessionId: string; binding: RunSession; release: () => void } | null>
+  /** Whether the chat shows an approval or question that waits for the person. */
+  waiting(sessionId: string): boolean
+  /** Observe `waiting` changes. */
+  subscribeWaiting(listener: () => void): () => void
+}
+
+/** How a run start ended. */
+export type RunStart =
+  | { readonly ok: true; readonly sessionId: string }
+  | { readonly ok: false; readonly reason: 'no-workspace' | 'failed'; readonly message: string | null }
+
+/** Steps are reported at most this often while the state stays the same. */
+const STEP_REPORT_MS = 3_000
+
+/** Count tool calls in some event entries. */
+function toolCalls(entries: readonly RunEntry[]): number {
+  let n = 0
+  for (const entry of entries) if (entry.event.type === 'tool/call') n++
+  return n
+}
+
+/**
+ * The text of the last assistant message in some event entries; reasoning and tool calls stay out.
+ * @param entries - the chat's event window.
+ * @returns the text, or an empty string.
+ */
+export function lastReply(entries: readonly RunEntry[]): string {
+  for (const { event } of [...entries].reverse()) {
+    if (event.type !== 'assistant/message') continue
+    const message = (event.data as { message?: { content?: unknown } } | undefined)?.message
+    const content = Array.isArray(message?.content) ? message.content as { type?: unknown; text?: unknown }[] : []
+    const text = content.filter(block => block.type === 'text' && typeof block.text === 'string').map(block => (block.text as string).trim())
+      .filter(Boolean).join('\n\n')
+    if (text !== '') return text
+  }
+  return ''
+}
+
+/**
+ * Start one run.
+ * @param host - the chat opener and the waiting signal.
+ * @param seed - the chat's first message.
+ * @param report - sends one run report; failures are the caller's to log.
+ * @param summarise - receives the closing reply of a finished run, to post as Ahel's comment.
+ * @returns whether the chat started; tracking continues until the first turn settles.
+ */
+export async function startRun(
+  host: RunHost,
+  seed: string,
+  report: (report: IssueRunReport) => void,
+  summarise?: (text: string) => void,
+): Promise<RunStart> {
+  const chat = await host.openChat()
+  if (chat === null) return { ok: false, reason: 'no-workspace', message: null }
+  const { sessionId, binding, release } = chat
+  const session = binding.session
+  let state: IssueRunState = 'running'
+  let steps = toolCalls(binding.eventSource.getSnapshot().entries)
+  let reported = 0
+  const send = (next: IssueRunState, force: boolean): void => {
+    const now = Date.now()
+    if (!force && next === state && now - reported < STEP_REPORT_MS) return
+    state = next
+    reported = now
+    report({ sessionId, state, steps, totalSteps: null })
+  }
+  send('running', true)
+
+  let ended = false
+  const disposers: (() => void)[] = []
+  const end = (final: 'finished' | 'failed'): void => {
+    if (ended) return
+    ended = true
+    for (const dispose of disposers) dispose()
+    send(final, true)
+    if (final === 'finished') {
+      const reply = lastReply(binding.eventSource.getSnapshot().entries)
+      if (reply !== '') summarise?.(reply)
+    }
+    release()
+  }
+
+  let started = session.getSnapshot().running
+  const onSession = (): void => {
+    const snapshot = session.getSnapshot()
+    if (snapshot.running) { started = true; return }
+    if (!started || ended) return
+    end(snapshot.lastAgentError !== null || snapshot.promptError !== null ? 'failed' : 'finished')
+  }
+  const onEvents = (): void => {
+    const window = binding.eventSource.getSnapshot()
+    const count = window.change.kind === 'append' && window.change.entries !== undefined
+      ? steps + toolCalls(window.change.entries)
+      : toolCalls(window.entries)
+    if (count === steps) return
+    steps = count
+    if (state === 'running') send('running', false)
+  }
+  const onWaiting = (): void => {
+    if (ended) return
+    const waiting = host.waiting(sessionId)
+    if (waiting && state !== 'waiting_approval') send('waiting_approval', true)
+    else if (!waiting && state === 'waiting_approval') send('running', true)
+  }
+  disposers.push(session.subscribe(onSession), binding.eventSource.subscribe(onEvents), host.subscribeWaiting(onWaiting))
+
+  let result: RemoteResult<{ accepted: true }>
+  try {
+    result = await binding.send(seed)
+  } catch (error) {
+    end('failed')
+    return { ok: false, reason: 'failed', message: error instanceof Error ? error.message : null }
+  }
+  if (!result.ok) {
+    end('failed')
+    return { ok: false, reason: 'failed', message: result.error.message }
+  }
+
+  onSession()
+  return { ok: true, sessionId }
+}

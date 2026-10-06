@@ -541,3 +541,6 @@ declare module '@ahel/cordis' {
     'ahel-account/changed'(view: AhelAccountView): void
   }
 }
+
+/** Issues shapes (the `ahelIssues` Remote boundary) live beside this file. */
+export type * from './issues-types.ts'
