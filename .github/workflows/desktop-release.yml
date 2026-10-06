@@ -25,7 +25,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     strategy:
-      fail-fast: true
+      # One platform failing must not cancel the other; publish ships what built.
+      fail-fast: false
       matrix:
         include:
           - os: macos-14
@@ -107,6 +108,9 @@ jobs:
   publish:
     name: publish
     needs: package
+    # Runs when a platform failed too: the release carries what built, and the
+    # last step still fails the workflow so the broken platform stays visible.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -121,14 +125,36 @@ jobs:
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
+          mkdir -p release-assets
+          ls -la release-assets
+          if [ ! -f release-assets/ahel-desktop-mac-arm64.dmg ]; then
+            echo "::error::the mac-arm64 installer is missing; nothing is published"
+            exit 1
+          fi
+          missing=()
+          [ -f release-assets/ahel-desktop-win-x64.exe ] || missing+=("Windows x64")
+          notes="Unsigned build of Ahel Desktop $version from ${GITHUB_SHA::12}. macOS: right-click the app and choose Open, or allow it in System Settings > Privacy & Security."
+          if [ ${#missing[@]} -eq 0 ]; then
+            notes="$notes Windows: SmartScreen > More info > Run anyway."
+          else
+            notes="$notes
+
+          Not in this release: ${missing[*]} (the build failed; see $RUN_URL)."
+          fi
           prerelease=()
           case "$version" in *-*) prerelease=(--prerelease) ;; esac
-          ls -la release-assets
           gh release create "$GITHUB_REF_NAME" release-assets/* \
             --repo "$GITHUB_REPOSITORY" \
             --title "Ahel Desktop $version" \
-            --notes "Unsigned build of Ahel Desktop $version from ${GITHUB_SHA::12}. macOS: right-click the app and choose Open, or allow it in System Settings > Privacy & Security. Windows: SmartScreen > More info > Run anyway." \
+            --notes "$notes" \
             "${prerelease[@]}"
+
+      - name: Fail when a platform did not build
+        if: needs.package.result != 'success'
+        run: |
+          echo "::error::package result is ${{ needs.package.result }}; the release lacks a platform"
+          exit 1
