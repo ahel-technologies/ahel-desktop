@@ -1040,6 +1040,25 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'computerUse',
+    summary: 'Owns one optional provider registration and the person\'s on switch.',
+    description: 'Owns one optional provider registration and the person\'s on switch.',
+    methods: [
+      {
+        signature: 'async setEnabled(enabled: boolean): Promise<void>',
+        description: 'Persist the person\'s on switch into this plugin\'s profile entry. The Loader applies it live and `computer-use/enabled` follows.',
+        parameters: [{ name: 'enabled', description: 'the requested value.' }],
+        returns: 'after the profile write.',
+      },
+      {
+        signature: 'register(name: ComputerUseProviderName): () => Promise<void>',
+        description: 'Reserve the sole provider slot until the contribution is disposed. A second registration fails even when it repeats the current name. Providers must stop their tools and await owned work before releasing this registration.',
+        parameters: [{ name: 'name', description: 'provider-owned name used in registration diagnostics.' }],
+        returns: 'the effect disposer for this exact registration.',
+      },
+    ],
+  },
+  {
     key: 'computerUseApproval',
     summary: 'Remote namespace `computerUseApproval`.',
     description: 'Remote namespace `computerUseApproval`.',
@@ -1070,6 +1089,42 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: '@Remote async setBlockedApps(apps: string[]): Promise<void>',
         description: 'Replace the user\'s own block list.',
         parameters: [{ name: 'apps', description: 'app names or bundle ids.' }],
+      },
+    ],
+  },
+  {
+    key: 'computerUseDriver',
+    summary: 'Owns the driver\'s lifetime, its permission status, and the Settings Remote.',
+    description: 'Owns the driver\'s lifetime, its permission status, and the Settings Remote.',
+    methods: [
+      {
+        signature: '@Remote current(): ComputerUseDriverStatus',
+        description: 'Read the current status.',
+        parameters: [],
+        returns: 'the switch, driver phase and macOS permissions.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async *watch(signal: AbortSignal): AsyncIterable<ComputerUseDriverStatus>',
+        description: 'Stream the status now and after every change.',
+        parameters: [{ name: 'signal', description: 'subscriber lifetime.' }],
+        returns: 'status snapshots until cancellation or service disposal.',
+      },
+      {
+        signature: '@Remote async setEnabled(enabled: boolean): Promise<ComputerUseDriverStatus>',
+        description: 'Turn computer use on or off for this profile (the `computerUse.enabled` setting). Turning it on reads the macOS grants and, when one is missing, opens System Settings at that pane. It raises no macOS prompt.',
+        parameters: [{ name: 'enabled', description: 'the requested value.' }],
+        returns: 'the status after the write.',
+      },
+      {
+        signature: '@Remote async recheck(): Promise<ComputerUseDriverStatus>',
+        description: 'Re-read the macOS grants. A grant that changed while the driver runs restarts the driver, because macOS caches grants per process.',
+        parameters: [],
+        returns: 'the status after the check.',
+      },
+      {
+        signature: '@Remote async openSystemSettings(pane: ComputerUseSettingsPane): Promise<void>',
+        description: 'Open System Settings at the Privacy & Security pane for one permission.',
+        parameters: [{ name: 'pane', description: 'the permission to show.' }],
       },
     ],
   },
@@ -4315,6 +4370,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'payload', description: '.signal - optional compaction cancellation signal.' }, { name: 'next', description: 'delegate to the next recovery listener.' }],
   },
   {
+    name: 'computer-use/enabled',
+    mode: 'emit',
+    signature: '\'computer-use/enabled\'(enabled: boolean): void',
+    summary: 'The person turned computer use on or off.',
+    description: 'The person turned computer use on or off. Emitted after the new value is live.',
+    parameters: [{ name: 'enabled', description: 'the value `ctx.computerUse.enabled` now reads.' }],
+  },
+  {
     name: 'connection/request',
     mode: 'waterfall',
     signature: '\'connection/request\'(request: IncomingMessage, response: ServerResponse, next: () => Promise<void>): Promise<void>',
@@ -5239,12 +5302,32 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ComputerUseCrop {\n    readonly mimeType: string;\n    readonly data: string;\n    readonly imageWidth: number | null;\n    readonly imageHeight: number | null;\n    readonly x: number;\n    readonly y: number;\n    readonly width: number;\n    readonly height: number;\n}',
   },
   {
+    name: 'ComputerUseDriverPhase',
+    declaration: 'export type ComputerUseDriverPhase = \'off\' | \'unsupported\' | \'unavailable\' | \'starting\' | \'ready\' | \'error\';',
+  },
+  {
+    name: 'ComputerUseDriverStatus',
+    declaration: 'export interface ComputerUseDriverStatus {\n    readonly enabled: boolean;\n    readonly phase: ComputerUseDriverPhase;\n    readonly platform: \'darwin\' | \'win32\' | \'other\';\n    readonly accessibility: ComputerUsePermission;\n    readonly screenRecording: ComputerUsePermission;\n    readonly driverVersion?: string;\n    readonly toolCount?: number;\n    readonly detail?: string;\n}',
+  },
+  {
     name: 'ComputerUseElement',
     declaration: 'export interface ComputerUseElement {\n    readonly role: string;\n    readonly label: string | null;\n}',
   },
   {
+    name: 'ComputerUsePermission',
+    declaration: 'export type ComputerUsePermission = \'granted\' | \'missing\' | \'unknown\' | \'not-required\';',
+  },
+  {
+    name: 'ComputerUseProviderName',
+    declaration: 'export type ComputerUseProviderName = Branded<\'ComputerUseProviderName\'>;',
+  },
+  {
     name: 'ComputerUseSessionView',
     declaration: 'export interface ComputerUseSessionView {\n    readonly sessionId: string;\n    readonly running: boolean;\n    readonly paused: boolean;\n    readonly activity: readonly ComputerUseActivityRow[];\n}',
+  },
+  {
+    name: 'ComputerUseSettingsPane',
+    declaration: 'export type ComputerUseSettingsPane = \'accessibility\' | \'screen-recording\';',
   },
   {
     name: 'ComputerUseStatus',

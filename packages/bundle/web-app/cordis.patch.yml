@@ -353,6 +353,18 @@
     - id: ui-voice-input
       name: '@ahel/dsh-experimental-client-ui-voice-input'
 
+    # Computer use (beta), Desktop only: off until Settings > General >
+    # Computer use (beta) writes `enabled: true` into the computer-use row
+    # (the `computerUse.enabled` setting). The provider then spawns the bundled
+    # Cua Driver in embedded mode and mounts it as MCP server `ahel-computer`
+    # (docs/phase4/COMPUTER-USE.md).
+    - id: computer-use
+      name: '@ahel/dsh-computer-use'
+      disabled: !!js "ctx.get('profileContext')?.name !== 'desktop'"
+    - id: computer-use-cua-driver
+      name: '@ahel/dsh-computer-use-cua-driver'
+      disabled: !!js "ctx.get('profileContext')?.name !== 'desktop'"
+
     # Claude Code, Codex and Gemini CLIs the person installed and signed into
     # themselves; detection and enable state only, the person's own vendor plan pays.
     # Local child processes for the llm-local-cli probes and CLI turns; the

@@ -50,6 +50,8 @@ export { REGION_BEGIN, REGION_END }
  * errors, so the partition can never silently drift from the service API.
  */
 export const SERVICE_PAGE: Record<string, string> = {
+  computerUse: 'computer-use.md',
+  computerUseDriver: 'computer-use.md',
   computerUseGate: 'computer-use.md',
   computerUseApproval: 'computer-use.md',
   speechToText: 'voice-input.md',
@@ -228,6 +230,7 @@ export const EVENT_SCOPE_PAGE: Record<string, string> = {
   'commands': 'commands.md',
   'connection': 'web-server.md',
   'compaction': 'compaction.md',
+  'computer-use': 'computer-use.md',
   'cordis': 'extensions.md',
   'authorization': 'credentials.md',
   'credentials': 'credentials.md',
@@ -311,6 +314,8 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   InspectOptions: 'boot.md',
   BrowserUseProviderName: 'browser-use.md',
   ComputerUseProviderName: 'computer-use.md',
+  ComputerUseDriverStatus: 'computer-use.md',
+  ComputerUseSettingsPane: 'computer-use.md',
   RenderedDocumentBytes: 'office-to-pdf.md',
   OfficeToPdfRequest: 'office-to-pdf.md',
   OfficeToPdfResult: 'office-to-pdf.md',

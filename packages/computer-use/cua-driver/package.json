@@ -1,0 +1,108 @@
+{
+  "name": "@ahel/dsh-computer-use-cua-driver",
+  "description": "Computer use through the bundled Cua Driver: embedded stdio MCP server ahel-computer and the Settings switch",
+  "version": "0.1.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahel-technologies/ahel-desktop.git",
+    "directory": "packages/computer-use/cua-driver"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./types": {
+      "types": "./lib/types/types.d.ts",
+      "default": "./lib/types/types.js"
+    },
+    "./typert": {
+      "types": "./lib/typert.host.d.ts",
+      "default": "./lib/typert.host.js"
+    },
+    "./remote": {
+      "types": "./lib/typert.remote-client.d.ts",
+      "default": "./lib/typert.remote-client.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json",
+    "./cua-driver.release.json": "./cua-driver.release.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@ahel/dsh-api-remotes",
+        "@ahel/dsh-client-locale",
+        "@ahel/dsh-client-ui-settings"
+      ],
+      "platform": "web"
+    }
+  },
+  "scripts": {
+    "bundle": "tsdown",
+    "watch": "tsdown --watch"
+  },
+  "files": [
+    "cua-driver.release.json",
+    "licenses/*",
+    "lib/index.js",
+    "lib/client.js",
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts",
+    "lib/typert.host.js",
+    "lib/typert.host.d.ts",
+    "lib/typert.remote-client.js",
+    "lib/typert.remote-client.d.ts"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@ahel/schemastery": "workspace:~",
+    "@ahel/dsh-home-paths": "workspace:*",
+    "@ahel/dsh-typert-protocol": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "peerDependencies": {
+    "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-computer-use": "workspace:*",
+    "@ahel/dsh-mcp-client": "workspace:*",
+    "@ahel/dsh-tools": "workspace:*"
+  },
+  "devDependencies": {
+    "@ahel/cordis": "workspace:~",
+    "@ahel/cordis-plugin-loader": "workspace:~",
+    "@ahel/dsh-agent": "workspace:*",
+    "@ahel/dsh-agent-loop": "workspace:*",
+    "@ahel/dsh-api-remotes": "workspace:*",
+    "@ahel/dsh-app-boot": "workspace:*",
+    "@ahel/dsh-client-locale": "workspace:*",
+    "@ahel/dsh-client-ui-primitives": "workspace:*",
+    "@ahel/dsh-client-ui-renderer": "workspace:*",
+    "@ahel/dsh-client-ui-settings": "workspace:*",
+    "@ahel/dsh-client-ui-slots": "workspace:*",
+    "@ahel/dsh-computer-use": "workspace:*",
+    "@ahel/dsh-computer-use-action-gate": "workspace:*",
+    "@ahel/dsh-config-editor": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-mcp-client": "workspace:*",
+    "@ahel/dsh-session": "workspace:*",
+    "@ahel/dsh-session-projection": "workspace:*",
+    "@ahel/dsh-settings": "workspace:*",
+    "@ahel/dsh-system-prompt": "workspace:*",
+    "@ahel/dsh-tools": "workspace:*",
+    "@ahel/dsh-user-approval": "workspace:*",
+    "@ahel/dsh-util-values": "workspace:*",
+    "@types/react": "~18.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

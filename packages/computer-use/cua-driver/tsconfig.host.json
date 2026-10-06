@@ -1,0 +1,31 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo"
+  },
+  "files": [
+    "src/index.ts",
+    "src/driver.ts",
+    "src/permissions.ts",
+    "src/probe.ts",
+    "src/release.ts",
+    "src/structured.ts",
+    "src/types.ts"
+  ],
+  "references": [
+    { "path": "../../../vendor/cosmokit" },
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../../vendor/schemastery" },
+    { "path": "../../../vendor/loader" },
+    { "path": "../../typert/protocol" },
+    { "path": "../../util/home-paths" },
+    { "path": "../../util/values" },
+    { "path": "../../llm/llm" },
+    { "path": "../../core/tools" },
+    { "path": "../../mcp/mcp-client" },
+    { "path": "../../settings/settings" },
+    { "path": "../computer-use" }
+  ]
+}
