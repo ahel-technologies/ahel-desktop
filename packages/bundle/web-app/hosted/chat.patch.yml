@@ -34,7 +34,10 @@
     workspacesDirectory: !!js dshHomePath('workspaces')
 
 # No local machine in the browser: no folder picker, no local CLIs, no child
-# processes, no plugin page.
+# processes, no plugin page. MCP servers connect over http(s) only: the
+# image's entrypoint sets DSH_MCP_STDIO=off, so an mcp-client row with
+# `transport: stdio` (which the MCP SDK would spawn itself, past the disabled
+# subprocess row) fails to load with a one-line reason.
 - id: directory-picker
   disabled: true
 

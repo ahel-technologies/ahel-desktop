@@ -7,7 +7,7 @@
 - `node:22-slim`, a production deploy of `dsh` and its bundles under `/app`, the built web client. No Python, no Electron, no local CLIs.
 - Runs as `node` (uid 1000). State lives in `DSH_HOME=/data`: the profile, Sessions, the Workspace (`/data/workspaces/default-workspace`) and `.credentials.yaml`.
 - Listens on `0.0.0.0:3080` (the overlay sets the bind; the CLI still refuses `--host 0.0.0.0`).
-- The overlay drops the folder picker, local CLIs, child processes and the plugin page. The person keeps chat, Ahel models, their own keys (stored in their volume), the Ahel MCP server, Discover, Your apps, Approvals and Inbox.
+- The overlay drops the folder picker, local CLIs, child processes and the plugin page. The entrypoint sets `DSH_MCP_STDIO=off`, so MCP servers connect over http(s) only; a `stdio` server fails to load with a one-line reason. The person keeps chat, Ahel models, their own keys (stored in their volume), the Ahel MCP server, Discover, Your apps, Approvals and Inbox.
 
 | Variable | Default | Meaning |
 |---|---|---|
@@ -127,6 +127,7 @@ For the coordinator. Every cluster command uses `--context contabo-arkenstone-pr
    6. Reload: same Session, no new pod. Open the chat from a second browser signed in as another person: a second pod.
    7. `curl -s -X POST -H 'origin: https://evil.example' https://ahel.ai/chat/api/session/list` answers `403`; `curl -s -X POST https://ahel.ai/api/internal/chat/grant` answers `404`.
    8. After 30+ minutes idle the reaper deletes the pod; the next load starts a new one with the old Sessions.
+   9. Isolation: `infra/k8s/chat/smoke-isolation.sh` (ahel repo) execs into a running chat pod and prints `PASS` for each wall: postgres, the `ahel-web` service, `10.43.0.1:443`, `173.249.13.52:6443`, `169.254.169.254` and another chat pod's `3080` all refuse. Any `FAIL` stops go-live.
 6. **Rollback facts, captured before step 1**: the ahel deploy SHA before #338; gateway rollback is `kubectl --context contabo-arkenstone-prod-k8s -n ahel-chat scale deploy/chat-gateway --replicas=0` plus removing the tunnel rule (the nav link then leads to a 404 until #340 is reverted); Host pods go with `kubectl --context contabo-arkenstone-prod-k8s -n ahel-chat delete pods -l app.kubernetes.io/part-of=ahel-chat-host` (volumes stay).
 
 Open items that do not block go-live:
