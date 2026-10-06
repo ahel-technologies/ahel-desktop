@@ -303,22 +303,22 @@ describe('LlmRuntime', () => {
       },
       {
         name: 'missing attachment service',
-        expected: 'current execution environment cannot access a readable path',
+        expected: 'is attached. Its text',
       },
       {
         name: 'provider without a host path',
         attachments: { fileHostPath: () => undefined },
-        expected: 'current execution environment cannot access a readable path',
+        expected: 'is attached. Its text',
       },
       {
         name: 'invalid durable reference',
         attachments: { fileHostPath: () => { throw new Error('invalid ref') } },
-        expected: 'current execution environment cannot access a readable path',
+        expected: 'is attached. Its text',
       },
       {
         name: 'missing filesystem mapping',
         attachments: { fileHostPath: () => '/host/notes.txt' },
-        expected: 'current execution environment cannot access a readable path',
+        expected: 'is attached. Its text',
       },
     ]
 
@@ -344,8 +344,12 @@ describe('LlmRuntime', () => {
       if (projected?.type !== 'text') throw new Error(`expected projected text for ${fixture.name}`)
       expect(projected.text, fixture.name).toContain(fixture.expected)
       if (fixture.fs !== undefined) {
-        expect(projected.text, fixture.name).toContain('include this saved path in the delegation prompt')
+        expect(projected.text, fixture.name).toContain('stored read-only at')
+      } else {
+        expect(projected.text, fixture.name).not.toContain('stored read-only at')
       }
+      expect(projected.text, fixture.name).toContain('follows in the "Attached files" message after this one')
+      expect(projected.text, fixture.name).not.toContain('file tools')
     }
   })
 

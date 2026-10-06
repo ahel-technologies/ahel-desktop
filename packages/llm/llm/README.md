@@ -115,7 +115,7 @@ File detection reads current content, including tool-role result content, on eve
 - **Replay state travels only within one adapter** — assistant replay state rides along only when the same adapter instance owns the historical and target routes; otherwise it is dropped before dispatch.
 - **Prepared calls are one-shot** — a prepared call can be dispatched exactly once, and its call-config fields must match the prepared config.
 - **Image projection follows the captured route** — durable `ImageBlock` references become route-specific request versions only for image-capable models; text-only models receive stable placeholders.
-- **File projection is unconditional** — no provider receives file bytes; every route gets one deterministic handle line per `FileBlock`, and the model reads the saved copy with its file tools on demand.
+- **File projection is unconditional** — no provider receives file bytes; every route gets one deterministic handle line per `FileBlock` that points the model at the `attachment-text` context message carrying the file's extracted text.
 - **Protocol ordering** — `usage` precedes `finish`, tool arguments stay raw JSON strings, and nothing follows the terminal `finish`.
 - **Registry mutations are atomic** — route and directory registration validates the whole candidate set before anything moves, so a refused change leaves the previous state serving.
 

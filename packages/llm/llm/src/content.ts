@@ -141,20 +141,19 @@ export function contentHasFile(content: readonly ContentBlock[]): boolean {
 }
 
 /**
- * Stable model-facing handle for one durable file reference: the address of
- * the verbatim stored copy and the instruction to read it on demand. This is
+ * Stable model-facing handle for one durable file reference. The file's
+ * extracted text, or the reason it could not be read, arrives in the
+ * `attachment-text` context message logged right after the prompt. This is
  * the only representation a provider ever receives for a file.
  * @param ref - durable verbatim file reference.
  * @param readonlyPath - execution-world path of the stored copy, when resolvable.
- * @returns deterministic handle text naming the file, its size, and its address.
+ * @returns deterministic handle text naming the file, its size, and where its text is.
  */
 export function fileHandleText(ref: FileAttachmentRef, readonlyPath: string | undefined): string {
   const digest = String(ref.attachmentId).slice('sha256:'.length, 'sha256:'.length + 8)
   const identity = `File ${quoted(ref.name)} (${ref.bytes} bytes, sha256:${digest})`
-  if (readonlyPath === undefined) {
-    return `[${identity} was uploaded, but the current execution environment cannot access a readable path. Report that limitation if its contents are needed; do not claim to have read it.]`
-  }
-  return `[${identity}: verbatim read-only copy saved at ${quoted(readonlyPath)}. Read that path with your file tools when its contents are needed; copy it to a writable location before modifying it. When delegating file work, include this saved path in the delegation prompt; only subagents sharing this execution environment can read it.]`
+  const stored = readonlyPath === undefined ? '' : `, stored read-only at ${quoted(readonlyPath)}`
+  return `[${identity} is attached${stored}. Its text, or the reason it could not be read, follows in the "Attached files" message after this one. If no such message follows, its contents are unavailable: say so if they are needed and do not claim to have read it.]`
 }
 
 /** Replace every file occurrence with handle text. */
