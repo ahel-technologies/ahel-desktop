@@ -17,6 +17,7 @@ kind: "package-reference"
 - [限制与失败](#limits-and-failures)
 - [模型体验](#model-experience)
 - [已知限制与延期工作](#known-limitations-and-deferred-work)
+- [开发备注](#dev-note)
 
 <a id="use-this-package"></a>
 ## 使用本包
@@ -61,3 +62,13 @@ kind: "package-reference"
 
 - 网页搜索能读取的每个页面，`web_fetch` 都报告 HTTP 200；网页搜索不传递源站状态码。
 - 未暴露网页搜索的 `screenshot` 工具；它仍可通过 Ahel MCP 服务器使用。
+
+<a id="dev-note"></a>
+## 开发备注
+
+<details>
+<summary>维护者的工作上下文——点击展开</summary>
+
+无。
+
+</details>

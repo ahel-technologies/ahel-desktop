@@ -23,6 +23,7 @@
   position: absolute;
   inset: 30%;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--dsw-alias-label-tertiary);
 }
 

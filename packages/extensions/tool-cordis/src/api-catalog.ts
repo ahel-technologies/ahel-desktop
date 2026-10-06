@@ -468,6 +468,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the access token, or undefined while signed out.',
       },
       {
+        signature: 'gateway(): string',
+        description: 'Host-only: the Ahel MCP gateway URL this grant\'s bearer is bound to; Host callers send the bearer to this URL and nowhere else.',
+        parameters: [],
+        returns: 'the configured `resource`.',
+      },
+      {
         signature: 'async revalidate(): Promise<void>',
         description: 'Host-only: after ahel.ai refused the current bearer, refresh it once. A refresh ahel.ai rejects signs the account out, like `accessToken()`.',
         parameters: [],
@@ -730,6 +736,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'ref', description: 'durable file reference.' }],
         returns: 'an absolute host path, or undefined when this backend is not host-file-backed.',
         throws: ['an AttachmentError when the durable reference is invalid.'],
+      },
+      {
+        signature: 'readFileText(ref: FileAttachmentRef, signal?: AbortSignal): Promise<FileAttachmentText | undefined>',
+        description: 'Read the model-readable text of one stored file (PDF, Word, PowerPoint, spreadsheet, or plain text), extracting it once and caching it beside the stored object. Backends without text extraction resolve undefined.',
+        parameters: [{ name: 'ref', description: 'durable file reference.' }, { name: 'signal', description: 'optional cancellation for this caller.' }],
+        returns: 'the extraction outcome, or undefined when unsupported by this backend.',
       },
       {
         signature: 'readImageRequest( ref: ImageAttachmentRef, target: ImageRequestTarget, signal?: AbortSignal, ): Promise<RequestImageAttachment>',
@@ -4642,7 +4654,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AhelAccountView',
-    declaration: 'export interface AhelAccountView {\n    readonly status: \'signed-out\' | \'signed-in\';\n    readonly profile: AhelProfile | null;\n    readonly attempt: AhelSignInAttemptView | null;\n    readonly workspace: string | null;\n    readonly reachable: boolean;\n}',
+    declaration: 'export interface AhelAccountView {\n    readonly status: \'signed-out\' | \'signed-in\';\n    readonly profile: AhelProfile | null;\n    readonly attempt: AhelSignInAttemptView | null;\n    readonly workspace: string | null;\n    readonly reachable: boolean;\n    readonly hosted?: AhelHostedPages | null;\n}',
+  },
+  {
+    name: 'AhelHostedPages',
+    declaration: 'export interface AhelHostedPages {\n    readonly signInUrl: string;\n    readonly signOutUrl: string;\n}',
   },
   {
     name: 'AhelIcon',
@@ -4898,7 +4914,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'CatalogCapability',
-    declaration: 'export interface CatalogCapability {\n    readonly key: string;\n    readonly name: string;\n    readonly type: string | null;\n    readonly servedBy?: string;\n    readonly state: \'on\' | \'off\' | \'needs_setup\' | \'unavailable\' | \'available\';\n    readonly needs: readonly string[];\n    readonly missingTypes?: readonly string[];\n    readonly itemId?: string | null;\n    readonly signInUrl?: string;\n    readonly reason: string | null;\n}',
+    declaration: 'export interface CatalogCapability {\n    readonly key: string;\n    readonly name: string;\n    readonly type: string | null;\n    readonly servedBy?: string;\n    readonly state: \'on\' | \'off\' | \'needs_setup\' | \'unavailable\' | \'available\';\n    readonly needs: readonly string[];\n    readonly missingTypes?: readonly string[];\n    readonly itemId?: string | null;\n    readonly signInUrl?: string;\n    readonly reason: string | null;\n    readonly tile?: CatalogRowTile;\n}',
   },
   {
     name: 'CatalogConcept',
@@ -5425,6 +5441,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface FileAttachmentRef {\n    attachmentId: AttachmentId;\n    name: string;\n    bytes: number;\n}',
   },
   {
+    name: 'FileAttachmentText',
+    declaration: 'export interface FileAttachmentText {\n    readonly status: \'text\' | \'no-text-layer\' | \'unsupported\' | \'failed\';\n    readonly format?: FileTextFormat;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly units?: number;\n    readonly reason?: string;\n}',
+  },
+  {
     name: 'FileBlock',
     declaration: 'export interface FileBlock {\n    type: \'file\';\n    attachment: FileAttachmentRef;\n}',
   },
@@ -5439,6 +5459,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'FileReferenceCandidate',
     declaration: 'export interface FileReferenceCandidate {\n    path: string;\n    kind: \'file\' | \'directory\';\n}',
+  },
+  {
+    name: 'FileTextFormat',
+    declaration: 'export type FileTextFormat = \'pdf\' | \'docx\' | \'pptx\' | \'spreadsheet\' | \'text\';',
   },
   {
     name: 'FileUploadReceiptId',

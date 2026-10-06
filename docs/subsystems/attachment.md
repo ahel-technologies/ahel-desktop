@@ -288,6 +288,16 @@ async *readFileStream( ref: FileAttachmentRef, signal?: AbortSignal, ): AsyncIte
 fileHostPath(ref: FileAttachmentRef): string | undefined
 
 /**
+ * Read the model-readable text of one stored file (PDF, Word, PowerPoint,
+ * spreadsheet, or plain text), extracting it once and caching it beside the
+ * stored object. Backends without text extraction resolve undefined.
+ * @param ref - durable file reference.
+ * @param signal - optional cancellation for this caller.
+ * @returns the extraction outcome, or undefined when unsupported by this backend.
+ */
+readFileText(ref: FileAttachmentRef, signal?: AbortSignal): Promise<FileAttachmentText | undefined>
+
+/**
  * Generate or read one deterministic model-request version from the stored normalized image.
  * @param ref - durable provider-independent normalized attachment reference.
  * @param target - route-chosen dimensions and byte target; an unmet byte target yields the smallest ladder output.

@@ -443,6 +443,7 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   EncodedFileAttachment: 'attachment.md',
   EncodedImageAttachment: 'attachment.md',
   FileAttachmentRef: 'attachment.md',
+  FileAttachmentText: 'attachment.md',
   SaveFileAttachment: 'attachment.md',
   SaveFileStreamAttachment: 'attachment.md',
   ImageAttachmentAccess: 'llm-streaming.md',

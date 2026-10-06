@@ -17,6 +17,7 @@ Search and page reads through ahel.ai's first-party Web Search app (`ahel.servic
 - [Limits and failures](#limits-and-failures)
 - [Model Experience](#model-experience)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 <a id="use-this-package"></a>
 ## Use this package
@@ -62,3 +63,13 @@ Signing in or out adds or removes two tool definitions, which changes the tool l
 
 - `web_fetch` reports HTTP 200 for every page Web Search could read; Web Search does not pass the origin status through.
 - Web Search's `screenshot` tool is not exposed; it stays reachable through the Ahel MCP server.
+
+<a id="dev-note"></a>
+## Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+None.
+
+</details>
