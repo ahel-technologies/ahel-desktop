@@ -282,6 +282,7 @@
       "@ahel/dsh-client-ui-workspace": ["./packages/client/ui-workspace/src"],
       "@ahel/dsh-client-ui-theme": ["./packages/client/ui-theme/src"],
       "@ahel/dsh-client-ui-theme/brand-font.css": ["./packages/client/ui-theme/src/styles/brand-font.css"],
+      "@ahel/dsh-client-ui-theme/ahel-font.css": ["./packages/client/ui-theme/src/styles/ahel-font.css"],
       "@ahel/dsh-client-ui-settings": ["./packages/client/ui-settings/src"],
       "@ahel/dsh-client-ui-settings-general": ["./packages/client/ui-settings-general/src"],
       "@ahel/dsh-client-ui-settings-general/types": ["./packages/client/ui-settings-general/src/types.ts"],

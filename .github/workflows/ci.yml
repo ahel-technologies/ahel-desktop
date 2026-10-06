@@ -78,6 +78,16 @@ jobs:
       - name: Prepare bubblewrap
         run: bash scripts/prepare-ci-bubblewrap.sh
 
-      # Builds the native system addon, then runs vitest.
+      # Some client plugins import generated modules that exist only in lib/
+      # (typert `/remote` faces, e.g. ui-mcp-app) and test fixtures load
+      # packages through their built exports, so build lib/ as a dev checkout has.
+      - name: Build libraries
+        run: pnpm run build:lib
+
+      # Builds the native system addon, then runs vitest. The per-test budget is
+      # the one upstream CI used: hosted runners are slower than a dev machine
+      # for suites that spawn real git and subprocesses.
       - name: Unit tests
+        env:
+          DSH_COVERAGE_TEST_TIMEOUT_MS: '90000'
         run: pnpm test
