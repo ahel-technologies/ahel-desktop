@@ -16,6 +16,6 @@ set -- --no-open \
 
 overlay=/app/node_modules/@ahel/dsh-web-app/hosted/chat.patch.yml
 if [ -f "$DSH_HOME/profiles/chat/package.json" ]; then
-  exec node /app/lib/bin.js --profile chat --patch "$overlay" "$@"
+  exec node /app/node_modules/@ahel/dsh/lib/bin.js --profile chat --patch "$overlay" "$@"
 fi
-exec node /app/lib/bin.js --profile chat --from-default-profile web --patch "$overlay" "$@"
+exec node /app/node_modules/@ahel/dsh/lib/bin.js --profile chat --from-default-profile web --patch "$overlay" "$@"

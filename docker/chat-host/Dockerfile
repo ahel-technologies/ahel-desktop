@@ -6,21 +6,27 @@
 # packages/bundle/web-app/hosted/chat.patch.yml). No Python, no Electron, no
 # local CLIs. Build from the repository root:
 #
-#   docker build -f docker/chat-host/Dockerfile -t ahel-chat-host .
+#   docker build -f docker/chat-host/Dockerfile \
+#     --build-arg DSH_CLIENT_COMMIT_HASH=$(git rev-parse HEAD) -t ahel-chat-host .
 #
 # Running it locally: docs/phase4/HOSTED-CHAT.md.
 
 ARG NODE_VERSION=22
 
 FROM node:${NODE_VERSION}-bookworm AS build
-ENV CI=1 DSH_TELEMETRY_DISABLED=1
+# The build context carries no .git; the client build records this commit instead.
+ARG DSH_CLIENT_COMMIT_HASH=0000000
+ENV CI=1 DSH_TELEMETRY_DISABLED=1 DSH_CLIENT_COMMIT_HASH=${DSH_CLIENT_COMMIT_HASH}
 WORKDIR /src
 RUN corepack enable
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build
-# A self-contained production tree: the CLI, its bundles and the built frontend.
-RUN pnpm --filter @ahel/dsh deploy --prod --legacy /out \
+# A self-contained production tree: the CLI, its bundles, the built frontend
+# and every workspace peer they import (runtime-manifest.mjs).
+RUN node docker/chat-host/runtime-manifest.mjs \
+  && pnpm install --no-frozen-lockfile --prefer-offline \
+  && pnpm --filter @ahel/chat-host-runtime deploy --prod --legacy /out \
   && cp docker/chat-host/entrypoint.sh /out/entrypoint.sh \
   && chmod 0755 /out/entrypoint.sh
 

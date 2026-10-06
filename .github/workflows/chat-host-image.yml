@@ -53,6 +53,7 @@ jobs:
           file: docker/chat-host/Dockerfile
           platforms: linux/amd64
           push: true
+          build-args: DSH_CLIENT_COMMIT_HASH=${{ github.sha }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
