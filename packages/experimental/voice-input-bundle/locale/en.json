@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Voice input",
-    "description": "Transcribe recordings locally with SenseVoice; first use requires installing dependencies"
+    "title": "Local voice engine",
+    "description": "Transcribe on this computer with SenseVoice (Chinese, English, Japanese, Korean, Cantonese); first use downloads about 239 MB"
   }
 }

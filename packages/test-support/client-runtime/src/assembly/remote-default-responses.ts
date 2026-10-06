@@ -59,5 +59,7 @@ export const remoteDefaultResponses: RemoteTable = {
     'ahelAccount/watch': openStream([{ status: 'signed-out', profile: null, attempt: null, workspace: null, reachable: true }]),
     // ui-local-cli lists the detected local CLIs for Settings > Models.
     'localCli/watch': openStream([[]]),
+    // client-ui-voice-input shares speech readiness across the composer mic and Settings > General > Dictation.
+    'speech/follow': openStream([{ providers: [], selection: { providerId: 'ahel-cloud', language: 'auto' }, maxAudioBytes: 2_000_000, maxDurationSeconds: 60 }]),
   },
 }

@@ -64,6 +64,7 @@ describe('release families', () => {
       '@ahel/dsh-experimental-inspector',
       '@ahel/dsh-experimental-ptc-runtime-python',
       '@ahel/dsh-experimental-session-inspector',
+      '@ahel/dsh-experimental-speech-to-text-ahel',
       '@ahel/dsh-experimental-speech-to-text-sensevoice',
       '@ahel/dsh-experimental-speech-to-text',
       '@ahel/dsh-experimental-tool-agent-team',

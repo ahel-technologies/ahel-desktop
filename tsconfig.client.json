@@ -54,6 +54,8 @@
     { "path": "./apps/desktop/tsconfig.client.json" },
     { "path": "./packages/util/atomic-write" },
     { "path": "./packages/experimental/client-ui-voice-input" },
+    // The dictation flow test drives the ahel.ai provider through the voice UI.
+    { "path": "./packages/experimental/speech-to-text-ahel" },
     { "path": "./packages/experimental/client-ui-claude-code-mods" },
 
     { "path": "./packages/client/ui-sidebar-terminal" },

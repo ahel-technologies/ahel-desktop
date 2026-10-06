@@ -1,13 +1,9 @@
+# Optional local voice engine. The web-app bundle already mounts dictation
+# (speech-to-text, the ahel.ai cloud provider, the speech Remote and the mic);
+# this bundle adds the local SenseVoice provider next to it, selectable in
+# Settings > General > Dictation. First use downloads about 239 MB (int8).
 - insert:
-    - id: speech-to-text
-      name: '@ahel/dsh-experimental-speech-to-text'
-      config:
-        defaultProvider: sensevoice-local
     - id: speech-to-text-sensevoice
       name: '@ahel/dsh-experimental-speech-to-text-sensevoice'
       config:
         dataRoot: !!js dshHomePath('speech-to-text', 'sensevoice')
-    - id: api-speech-to-text
-      name: '@ahel/dsh-experimental-api-speech-to-text'
-    - id: ui-voice-input
-      name: '@ahel/dsh-experimental-client-ui-voice-input'

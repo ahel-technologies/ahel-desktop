@@ -2483,6 +2483,18 @@ importers:
       '@ahel/dsh-cordis-host-runner':
         specifier: workspace:*
         version: link:../../extensions/cordis-host-runner
+      '@ahel/dsh-experimental-api-speech-to-text':
+        specifier: workspace:*
+        version: link:../../experimental/api-speech-to-text
+      '@ahel/dsh-experimental-client-ui-voice-input':
+        specifier: workspace:*
+        version: link:../../experimental/client-ui-voice-input
+      '@ahel/dsh-experimental-speech-to-text':
+        specifier: workspace:*
+        version: link:../../experimental/speech-to-text
+      '@ahel/dsh-experimental-speech-to-text-ahel':
+        specifier: workspace:*
+        version: link:../../experimental/speech-to-text-ahel
       '@ahel/dsh-file-reference':
         specifier: workspace:*
         version: link:../../context/file-reference
@@ -7747,6 +7759,9 @@ importers:
       '@ahel/dsh-client-ui-session':
         specifier: workspace:*
         version: link:../../client/ui-session
+      '@ahel/dsh-client-ui-settings':
+        specifier: workspace:*
+        version: link:../../client/ui-settings
       '@ahel/dsh-client-ui-slots':
         specifier: workspace:*
         version: link:../../client/ui-slots
@@ -7756,6 +7771,9 @@ importers:
       '@ahel/dsh-experimental-speech-to-text':
         specifier: workspace:*
         version: link:../speech-to-text
+      '@ahel/dsh-experimental-speech-to-text-ahel':
+        specifier: workspace:*
+        version: link:../speech-to-text-ahel
       '@ahel/dsh-session':
         specifier: workspace:*
         version: link:../../core/session
@@ -7995,6 +8013,22 @@ importers:
         specifier: workspace:*
         version: link:../../settings/settings
 
+  packages/experimental/speech-to-text-ahel:
+    dependencies:
+      '@ahel/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@ahel/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@ahel/dsh-ahel-account':
+        specifier: workspace:*
+        version: link:../../credentials/ahel-account
+      '@ahel/dsh-experimental-speech-to-text':
+        specifier: workspace:*
+        version: link:../speech-to-text
+
   packages/experimental/speech-to-text-sensevoice:
     dependencies:
       '@ahel/dsh-timeout':
@@ -8086,15 +8120,6 @@ importers:
 
   packages/experimental/voice-input-bundle:
     dependencies:
-      '@ahel/dsh-experimental-api-speech-to-text':
-        specifier: workspace:*
-        version: link:../api-speech-to-text
-      '@ahel/dsh-experimental-client-ui-voice-input':
-        specifier: workspace:*
-        version: link:../client-ui-voice-input
-      '@ahel/dsh-experimental-speech-to-text':
-        specifier: workspace:*
-        version: link:../speech-to-text
       '@ahel/dsh-experimental-speech-to-text-sensevoice':
         specifier: workspace:*
         version: link:../speech-to-text-sensevoice

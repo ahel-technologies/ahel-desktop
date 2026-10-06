@@ -2,7 +2,7 @@
 
 import type { DesktopShortcutInput, ShortcutConfigSnapshot, ShortcutSaveResult } from '@ahel/dsh-client-shortcuts/protocol'
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import { DESKTOP_IPC, SCHEME, type DshDesktopProductApi, type DesktopUpdatePresentation } from './ipc.ts'
+import { DESKTOP_IPC, SCHEME, type DshDesktopProductApi, type DesktopDictationState, type DesktopUpdatePresentation } from './ipc.ts'
 import { markDocumentPlatform, syncWindowFullscreen } from './preload-platform.ts'
 import { syncNativeTheme } from './preload-theme.ts'
 import { syncWindowsAppearance } from './preload-windows.ts'
@@ -46,6 +46,15 @@ function createProductApi(): DshDesktopProductApi {
         const handle = (_event: Electron.IpcRendererEvent, snapshot: ShortcutConfigSnapshot): void => { listener(snapshot) }
         ipcRenderer.on(DESKTOP_IPC.shortcutsChanged, handle)
         return () => { ipcRenderer.off(DESKTOP_IPC.shortcutsChanged, handle) }
+      },
+    },
+    dictation: {
+      get: () => ipcRenderer.invoke(DESKTOP_IPC.dictationGet) as Promise<DesktopDictationState>,
+      set: accelerator => ipcRenderer.invoke(DESKTOP_IPC.dictationSet, accelerator) as Promise<DesktopDictationState>,
+      onToggle(listener) {
+        const handle = (): void => { listener() }
+        ipcRenderer.on(DESKTOP_IPC.dictationToggle, handle)
+        return () => { ipcRenderer.off(DESKTOP_IPC.dictationToggle, handle) }
       },
     },
     updates: {

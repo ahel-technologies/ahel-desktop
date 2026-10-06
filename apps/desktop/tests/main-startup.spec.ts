@@ -231,6 +231,7 @@ vi.mock('electron', () => ({
   dialog: harness.dialog,
   shell: { openExternal: harness.openExternal },
   nativeTheme: harness.nativeTheme,
+  globalShortcut: { register: vi.fn(() => true), unregister: vi.fn() },
   net: { fetch: vi.fn() },
   ipcMain: {
     on: harness.ipcOn,

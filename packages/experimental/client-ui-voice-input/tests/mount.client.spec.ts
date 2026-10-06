@@ -56,6 +56,7 @@ async function fixture(fail = false) {
     'conversation.input.activity': { kind: 'single', scope: 'session' },
     'plugins.bundle.activation': { kind: 'keyed', scope: 'root' },
     'plugins.bundle.config': { kind: 'keyed', scope: 'root' },
+    'settings.general.item': { kind: 'list', scope: 'root' },
   } } as never,
   () => null)
   if (fail) vi.spyOn(ctx.slots, 'inject').mockImplementationOnce(() => { throw new Error('slot failed') })
@@ -72,8 +73,11 @@ it('withdraws its Remote, localized slot and microphone captures on disposal', a
     expect(entry).toMatchObject({ locale: 'voice-input' })
     const actions = entry!.inject!()
     assertVoiceActions(actions)
+    const opened = vi.fn()
+    b.ctx.on('settings/open-section' as never, opened as never)
     actions.openSettings()
-    expect(b.openBundle).toHaveBeenCalledWith('@ahel/dsh-experimental-voice-input-bundle')
+    expect(opened).toHaveBeenCalledWith('general')
+    expect(b.ctx.slots.entries('settings.general.item')[0]).toMatchObject({ locale: 'voice-input' })
     const finished = actions.createRecording()
     assert(finished instanceof Recording)
     await finished.dispose()

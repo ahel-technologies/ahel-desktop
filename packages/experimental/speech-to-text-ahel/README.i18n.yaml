@@ -1,0 +1,31 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/experimental/speech-to-text-ahel/README.md
+/:
+  en: 4286714872ee50fe
+  zh: 4f714afc8f432856
+/ahel-dsh-experimental-speech-to-text-ahel:
+  en: a7f3f7323daa3892
+  zh: cc77feb4fdf29dac
+/ahel-dsh-experimental-speech-to-text-ahel/summary:
+  en: 949f8357492487e4
+  zh: 937345593da67caf
+/ahel-dsh-experimental-speech-to-text-ahel/table-of-contents:
+  en: 4e53164159b5ce41
+  zh: 281ecc5c727b240a
+/ahel-dsh-experimental-speech-to-text-ahel/use-this-package:
+  en: ee7c10e399226867
+  zh: f1ad6c21402928e3
+/ahel-dsh-experimental-speech-to-text-ahel/model-experience:
+  en: fca6265a57e5a425
+  zh: 275f56711a1a8bc0
+/ahel-dsh-experimental-speech-to-text-ahel/model-experience/kv-cache-effect:
+  en: b5ec79db2e1d0dbc
+  zh: e5aff567ae5ee6fc
+/ahel-dsh-experimental-speech-to-text-ahel/known-limitations-and-deferred-work:
+  en: 443255d318f1b52b
+  zh: 1f3e56a7ead77e00
+/ahel-dsh-experimental-speech-to-text-ahel/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

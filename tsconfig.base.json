@@ -34,6 +34,7 @@
       "@ahel/dsh-otel": ["./packages/telemetry/otel/src"],
       "@ahel/dsh-api-gateway/stream-protocol": ["./packages/api/gateway/src/stream-protocol.ts"],
       "@ahel/dsh-experimental-speech-to-text": ["./packages/experimental/speech-to-text/src/index.ts"],
+      "@ahel/dsh-experimental-speech-to-text-ahel": ["./packages/experimental/speech-to-text-ahel/src/index.ts"],
       "@ahel/dsh-experimental-speech-to-text-sensevoice": ["./packages/experimental/speech-to-text-sensevoice/src/index.ts"],
       "@ahel/dsh-experimental-api-speech-to-text": ["./packages/experimental/api-speech-to-text/src/index.ts"],
       "@ahel/dsh-experimental-client-ui-voice-input": ["./packages/experimental/client-ui-voice-input/src/index.ts"],

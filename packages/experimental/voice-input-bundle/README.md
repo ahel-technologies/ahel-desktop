@@ -1,5 +1,5 @@
 ---
-description: "Enable experimental speech input from the plugin manager."
+description: "Optional local SenseVoice engine next to Ahel dictation."
 kind: "package-bundle"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This optional bundle composes a speech Service Definition, local SenseVoice provider, authenticated Remote and browser microphone control. Shipped profiles leave it disabled.
+This optional bundle adds the local SenseVoice provider to dictation. Ahel Desktop already mounts dictation itself (the speech registry, the ahel.ai cloud provider, the speech Remote and the mic, in `@ahel/dsh-web-app`), so this bundle carries only the local engine. Shipped profiles do not offer it yet; it stays out of the default build so nobody downloads about 239 MB they did not ask for.
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ This optional bundle composes a speech Service Definition, local SenseVoice prov
 <a id="use-this-package"></a>
 ## Use this package
 
-Open Plugins in the Web sidebar and enable Voice Input, marked by a blue waveform icon. If models need preparation, a dialog offers Go to setup or Later; Go to setup opens the bundle details. Complete caches need no setup prompt. In the details, choose Download and prepare; the collapsed current-step summary expands to the complete step list. Downloads report actual bytes; verification and loading show elapsed time. Once ready, click the microphone between the model selector and Send, then Stop to insert a transcript. Bundle details store the recognizer and language through the Settings service. Disabling the bundle cancels active work; cached assets remain on disk.
+With Developer tools on, open Plugins and enable Local voice engine. If models need preparation, a dialog offers Go to setup or Later; Go to setup opens the bundle details, where Download and prepare fetches the SenseVoice model (about 239 MB, int8). Once ready, choose SenseVoice under Settings > General > Dictation; the mic and the push-to-talk shortcut then transcribe on this computer. Disabling the bundle cancels active work; cached assets remain on disk.
 
 -----
 
@@ -35,7 +35,7 @@ Open Plugins in the Web sidebar and enable Voice Input, marked by a blue wavefor
 <details>
 <summary>Maintainer details — click to expand</summary>
 
-The static `cordis.patch.yml` adds the four voice rows, selects `sensevoice-local` as the default recognizer and supplies the provider cache directory with `dshHomePath`. Optional-bundle installation makes the package available to management without selecting it in default profiles. The browser contribution owns its generated Remote mount; stable API Remotes do not import experimental code.
+The static `cordis.patch.yml` adds one row, `speech-to-text-sensevoice`, with its cache directory from `dshHomePath`. The default recognizer stays `ahel-cloud`; a person selects `sensevoice-local` in Settings > General > Dictation. Optional-bundle installation makes the package available to management without selecting it in default profiles. The browser contribution owns its generated Remote mount; stable API Remotes do not import experimental code.
 
 </details>
 

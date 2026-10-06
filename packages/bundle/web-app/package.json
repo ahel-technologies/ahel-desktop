@@ -134,7 +134,11 @@
     "@ahel/dsh-web": "workspace:*",
     "@ahel/dsh-tool-web": "workspace:*",
     "@ahel/dsh-web-search-ahel": "workspace:*",
-    "@ahel/dsh-client-ui-settings-web-search": "workspace:*"
+    "@ahel/dsh-client-ui-settings-web-search": "workspace:*",
+    "@ahel/dsh-experimental-speech-to-text": "workspace:*",
+    "@ahel/dsh-experimental-speech-to-text-ahel": "workspace:*",
+    "@ahel/dsh-experimental-api-speech-to-text": "workspace:*",
+    "@ahel/dsh-experimental-client-ui-voice-input": "workspace:*"
   },
   "peerDependencies": {
     "@ahel/cordis": "workspace:~",

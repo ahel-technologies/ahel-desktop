@@ -317,6 +317,27 @@
           searchTimeoutMs: 60000
           fetchTimeoutMs: 60000
 
+    # Dictation: the mic between the model picker and Send records 16 kHz
+    # mono WAV; ahel.ai transcribes it through the signed-in account (metered
+    # on the workspace balance) and the text lands in the draft, never sent.
+    # Only the cloud provider is mounted: the local SenseVoice engine (about
+    # 239 MB on first use) stays out; the optional voice-input-bundle adds it.
+    - id: speech-to-text
+      name: '@ahel/dsh-experimental-speech-to-text'
+      config:
+        defaultProvider: ahel-cloud
+
+    - id: speech-to-text-ahel
+      name: '@ahel/dsh-experimental-speech-to-text-ahel'
+
+    - id: api-speech-to-text
+      name: '@ahel/dsh-experimental-api-speech-to-text'
+      config:
+        maxDurationSeconds: 60
+
+    - id: ui-voice-input
+      name: '@ahel/dsh-experimental-client-ui-voice-input'
+
     # Claude Code, Codex and Gemini CLIs the person installed and signed into
     # themselves; detection and enable state only, the person's own vendor plan pays.
     # Local child processes for the llm-local-cli probes and CLI turns; the

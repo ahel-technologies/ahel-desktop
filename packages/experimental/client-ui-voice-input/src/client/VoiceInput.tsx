@@ -10,6 +10,7 @@ import type { SpeechReadiness } from './readiness.ts'
 import { Waveform } from './Waveform.tsx'
 import { VoiceSetupDialog } from './VoiceSetupDialog.tsx'
 import { NS } from './locales.ts'
+import type { DictationToggles } from './hotkey.ts'
 import { Button, IconCloseOutlineRegular, IconStopFillRegular, IconMicrophoneOutlineRegular, StateDot, Tooltip } from '@ahel/dsh-client-ui-primitives'
 import css from './VoiceInput.module.css'
 
@@ -23,6 +24,8 @@ export interface VoiceInputActions {
   prepare: (providerId: SpeechProviderId, options?: SpeechPreparationOptions) => Promise<void>
   cancelPreparation: (providerId: SpeechProviderId) => Promise<void>
   configure: (patch: SpeechSelectionPatch) => Promise<void>
+  /** Desktop push-to-talk presses, routed to the composer on screen. */
+  toggles: DictationToggles
 }
 
 /** Entry-injected Host readiness and microphone operations. */
@@ -54,7 +57,7 @@ async function disposeRecording(capture: Recording): Promise<void> {
 
 /** Render a compact microphone or an expanded capture, transcription, or retry row. */
 export function VoiceInput({ sessionId, inputActions, locked, onActiveChange,
-  createRecording, transcribe, openSettings, useSpeechReadiness, t }: VoiceInputProps) {
+  createRecording, transcribe, openSettings, toggles, useSpeechReadiness, t }: VoiceInputProps) {
   const readiness = useSpeechReadiness(value => value), catalog = readiness.catalog
   const provider = catalog?.providers.find(item => item.id === catalog.selection.providerId)
   const usable = readiness.connected && (provider?.preparation.phase === 'ready' || provider?.preparation.phase === 'standby'
@@ -64,6 +67,8 @@ export function VoiceInput({ sessionId, inputActions, locked, onActiveChange,
   useEffect(() => { if (usable) setSetupOpen(false) }, [usable])
   const current = useRef<ActiveRecording>(), generation = useRef(0)
   const expanded = phase !== 'idle'
+  const root = useRef<HTMLElement | null>(null)
+  const cloud = provider?.location === 'cloud'
   useLayoutEffect(() => { onActiveChange(expanded); return () => { onActiveChange(false) } }, [expanded, onActiveChange])
 
   const cancel = (): void => {
@@ -142,9 +147,20 @@ export function VoiceInput({ sessionId, inputActions, locked, onActiveChange,
       if (run === generation.current) { current.current = undefined; feedback(failureText(failure)) }
     }
   }
+  // The push-to-talk shortcut starts a recording, or stops and transcribes the one running.
+  const press = useRef<() => void>(() => {})
+  press.current = () => {
+    const active = current.current
+    if (active === undefined) { if (usable) void start(); else if (!locked) setSetupOpen(true) }
+    else if (active.phase === 'recording') void finish()
+  }
+  useEffect(() => toggles.add({
+    visible: () => root.current !== null && root.current.isConnected && root.current.getClientRects().length > 0,
+    toggle: () => { press.current() },
+  }), [toggles])
   if (!expanded) return <>
-    <Tooltip label={t('dictate')} disabled={!usable} side="top" portal>
-      <span className={css.triggerAnchor}><Button className={css.trigger} size="sm" disabled={locked}
+    <Tooltip label={t(cloud ? 'dictateCloud' : 'dictate')} disabled={!usable} side="top" portal>
+      <span className={css.triggerAnchor} ref={(element) => { root.current = element }}><Button className={css.trigger} size="sm" disabled={locked}
         aria-label={t(usable ? 'start' : 'setupPrompt.trigger')} aria-haspopup={usable ? undefined : 'dialog'}
         onMouseDown={(event) => { event.preventDefault() }}
         onClick={() => { if (usable) void start(); else setSetupOpen(true) }}><IconMicrophoneOutlineRegular size={18} /></Button></span>
@@ -153,14 +169,14 @@ export function VoiceInput({ sessionId, inputActions, locked, onActiveChange,
       needsInstallation={readiness.connected && provider?.location === 'host-local' && provider.preparation.phase === 'unprepared'}
       onDismiss={() => { setSetupOpen(false) }} onOpenDetails={() => { setSetupOpen(false); openSettings() }} t={t} />
   </>
-  return <div className={css.captureRow} data-voice-activity={phase}>
+  return <div className={css.captureRow} data-voice-activity={phase} ref={(element) => { root.current = element }}>
     <Button type="button" className={css.roundButton} size="sm" aria-label={t(pending ? 'discard' : 'cancel')}
       onClick={cancel}><IconCloseOutlineRegular size={14} /></Button>
     {phase === 'recording' ? <Waveform recording={current.current?.capture} label={t('recording')} />
       : <span className={css.activityMessage} role="status" title={pending || message}>
         {(phase === 'requesting' || phase === 'transcribing') && <StateDot state="ongoing" />}
         {phase === 'feedback' ? message : t(phase === 'requesting' ? 'requesting'
-          : provider?.preparation.phase === 'waking' ? 'wakingShort' : 'transcribingShort')}</span>}
+          : provider?.preparation.phase === 'waking' ? 'wakingShort' : cloud ? 'transcribingCloud' : 'transcribingShort')}</span>}
     {phase === 'recording' && <Button type="button" className={css.roundButton} size="sm" aria-label={t('stop')}
       onClick={() => { void finish() }}><IconStopFillRegular size={14} /></Button>}
     {phase === 'feedback' && (pending
