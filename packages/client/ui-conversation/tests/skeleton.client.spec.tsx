@@ -385,7 +385,7 @@ describe('Hero chrome', () => {
   it('renders the English hero headline with no preview badge through the hero locale seat', () => {
     const renderSlot = vi.fn<HeroShellProps['renderSlot']>(() => null)
     const view = render(<HeroShell t={makeTranslate(en, commonEn)} renderSlot={renderSlot} />)
-    expect(view.getByText('Your apps, in one chat')).toBeTruthy()
+    expect(view.getByText('What can I help with?')).toBeTruthy()
     expect(view.queryByText('Preview')).toBeNull()
     expect(renderSlot).toHaveBeenCalledOnce()
     expect(renderSlot.mock.calls[0]?.[0]).toBe('conversation.hero.brand.mark')
