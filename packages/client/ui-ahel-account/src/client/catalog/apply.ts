@@ -33,8 +33,11 @@ const DiscoverWithConnect = withConnect(DiscoverPage)
 /** Your apps with the same context. */
 const AppsWithConnect = withConnect(YourAppsPage)
 
-/** Window focus re-reads at most this often. */
-const FOCUS_REFRESH_MS = 5_000
+/** Window focus and visibility re-read at most this often. Opening Your apps,
+ *  a sign-in or workspace change, and an install or removal read at once;
+ *  nothing reads on a timer (ahel.ai counts every `installed` call in the
+ *  workspace Activity, 2026-10-06). */
+const FOCUS_REFRESH_MS = 60_000
 
 /**
  * Register the Discover and Your apps panels and the shared installs read.
