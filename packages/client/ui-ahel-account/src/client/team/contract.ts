@@ -3,7 +3,6 @@ import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@ahe
 import type { AhelAccountView, DesktopSummary, HandoffList, HandoffReceivedRow } from '@ahel/dsh-ahel-account/types'
 import type {} from '@ahel/dsh-client-ui-layout/client'
 import type {} from '@ahel/dsh-client-ui-sidebar/client'
-import type {} from '@ahel/dsh-client-ui-workspace/client'
 import type {} from '@ahel/dsh-client-ui-conversation/client'
 import type {} from '../locales.ts'
 
@@ -125,8 +124,8 @@ export interface TeamGlanceInjected {
   }
 }
 
-/** Props of the team header above the sidebar's workspace list. */
-export type TeamHeaderProps = PropsRuntime<'sidebar.workspaces.header'> & InjectFace<TeamGlanceInjected> & PropsLocale<'ahel-account'>
+/** Props of the team header at the top of the sidebar. */
+export type TeamHeaderProps = PropsRuntime<'sidebar.header'> & InjectFace<TeamGlanceInjected> & PropsLocale<'ahel-account'>
 
-/** Props of the team strip below the blank-session composer. */
-export type TeamStripProps = PropsRuntime<'conversation.hero.dock'> & InjectFace<TeamGlanceInjected> & PropsLocale<'ahel-account'>
+/** Props of the team strip under the blank-session greeting. */
+export type TeamStripProps = PropsRuntime<'conversation.hero.subhead'> & InjectFace<TeamGlanceInjected> & PropsLocale<'ahel-account'>

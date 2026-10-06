@@ -95,13 +95,12 @@
   line-height: 16px;
 }
 
-/* One centered wrapping row between the hero composer and the starter chips. */
+/* One centered wrapping row under the greeting; the hero stack's 12px gap spaces it. */
 .strip {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  padding-top: 12px;
 }
 
 .tile {

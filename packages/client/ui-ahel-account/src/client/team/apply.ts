@@ -3,8 +3,8 @@
  * owners and team leads with the pending-count badge, and a system
  * notification when a new held call arrives; the `ahel-inbox` main panel and
  * its sidebar row with the unread badge, whose Open seeds a new session; the
- * team header above the sidebar's workspace list and the welcome screen's team
- * strip; and "Share with teammate" in the session menu and as the chat
+ * team header at the top of the sidebar and the team strip under the welcome
+ * greeting; and "Share with teammate" in the session menu and as the chat
  * header's Hand off button, with its dialog.
  */
 import type { Context } from '@ahel/cordis'
@@ -242,7 +242,8 @@ function registerInbox(ctx: Context, account: AhelAccountInjected, summary: Team
 }
 
 /**
- * Register the sidebar team header and the welcome screen's team strip; both render nothing while signed out.
+ * Register the team header at the top of the sidebar and the team strip under the welcome greeting;
+ * both render nothing while signed out or before the first summary.
  * @param ctx - Client context with `slots` and `layout`.
  * @param account - the account face.
  * @param summary - the shared summary poll.
@@ -256,12 +257,11 @@ function registerGlance(ctx: Context, account: AhelAccountInjected, summary: Tea
     },
     hooks: { account: account.hooks.account, summary: summary.state },
   }
-  ctx.slots.inject('sidebar.workspaces.header', () => ctx.slots.register({
-    name: 'sidebar.workspaces.header', id: 'ahel-team', order: 0, locale: NS, inject: () => face,
+  ctx.slots.inject('sidebar.header', () => ctx.slots.register({
+    name: 'sidebar.header', id: 'ahel-team', order: 0, locale: NS, inject: () => face,
   }, TeamHeader))
-  // Before the starter chips (order 0).
-  ctx.slots.inject('conversation.hero.dock', () => ctx.slots.register({
-    name: 'conversation.hero.dock', id: 'ahel-team', order: -10, locale: NS, inject: () => face,
+  ctx.slots.inject('conversation.hero.subhead', () => ctx.slots.register({
+    name: 'conversation.hero.subhead', id: 'ahel-team', order: 0, locale: NS, inject: () => face,
   }, TeamStrip))
 }
 

@@ -1,7 +1,7 @@
 /**
- * The team at a glance: the sidebar header above the workspace list (workspace
- * name, member faces, member count) and the welcome screen's strip of quiet
- * tiles (members, open approvals, inbox, connected apps), each opening its panel.
+ * The team at a glance: the header at the top of the sidebar (workspace name,
+ * member faces, member count) and the strip of quiet tiles under the welcome
+ * greeting (members, open approvals, inbox, connected apps), each opening its panel.
  */
 import type { ReactNode } from 'react'
 import type { AhelAccountView, DesktopMember, DesktopSummary } from '@ahel/dsh-ahel-account/types'
@@ -101,7 +101,7 @@ function membersText(total: number | null, t: Translate): string | null {
 }
 
 /**
- * Sidebar header above the workspace list: member faces, workspace name and member count.
+ * Header at the top of the sidebar: member faces, workspace name and member count.
  * A press opens the team settings on ahel.ai. Nothing renders in the rail or while signed out.
  * @param props - column state and the team face.
  * @returns the header, or null.
@@ -138,7 +138,7 @@ function Tile({ count, words, onPress }: { count: number; words: string; onPress
 }
 
 /**
- * The welcome screen's team strip below the composer: the workspace with its
+ * The team strip under the welcome greeting, above the composer: the workspace with its
  * members, then open approvals (owners and team leads), inbox items and
  * connected apps. Each tile opens its panel; parts ahel.ai did not send stay out.
  * @param props - the team face.

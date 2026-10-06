@@ -197,6 +197,8 @@ declare module '@ahel/dsh-client-ui-slots' {
     'conversation.brand.pulse': { kind: 'single'; scope: 'root'; owner: BrandPulseMarkOwnerProps }
     /** Names the signed-in person in the blank-session greeting headline. */
     'conversation.hero.greeting': { kind: 'single'; scope: 'root'; owner: HeroGreetingOwnerProps }
+    /** Entries directly under the blank-session greeting, above the composer, in ascending `order`. */
+    'conversation.hero.subhead': { kind: 'list'; scope: 'root' }
     /** Agent-preset control staged for a New Session. */
     'conversation.hero.agentPreset': { kind: 'single'; scope: 'session-maybe'; owner: HeroAgentPresetOwnerProps }
     /** Full-width entries above the composer card. */
@@ -245,6 +247,7 @@ declare module '@ahel/dsh-client-ui-slots' {
         'conversation.input.dock': { kind: 'list'; scope: 'session' }
         'conversation.hero.brand.mark': { kind: 'single'; scope: 'root' }
         'conversation.hero.greeting': { kind: 'single'; scope: 'root' }
+        'conversation.hero.subhead': { kind: 'list'; scope: 'root' }
         'conversation.hero.workspace': { kind: 'single'; scope: 'root' }
         'conversation.hero.agentPreset': { kind: 'single'; scope: 'session-maybe' }
       }

@@ -5,7 +5,8 @@
  * everything between the workspace section header and the list bottom is the
  * `sidebar.workspaces` registrant's (ui-workspace), and the foot is the
  * `sidebar.settings` registrant's (ui-settings), followed by optional footer
- * actions in `sidebar.footer.action`.
+ * actions in `sidebar.footer.action`. `sidebar.header` entries sit under the
+ * brand row.
  */
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@ahel/dsh-client-ui-slots'
 import type { ObservableSnapshot } from '@ahel/dsh-client-store'
@@ -51,6 +52,13 @@ declare module '@ahel/dsh-client-ui-slots' {
      * package's 'sidebar' entry; each action receives only the column state.
      */
     'sidebar.footer.action': { kind: 'list'; scope: 'root'; owner: SidebarFooterActionOwnerProps }
+    /**
+     * Entries at the top of the column, under the brand row and above New
+     * Session and the panel rows, for example the signed-in team's name and
+     * members. Declared by this package's 'sidebar' entry; each entry
+     * receives the column state and renders nothing it has no room for.
+     */
+    'sidebar.header': { kind: 'list'; scope: 'root'; owner: SidebarHeaderOwnerProps }
   }
 }
 
@@ -104,6 +112,12 @@ export interface SidebarSettingsOwnerProps {
   wide: boolean
 }
 
+/** Owner share of one entry at the top of the column. */
+export interface SidebarHeaderOwnerProps {
+  /** Whether the sidebar renders wide content (false = 56px rail). */
+  wide: boolean
+}
+
 /** Owner share of an action rendered beside Settings at the sidebar foot. */
 export interface SidebarFooterActionOwnerProps {
   /** Whether the sidebar renders wide content (false = 56px rail). */
@@ -144,5 +158,6 @@ export type SidebarRootComponentProps =
     | 'sidebar.workspaces'
     | 'sidebar.settings'
     | 'sidebar.footer.action'
+    | 'sidebar.header'
   >
   & InjectFace<SidebarRootInjected> & PropsLocale<'sidebar'>

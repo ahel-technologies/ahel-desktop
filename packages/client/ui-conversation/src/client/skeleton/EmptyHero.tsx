@@ -139,6 +139,7 @@ export function HeroShell({ t, renderSlot, children }: HeroShellProps) {
             <span>{renderSlot('conversation.hero.greeting', { greet }, { fallback: greet() })}</span>
           </span>
         </div>
+        {renderSlot('conversation.hero.subhead', {})}
         <div className={css.body}>
           {/* The composer remains mounted outside this component. */}
         </div>

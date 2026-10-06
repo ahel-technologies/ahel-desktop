@@ -388,8 +388,9 @@ describe('Hero chrome', () => {
     const view = render(<HeroShell t={makeTranslate(en, commonEn)} renderSlot={renderSlot} />)
     expect(view.getByText(/Good (morning|afternoon|evening)|Late night|Still up|Moonlit/)).toBeTruthy()
     expect(view.queryByText('Preview')).toBeNull()
-    expect(renderSlot).toHaveBeenCalledTimes(2)
+    expect(renderSlot).toHaveBeenCalledTimes(3)
     expect(renderSlot.mock.calls[1]?.[0]).toBe('conversation.hero.greeting')
+    expect(renderSlot.mock.calls[2]?.[0]).toBe('conversation.hero.subhead')
     expect(renderSlot.mock.calls[0]?.[0]).toBe('conversation.hero.brand.mark')
     const brandMarkOwner = renderSlot.mock.calls[0]?.[1]
     if (brandMarkOwner === undefined || !('size' in brandMarkOwner) || !('className' in brandMarkOwner)) {

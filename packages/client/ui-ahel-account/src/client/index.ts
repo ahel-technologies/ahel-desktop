@@ -8,8 +8,8 @@
  * refusals in the transcript, the Discover panel over the Host's
  * `ahelCatalog` namespace, and over `ahelTeam`'s summary the balance line
  * and the Approvals panel with its badge and notifications, the Inbox
- * of teammate handoffs with its unread badge, the team header above the
- * sidebar's workspace list, the welcome screen's team strip, and the chat
+ * of teammate handoffs with its unread badge, the team header at the top of
+ * the sidebar, the team strip under the welcome greeting, and the chat
  * header's Hand off button.
  */
 import type { Context } from '@ahel/cordis'

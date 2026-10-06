@@ -762,15 +762,6 @@ describe('WorkspaceBrowser', () => {
     expect(rendered).toHaveBeenCalledWith('sidebar.workspaces.session.row.action', owner)
   })
 
-  it('renders the header entries above the section header with the column state', () => {
-    const renderSlot: WorkspaceBrowserProps['renderSlot'] = (name: string, owner: object) =>
-      name === 'sidebar.workspaces.header' ? <div data-testid="team-header">{String((owner as { wide: boolean }).wide)}</div> : null
-    mount({ renderSlot })
-    const header = screen.getByTestId('team-header')
-    expect(header.textContent).toBe('true')
-    expect(header.nextElementSibling?.textContent).toContain(zh['section.workspaces'])
-  })
-
   it('shows five sessions by default and clears transient show-all when the Workspace collapses', () => {
     const items = Array.from({ length: 7 }, (_, index) => summary(`session-${index + 1}`, 7 - index))
     const b = mount({
