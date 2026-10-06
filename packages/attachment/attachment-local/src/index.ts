@@ -6,6 +6,7 @@ import z from '@ahel/schemastery'
 import { AttachmentStore } from '@ahel/dsh-attachment'
 import type {
   FileAttachmentRef,
+  FileAttachmentText,
   ImageAttachmentLimits,
   ImageAttachmentRef,
   ImageRequestTarget,
@@ -23,12 +24,20 @@ import {
   readFileStreamVerbatim, saveFileStreamVerbatim, saveFileVerbatim, storedFilePath,
 } from './file-store.ts'
 import { readRequestImageFile, requestImageVariantId } from './request-image.ts'
+import {
+  DEFAULT_MAX_FILE_TEXT_BYTES, DEFAULT_MAX_FILE_TEXT_SOURCE_BYTES, readOrExtractFileText, type FileTextLimits,
+} from './file-text.ts'
+import { installAttachmentTextContext } from './file-context.ts'
 
 export { canPassThroughNormalization, normalizeImage } from './normalization.ts'
 export type { NormalizedImage, NormalizationPolicy } from './normalization.ts'
 export { commitPreparedImageFile, prepareImageFile, readImageFile, saveImageFile, validateImageFile } from './store.ts'
 export type { PreparedImageFile } from './store.ts'
 export { readRequestImageFile, requestImageVariantId } from './request-image.ts'
+export { DEFAULT_MAX_FILE_TEXT_BYTES, DEFAULT_MAX_FILE_TEXT_SOURCE_BYTES, extractFileText } from './file-text.ts'
+export type { FileTextLimits } from './file-text.ts'
+export { renderAttachmentText } from './file-context.ts'
+export type { AttachmentTextFile, AttachmentTextSource } from './file-context.ts'
 
 /** Default maximum encoded bytes for one submitted image; oversized sources are refused, not shrunk. */
 export const DEFAULT_MAX_IMAGE_BYTES = 20 * 1024 * 1024
@@ -56,6 +65,8 @@ export const DEFAULT_NORMALIZED_IMAGE_MAX_BYTES = 4 * 1024 * 1024
 export const DEFAULT_IMAGE_COMPRESSION_CONCURRENCY = 2
 /** Maximum configurable native image transformations per store. */
 export const MAX_IMAGE_COMPRESSION_CONCURRENCY = 8
+/** Default cap on extracted file text the model receives for one prompt. */
+export const DEFAULT_MAX_PROMPT_FILE_TEXT_BYTES = 800 * 1024
 
 /** Local attachment backend configuration. */
 export interface Config {
@@ -82,6 +93,12 @@ export interface Config {
   normalizedImageMaxBytes?: number
   /** Maximum simultaneous normalization or request-image transformations in this service instance. */
   imageCompressionConcurrency?: number
+  /** Cap on text extracted from one attached file, in UTF-8 bytes. Default: 200 KiB. */
+  maxFileTextBytes?: number
+  /** Largest attached file read for text extraction. Default: 64 MiB. */
+  maxFileTextSourceBytes?: number
+  /** Cap on extracted text the model receives for one prompt's attachments, in UTF-8 bytes. Default: 800 KiB. */
+  maxPromptFileTextBytes?: number
 }
 
 function abortReason(signal: AbortSignal): Error {
@@ -157,6 +174,9 @@ export class LocalAttachmentStore extends AttachmentStore {
     normalizedImageMaxBytes: z.number().step(1).min(1).default(DEFAULT_NORMALIZED_IMAGE_MAX_BYTES),
     imageCompressionConcurrency: z.number().step(1).min(1).max(MAX_IMAGE_COMPRESSION_CONCURRENCY)
       .default(DEFAULT_IMAGE_COMPRESSION_CONCURRENCY),
+    maxFileTextBytes: z.number().step(1).min(1).default(DEFAULT_MAX_FILE_TEXT_BYTES),
+    maxFileTextSourceBytes: z.number().step(1).min(1).default(DEFAULT_MAX_FILE_TEXT_SOURCE_BYTES),
+    maxPromptFileTextBytes: z.number().step(1).min(1).default(DEFAULT_MAX_PROMPT_FILE_TEXT_BYTES),
   })
 
   /** Absolute versioned storage root. */
@@ -169,6 +189,9 @@ export class LocalAttachmentStore extends AttachmentStore {
   private readonly cacheRoot: string
   private readonly compression: CompressionLimiter
   private readonly requestInflight = new Map<string, SharedRequest<RequestImageAttachment>>()
+  /** Resolved file-text extraction caps. */
+  readonly fileTextLimits: FileTextLimits
+  private readonly textInflight = new Map<string, Promise<FileAttachmentText>>()
 
   constructor(ctx: Context, config: Config) {
     super(ctx)
@@ -198,6 +221,11 @@ export class LocalAttachmentStore extends AttachmentStore {
     }
     this.imageCompressionConcurrency = compressionConcurrency
     this.compression = new CompressionLimiter(compressionConcurrency)
+    this.fileTextLimits = Object.freeze({
+      maxTextBytes: config.maxFileTextBytes ?? DEFAULT_MAX_FILE_TEXT_BYTES,
+      maxSourceBytes: config.maxFileTextSourceBytes ?? DEFAULT_MAX_FILE_TEXT_SOURCE_BYTES,
+    })
+    installAttachmentTextContext(ctx, this, config.maxPromptFileTextBytes ?? DEFAULT_MAX_PROMPT_FILE_TEXT_BYTES)
   }
 
   async validateImage(input: SaveImageAttachment): Promise<void> {
@@ -230,11 +258,39 @@ export class LocalAttachmentStore extends AttachmentStore {
   }
 
   override async saveFile(input: SaveFileAttachment): Promise<FileAttachmentRef> {
-    return saveFileVerbatim(this.root, input)
+    return this.primeFileText(await saveFileVerbatim(this.root, input))
   }
 
   override async saveFileStream(input: SaveFileStreamAttachment): Promise<FileAttachmentRef> {
-    return saveFileStreamVerbatim(this.root, input)
+    return this.primeFileText(await saveFileStreamVerbatim(this.root, input))
+  }
+
+  override readFileText(ref: FileAttachmentRef, signal?: AbortSignal): Promise<FileAttachmentText> {
+    signal?.throwIfAborted()
+    const key = String(ref.attachmentId)
+    let operation = this.textInflight.get(key)
+    if (operation === undefined) {
+      operation = readOrExtractFileText(this.root, ref, this.fileTextLimits).finally(() => {
+        this.textInflight.delete(key)
+      })
+      this.textInflight.set(key, operation)
+    }
+    if (signal === undefined) return operation
+    return new Promise<FileAttachmentText>((resolve, reject) => {
+      const abort = (): void => {
+        reject(abortReason(signal))
+      }
+      signal.addEventListener('abort', abort, { once: true })
+      void operation.then(resolve, reject).finally(() => {
+        signal.removeEventListener('abort', abort)
+      })
+    })
+  }
+
+  /** Start text extraction at attach time so the first prompt finds it cached. */
+  private primeFileText(ref: FileAttachmentRef): FileAttachmentRef {
+    void this.readFileText(ref)
+    return ref
   }
 
   override readFileStream(ref: FileAttachmentRef, signal?: AbortSignal): AsyncIterable<Uint8Array> {

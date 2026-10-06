@@ -45,6 +45,26 @@ export interface FileAttachmentRef {
   bytes: number
 }
 
+/** Document family a stored file's text was read from. */
+export type FileTextFormat = 'pdf' | 'docx' | 'pptx' | 'spreadsheet' | 'text'
+
+/**
+ * Model-readable text extracted from one stored file. `no-text-layer` is a
+ * PDF whose pages carry no text (usually a scan); `unsupported` and `failed`
+ * carry a short `reason` the model can relay to the user.
+ */
+export interface FileAttachmentText {
+  readonly status: 'text' | 'no-text-layer' | 'unsupported' | 'failed'
+  readonly format?: FileTextFormat
+  /** Extracted text, empty unless `status` is `text`. */
+  readonly text: string
+  /** True when `text` was cut at the per-file cap. */
+  readonly truncated: boolean
+  /** Pages, slides, or sheets read, when the format has them. */
+  readonly units?: number
+  readonly reason?: string
+}
+
 /** Base64-encoded file upload accompanying one wire request. */
 export interface EncodedFileAttachment {
   /** Canonical base64 encoding of the file bytes. */

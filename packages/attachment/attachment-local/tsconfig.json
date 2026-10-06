@@ -7,6 +7,8 @@
     { "path": "../../../vendor/cordis" },
     { "path": "../../../vendor/schemastery" },
     { "path": "../attachment" },
+    { "path": "../../llm/llm" },
+    { "path": "../../core/agent" },
     { "path": "../../util/home-paths" },
     { "path": "../../util/lazy-require" }
   ]

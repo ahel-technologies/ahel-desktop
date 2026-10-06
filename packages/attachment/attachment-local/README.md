@@ -27,6 +27,8 @@ Store images and generic file attachments durably below `DSH_HOME` on the machin
 
 In the default composition, images and generic files attached to prompts or commands are stored on this machine automatically. If you compose your own setup, mounting this plugin provides durable attachments.
 
+Attached PDF, Word, PowerPoint, spreadsheet, and plain-text files are read as text when attached (cached under `file-text/`, capped at `maxFileTextBytes` per file, scanned PDFs reported as having no text layer), and the next model step receives that text as one logged `attachment-text` context message after the prompt.
+
 ### Minimal configuration
 
 Mount the plugin with no required configuration. The defaults below define what you can attach; the generated configuration catalog is the exhaustive source for every field.
