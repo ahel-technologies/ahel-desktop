@@ -31,6 +31,7 @@ import type { ModelsSettingsStore, ProviderRow } from './store.ts'
 import type { ModelsOperations } from './operations.ts'
 import type { SettingsSchemaOperations } from './schema-operations.ts'
 import { ProviderEditor, type ProviderEditorProps } from './ProviderEditor.tsx'
+import { PresetTiles } from './PresetTiles.tsx'
 import type { en } from './locales.ts'
 import styles from './ModelsSection.module.css'
 
@@ -228,6 +229,8 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
   const [deleting, setDeleting] = useState(false)
   const [deleteFailure, setDeleteFailure] = useState<string | undefined>(undefined)
   const [savedTarget, setSavedTarget] = useState<ProviderIdentity | undefined>(undefined)
+  /** The route of the open preset card, if any. */
+  const [presetOpen, setPresetOpen] = useState<string | undefined>(undefined)
 
   const announceSaved = (target: ProviderIdentity): void => {
     // Announced only once the refreshed directory is in the snapshot the
@@ -414,6 +417,7 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
                       // it held, since closing either card would otherwise
                       // discard the other's draft.
                       setAddOpen(false)
+                      setPresetOpen(undefined)
                       setEditing(open ? undefined : target)
                     }}
                   >
@@ -459,6 +463,23 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
           )
         })}
       </ul>
+      <PresetTiles
+        configured={configured.map(row => row.entry.provider)}
+        revision={piAi?.revision}
+        open={presetOpen}
+        onOpen={(route) => {
+          setSavedTarget(undefined)
+          if (route !== undefined) closeAdd()
+          setPresetOpen(route)
+        }}
+        onConnected={(preset) => {
+          setPresetOpen(undefined)
+          announceSaved({ provider: preset.route, displayName: preset.displayName })
+        }}
+        operations={operations}
+        t={t}
+        readOnly={!state.writable}
+      />
       <div className={styles['addBlock']}>
         {addOpen
           ? (
@@ -595,6 +616,7 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
                     setEditing(first === undefined ? undefined : targetOf(first.row))
                     setAddMode(initial)
                     setVisited(new Set([initial]))
+                    setPresetOpen(undefined)
                     setAddOpen(true)
                   }}
                 >

@@ -720,3 +720,85 @@ select.input {
   line-height: 20px;
   text-align: center;
 }
+
+/* One-key provider presets: tiles in the card material, then the open card. */
+.presets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.presetGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.presetTile {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 0.5px solid var(--dsw-alias-settings-card-stroke);
+  border-radius: var(--dsw-radius-lg);
+  background: var(--dsw-alias-settings-card-fill);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.presetTile:hover:not(:disabled),
+.presetTileOpen {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.presetTile:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.presetTile:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+}
+
+.presetGlyph {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--dsw-radius-md);
+  background: var(--dsw-alias-label-primary);
+  color: var(--dsw-alias-label-primary-foreground);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.presetText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.presetBlurb {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.presetLink {
+  align-self: flex-start;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-link);
+  text-decoration: none;
+}
+
+.presetLink:hover {
+  text-decoration: underline;
+}

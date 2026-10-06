@@ -68,8 +68,44 @@ interface ListingTopProvider {
   max_completion_tokens?: unknown
 }
 
+/** Venice's per-model metadata block. */
+interface ListingModelSpec {
+  name?: unknown
+  availableContextTokens?: unknown
+  maxCompletionTokens?: unknown
+  traits?: unknown
+  capabilities?: { supportsFunctionCalling?: unknown; supportsVision?: unknown } | null
+}
+
+/** OpenRouter-style modality declaration. */
+interface ListingArchitecture {
+  input_modalities?: unknown
+}
+
+/**
+ * Model kinds a listing may tag with `type` (Venice, Together) that cannot
+ * serve a chat request; entries tagged with one are not candidates.
+ */
+const NON_CHAT_TYPES: ReadonlySet<string> = new Set([
+  'asr', 'audio', 'decision', 'embedding', 'image', 'inpaint', 'moderation', 'music', 'rerank', 'tts', 'upscale', 'video',
+])
+
+/**
+ * The `supported_endpoint_types` value (OrcaRouter) a model needs to be
+ * reachable over each listable protocol.
+ */
+const ENDPOINT_TYPES: Readonly<Record<string, string>> = {
+  'anthropic-messages': 'anthropic',
+  'openai-completions': 'openai',
+  'openai-responses': 'openai-response',
+}
+
 /** One entry of a supported `GET /models` reply. */
 interface ListingEntry {
+  type?: unknown
+  supported_endpoint_types?: unknown
+  model_spec?: ListingModelSpec | null
+  architecture?: ListingArchitecture | null
   id?: unknown
   /** Common gateway extensions; absent from the official listings. */
   name?: unknown
@@ -178,7 +214,7 @@ async function readBounded(response: Response, url: string): Promise<string> {
  * a working endpoint's catalog. Missing names fall back to the adopted id so
  * the Web form receives a complete human-readable row.
  */
-function readListing(body: unknown): LlmDiscoveredModel[] {
+function readListing(body: unknown, api: string): LlmDiscoveredModel[] {
   const listing = body as { data?: unknown; models?: unknown } | null
   const data = listing?.data
   let listed: { readonly key?: string; readonly raw: unknown }[]
@@ -199,17 +235,21 @@ function readListing(body: unknown): LlmDiscoveredModel[] {
       .map(([key, raw]) => ({ key, raw }))
   }
   const models: LlmDiscoveredModel[] = []
+  let preferred: LlmDiscoveredModel | undefined
   for (const { key, raw } of listed) {
     const entry = raw as ListingEntry | null
     const id = label(key, entry?.id)
     if (id === undefined) continue
-    const name = label(entry?.name, entry?.display_name, entry?.displayName) ?? id
+    if (!servesChat(entry, api)) continue
+    const spec = entry?.model_spec
+    const name = label(entry?.name, entry?.display_name, entry?.displayName, spec?.name) ?? id
     const contextWindow = capacity(
       entry?.contextWindow,
       entry?.context_window,
       entry?.context_length,
       entry?.max_input_tokens,
       entry?.limit?.context,
+      spec?.availableContextTokens,
     )
     const maxTokens = capacity(
       entry?.maxOutputTokens,
@@ -218,15 +258,46 @@ function readListing(body: unknown): LlmDiscoveredModel[] {
       entry?.max_tokens,
       entry?.limit?.output,
       entry?.top_provider?.max_completion_tokens,
+      spec?.maxCompletionTokens,
     )
-    models.push({
+    const inputModalities = imageInput(entry)
+    const model: LlmDiscoveredModel = {
       id,
       name,
       ...contextWindow === undefined ? {} : { contextWindow },
       ...maxTokens === undefined ? {} : { maxTokens },
-    })
+      ...inputModalities === undefined ? {} : { inputModalities },
+    }
+    if (preferred === undefined && Array.isArray(spec?.traits) && spec.traits.includes('default')) preferred = model
+    else models.push(model)
   }
-  return models
+  // A listing that marks its own default (Venice's `default` trait) lists it
+  // first, so a surface that adopts the whole list starts on that model.
+  return preferred === undefined ? models : [preferred, ...models]
+}
+
+/**
+ * Whether a listing entry can serve this protocol's chat request: not tagged
+ * as a non-chat `type`, reachable over the protocol when the entry names its
+ * endpoint types, and not declared unable to call tools (every agent request
+ * carries tools).
+ */
+function servesChat(entry: ListingEntry | null, api: string): boolean {
+  if (typeof entry?.type === 'string' && NON_CHAT_TYPES.has(entry.type)) return false
+  const endpoints = entry?.supported_endpoint_types
+  const needed = ENDPOINT_TYPES[api]
+  if (Array.isArray(endpoints) && needed !== undefined && !endpoints.includes(needed)) return false
+  return entry?.model_spec?.capabilities?.supportsFunctionCalling !== false
+}
+
+/** Image input disclosed as an OpenRouter-style modality list or a Venice vision capability. */
+function imageInput(entry: ListingEntry | null): LlmDiscoveredModel['inputModalities'] {
+  const declared = entry?.architecture?.input_modalities
+  const vision = Array.isArray(declared)
+    ? declared.includes('image')
+    : entry?.model_spec?.capabilities?.supportsVision
+  if (vision === true) return ['text', 'image']
+  return Array.isArray(declared) || vision === false ? ['text'] : undefined
 }
 
 /**
@@ -359,5 +430,5 @@ export async function discoverModels(
   } catch (error: unknown) {
     throw new LlmError(`${url} did not answer with JSON`, 'DISCOVERY_FAILED', { cause: error })
   }
-  return readListing(body)
+  return readListing(body, api)
 }

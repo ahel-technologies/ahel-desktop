@@ -128,7 +128,15 @@ function profileOptions(
     ...profile.websocketConnectTimeoutMs === undefined ? {} : { websocketConnectTimeoutMs: profile.websocketConnectTimeoutMs },
     // The agent recovery layer owns visible attempts; one adapter call is one SDK attempt.
     maxRetries: 0,
+    ...profile.body === undefined ? {} : { onPayload: mergeBody(profile.body) },
   }
+}
+
+/** Merge a profile's extra body fields over the payload pi-ai built. */
+function mergeBody(body: Readonly<Record<string, unknown>>): NonNullable<SimpleStreamOptions['onPayload']> {
+  return payload => typeof payload === 'object' && payload !== null && !Array.isArray(payload)
+    ? { ...payload, ...body }
+    : undefined
 }
 
 /**

@@ -102,6 +102,14 @@ export const en = {
   settingsPathUnresolvable: 'unresolvable settings path',
   create: 'Create provider',
   creating: 'Creating\u2026',
+  presetsHeading: 'Connect with a key',
+  presetVeniceBlurb: 'Private, uncensored open and frontier models.',
+  presetOpenRouterBlurb: 'One key for hundreds of models.',
+  presetOrcaRouterBlurb: 'One key for many providers at provider prices.',
+  presetGetKey: 'Get a key at {host}',
+  presetConnect: 'Connect',
+  presetConnecting: 'Connecting\u2026',
+  presetNoModels: 'This key lists no chat models that can use tools.',
 }
 
 /** The settings.models namespace key union. */
@@ -209,4 +217,12 @@ export const zh: { [Key in keyof typeof en]: string } = {
   settingsPathUnresolvable: '无法解析设置路径',
   create: '创建提供商',
   creating: '创建中\u2026',
+  presetsHeading: '用密钥连接',
+  presetVeniceBlurb: '注重隐私、不经审查的开源与前沿模型。',
+  presetOpenRouterBlurb: '一个密钥，数百个模型。',
+  presetOrcaRouterBlurb: '一个密钥接入多家提供商，按原价计费。',
+  presetGetKey: '在 {host} 获取密钥',
+  presetConnect: '连接',
+  presetConnecting: '连接中\u2026',
+  presetNoModels: '此密钥下没有可调用工具的对话模型。',
 }
