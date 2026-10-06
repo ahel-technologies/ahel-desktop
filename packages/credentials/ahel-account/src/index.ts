@@ -88,7 +88,7 @@ export interface Config {
    * ahel.ai's hosted chat: JSON `{"client_id", "refresh_token"}`. Empty disables it.
    */
   launchTokenEnv?: string
-  /** Path on `appOrigin` a launched Host's Sign in reloads for a fresh grant. */
+  /** Path on `appOrigin` a launched Host's Sign in opens: the chat gateway replaces the Host with one holding a fresh grant. */
   hostedSignInPath?: string
   /** Path on `appOrigin` a launched Host's Sign out opens. */
   hostedSignOutPath?: string
@@ -108,7 +108,7 @@ export const Config = Schema.object({
   reachableIntervalMs: Schema.number().min(1_000).max(3_600_000).default(60_000),
   unreachableIntervalMs: Schema.number().min(1_000).max(3_600_000).default(5_000),
   launchTokenEnv: Schema.string().pattern(/^([A-Za-z_][A-Za-z0-9_]*)?$/).default('AHEL_LAUNCH_TOKEN'),
-  hostedSignInPath: Schema.string().pattern(/^\//).default('/chat/'),
+  hostedSignInPath: Schema.string().pattern(/^\//).default('/chat/?signin=1'),
   hostedSignOutPath: Schema.string().pattern(/^\//).default('/app/settings'),
 })
 

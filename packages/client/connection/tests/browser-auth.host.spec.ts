@@ -140,6 +140,20 @@ describe('BrowserAuth', () => {
     })
   })
 
+  it('takes a gateway-chosen token from the environment once and ignores a malformed one', async () => {
+    const chosen = Buffer.alloc(32, 7).toString('base64url')
+    vi.stubEnv('DSH_BROWSER_TOKEN', chosen)
+    const auth = await createAuth(new RecordCredentials(), 30, {})
+    expect(process.env.DSH_BROWSER_TOKEN).toBeUndefined()
+    expect(new URL(auth.authenticatedUrl('http://127.0.0.1:3080')).searchParams.get('token')).toBe(chosen)
+    expect(exchange(auth).state.status).toBe(303)
+
+    vi.stubEnv('DSH_BROWSER_TOKEN', 'short')
+    const other = await createAuth(new RecordCredentials(), 30, {})
+    expect(new URL(other.authenticatedUrl('http://127.0.0.1:3080')).searchParams.get('token')).not.toBe('short')
+    vi.unstubAllEnvs()
+  })
+
   it('preserves the caller authority and mount while adding only this process token', async () => {
     const auth = await createAuth(new RecordCredentials())
     const mounted = new URL(auth.authenticatedUrl('https://gateway.example/tools/dsh/'))

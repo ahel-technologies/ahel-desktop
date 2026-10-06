@@ -49,10 +49,25 @@ function decodeBase64Url(value: string): Buffer | undefined {
   return encodeBase64Url(decoded) === value ? decoded : undefined
 }
 
+/**
+ * Environment variable a hosting gateway sets to choose this process's launch
+ * token, so it can present the token itself instead of reading it from stdout.
+ * Read once and removed from the environment; a value that is not a canonical
+ * base64url 32-byte token is ignored and a random token is minted instead.
+ */
+export const BROWSER_TOKEN_ENV = 'DSH_BROWSER_TOKEN'
+
+function takeEnvironmentToken(): string | undefined {
+  const value = process.env[BROWSER_TOKEN_ENV]
+  if (value === undefined) return undefined
+  Reflect.deleteProperty(process.env, BROWSER_TOKEN_ENV)
+  return canonicalSecret(value) === undefined ? undefined : value
+}
+
 function processLaunchToken(owner: object): string {
   const existing = PROCESS_LAUNCH_TOKENS.get(owner)
   if (existing !== undefined) return existing
-  const created = encodeBase64Url(randomBytes(SECRET_BYTES))
+  const created = takeEnvironmentToken() ?? encodeBase64Url(randomBytes(SECRET_BYTES))
   PROCESS_LAUNCH_TOKENS.set(owner, created)
   return created
 }

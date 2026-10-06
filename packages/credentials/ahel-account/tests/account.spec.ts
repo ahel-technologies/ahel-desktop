@@ -148,7 +148,7 @@ it('adopts a launch token from the environment once, by one refresh', async () =
   expect(ahel.seen.tokenForms[0]?.get('refresh_token')).toBe('launch-refresh')
   expect(parseOAuthGrant((await ctx.credentials.resolve(credentialRef('AHEL_ACCOUNT')))!.value))
     .toMatchObject({ client_id: 'ahel-web-chat', access_token: 'access-1', refresh_token: 'refresh-1' })
-  expect((await ctx.ahelAccount.state()).hosted).toEqual({ signInUrl: `${ahel.origin}/chat/`, signOutUrl: `${ahel.origin}/app/settings` })
+  expect((await ctx.ahelAccount.state()).hosted).toEqual({ signInUrl: `${ahel.origin}/chat/?signin=1`, signOutUrl: `${ahel.origin}/app/settings` })
   await expect(ctx.ahelAccount.signOut()).rejects.toThrow(/on ahel\.ai/)
 })
 
