@@ -1,13 +1,14 @@
 // The composer remains in ConversationRoot so switching out of the blank-draft
 // phase does not remount its textarea.
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import {
   FISH_LOGO_PATH, FISH_LOGO_VIEWBOX, IconChevronDownOutlineRegular, IconFolderCloseRegular, IconFolderOpenRegular,
 } from '@ahel/dsh-client-ui-primitives'
 import { workspaceTitleOf } from '@ahel/dsh-util-workspace-path'
 import type { ConversationContentProps } from '../contract/slots.ts'
+import { dayOfYear, heroGreeting, heroGreetingBand } from './hero-greeting.ts'
 import css from './HeroShell.module.css'
 
 /** The owner's locale seat type, passed to hero chrome as a plain prop. */
@@ -124,6 +125,36 @@ function HeroFish({ hovering }: { hovering: boolean }) {
   )
 }
 
+/** How often the hero checks whether the part of the day changed. */
+const GREETING_TICK_MS = 60_000
+
+/**
+ * Day of the year with the day starting at 05:00, so one late night keeps one phrase across midnight.
+ * @param date - the local moment.
+ * @returns the greeting seed.
+ */
+function greetingDay(date: Date): number {
+  return dayOfYear(new Date(date.getTime() - 5 * 3_600_000))
+}
+
+/**
+ * The moment the greeting was last chosen; it moves only when the part of
+ * the day or the date changes, so the headline does not re-render every tick.
+ * @returns the greeting's reference time.
+ */
+function useGreetingClock(): Date {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const next = new Date()
+      setNow(prev => heroGreetingBand(prev.getHours()) === heroGreetingBand(next.getHours())
+        && greetingDay(prev) === greetingDay(next) ? prev : next)
+    }, GREETING_TICK_MS)
+    return () => { clearInterval(timer) }
+  }, [])
+  return now
+}
+
 /**
  * Render the hero chrome (headline only; no composer, no workspace row).
  * @param props - see {@link HeroShellProps}.
@@ -131,6 +162,11 @@ function HeroFish({ hovering }: { hovering: boolean }) {
  */
 export function HeroShell({ t, renderSlot, children }: HeroShellProps) {
   const [hovering, setHovering] = useState(false)
+  const now = useGreetingClock()
+  const greet = useCallback(
+    (name?: string) => heroGreeting({ hour: now.getHours(), name, seed: greetingDay(now) }, t),
+    [now, t],
+  )
   return (
     <div className={css.root}>
       <div className={css.stack}>
@@ -151,7 +187,7 @@ export function HeroShell({ t, renderSlot, children }: HeroShellProps) {
           </span>
           <span className={css.titleGroup}>
             {/* Own element: keeps the headline text addressable apart from the badge. */}
-            <span>{t('hero.headline')}</span>
+            <span>{renderSlot('conversation.hero.greeting', { greet }, { fallback: greet() })}</span>
           </span>
         </div>
         <div className={css.body}>

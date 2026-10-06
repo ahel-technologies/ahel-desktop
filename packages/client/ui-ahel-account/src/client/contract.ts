@@ -39,6 +39,9 @@ export type AccountMenuProps = PropsRuntime<'sidebar.footer.action'> & InjectFac
 /** Props of the starter prompts below the blank-session composer. */
 export type StarterPromptsProps = PropsRuntime<'conversation.hero.dock'> & InjectFace<AhelAccountInjected> & PropsLocale<'ahel-account'>
 
+/** Props of the blank-session greeting that names the signed-in person. */
+export type HeroGreetingProps = PropsRuntime<'conversation.hero.greeting'> & InjectFace<AhelAccountInjected>
+
 /** Props of the in-place row for an Ahel model refusal; `matched` is the claimed failure code. */
 export type AhelTurnErrorProps = PropsRuntime<'conversation.chat.turnError'> & { matched: AhelFailureCode }
   & InjectFace<AhelAccountInjected> & PropsLocale<'ahel-account'>

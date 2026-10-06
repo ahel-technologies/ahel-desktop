@@ -189,6 +189,8 @@ declare module '@ahel/dsh-client-ui-slots' {
     'conversation.hero.workspace': { kind: 'single'; scope: 'root'; owner: EmptyWorkspaceOwnerProps }
     /** Brand mark shown before the blank-session headline. */
     'conversation.hero.brand.mark': { kind: 'single'; scope: 'root'; owner: HeroBrandMarkOwnerProps }
+    /** Names the signed-in person in the blank-session greeting headline. */
+    'conversation.hero.greeting': { kind: 'single'; scope: 'root'; owner: HeroGreetingOwnerProps }
     /** Agent-preset control staged for a New Session. */
     'conversation.hero.agentPreset': { kind: 'single'; scope: 'session-maybe'; owner: HeroAgentPresetOwnerProps }
     /** Full-width entries above the composer card. */
@@ -236,6 +238,7 @@ declare module '@ahel/dsh-client-ui-slots' {
         'conversation.composer.bar': { kind: 'single'; scope: 'session-maybe' }
         'conversation.input.dock': { kind: 'list'; scope: 'session' }
         'conversation.hero.brand.mark': { kind: 'single'; scope: 'root' }
+        'conversation.hero.greeting': { kind: 'single'; scope: 'root' }
         'conversation.hero.workspace': { kind: 'single'; scope: 'root' }
         'conversation.hero.agentPreset': { kind: 'single'; scope: 'session-maybe' }
       }
@@ -445,6 +448,15 @@ export interface ComposerChainProps {
   session: SessionSnapshot | undefined
   /** Effective business-owned interaction awaiting the user in this Session. */
   pendingInteraction: SessionPendingInteraction | undefined
+}
+
+/** Values supplied to the occupant that names the person in the blank-session greeting. */
+export interface HeroGreetingOwnerProps {
+  /**
+   * Headline for the current part of the day, e.g. "Good evening, Karl".
+   * @param name - the person's first name; omitted greets without one.
+   */
+  greet: (name?: string) => string
 }
 
 /** Presentation props supplied to the blank-session brand mark. */

@@ -94,11 +94,12 @@ it('hot-reloads a real client-plugin source edit without refreshing the page', a
     .map(async path => [path, await readFile(path)] as const))
   const originalClientArtifactPaths = new Set(originalClientArtifacts.map(([path]) => path))
   const originalSource = await readFile(sourcePath)
-  const oldText = 'What can I help with?'
-  const sourceNeedle = "'hero.headline': 'What can I help with?'"
+  const oldText = /Good (morning|afternoon|evening)|Late night|Still up|Moonlit/
+  // Every greeting variant, so the edit lands whichever part of the day the run falls in.
+  const sourceNeedle = /('hero\.greeting\.[\w.]+': )'[^']*'/g
   const newText = `HMR UPDATED ${'x'.repeat(80)}`
-  const updatedSource = originalSource.toString().replace(sourceNeedle, `'hero.headline': '${newText}'`)
-  if (updatedSource === originalSource.toString()) throw new Error(`HMR source lacks ${JSON.stringify(sourceNeedle)}`)
+  const updatedSource = originalSource.toString().replace(sourceNeedle, `$1'${newText}'`)
+  if (updatedSource === originalSource.toString()) throw new Error(`HMR source lacks ${String(sourceNeedle)}`)
 
   const subprocessCtx = new Context()
   let subprocessFiber: Fiber | undefined

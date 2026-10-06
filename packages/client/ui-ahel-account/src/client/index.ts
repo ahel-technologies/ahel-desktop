@@ -1,7 +1,8 @@
 /**
  * Browser face of the Ahel account: mounts the Host's `ahelAccount` Remote
  * namespace, keeps one live account view from its `watch` stream, and fills
- * the sidebar footer (account menu, offline banner), the Settings > Models
+ * the sidebar footer (account menu, offline banner), the blank-session
+ * greeting's first name, the Settings > Models
  * footer (the Ahel row beside bring-your-own-key providers), the starter
  * prompts below the blank-session composer, the rows for Ahel model
  * refusals in the transcript, the Discover panel over the Host's
@@ -22,13 +23,15 @@ import { AccountMenu } from './AccountMenu.tsx'
 import { AhelQuotaNotice, AhelTurnError, claimAhelFailure } from './AhelNotices.tsx'
 import { ModelsRow } from './ModelsRow.tsx'
 import { StarterPrompts } from './StarterPrompts.tsx'
+import { HeroGreeting } from './HeroGreeting.tsx'
 import { registerCatalog } from './catalog/apply.ts'
 import { registerTeam } from './team/apply.ts'
 import { registerTeamSummary } from './team/summary.ts'
 import { en, NS, zh } from './locales.ts'
 
 export type {
-  AccountMenuProps, AhelAccountInjected, AhelFailureCode, AhelQuotaNoticeProps, AhelTurnErrorProps, ModelsRowProps, StarterPromptsProps,
+  AccountMenuProps, AhelAccountInjected, AhelFailureCode, AhelQuotaNoticeProps, AhelTurnErrorProps, HeroGreetingProps, ModelsRowProps,
+  StarterPromptsProps,
 } from './contract.ts'
 export type { AhelAccountKey } from './locales.ts'
 export type { CatalogPanelId, DiscoverInjected, DiscoverPageProps } from './catalog/contract.ts'
@@ -149,6 +152,9 @@ function register(ctx: Context): void {
   ctx.slots.inject('conversation.hero.dock', () => ctx.slots.register({
     name: 'conversation.hero.dock', id: 'ahel-starters', order: 0, locale: NS, inject: () => injected,
   }, StarterPrompts))
+  ctx.slots.inject('conversation.hero.greeting', () => ctx.slots.register({
+    name: 'conversation.hero.greeting', inject: () => injected,
+  }, HeroGreeting))
   ctx.slots.inject('conversation.chat.turnError', () => ctx.slots.register({
     name: 'conversation.chat.turnError', locale: NS, inject: () => injected, select: claimAhelFailure,
   }, AhelTurnError))

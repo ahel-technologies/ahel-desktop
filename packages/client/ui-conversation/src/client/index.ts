@@ -2,6 +2,8 @@
 export { apply, Config, inject } from './apply.ts'
 export type { Config as ConversationConfig } from './apply.ts'
 export { UiConversation } from './conversation/assembly.ts'
+export { dayOfYear, heroGreeting, heroGreetingBand } from './skeleton/hero-greeting.ts'
+export type { HeroGreetingBand, HeroGreetingInput, HeroGreetingKey, HeroGreetingTranslate } from './skeleton/hero-greeting.ts'
 export type { ConversationBinding } from './conversation/assembly.ts'
 export type { ConversationGroupRegistry } from './conversation/group-registry.ts'
 export type {
@@ -66,7 +68,7 @@ export type {
   ConversationSessionInjected, ConversationSessionSlotProps, ConversationSlotProps, ConversationViewsProps,
   ConversationWidthControlsInputProps, ConversationWidthControlsProps,
   ConversationStore, ConvViewOwnerProps, ConvViewProps, EmptyWorkspaceOwnerProps,
-  HeroAgentPresetOwnerProps, HeroBrandMarkOwnerProps, InputControlOwnerProps, InputZone,
+  HeroAgentPresetOwnerProps, HeroBrandMarkOwnerProps, HeroGreetingOwnerProps, InputControlOwnerProps, InputZone,
   MessageImageLoader, MessageImageSource, MessageImagesOwnerProps, RenderMessageImages, UseConversation,
   UseConversationViews,
 } from './contract/slots.ts'
