@@ -24,8 +24,15 @@ export const REMOTES_PACKAGE = '@ahel/dsh-api-remotes'
 const PREFIX = 'remote.'
 
 /**
+ * Namespaces a roster plugin mounts itself through `ctx.remote.$mount`; a proxy
+ * under the same `remote.<ns>` would make that mount fail as a conflict. Their
+ * calls still reach the mock through the mounted contract.
+ */
+const SELF_MOUNTED_NAMESPACES = new Set(['ahelAccount', 'ahelCatalog', 'ahelTeam', 'localCli'])
+
+/**
  * Namespaces to provide: every `remote.<ns>` a roster module injects, plus the
- * namespace of every endpoint the mock has a rule for.
+ * namespace of every endpoint the mock has a rule for, minus the self-mounted ones.
  * @param modules - loaded roster modules.
  * @param mock - the spec's mock.
  * @returns sorted namespace names.
@@ -39,6 +46,7 @@ export function remoteNamespacesOf(modules: Iterable<ClientPluginModule>, mock: 
     const slash = endpoint.indexOf('/')
     if (slash > 0 && !endpoint.startsWith('$')) names.add(endpoint.slice(0, slash))
   }
+  for (const namespace of SELF_MOUNTED_NAMESPACES) names.delete(namespace)
   return [...names].sort()
 }
 

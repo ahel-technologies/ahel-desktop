@@ -73,9 +73,14 @@ let backendReady = false
 /** Error-level console output of the primary window, attached to crash reports. */
 const rendererConsole = new RendererConsoleTail()
 
-/** Whether electron-builder stamped this package as an unsigned build (`dshDesktopUnsigned`). */
+/** Whether electron-builder stamped this package as an unsigned build (`dshDesktopUnsigned`); an unreadable manifest reads as signed. */
 function packagedUnsigned(): boolean {
-  const manifest: unknown = JSON.parse(readFileSync(join(app.getAppPath(), 'package.json'), 'utf8'))
+  let manifest: unknown
+  try {
+    manifest = JSON.parse(readFileSync(join(app.getAppPath(), 'package.json'), 'utf8'))
+  } catch {
+    return false
+  }
   return typeof manifest === 'object' && manifest !== null && 'dshDesktopUnsigned' in manifest && manifest.dshDesktopUnsigned === true
 }
 

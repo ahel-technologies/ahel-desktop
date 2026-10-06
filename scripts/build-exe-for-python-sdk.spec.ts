@@ -101,7 +101,7 @@ describe('Python runtime executable builder CLI', () => {
     expect(result.status).toBe(0)
     expect(result.stdout).toContain('exec pkg')
     expect(result.stdout).toContain('--sea --targets node24-macos-x64')
-    expect(result.stdout).toContain('prepare Python and Office skills for mac-x64')
+    expect(result.stdout).toContain('prepare Python for mac-x64')
     expect(result.stdout).toContain(join(root, 'dist-exe', 'macos-x64'))
   })
 

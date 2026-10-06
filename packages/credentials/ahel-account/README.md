@@ -1,6 +1,22 @@
+---
+description: "ahel.ai account for Ahel Desktop: one browser sign-in whose grant the Ahel MCP server and Ahel models share, plus the Discover catalog and team Remote namespaces."
+kind: "package-reference"
+---
+
 # @ahel/dsh-ahel-account
 
+## Summary
+
 The ahel.ai account for Ahel Desktop. One browser sign-in stores one OAuth grant under the credential reference `AHEL_ACCOUNT`; the Ahel MCP server (`dsh-mcp-client` with `auth.credentialRef: AHEL_ACCOUNT`) and Ahel models (`dsh-llm-ahel`) both use it.
+
+## Table of Contents
+
+- [Use this package](#use-this-package)
+- [Catalog: the ahelCatalog namespace](#catalog-the-ahelcatalog-namespace)
+- [Team: the ahelTeam namespace](#team-the-ahelteam-namespace)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 ## Use this package
 
@@ -30,7 +46,7 @@ Sign-in copies the `ahel` CLI flow: discovery, a loopback listener on `127.0.0.1
 
 A child service, `ctx.ahelCatalog`, gives the desktop the ahel.ai Discover catalog and the person's installs. Its Remote namespace `ahelCatalog` exposes six methods.
 - `browse(query)` and `browsePart(query, groupKey, offset)` read the anonymous `GET /api/public/catalog-search?view=listing` that ahel.ai/discover reads. They work signed out. Row links and marks come back as absolute ahel.ai URLs.
-- `browse` takes `concept` (`apps`, `mcp-servers`, `skills`, `knowledge`, `packs`) for ahel.ai's Discover sections; an ahel.ai without the listing `concept` filter is answered from `?concept=` catalog search instead. `knowledgeProducts()` reads `GET /api/public/knowledge-products` and answers null while ahel.ai has no such route; `add` takes a product's `installId`.
+- `browse` takes `concept` (`apps`, `mcp-servers`, `skills`, `packs`) for ahel.ai's Discover sections; an ahel.ai without the listing `concept` filter is answered from `?concept=` catalog search instead.
 - `installed()`, `add(id)` and `setEnabled(key, on)` call the Ahel MCP gateway tools `installed`, `install` and `switch`. They use this account's bearer and the selected `?workspace=`, and refresh once after a 401. The desktop and ahel.ai therefore share one server state.
 - Failures are `RemoteError` codes: `ahel-catalog/busy` (HTTP 429), `ahel-catalog/unreachable`, `ahel-catalog/signed-out`, and `ahel-catalog/refused`, whose message is ahel.ai's own sentence.
 - The gateway has no uninstall tool, so removing an app is done on ahel.ai at `/app/apps`.
@@ -50,3 +66,7 @@ None. The package adds no tools, prompt text or session events.
 
 - The grant is stored by the credentials provider in use (`credentials-local`: `$DSH_HOME/.credentials.yaml`, mode 600). A Keychain-backed provider is Phase 3.
 - No workspace picker: ahel.ai pins the token to the person's single seat or oldest membership.
+
+### Dev Note
+
+Maintainers change this package with the ahel.ai API: the `/api/mcp/*`, `/api/public/catalog-search` and `/api/desktop/*` shapes live in `src/types.ts`, and the catalog generator lists them in `scripts/gen-cordis-catalog.ts`.

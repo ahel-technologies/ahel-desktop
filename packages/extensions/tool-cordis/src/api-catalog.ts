@@ -87,6 +87,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     description: 'Owns the default model selection independently of any Host or transport. A configured provider and model win. Without them the default follows the first model of the first registered provider route, so a fresh install becomes usable as soon as the user adds one provider in Settings → Models.',
     methods: [
       {
+        signature: 'configuredSelection(): ModelSelection | undefined',
+        description: 'Read only the saved selection, ignoring the discovered fallback.',
+        parameters: [],
+        returns: 'the configured selection, or undefined while provider or model is unset.',
+      },
+      {
         signature: 'currentSelection(): ModelSelection | undefined',
         description: 'Read the current default model selection without waiting for the provider registry.',
         parameters: [],
@@ -102,6 +108,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: 'async saveSelection(next: ModelSelection): Promise<void>',
         description: 'Save the complete default model selection. A deployment without a configuration editor keeps its composition entry. Saves commit in submission order; a failed save rejects its caller without blocking later saves.',
         parameters: [{ name: 'next', description: 'resolved selection accepted by an entry point.' }],
+        returns: 'fulfillment after the optional profile write settles.',
+      },
+      {
+        signature: 'async clearSelection(): Promise<void>',
+        description: 'Remove the saved selection, so the default follows the first configured route again; used when the saved route goes away (an account signs out).',
+        parameters: [],
         returns: 'fulfillment after the optional profile write settles.',
       },
     ],
@@ -393,6 +405,217 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Resolve a caller without throwing, used by scoped-tool installation and observers.',
         parameters: [{ name: 'agent', description: 'candidate exact live Agent.' }],
         returns: 'Team membership, or undefined for non-Team subagents and stale identities.',
+      },
+    ],
+  },
+  {
+    key: 'ahelAccount',
+    summary: 'Account service; the default export loads it as a plugin.',
+    description: 'Account service; the default export loads it as a plugin.',
+    methods: [
+      {
+        signature: '@Remote async state(): Promise<AhelAccountView>',
+        description: 'Read the stored-account presence, its profile and the latest attempt.',
+        parameters: [],
+        returns: 'a snapshot without tokens.',
+      },
+      {
+        signature: '@Remote async selectWorkspace(id: string | null): Promise<AhelAccountView>',
+        description: 'Choose the ahel.ai workspace the MCP server and Ahel models act in, and save it in settings.',
+        parameters: [{ name: 'id', description: 'one of the profile\'s workspace ids, or null for the account default.' }],
+        returns: 'the view after the choice is applied.',
+      },
+      {
+        signature: 'async workspace(): Promise<string | undefined>',
+        description: 'Host-only: the selected workspace id while it is one of the signed-in person\'s workspaces.',
+        parameters: [],
+        returns: 'the id, or undefined for the account default.',
+      },
+      {
+        signature: '@Remote async signIn(): Promise<AhelAccountView>',
+        description: 'Join the running attempt or start a browser sign-in. Resolves once the authorize URL exists (or the attempt failed), without waiting for the person to approve; the opener, when set, has been asked to open it.',
+        parameters: [],
+        returns: 'the view with `attempt.authorizeUrl` for a shell that opens the browser itself.',
+      },
+      {
+        signature: '@Remote async cancelSignIn(id: AhelSignInAttemptId): Promise<AhelAccountView>',
+        description: 'Cancel only the named attempt.',
+        parameters: [{ name: 'id', description: 'attempt to cancel.' }],
+        returns: 'the view after the attempt settled.',
+      },
+      {
+        signature: '@Remote async signOut(): Promise<AhelAccountView>',
+        description: 'Revoke the grant on ahel.ai, then delete the stored credential. A failed revoke is logged and never keeps the local grant.',
+        parameters: [],
+        returns: 'the signed-out view.',
+      },
+      {
+        signature: '@Remote async profile(): Promise<AhelProfile | null>',
+        description: 'Read name, email and workspaces live from ahel.ai.',
+        parameters: [],
+        returns: 'the profile, or null while signed out.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async *watch(signal: AbortSignal): AsyncIterable<AhelAccountView>',
+        description: 'Subscribe to complete views, starting with the current one.',
+        parameters: [{ name: 'signal', description: 'subscription lifetime; ending it never cancels a sign-in.' }],
+        returns: 'views as account state changes.',
+      },
+      {
+        signature: 'async accessToken(): Promise<string | undefined>',
+        description: 'Host-only: a bearer valid for at least `refreshSkewMs`, refreshed and written back first when needed. A refresh ahel.ai rejects signs the account out.',
+        parameters: [],
+        returns: 'the access token, or undefined while signed out.',
+      },
+      {
+        signature: 'async revalidate(): Promise<void>',
+        description: 'Host-only: after ahel.ai refused the current bearer, refresh it once. A refresh ahel.ai rejects signs the account out, like `accessToken()`.',
+        parameters: [],
+      },
+      {
+        signature: 'setOpener(opener: ExternalOpener): () => void',
+        description: 'Host-only: set the browser opener used by later sign-ins. Without one, the authorize URL is logged and returned in the view.',
+        parameters: [{ name: 'opener', description: 'the shell\'s external opener.' }],
+        returns: 'a disposer that restores the previous opener.',
+      },
+    ],
+  },
+  {
+    key: 'ahelCatalog',
+    summary: 'Child service of `AhelAccount`; the Remote namespace `ahelCatalog`.',
+    description: 'Child service of `AhelAccount`; the Remote namespace `ahelCatalog`.',
+    methods: [
+      {
+        signature: '@Remote async browse(query: CatalogBrowseQuery): Promise<CatalogBrowsePage>',
+        description: 'One page of the Discover listing; works signed out.',
+        parameters: [{ name: 'query', description: 'search words, kind, category and page.' }],
+        returns: 'the page with every link and mark made absolute on ahel.ai.',
+        throws: ['RemoteError `ahel-catalog/busy` or `ahel-catalog/unreachable`.'],
+      },
+      {
+        signature: '@Remote async browsePart(query: CatalogBrowseQuery, groupKey: string, offset: number): Promise<CatalogPart>',
+        description: 'A further slice of one group\'s nested skills.',
+        parameters: [{ name: 'query', description: 'the query the group was listed under.' }, { name: 'groupKey', description: '`CatalogGroup.key`.' }, { name: 'offset', description: 'rows of the nest already shown.' }],
+        returns: 'the slice and how many rows remain.',
+        throws: ['RemoteError `ahel-catalog/busy` or `ahel-catalog/unreachable`.'],
+      },
+      {
+        signature: '@Remote async installed(): Promise<CatalogInstalled>',
+        description: 'The signed-in person\'s capabilities in the selected workspace.',
+        parameters: [],
+        returns: 'the rows, or `signedIn: false` with none while signed out.',
+        throws: ['RemoteError `ahel-catalog/signed-out`, `ahel-catalog/refused` or `ahel-catalog/unreachable`.'],
+      },
+      {
+        signature: '@Remote async add(id: string): Promise<CatalogInstallResult>',
+        description: 'Install one catalog item, or answer how to connect an "app:<service>" row. Named `add` because the client\'s Remote namespace service keeps `install` for itself.',
+        parameters: [{ name: 'id', description: '`CatalogRow.id`.' }],
+        returns: 'the install outcome; `needs_setup` carries the URL to open in the browser.',
+        throws: ['RemoteError `ahel-catalog/signed-out`, `ahel-catalog/refused` or `ahel-catalog/unreachable`.'],
+      },
+      {
+        signature: '@Remote async setEnabled(key: string, on: boolean): Promise<CatalogSwitchResult>',
+        description: 'Turn one installed capability on or off.',
+        parameters: [{ name: 'key', description: '`CatalogCapability.key`.' }, { name: 'on', description: 'the wanted state.' }],
+        returns: 'the state ahel.ai stored.',
+        throws: ['RemoteError `ahel-catalog/signed-out`, `ahel-catalog/refused` or `ahel-catalog/unreachable`.'],
+      },
+      {
+        signature: '@Remote async knowledgeProducts(): Promise<KnowledgeProduct[] | null>',
+        description: 'ahel.ai\'s four Knowledge products, as its /knowledge page draws them; works signed out.',
+        parameters: [],
+        returns: 'the products, or null while ahel.ai has no `/api/public/knowledge-products`.',
+        throws: ['RemoteError `ahel-catalog/busy` or `ahel-catalog/unreachable`.'],
+      },
+    ],
+  },
+  {
+    key: 'ahelTeam',
+    summary: 'Child service of `AhelAccount`; the Remote namespace `ahelTeam`.',
+    description: 'Child service of `AhelAccount`; the Remote namespace `ahelTeam`.',
+    methods: [
+      {
+        signature: '@Remote async summary(): Promise<DesktopSummary>',
+        description: 'The sidebar and account-menu poll: pending approvals, unread handoffs and the balance.',
+        parameters: [],
+        returns: 'the summary; a part ahel.ai could not read is null.',
+        throws: ['RemoteError `ahel-team/*`.'],
+      },
+      {
+        signature: '@Remote async decideApproval(id: string, decision: \'approved\' | \'declined\', note: string | null): Promise<ApprovalDecision>',
+        description: 'Approve or decline one held call. Nothing runs here: approve opens a one-hour window in which the requester\'s AI repeats the exact call.',
+        parameters: [{ name: 'id', description: '`ApprovalRow.id`.' }, { name: 'decision', description: 'the answer.' }, { name: 'note', description: 'an optional note for the requester, up to 500 characters.' }],
+        returns: 'the stored decision.',
+        throws: ['RemoteError `ahel-team/forbidden` for a Member, `ahel-team/refused` when it expired or was answered.'],
+      },
+      {
+        signature: '@Remote async signIns(): Promise<VaultSignInList>',
+        description: 'The workspace\'s managed sign-ins and whether this seat may change them.',
+        parameters: [],
+        returns: 'status only, never a token.',
+        throws: ['RemoteError `ahel-team/*`.'],
+      },
+      {
+        signature: '@Remote async connectPanel(app: string): Promise<KeyConnectAnswer>',
+        description: 'One app\'s Connect state: the key form for a key app, its sign-in for a sign-in app.',
+        parameters: [{ name: 'app', description: 'a catalog item id, stack key, vendor slug or `app:<service>`.' }],
+        returns: 'the panel, the sign-in and the app\'s ahel.ai vault page.',
+        throws: ['RemoteError `ahel-team/*`.'],
+      },
+      {
+        signature: '@Remote async connect(app: string, values: Record<string, string>): Promise<KeyConnectSaved>',
+        description: 'Seal a key app\'s values in the workspace vault, install it and switch it on. The values go to `POST /api/desktop/connect` only and are never logged or put in an error.',
+        parameters: [{ name: 'app', description: '`KeyConnectView.app`.' }, { name: 'values', description: '`KeyConnectField.id` to the typed value.' }],
+        returns: 'the panel after the save.',
+        throws: ['RemoteError `ahel-team/forbidden` for a Member, `ahel-team/refused` for invalid fields.'],
+      },
+      {
+        signature: '@Remote async disconnect(app: string): Promise<VaultDisconnected>',
+        description: 'Forget an app\'s sign-in or stored key; the installed row stays.',
+        parameters: [{ name: 'app', description: 'the name `connectPanel` took.' }],
+        returns: 'whether anything was removed.',
+        throws: ['RemoteError `ahel-team/refused` with `webUrl` when the app has several accounts.'],
+      },
+      {
+        signature: '@Remote async inbox(): Promise<HandoffList>',
+        description: 'Handoffs received and sent.',
+        parameters: [],
+        returns: 'the Inbox.',
+        throws: ['RemoteError `ahel-team/*`.'],
+      },
+      {
+        signature: '@Remote async openHandoff(id: string): Promise<HandoffRead>',
+        description: 'Read one handoff and mark it read.',
+        parameters: [{ name: 'id', description: 'a handoff id from the Inbox.' }],
+        returns: 'the handoff with its reader-safe text.',
+        throws: ['RemoteError `ahel-team/refused` when it is not available to this person.'],
+      },
+      {
+        signature: '@Remote async prepareHandoff(draft: HandoffDraft): Promise<HandoffReview>',
+        description: 'The editable preview of a handoff with the teammate list; stores nothing.',
+        parameters: [{ name: 'draft', description: 'title and sections.' }],
+        returns: 'the preview with the `requestKey` Share needs.',
+        throws: ['RemoteError `ahel-team/refused` for invalid text or a plan without handoffs.'],
+      },
+      {
+        signature: '@Remote async shareHandoff(share: HandoffShare): Promise<HandoffSent>',
+        description: 'Deliver a reviewed handoff. Only the dialog\'s Share button calls this; that press is the person\'s confirmation.',
+        parameters: [{ name: 'share', description: 'the reviewed draft, the chosen teammates and the preview\'s `requestKey`.' }],
+        returns: 'the delivery; a retry with the same `requestKey` answers `repeated: true`.',
+        throws: ['RemoteError `ahel-team/refused` for an unknown teammate or invalid text.'],
+      },
+      {
+        signature: '@Remote async markHandoffDone(id: string): Promise<HandoffSent>',
+        description: 'Mark a handoff done; it stays readable.',
+        parameters: [{ name: 'id', description: 'a handoff id.' }],
+        returns: 'the handoff with `status: \'done\'`.',
+        throws: ['RemoteError `ahel-team/refused` when it is not available to this person.'],
+      },
+      {
+        signature: '@Remote async sessionDraft(sessionId: string): Promise<HandoffSessionDraft>',
+        description: 'Prefill for "Share with teammate" from one local chat; no network.',
+        parameters: [{ name: 'sessionId', description: 'the chat\'s session id.' }],
+        returns: 'its title, the first message the person typed and the last assistant reply; empty strings for what the session store could not give.',
       },
     ],
   },
@@ -1368,6 +1591,43 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'localCli',
+    summary: 'Local CLI detection service; the default export loads it as a plugin.',
+    description: 'Local CLI detection service; the default export loads it as a plugin.',
+    methods: [
+      {
+        signature: '@Remote async list(): Promise<LocalCliView[]>',
+        description: 'The last detection with the current enable state; waits for the first detection.',
+        parameters: [],
+        returns: 'one view per CLI, in display order.',
+      },
+      {
+        signature: '@Remote async detect(): Promise<LocalCliView[]>',
+        description: 'Re-probe every CLI concurrently. A call during a running detection joins it; one within two seconds of the last reuses its result.',
+        parameters: [],
+        returns: 'the fresh views.',
+      },
+      {
+        signature: '@Remote async enable(id: LocalCliId): Promise<LocalCliView[]>',
+        description: 'Turn a CLI on and save the choice in settings.',
+        parameters: [{ name: 'id', description: 'the CLI.' }],
+        returns: 'the views after the change.',
+      },
+      {
+        signature: '@Remote async disable(id: LocalCliId): Promise<LocalCliView[]>',
+        description: 'Turn a CLI off and save the choice in settings.',
+        parameters: [{ name: 'id', description: 'the CLI.' }],
+        returns: 'the views after the change.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async *watch(signal: AbortSignal): AsyncIterable<LocalCliView[]>',
+        description: 'Subscribe to complete lists, starting with the current one.',
+        parameters: [{ name: 'signal', description: 'subscription lifetime.' }],
+        returns: 'the list after every detection and enable change.',
+      },
+    ],
+  },
+  {
     key: 'lsp',
     summary: 'The LSP capability seam (`ctx.lsp`).',
     description: 'The LSP capability seam (`ctx.lsp`). Owns provider registration/selection and normalized query execution; exposes exactly the four operations and no protocol escape hatch.',
@@ -1387,6 +1647,36 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'mcpApps',
+    summary: 'Remote namespace `mcpApps`: resource reads and host-proxied tool calls for MCP Apps cards.',
+    description: 'Remote namespace `mcpApps`: resource reads and host-proxied tool calls for MCP Apps cards.',
+    methods: [
+      {
+        signature: '@Remote(\'readResource\') async readResource(agent: Agent, server: string, uri: string, signal: AbortSignal): Promise<JsonValue>',
+        description: 'Read one resource from a server visible to the Session\'s Agent. `ui://` reads are cached by the resource runtime.',
+        parameters: [{ name: 'agent', description: 'lookup parameter resolved from the Session identity.' }, { name: 'server', description: 'configured MCP server name.' }, { name: 'uri', description: 'resource URI.' }, { name: 'signal', description: 'carrier cancellation.' }],
+        returns: 'the MCP `resources/read` result.',
+      },
+      {
+        signature: '@Remote(\'resultMeta\') resultMeta(agent: Agent, callId: string): McpAppJsonObject | null',
+        description: 'Read a call\'s live result `_meta` (for example a one-use press token). It lives only in Host memory, so after a Host restart this returns `null`.',
+        parameters: [{ name: 'agent', description: 'lookup parameter resolved from the Session identity.' }, { name: 'callId', description: 'the settled tool call the card renders.' }],
+        returns: 'the result `_meta`, or `null`.',
+      },
+      {
+        signature: '@Remote(\'updateModelContext\') updateModelContext(agent: Agent, server: string, update: McpAppJsonObject): void',
+        description: 'Record a card\'s `ui/update-model-context` payload as context for the Agent\'s next model request (a logged inbox event).',
+        parameters: [{ name: 'agent', description: 'lookup parameter resolved from the Session identity.' }, { name: 'server', description: 'the card\'s MCP server.' }, { name: 'update', description: 'the payload: `content` blocks and optional `structuredContent`.' }],
+      },
+      {
+        signature: '@Remote(\'callTool\') async callTool(agent: Agent, server: string, tool: string, args: McpAppJsonObject, signal: AbortSignal): Promise<McpAppCallResult>',
+        description: 'Run one MCP tool for a card, through the same registry pipeline and approval seam as a model call. The tool must belong to `server` and its MCP Apps visibility must include `app`. Each call is reported to the Agent as logged context for its next model request (tool name and result text; arguments are omitted because they can carry tokens).',
+        parameters: [{ name: 'agent', description: 'lookup parameter resolved from the Session identity.' }, { name: 'server', description: 'the card\'s MCP server; calls to other servers are refused.' }, { name: 'tool', description: 'raw MCP tool name.' }, { name: 'args', description: 'tool arguments from the card.' }, { name: 'signal', description: 'carrier cancellation.' }],
+        returns: 'MCP `CallToolResult` fields; failures arrive with `isError: true`.',
+      },
+    ],
+  },
+  {
     key: 'mcpResources',
     summary: 'Scoped resource access plus three tools shared by configured MCP servers.',
     description: 'Scoped resource access plus three tools shared by configured MCP servers.',
@@ -1396,6 +1686,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Register one server and expose resource tools while that scope has providers.',
         parameters: [{ name: 'server', description: 'configured server name, unique in this scope.' }, { name: 'provider', description: 'connection-owned resource operations.' }],
         returns: 'the effect disposer for this exact registration.',
+      },
+      {
+        signature: 'async readAppResource(agent: ToolExecution[\'agent\'], server: string, uri: string, signal: AbortSignal): Promise<JsonValue>',
+        description: 'Read one resource for an MCP Apps host on behalf of an agent. `ui://` results are cached per server provider, connection generation, and URI (the URI carries the server\'s content version); other URIs are read uncached. A failed read is never cached.',
+        parameters: [{ name: 'agent', description: 'agent whose scope selects the server.' }, { name: 'server', description: 'configured server name visible to that agent.' }, { name: 'uri', description: 'resource URI to read.' }, { name: 'signal', description: 'caller cancellation; it stops this caller\'s wait, not a shared cached read.' }],
+        returns: 'the `resources/read` result as lossless JSON.',
       },
     ],
   },
@@ -3741,6 +4037,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'payload', description: '.signal - the current turn\'s explicit abort signal. Scope-filtered dispatch (`@ahel/dsh-scope`): agent-scoped listeners receive only that agent.' }],
   },
   {
+    name: 'ahel-account/changed',
+    mode: 'emit',
+    signature: '\'ahel-account/changed\'(view: AhelAccountView): void',
+    summary: 'The account view changed: a sign-in step, a completed sign-in or sign-out, or an external edit of the stored grant.',
+    description: 'The account view changed: a sign-in step, a completed sign-in or sign-out, or an external edit of the stored grant.',
+    parameters: [{ name: 'view', description: 'the new complete view.' }],
+  },
+  {
     name: 'api-session/activity',
     mode: 'emit',
     signature: '\'api-session/activity\'(sessionId: SessionId, updatedAt: number): void',
@@ -3979,6 +4283,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     summary: 'Waterfall around every streaming model call (retry, replay, routing).',
     description: 'Waterfall around every streaming model call (retry, replay, routing). Bound to the LlmRuntime; call `next()` to reach the resolved adapter\'s stream, or yield your own chunks to short-circuit.',
     parameters: [{ name: 'options', description: 'the full request. A LOOP-built request carries the process-local {@link markAgentLoopRequest} identity and arrives deep-frozen (mutation throws): its content is a pure function of the session log (the reconstructability Agent Note), so listeners read it, never rewrite it. Hand-built calls do not carry that marker; callers own their request inputs and must keep them unchanged until the stream settles.' }],
+  },
+  {
+    name: 'local-cli/changed',
+    mode: 'emit',
+    signature: '\'local-cli/changed\'(views: readonly LocalCliView[]): void',
+    summary: 'The detected CLIs or their enable state changed.',
+    description: 'The detected CLIs or their enable state changed.',
+    parameters: [{ name: 'views', description: 'the complete list, in `LOCAL_CLI_IDS` order.' }],
   },
   {
     name: 'permission-presets/catalog-changed',
@@ -4329,6 +4641,38 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type AgentStatus = \'idle\' | \'running\';',
   },
   {
+    name: 'AhelAccountView',
+    declaration: 'export interface AhelAccountView {\n    readonly status: \'signed-out\' | \'signed-in\';\n    readonly profile: AhelProfile | null;\n    readonly attempt: AhelSignInAttemptView | null;\n    readonly workspace: string | null;\n    readonly reachable: boolean;\n}',
+  },
+  {
+    name: 'AhelIcon',
+    declaration: 'export type AhelIcon = {\n    readonly type: \'logo\';\n    readonly src: string;\n    readonly slug?: string;\n} | {\n    readonly type: \'glyph\';\n    readonly glyph: string;\n} | {\n    readonly type: \'letter\';\n    readonly letter: string;\n};',
+  },
+  {
+    name: 'AhelJson',
+    declaration: 'export type AhelJson = string | number | boolean | null | readonly AhelJson[] | {\n    readonly [key: string]: AhelJson;\n};',
+  },
+  {
+    name: 'AhelProfile',
+    declaration: 'export interface AhelProfile {\n    readonly email: string;\n    readonly name: string | null;\n    readonly workspaces: readonly AhelWorkspace[];\n}',
+  },
+  {
+    name: 'AhelSignInAttemptId',
+    declaration: 'export type AhelSignInAttemptId = Branded<\'AhelSignInAttemptId\'>;',
+  },
+  {
+    name: 'AhelSignInAttemptView',
+    declaration: 'export interface AhelSignInAttemptView {\n    readonly id: AhelSignInAttemptId;\n    readonly phase: \'starting\' | \'waiting-browser\' | \'exchanging\' | \'succeeded\' | \'cancelled\' | \'failed\';\n    readonly authorizeUrl?: string;\n    readonly errorCode?: AhelSignInErrorCode;\n}',
+  },
+  {
+    name: 'AhelSignInErrorCode',
+    declaration: 'export type AhelSignInErrorCode = \'denied\' | \'timeout\' | \'network\' | \'protocol\' | \'storage\' | \'cancelled\';',
+  },
+  {
+    name: 'AhelWorkspace',
+    declaration: 'export interface AhelWorkspace {\n    readonly id: string;\n    readonly name: string;\n    readonly slug: string;\n    readonly role: string;\n}',
+  },
+  {
     name: 'AnyHook',
     declaration: 'export type AnyHook = ModHook<unknown, unknown>;',
   },
@@ -4359,6 +4703,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ApprovalRequestEvent',
     declaration: 'export interface ApprovalRequestEvent {\n    readonly agent: Agent;\n    readonly toolName: string;\n    readonly callId?: ToolCallId;\n    readonly reason?: string;\n    readonly displayReason?: {\n        readonly en: string;\n        readonly [locale: string]: string;\n    };\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'ApprovalRow',
+    declaration: 'export interface ApprovalRow {\n    readonly id: string;\n    readonly what: string;\n    readonly server: string | null;\n    readonly tool: string | null;\n    readonly args: {\n        readonly [key: string]: AhelJson;\n    } | null;\n    readonly guardrailName: string;\n    readonly requester: {\n        readonly email: string;\n        readonly name: string | null;\n    } | null;\n    readonly createdAt: string;\n    readonly expiresAt: string;\n}',
   },
   {
     name: 'ArchiveSessionOptions',
@@ -4539,6 +4887,62 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ButtonProps',
     declaration: 'export interface ButtonProps {\n    readonly label: string;\n    readonly hotkey?: string | undefined;\n    readonly disabled?: boolean | undefined;\n    readonly onPress?: (() => unknown) | undefined;\n}',
+  },
+  {
+    name: 'CatalogBrowsePage',
+    declaration: 'export interface CatalogBrowsePage {\n    readonly total: number;\n    readonly page: number;\n    readonly pageSize: number;\n    readonly groups: readonly CatalogGroup[];\n    readonly kinds: {\n        readonly app: number;\n        readonly skill: number;\n    };\n    readonly categories: Readonly<Record<string, number>>;\n    readonly summary: {\n        readonly rows: number;\n        readonly apps: number;\n        readonly officialApps: number;\n        readonly skills: number;\n        readonly copies: number;\n    };\n}',
+  },
+  {
+    name: 'CatalogBrowseQuery',
+    declaration: 'export interface CatalogBrowseQuery {\n    readonly q: string;\n    readonly kind: \'all\' | \'app\' | \'skill\';\n    readonly category: string | null;\n    readonly page: number;\n    readonly concept?: CatalogConcept | null;\n    readonly official?: boolean;\n    readonly free?: boolean;\n    readonly sort?: CatalogSort;\n}',
+  },
+  {
+    name: 'CatalogCapability',
+    declaration: 'export interface CatalogCapability {\n    readonly key: string;\n    readonly name: string;\n    readonly type: string | null;\n    readonly servedBy?: string;\n    readonly state: \'on\' | \'off\' | \'needs_setup\' | \'unavailable\' | \'available\';\n    readonly needs: readonly string[];\n    readonly missingTypes?: readonly string[];\n    readonly itemId?: string | null;\n    readonly signInUrl?: string;\n    readonly reason: string | null;\n}',
+  },
+  {
+    name: 'CatalogConcept',
+    declaration: 'export type CatalogConcept = \'apps\' | \'mcp-servers\' | \'skills\' | \'knowledge\' | \'packs\';',
+  },
+  {
+    name: 'CatalogFactPart',
+    declaration: 'export type CatalogFactPart = {\n    readonly key: \'provenance\';\n    readonly text: \'Official\' | \'Community\';\n    readonly official: boolean;\n} | {\n    readonly key: \'by\';\n    readonly text: string;\n} | {\n    readonly key: \'runs\';\n    readonly text: string;\n} | {\n    readonly key: \'tools\';\n    readonly text: string;\n    readonly reads: number;\n    readonly writes: number;\n} | {\n    readonly key: \'connect\';\n    readonly text: string;\n    readonly need: \'sign-in\' | \'key\' | \'none\';\n} | {\n    readonly key: \'price\';\n    readonly text: string;\n    readonly source: \'ahel\' | \'vendor\';\n};',
+  },
+  {
+    name: 'CatalogGroup',
+    declaration: 'export interface CatalogGroup {\n    readonly key: string;\n    readonly row: CatalogRow;\n    readonly skills: {\n        readonly vendorName: string;\n        readonly count: number;\n        readonly rows: readonly CatalogRow[];\n    } | null;\n    readonly copies: number;\n}',
+  },
+  {
+    name: 'CatalogInstalled',
+    declaration: 'export interface CatalogInstalled {\n    readonly signedIn: boolean;\n    readonly rows: readonly CatalogCapability[];\n}',
+  },
+  {
+    name: 'CatalogInstallResult',
+    declaration: 'export interface CatalogInstallResult {\n    readonly key: string | null;\n    readonly name: string;\n    readonly type: string;\n    readonly state: string;\n    readonly needs: readonly string[];\n    readonly signInUrl?: string;\n    readonly connectUrl?: string;\n    readonly note: string;\n    readonly try: string | null;\n}',
+  },
+  {
+    name: 'CatalogPart',
+    declaration: 'export interface CatalogPart {\n    readonly rows: readonly CatalogRow[];\n    readonly remaining: number;\n}',
+  },
+  {
+    name: 'CatalogRow',
+    declaration: 'export interface CatalogRow {\n    readonly id: string;\n    readonly name: string;\n    readonly kind: \'app\' | \'skill\';\n    readonly kindLabel: \'App\' | \'Skill\';\n    readonly tile: CatalogRowTile;\n    readonly facts: readonly CatalogFactPart[];\n    readonly chips: readonly string[];\n    readonly description: string | null;\n    readonly href: string;\n    readonly state: CatalogRowState;\n    readonly vendor: {\n        readonly slug: string;\n        readonly name: string;\n    } | null;\n    readonly official: boolean;\n}',
+  },
+  {
+    name: 'CatalogRowState',
+    declaration: 'export type CatalogRowState = \'connect\' | \'add\' | \'added\' | \'on\' | \'needs-setup\' | \'install\' | \'turn-on\' | \'unavailable\';',
+  },
+  {
+    name: 'CatalogRowTile',
+    declaration: 'export interface CatalogRowTile {\n    readonly text: string;\n    readonly tone: \'plain\' | \'skill\' | \'ahel\';\n    readonly mark: string | null;\n}',
+  },
+  {
+    name: 'CatalogSort',
+    declaration: 'export type CatalogSort = \'best\' | \'added\' | \'name\' | \'newest\';',
+  },
+  {
+    name: 'CatalogSwitchResult',
+    declaration: 'export interface CatalogSwitchResult {\n    readonly key: string;\n    readonly state: string;\n}',
   },
   {
     name: 'ChangeResult',
@@ -4857,6 +5261,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface DeliveryRetentionBounds {\n    readonly days: number;\n    readonly records: number;\n}',
   },
   {
+    name: 'DesktopCredits',
+    declaration: 'export type DesktopCredits = {\n    readonly visible: false;\n} | {\n    readonly visible: true;\n    readonly balanceCents: number;\n    readonly workspaceSpentTodayCents: number;\n    readonly low: boolean;\n    readonly lowThresholdCents: number;\n    readonly canTopUp: boolean;\n    readonly topUpUrl: string;\n};',
+  },
+  {
+    name: 'DesktopSummary',
+    declaration: 'export interface DesktopSummary {\n    readonly workspace: {\n        readonly id: string;\n        readonly name: string;\n        readonly role: string;\n    };\n    readonly approvals: {\n        readonly rows: readonly ApprovalRow[];\n    } | null;\n    readonly inbox: {\n        readonly unread: number;\n    } | null;\n    readonly credits: DesktopCredits | null;\n    readonly at: string;\n}',
+  },
+  {
     name: 'DeveloperMessage',
     declaration: 'export interface DeveloperMessage extends MessageBase {\n    readonly role: \'developer\';\n}',
   },
@@ -4995,6 +5407,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'EveryScheduleRecord',
     declaration: 'export interface EveryScheduleRecord {\n    readonly id: ScheduleId;\n    readonly kind: \'every\';\n    readonly title: string;\n    readonly prompt: string;\n    readonly everySeconds: number;\n    readonly scheduledAt: string;\n}',
+  },
+  {
+    name: 'ExternalOpener',
+    declaration: 'export type ExternalOpener = (url: string) => Promise<void> | void;',
   },
   {
     name: 'FeedbackCategory',
@@ -5143,6 +5559,58 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'GrantRecord',
     declaration: 'export interface GrantRecord {\n    readonly kind: \'grant\';\n    readonly payload: unknown;\n}',
+  },
+  {
+    name: 'HandoffDraft',
+    declaration: 'export interface HandoffDraft {\n    readonly title: string;\n    readonly sections: HandoffSections;\n}',
+  },
+  {
+    name: 'HandoffEvidence',
+    declaration: 'export interface HandoffEvidence {\n    readonly author: {\n        readonly name: string | null;\n        readonly email: string;\n        readonly verified: true;\n    };\n    readonly workspace: {\n        readonly id: string;\n        readonly name: string;\n    };\n    readonly sentAt: string;\n    readonly note: string;\n}',
+  },
+  {
+    name: 'HandoffList',
+    declaration: 'export interface HandoffList {\n    readonly view: \'handoff_list\';\n    readonly scope: \'all\' | \'received\' | \'sent\';\n    readonly received: readonly HandoffReceivedRow[];\n    readonly sent: readonly HandoffSentRow[];\n    readonly detail: string;\n}',
+  },
+  {
+    name: 'HandoffRead',
+    declaration: 'export interface HandoffRead {\n    readonly view: \'handoff_read\';\n    readonly id: string;\n    readonly title: string;\n    readonly version: number;\n    readonly latestVersion: number;\n    readonly status: string;\n    readonly secretsRemoved: number;\n    readonly from: string;\n    readonly sentAt: string;\n    readonly sections: readonly HandoffSectionRow[];\n    readonly evidence: HandoffEvidence;\n    readonly unverifiedNote: string;\n    readonly screened: \'clean\' | \'flagged\';\n    readonly screenedReason: string | null;\n    readonly url: string;\n    readonly text: string;\n}',
+  },
+  {
+    name: 'HandoffReceivedRow',
+    declaration: 'export interface HandoffReceivedRow {\n    readonly id: string;\n    readonly title: string;\n    readonly version: number;\n    readonly status: string;\n    readonly unread: boolean;\n    readonly updatedAt: string;\n    readonly url: string;\n    readonly from: string;\n    readonly next: string;\n    readonly secretsRemoved: number;\n}',
+  },
+  {
+    name: 'HandoffReview',
+    declaration: 'export interface HandoffReview {\n    readonly view: \'handoff_review\';\n    readonly title: string;\n    readonly sections: readonly HandoffSectionRow[];\n    readonly evidence: HandoffEvidence;\n    readonly unverifiedNote: string;\n    readonly recipients: readonly {\n        readonly value: string;\n        readonly label: string;\n        readonly role: string;\n    }[];\n    readonly selected: string | null;\n    readonly warnings: readonly string[];\n    readonly noTeammates: boolean;\n    readonly inviteUrl: string;\n    readonly continuation: {\n        readonly key: string;\n        readonly tool: string;\n        readonly requestKey: string;\n    };\n    readonly submit: string;\n    readonly footnote: string;\n}',
+  },
+  {
+    name: 'HandoffSectionId',
+    declaration: 'export type HandoffSectionId = \'goal\' | \'decisions\' | \'changes\' | \'references\' | \'tests\' | \'open\' | \'next\';',
+  },
+  {
+    name: 'HandoffSectionRow',
+    declaration: 'export interface HandoffSectionRow {\n    readonly id: HandoffSectionId;\n    readonly label: string;\n    readonly help: string;\n    readonly required: boolean;\n    readonly maxLength: number;\n    readonly value: string;\n}',
+  },
+  {
+    name: 'HandoffSections',
+    declaration: 'export type HandoffSections = Readonly<Partial<Record<HandoffSectionId, string>>>;',
+  },
+  {
+    name: 'HandoffSent',
+    declaration: 'export interface HandoffSent {\n    readonly view: \'handoff_sent\';\n    readonly id: string;\n    readonly title: string;\n    readonly version: number;\n    readonly status?: string;\n    readonly recipients: number;\n    readonly recipientNames?: readonly string[];\n    readonly url: string;\n    readonly repeated: boolean;\n    readonly detail: string;\n    readonly warnings?: readonly string[];\n}',
+  },
+  {
+    name: 'HandoffSentRow',
+    declaration: 'export interface HandoffSentRow {\n    readonly id: string;\n    readonly title: string;\n    readonly version: number;\n    readonly status: string;\n    readonly recipients: number;\n    readonly read: boolean;\n    readonly updatedAt: string;\n    readonly url: string;\n    readonly from: string;\n    readonly next: string;\n    readonly secretsRemoved: number;\n}',
+  },
+  {
+    name: 'HandoffSessionDraft',
+    declaration: 'export interface HandoffSessionDraft {\n    readonly title: string;\n    readonly goal: string;\n    readonly changes: string;\n}',
+  },
+  {
+    name: 'HandoffShare',
+    declaration: 'export interface HandoffShare extends HandoffDraft {\n    readonly recipients: readonly string[];\n    readonly requestKey: string;\n}',
   },
   {
     name: 'HookBudget',
@@ -5401,6 +5869,30 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type JsonValue = null | boolean | number | string | JsonValue[] | {\n    [key: string]: JsonValue;\n};',
   },
   {
+    name: 'KeyConnectAnswer',
+    declaration: 'export interface KeyConnectAnswer {\n    readonly panel: KeyConnectView | null;\n    readonly signIn: VaultSignIn | null;\n    readonly canManage: boolean;\n    readonly webUrl: string;\n}',
+  },
+  {
+    name: 'KeyConnectField',
+    declaration: 'export interface KeyConnectField {\n    readonly id: string;\n    readonly label: string;\n    readonly secret: boolean;\n    readonly required: boolean;\n    readonly placeholder?: string;\n    readonly defaultValue?: string;\n}',
+  },
+  {
+    name: 'KeyConnectSaved',
+    declaration: 'export interface KeyConnectSaved {\n    readonly panel: KeyConnectView | null;\n}',
+  },
+  {
+    name: 'KeyConnectView',
+    declaration: 'export interface KeyConnectView {\n    readonly app: string;\n    readonly vendor: string;\n    readonly icon?: AhelIcon;\n    readonly keyPageUrl: string | null;\n    readonly keySteps: readonly string[] | null;\n    readonly readOnlyEnough: boolean;\n    readonly fields: readonly KeyConnectField[];\n    readonly count: number | null;\n    readonly countNoun: \'action\' | \'tool\';\n    readonly stackKey: string | null;\n    readonly connected: boolean;\n    readonly ask: string | null;\n}',
+  },
+  {
+    name: 'KnowledgeProduct',
+    declaration: 'export interface KnowledgeProduct {\n    readonly id: string;\n    readonly installId: string;\n    readonly name: string;\n    readonly promise: string;\n    readonly includes: string;\n    readonly cents: number;\n    readonly price: string;\n    readonly ask: string;\n    readonly glyph: string;\n    readonly sources: readonly KnowledgeSource[];\n}',
+  },
+  {
+    name: 'KnowledgeSource',
+    declaration: 'export interface KnowledgeSource {\n    readonly id: string;\n    readonly name: string;\n    readonly description: string;\n    readonly servable: boolean;\n    readonly href: string;\n}',
+  },
+  {
     name: 'KvFacet',
     declaration: 'export interface KvFacet {\n    open(descriptor: KvUnitDescriptor): Promise<KvUnit>;\n}',
   },
@@ -5489,6 +5981,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface LocalAtInput {\n    readonly date: string;\n    readonly time: string;\n    readonly time_zone: string;\n}',
   },
   {
+    name: 'LocalCliId',
+    declaration: 'export type LocalCliId = \'claude-code\' | \'codex-cli\' | \'gemini-cli\';',
+  },
+  {
+    name: 'LocalCliLabel',
+    declaration: 'export type LocalCliLabel = \'Claude Code (installed)\' | \'Codex (installed)\' | \'Gemini CLI (installed)\';',
+  },
+  {
+    name: 'LocalCliView',
+    declaration: 'export interface LocalCliView {\n    readonly id: LocalCliId;\n    readonly label: LocalCliLabel;\n    readonly installed: boolean;\n    readonly path?: string;\n    readonly version?: string;\n    readonly versionOk: boolean;\n    readonly login: \'signed-in\' | \'signed-out\' | \'unknown\';\n    readonly enabled: boolean;\n    readonly installUrl: string;\n    readonly signInHint: string;\n}',
+  },
+  {
     name: 'LocalizedText',
     declaration: 'export type LocalizedText = string | {\n    readonly en: string;\n    readonly [locale: string]: string;\n};',
   },
@@ -5545,12 +6049,24 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type MatcherValue = string | number | boolean | null | RegExp | readonly (string | number | boolean | null)[];',
   },
   {
+    name: 'McpAppCallResult',
+    declaration: 'export type McpAppCallResult = {\n    content: JsonValue[];\n    structuredContent?: JsonValue;\n    _meta?: McpAppJsonObject;\n    isError?: boolean;\n};',
+  },
+  {
+    name: 'McpAppJsonObject',
+    declaration: 'export type McpAppJsonObject = {\n    [key: string]: JsonValue;\n};',
+  },
+  {
     name: 'McpResourceProvider',
-    declaration: 'export interface McpResourceProvider {\n    request(request: McpResourceRequest, exec: ToolExecution): Promise<JsonValue>;\n}',
+    declaration: 'export interface McpResourceProvider {\n    request(request: McpResourceRequest, options: McpResourceRequestOptions): Promise<JsonValue>;\n    generation?(): number;\n}',
   },
   {
     name: 'McpResourceRequest',
     declaration: 'export type McpResourceRequest = {\n    method: \'resources/list\' | \'resources/templates/list\';\n    cursor?: string;\n} | {\n    method: \'resources/read\';\n    uri: string;\n};',
+  },
+  {
+    name: 'McpResourceRequestOptions',
+    declaration: 'export interface McpResourceRequestOptions {\n    readonly signal: AbortSignal;\n}',
   },
   {
     name: 'Message',
@@ -7799,6 +8315,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'UserMessage',
     declaration: 'export interface UserMessage extends MessageBase {\n    readonly role: \'user\';\n}',
+  },
+  {
+    name: 'VaultDisconnected',
+    declaration: 'export interface VaultDisconnected {\n    readonly ok: true;\n    readonly removed: boolean;\n}',
+  },
+  {
+    name: 'VaultSignIn',
+    declaration: 'export interface VaultSignIn {\n    readonly key: string;\n    readonly itemId: string | null;\n    readonly service: string | null;\n    readonly label: string;\n    readonly icon: AhelIcon | null;\n    readonly issuer: string;\n    readonly signedInAt: string;\n    readonly expired: boolean;\n}',
+  },
+  {
+    name: 'VaultSignInList',
+    declaration: 'export interface VaultSignInList {\n    readonly signIns: readonly VaultSignIn[];\n    readonly canManage: boolean;\n}',
   },
   {
     name: 'VerifiedWebhookDelivery',

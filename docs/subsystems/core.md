@@ -425,6 +425,12 @@ Owns the default model selection independently of any Host or transport. A confi
 
 ```ts cordis-catalog
 /**
+ * Read only the saved selection, ignoring the discovered fallback.
+ * @returns the configured selection, or undefined while provider or model is unset.
+ */
+configuredSelection(): ModelSelection | undefined
+
+/**
  * Read the current default model selection without waiting for the provider registry.
  * @returns the configured selection, else the last discovered fallback, else undefined.
  */
@@ -446,6 +452,13 @@ async resolveSelection(): Promise<ModelSelection | undefined>
  * @returns fulfillment after the optional profile write settles.
  */
 async saveSelection(next: ModelSelection): Promise<void>
+
+/**
+ * Remove the saved selection, so the default follows the first configured
+ * route again; used when the saved route goes away (an account signs out).
+ * @returns fulfillment after the optional profile write settles.
+ */
+async clearSelection(): Promise<void>
 ```
 
 Source: [`packages/core/agent-default-model/src/index.ts`](../../packages/core/agent-default-model/src/index.ts)

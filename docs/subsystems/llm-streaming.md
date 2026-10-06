@@ -1045,6 +1045,50 @@ Types: [FileAttachmentRef](attachment.md)
 
 Source: [`packages/llm/llm/src/index.ts`](../../packages/llm/llm/src/index.ts)
 
+<a id="ctxlocalcli--localcli"></a>
+
+### `ctx.localCli` — `LocalCli`
+
+Local CLI detection service; the default export loads it as a plugin.
+
+```ts cordis-catalog
+/**
+ * The last detection with the current enable state; waits for the first detection.
+ * @returns one view per CLI, in display order.
+ */
+@Remote async list(): Promise<LocalCliView[]>
+
+/**
+ * Re-probe every CLI concurrently. A call during a running detection joins
+ * it; one within two seconds of the last reuses its result.
+ * @returns the fresh views.
+ */
+@Remote async detect(): Promise<LocalCliView[]>
+
+/**
+ * Turn a CLI on and save the choice in settings.
+ * @param id - the CLI.
+ * @returns the views after the change.
+ */
+@Remote async enable(id: LocalCliId): Promise<LocalCliView[]>
+
+/**
+ * Turn a CLI off and save the choice in settings.
+ * @param id - the CLI.
+ * @returns the views after the change.
+ */
+@Remote async disable(id: LocalCliId): Promise<LocalCliView[]>
+
+/**
+ * Subscribe to complete lists, starting with the current one.
+ * @param signal - subscription lifetime.
+ * @returns the list after every detection and enable change.
+ */
+@Remote({ mode: 'stream' }) async *watch(signal: AbortSignal): AsyncIterable<LocalCliView[]>
+```
+
+Source: [`packages/llm/llm-local-cli/src/index.ts`](../../packages/llm/llm-local-cli/src/index.ts)
+
 <a id="llm-events"></a>
 
 ### `llm/*` events
@@ -1093,4 +1137,25 @@ Waterfall around every streaming model call (retry, replay, routing). Bound to t
 ```
 
 Source: [`packages/llm/llm/src/index.ts`](../../packages/llm/llm/src/index.ts)
+
+<a id="local-cli-events"></a>
+
+### `local-cli/*` events
+
+<a id="local-clichanged--emit"></a>
+
+#### `local-cli/changed` — emit
+
+The detected CLIs or their enable state changed.
+
+```ts cordis-catalog
+/**
+ * The detected CLIs or their enable state changed.
+ * @param views - the complete list, in `LOCAL_CLI_IDS` order.
+ * @mode emit
+ */
+'local-cli/changed'(views: readonly LocalCliView[]): void
+```
+
+Source: [`packages/llm/llm-local-cli/src/index.ts`](../../packages/llm/llm-local-cli/src/index.ts)
 <!-- END GENERATED cordis-surface -->

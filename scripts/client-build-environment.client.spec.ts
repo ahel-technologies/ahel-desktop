@@ -25,9 +25,9 @@ const COMMIT_HASH = '0123456789abcdef0123456789abcdef01234567'
 const PROBE_KEY = `process.env.${PROBE_NAME}`
 const originalProbe = process.env[PROBE_NAME]
 const roots: string[] = []
+// The upstream release, e2e, sandbox and Python SDK workflows were dropped; ci.yml remains.
 const dshBuildWorkflows = [
   'ci.yml',
-  'desktop-release.yml',
 ]
 
 afterEach(() => {

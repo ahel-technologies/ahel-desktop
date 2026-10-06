@@ -409,7 +409,9 @@ describe('desktop main startup', () => {
     expect((await handler(new Request('ahel-app://unknown/update-dialog.html'))).status).toBe(404)
   })
 
-  it('installs hidden native DevTools shortcuts in the macOS application menu', async () => {
+  it('installs hidden native DevTools shortcuts in the macOS application menu when AHEL_DESKTOP_DEVTOOLS=1', async () => {
+    // Packaged builds keep DevTools off unless this switch opts in.
+    vi.stubEnv('AHEL_DESKTOP_DEVTOOLS', '1')
     vi.stubGlobal('process', { ...process, platform: 'darwin' })
     await readyForUpdate()
     expect(applicationMenuItems().slice(-2)).toEqual([
@@ -434,7 +436,8 @@ describe('desktop main startup', () => {
     const submenu = applicationMenuItems()
     const options = harness.app.setAboutPanelOptions.mock.calls[0]![0]
     const expected = JSON.parse(readFileSync(new URL('./expected/about-panel.json', import.meta.url), 'utf8')) as Record<string, unknown>
-    const [about, separator] = submenu
+    // About, then Licenses, then the separator.
+    const [about, , separator] = submenu
     expect({ menu: [{ label: about!.label, role: about!.role }, separator], options: { ...options, iconPath: '<app icon>' } })
       .toEqual(expected[`${platform}:${locale}`])
     expect(options.iconPath).toBe(packaged ? join('desktop-test-resources', 'icon.png')
@@ -447,7 +450,7 @@ describe('desktop main startup', () => {
     const zh = locale === 'zh-CN'
     expect(harness.dialog.showMessageBox).toHaveBeenLastCalledWith(expect.objectContaining({
       type: 'info', title: zh ? '关于 Ahel Desktop' : 'About Ahel Desktop', message: 'Ahel Desktop',
-      detail: zh ? '版本 V1.0.0\n基于 DeepSeek Harness（MIT）构建' : 'Version V1.0.0\nBuilt on DeepSeek Harness (MIT)', buttons: [zh ? '确定' : 'OK'], cancelId: 0,
+      detail: zh ? '版本 V1.0.0\n基于 DeepSeek Harness（MIT）构建' : 'Version V1.0.0\nBuilt on DeepSeek Harness (MIT)', buttons: [zh ? '确定' : 'OK', zh ? '许可证' : 'Licenses'], cancelId: 0,
     }))
     // A dialog that cannot open is logged, not surfaced as an unhandled rejection.
     harness.dialog.showMessageBox.mockRejectedValueOnce(new Error('overlay unavailable'))
@@ -511,10 +514,8 @@ describe('desktop main startup', () => {
     } else if (platform === 'win32') {
       expect(window.options).toMatchObject({ titleBarStyle: 'hidden', titleBarOverlay: { height: WINDOWS_TITLEBAR_HEIGHT } })
       expect(window.options).not.toHaveProperty('vibrancy')
-      expect(harness.menu.mock.calls[0]![0]).toEqual([
-        { role: 'toggleDevTools', visible: false },
-        { role: 'toggleDevTools', visible: false, accelerator: 'F12' },
-      ])
+      // Packaged: no DevTools shortcuts.
+      expect(harness.menu.mock.calls[0]![0]).toEqual([])
     } else {
       expect(window.options).not.toHaveProperty('titleBarStyle')
       expect(window.options).not.toHaveProperty('vibrancy')
@@ -652,7 +653,7 @@ describe('desktop main startup', () => {
     expect(() => handler(event, 'application', NaN, 34)).toThrow('invalid popup request')
     const application = handler(event, 'application', 48, 34)
     expect(harness.menu.buildFromTemplate.mock.lastCall![0].map(item => item.label ?? item.type)).toEqual([
-      '关于 Ahel Desktop', 'separator', '检查更新…', '管理命令行工具…', 'separator', '退出',
+      '关于 Ahel Desktop', '许可证', 'separator', '检查更新…', '管理命令行工具…', 'separator', '退出',
     ])
     expect(harness.popup.mock.lastCall![0]).toMatchObject({ window, x: 48, y: 34 })
     expect(harness.popup.mock.lastCall![0].callback).toBeTypeOf('function')
@@ -689,8 +690,8 @@ describe('desktop main startup', () => {
       : ['Application', 'editMenu'])
     const application = template[0]!.submenu as MenuItemConstructorOptions[]
     expect(application.filter(item => item.visible !== false).map(describeItem)).toEqual(platform === 'darwin'
-      ? ['about', 'separator', en.checkUpdatesMenu, en.cliCommandMenu, 'separator', 'hide', 'hideOthers', 'unhide', 'separator', 'quit']
-      : ['about', 'separator', en.checkUpdatesMenu, 'separator', 'quit'])
+      ? ['about', en.licensesMenu, 'separator', en.checkUpdatesMenu, en.cliCommandMenu, 'separator', 'hide', 'hideOthers', 'unhide', 'separator', 'quit']
+      : ['about', en.licensesMenu, 'separator', en.checkUpdatesMenu, 'separator', 'quit'])
     expect(harness.menu.setApplicationMenu).toHaveBeenCalledOnce()
   })
 

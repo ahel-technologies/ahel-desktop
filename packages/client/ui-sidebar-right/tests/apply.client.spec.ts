@@ -77,6 +77,8 @@ async function boot(shortcuts: Partial<Shortcuts> = {}) {
   ctx.provide('resources', resources as never)
   ctx.provide('sessions', { retain: vi.fn(() => ({ ready: Promise.resolve(), release: vi.fn() })) } as never)
   ctx.provide('uiSession', { adapter: { current } } as never)
+  // The panel registers only while Developer tools are on.
+  ctx.provide('configForms', { developerTools: { enabled: createSnapshotStore(true) } } as never)
   const fiber = ctx.plugin({ inject: [...inject], apply })
   await fiber.await()
   const seat = (name: string): Recorded => {

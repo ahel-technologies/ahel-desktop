@@ -44,6 +44,7 @@ const SIDEBAR = 'client/ui-sidebar/src/client/SidebarRoot.module.css'
 const CONVERSATION = 'client/ui-conversation/src/client/skeleton/ConversationRoot.module.css'
 const DOCKKIT = 'client/ui-dockkit/src/components/dockkit.module.css'
 const PLUGIN_MANAGER = 'client/ui-plugin-manager/src/client/PluginManagerPage.module.css'
+const AHEL_PAGES = 'client/ui-ahel-account/src/client/catalog/Catalog.module.css'
 
 /**
  * One chrome row: the sheet that lays it out, the markup that marks it, and the
@@ -100,6 +101,10 @@ const CHROME_ROWS: readonly ChromeRow[] = [
     selector: '.detailTop',
     markup: 'client/ui-plugin-manager/src/client/PluginManagerPage.tsx',
   },
+  // The Ahel account panels share the catalog sheet's top row.
+  ...[
+    'catalog/DiscoverPage.tsx', 'catalog/YourAppsPage.tsx', 'team/ApprovalsPage.tsx', 'team/InboxPage.tsx',
+  ].map(page => ({ file: AHEL_PAGES, selector: '.top', markup: `client/ui-ahel-account/src/client/${page}` })),
 ]
 
 /**

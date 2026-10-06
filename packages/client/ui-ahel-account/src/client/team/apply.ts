@@ -2,10 +2,12 @@
  * Team assembly: the `ahel-approvals` main panel, its sidebar row for
  * owners and team leads with the pending-count badge, and a system
  * notification when a new held call arrives; the `ahel-inbox` main panel and
- * its sidebar row with the unread badge, whose Open seeds a new session.
+ * its sidebar row with the unread badge, whose Open seeds a new session; and
+ * the session menu's "Share with teammate" with its dialog.
  */
 import type { Context } from '@ahel/cordis'
-import type { AhelAccountView } from '@ahel/dsh-ahel-account/types'
+import type { AhelAccountView, HandoffSessionDraft } from '@ahel/dsh-ahel-account/types'
+import type { HostObservable } from '@ahel/dsh-client-ui-slots'
 import type { MainPanelId } from '@ahel/dsh-client-ui-layout/client'
 // Type-only: the `ahel-team/*` Remote failure codes.
 import type {} from '@ahel/dsh-ahel-account'
@@ -19,6 +21,7 @@ import { NS } from '../locales.ts'
 import { ApprovalsPanelIcon, InboxPanelIcon } from '../catalog/PanelIcons.tsx'
 import { ApprovalsPage } from './ApprovalsPage.tsx'
 import { InboxPage } from './InboxPage.tsx'
+import { ShareHandoffDialog, ShareHandoffMenuItem, type ShareHandoffInjected, type ShareRequest } from './ShareHandoff.tsx'
 import type { ApprovalsInjected, InboxAnswer, InboxInjected, InboxLoad, TeamSummary, TeamSummaryState } from './contract.ts'
 
 /** Main panel and sidebar row id of the Approvals page. */
@@ -45,6 +48,8 @@ const MANAGER_ROLES: ReadonlySet<string> = new Set(['OWNER', 'ADMIN'])
 function selectedRole(view: AhelAccountView | null, state: TeamSummaryState): string | undefined {
   if (view?.status !== 'signed-in') return undefined
   const id = view.workspace ?? state.summary?.workspace.id
+  // An outdated ahel.ai sends no summary to name its default workspace; any managed workspace shows the row and its update notice.
+  if (id === undefined && state.outdated) return view.profile?.workspaces.find(item => MANAGER_ROLES.has(item.role))?.role
   if (id === undefined) return undefined
   return view.profile?.workspaces.find(item => item.id === id)?.role
     ?? (state.summary?.workspace.id === id ? state.summary.workspace.role : undefined)
@@ -116,6 +121,7 @@ export function registerTeam(ctx: Context, account: AhelAccountInjected, summary
   })
 
   ctx.effect(() => watchNewApprovals(ctx, account, summary), 'ui-ahel-account: approval notifications')
+  registerShare(ctx, account, summary)
   // Only the Inbox needs the session navigation; Approvals do not wait for it.
   ctx.inject(['uiWorkspace'], (inner) => { registerInbox(inner, account, summary) })
 }
@@ -235,6 +241,78 @@ function registerInbox(ctx: Context, account: AhelAccountInjected, summary: Team
       dispose = undefined
     }
   })
+}
+
+/** Prefill when the chat could not be read. */
+const NO_DRAFT: HandoffSessionDraft = { title: '', goal: '', changes: '' }
+
+/**
+ * Register "Share with teammate" in the session menu while signed in, and its dialog.
+ * @param ctx - Client context with `remote.ahelTeam` and `slots`.
+ * @param account - the account face.
+ * @param summary - the shared summary poll, re-read after a share.
+ */
+function registerShare(ctx: Context, account: AhelAccountInjected, summary: TeamSummary): void {
+  let request: ShareRequest | null = null
+  let nonce = 0
+  const listeners = new Set<() => void>()
+  const shareRequest: HostObservable<ShareRequest | null> = {
+    getSnapshot: () => request,
+    subscribe: (listener) => { listeners.add(listener); return () => { listeners.delete(listener) } },
+  }
+  const setRequest = (next: ShareRequest | null): void => {
+    request = next
+    for (const listener of listeners) listener()
+  }
+  const face: ShareHandoffInjected = {
+    requestShare: (sessionId, displayTitle) => { setRequest({ sessionId, displayTitle, nonce: ++nonce }) },
+    settleShare: () => { setRequest(null) },
+    draft: async (sessionId) => {
+      const result = await ctx.remote.ahelTeam.sessionDraft(sessionId)
+      return result.ok ? result.value : NO_DRAFT
+    },
+    prepare: async (draft) => {
+      const result = await ctx.remote.ahelTeam.prepareHandoff(draft)
+      return result.ok ? { ok: true, value: result.value } : inboxFailure(result.error)
+    },
+    share: async (share) => {
+      const result = await ctx.remote.ahelTeam.shareHandoff(share)
+      if (!result.ok) return inboxFailure(result.error)
+      summary.refresh()
+      return { ok: true, value: result.value }
+    },
+    openUrl: (href) => {
+      const url = webUrl(href, account, summary)
+      if (url !== null) account.openLink(url)
+    },
+    hooks: { shareRequest },
+  }
+
+  ctx.slots.inject('sidebar.workspaces.session.menu.item', () => {
+    let dispose: (() => void) | undefined
+    const reconcile = (): void => {
+      const show = account.hooks.account.getSnapshot()?.status === 'signed-in'
+      if (show && dispose === undefined) {
+        dispose = ctx.slots.register({
+          name: 'sidebar.workspaces.session.menu.item', id: 'ahel-share', order: 350, locale: NS, inject: () => face,
+        }, ShareHandoffMenuItem)
+      } else if (!show && dispose !== undefined) {
+        dispose()
+        dispose = undefined
+        setRequest(null)
+      }
+    }
+    reconcile()
+    const off = account.hooks.account.subscribe(reconcile)
+    return () => {
+      off()
+      dispose?.()
+      dispose = undefined
+    }
+  })
+  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+    name: 'shell.overlay', id: 'ahel-share', locale: NS, inject: () => face,
+  }, ShareHandoffDialog))
 }
 
 /**

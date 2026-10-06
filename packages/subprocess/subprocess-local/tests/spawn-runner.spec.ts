@@ -13,7 +13,7 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, posix, resolve } from 'node:path'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { Win32Error } from '@ahel/dsh-win32-process'
 import type {
   CurrentTokenProcessBindings,
@@ -388,6 +388,9 @@ describe('runner launch inputs', () => {
   })
 
   it('resolves Windows executables with target-cwd and PATH search semantics', () => {
+    // The default host environment is the runner's own; a NoDefaultCurrentDirectoryInExePath there drops the cwd probe.
+    vi.stubEnv('NoDefaultCurrentDirectoryInExePath', undefined)
+    onTestFinished(() => { vi.unstubAllEnvs() })
     const probed: string[] = []
     const exists = (candidate: string): boolean => {
       probed.push(candidate)

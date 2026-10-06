@@ -117,6 +117,62 @@ interface McpResourceProvider {
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.zh.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
+<a id="ctxmcpapps--mcpappscontroller"></a>
+
+### `ctx.mcpApps` — `McpAppsController`
+
+Remote namespace `mcpApps`: resource reads and host-proxied tool calls for MCP Apps cards.
+
+```ts cordis-catalog
+/**
+ * Read one resource from a server visible to the Session's Agent. `ui://`
+ * reads are cached by the resource runtime.
+ * @param agent - lookup parameter resolved from the Session identity.
+ * @param server - configured MCP server name.
+ * @param uri - resource URI.
+ * @param signal - carrier cancellation.
+ * @returns the MCP `resources/read` result.
+ */
+@Remote('readResource') async readResource(agent: Agent, server: string, uri: string, signal: AbortSignal): Promise<JsonValue>
+
+/**
+ * Read a call's live result `_meta` (for example a one-use press token).
+ * It lives only in Host memory, so after a Host restart this returns `null`.
+ * @param agent - lookup parameter resolved from the Session identity.
+ * @param callId - the settled tool call the card renders.
+ * @returns the result `_meta`, or `null`.
+ */
+@Remote('resultMeta') resultMeta(agent: Agent, callId: string): McpAppJsonObject | null
+
+/**
+ * Record a card's `ui/update-model-context` payload as context for the
+ * Agent's next model request (a logged inbox event).
+ * @param agent - lookup parameter resolved from the Session identity.
+ * @param server - the card's MCP server.
+ * @param update - the payload: `content` blocks and optional `structuredContent`.
+ */
+@Remote('updateModelContext') updateModelContext(agent: Agent, server: string, update: McpAppJsonObject): void
+
+/**
+ * Run one MCP tool for a card, through the same registry pipeline and
+ * approval seam as a model call. The tool must belong to `server` and its
+ * MCP Apps visibility must include `app`. Each call is reported to the
+ * Agent as logged context for its next model request (tool name and
+ * result text; arguments are omitted because they can carry tokens).
+ * @param agent - lookup parameter resolved from the Session identity.
+ * @param server - the card's MCP server; calls to other servers are refused.
+ * @param tool - raw MCP tool name.
+ * @param args - tool arguments from the card.
+ * @param signal - carrier cancellation.
+ * @returns MCP `CallToolResult` fields; failures arrive with `isError: true`.
+ */
+@Remote('callTool') async callTool(agent: Agent, server: string, tool: string, args: McpAppJsonObject, signal: AbortSignal): Promise<McpAppCallResult>
+```
+
+Types: [Agent](core.zh.md)
+
+Source: [`packages/client/ui-mcp-app/src/index.ts`](../../packages/client/ui-mcp-app/src/index.ts)
+
 <a id="ctxmcpresources--mcpresourceruntime"></a>
 
 ### `ctx.mcpResources` — `McpResourceRuntime`
@@ -131,7 +187,22 @@ Scoped resource access plus three tools shared by configured MCP servers.
  * @returns the effect disposer for this exact registration.
  */
 register(server: string, provider: McpResourceProvider): () => void
+
+/**
+ * Read one resource for an MCP Apps host on behalf of an agent. `ui://`
+ * results are cached per server provider, connection generation, and URI
+ * (the URI carries the server's content version); other URIs are read
+ * uncached. A failed read is never cached.
+ * @param agent - agent whose scope selects the server.
+ * @param server - configured server name visible to that agent.
+ * @param uri - resource URI to read.
+ * @param signal - caller cancellation; it stops this caller's wait, not a shared cached read.
+ * @returns the `resources/read` result as lossless JSON.
+ */
+async readAppResource(agent: ToolExecution['agent'], server: string, uri: string, signal: AbortSignal): Promise<JsonValue>
 ```
+
+Types: [ToolExecution](tools.zh.md)
 
 Source: [`packages/mcp/mcp-resources/src/index.ts`](../../packages/mcp/mcp-resources/src/index.ts)
 <!-- END GENERATED cordis-surface -->

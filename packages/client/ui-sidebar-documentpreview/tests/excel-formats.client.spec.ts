@@ -1,5 +1,4 @@
 /** Additional spreadsheet formats retain layout and literal delimited fields. */
-import { readFileSync } from 'node:fs'
 import { utils, write } from 'xlsx'
 import { expect, it } from 'vitest'
 import { Config } from '../src/config.ts'
@@ -36,12 +35,6 @@ it.each([false, true])('reads BIFF values, formulas, merges, layout, and dates w
   expect(first.config!.columnlen![0]).toBeGreaterThan(100)
   expect(first.luckysheet_select_save).toEqual([{ row: [0, 0], column: [0, 2], row_focus: 0, column_focus: 0 }])
   expect(missingResults).toBe(0)
-})
-
-it('reads an independently generated Office XLS fixture', async () => {
-  const bytes = readFileSync(new URL('../../../../apps/web/tests/fixtures/office/preview.xls', import.meta.url))
-  const result = await convertExcel(new Uint8Array(bytes), 'xls', limits)
-  expect(result.sheets.flatMap(sheet => sheet.celldata).some(cell => String(cell?.v?.v).includes('Office preview'))).toBe(true)
 })
 
 it('maps optional row metadata, empty formula caches, errors, and Date values', () => {

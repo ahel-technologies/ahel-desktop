@@ -141,6 +141,7 @@
   padding: 6px 12px;
   border: 1px solid var(--ahel-line-tile);
   border-radius: 999px;
+  corner-shape: round;
   background: var(--ahel-card);
   color: var(--ahel-ink);
   font: 500 13px/20px var(--font-sans);

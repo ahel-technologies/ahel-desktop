@@ -116,32 +116,29 @@ describe('the new-session chip', () => {
   })
 
   it('keeps a named custom preset that overrides a development preset id', () => {
-    renderSeat({ options: [{ id: 'ptc', name: 'My workflow' }] }, undefined, undefined, false)
+    renderSeat({ options: [{ id: 'ptc', name: 'My workflow' }, { id: 'standard' }] }, undefined, undefined, false)
     fireEvent.click(screen.getByRole('button'))
     expect(screen.getByRole('menuitem', { name: /^My workflow/ })).toBeTruthy()
   })
 
-  it('keeps the current mode visible without opening a picker when all options are hidden', () => {
-    const actions = renderSeat({ current: 'minimal', options: [{ id: 'ptc' }, { id: 'minimal' }] }, undefined, undefined, false)
-    const trigger = screen.getByRole<HTMLButtonElement>('button', { name: en.presetMinimalName })
-    expect(trigger.disabled).toBe(true)
-    fireEvent.click(trigger)
-    expect(trigger.getAttribute('aria-expanded')).toBe('false')
-    expect(screen.queryByRole('menu')).toBeNull()
-    expect(actions.select).not.toHaveBeenCalled()
+  it('hides the chip when one or no option is visible', () => {
+    renderSeat({ current: 'minimal', options: [{ id: 'ptc' }, { id: 'minimal' }] }, undefined, undefined, false)
+    expect(screen.queryByRole('button')).toBeNull()
+    cleanup()
+    renderSeat({ current: 'standard', options: [{ id: 'standard' }] })
+    expect(screen.queryByRole('button')).toBeNull()
   })
 
-  it('closes a picker when its last visible option disappears and keeps it closed when options return', () => {
-    const options = [{ id: 'minimal' }, { id: 'mine' }]
+  it('closes a picker when its visible options run out and keeps it closed when options return', () => {
+    const options = [{ id: 'minimal' }, { id: 'mine' }, { id: 'standard' }]
     const actions = renderSeat({ current: 'minimal', options }, undefined, undefined, false)
-    const trigger = screen.getByRole<HTMLButtonElement>('button', { name: en.presetMinimalName })
-    fireEvent.click(trigger)
+    fireEvent.click(screen.getByRole('button', { name: en.presetMinimalName }))
     expect(screen.getByRole('menuitem', { name: /^mine/ })).toBeTruthy()
     act(() => { actions.store.set({ ...actions.store.getSnapshot(), options: [{ id: 'ptc' }, { id: 'minimal' }] }) })
-    expect(trigger.disabled).toBe(true)
-    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('button')).toBeNull()
     expect(screen.queryByRole('menu')).toBeNull()
     act(() => { actions.store.set({ ...actions.store.getSnapshot(), options }) })
+    const trigger = screen.getByRole<HTMLButtonElement>('button', { name: en.presetMinimalName })
     expect(trigger.disabled).toBe(false)
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
     expect(screen.queryByRole('menu')).toBeNull()
@@ -309,7 +306,7 @@ describe('the chip introduce cue', () => {
     vi.useFakeTimers()
     const actions = renderSeat({
       current: 'creator',
-      options: [{ id: 'creator', name: 'CreatorMode' }],
+      options: [{ id: 'creator', name: 'CreatorMode' }, { id: 'standard' }],
       introduce: true,
     })
 
@@ -335,7 +332,7 @@ describe('the chip introduce cue', () => {
     vi.useFakeTimers()
     renderSeat({
       current: 'creator',
-      options: [{ id: 'creator', name: '创造模式' }],
+      options: [{ id: 'creator', name: '创造模式' }, { id: 'standard' }],
       introduce: true,
     })
 
@@ -351,7 +348,7 @@ describe('the chip introduce cue', () => {
     vi.useFakeTimers()
     const actions = renderSeat({
       current: 'creator',
-      options: [{ id: 'creator', name: 'C' }],
+      options: [{ id: 'creator', name: 'C' }, { id: 'standard' }],
       introduce: true,
     })
 
@@ -372,7 +369,7 @@ describe('the chip introduce cue', () => {
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })))
     const actions = renderSeat({
       current: 'creator',
-      options: [{ id: 'creator', name: '' }],
+      options: [{ id: 'creator', name: '' }, { id: 'standard' }],
       introduce: true,
     })
 
@@ -400,15 +397,14 @@ describe('the session-header label', () => {
     expect(screen.getByTitle(en.headerHint).textContent).toBe('mine')
   })
 
-  it('shows the id until the roster resolves it', () => {
-    renderLabel({
+  it('shows nothing until the roster offers more than one preset', () => {
+    const { view } = renderLabel({
       blank: false,
       projectionValues: { agentPreset: 'standard' },
     }, { options: [] })
 
-    // The session's own summary is the authority on which preset it runs; the
-    // roster only supplies the display name, and its arrival is a later frame.
-    expect(screen.getByTitle(en.headerHint).textContent).toBe('standard')
+    // With one preset or none the label names no choice the person made.
+    expect(view.container.firstChild).toBeNull()
   })
 
   it('renders nothing, and reads no roster, when the session records no preset', async () => {

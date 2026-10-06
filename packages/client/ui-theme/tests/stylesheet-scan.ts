@@ -93,6 +93,12 @@ export function packageFiles(accepts: (name: string) => boolean): string[] {
 }
 
 /**
+ * The Ahel account panels draw ahel.ai's own design (its fonts, radius scale,
+ * focus ring and menus), so the DSH token-scale guards skip this package.
+ */
+export const AHEL_DESIGN_PACKAGE = '/packages/client/ui-ahel-account/'
+
+/**
  * Every CSS file shipped as package source.
  * @returns absolute stylesheet paths, `/`-separated on every platform.
  */

@@ -250,8 +250,8 @@ export type DesktopCredits =
   | {
     readonly visible: true
     readonly balanceCents: number
-    /** Spend since UTC midnight, net of refunds. */
-    readonly spentTodayCents: number
+    /** The whole workspace's spend since UTC midnight, net of refunds. */
+    readonly workspaceSpentTodayCents: number
     readonly low: boolean
     readonly lowThresholdCents: number
     /** Only the owner tops up; others are told to ask the owner. */
@@ -488,6 +488,16 @@ export interface HandoffShare extends HandoffDraft {
   readonly recipients: readonly string[]
   /** `HandoffReview.continuation.requestKey`. */
   readonly requestKey: string
+}
+
+/** What one local chat offers to prefill a handoff; empty strings where the chat could not be read. */
+export interface HandoffSessionDraft {
+  /** The chat's title, up to 120 characters. */
+  readonly title: string
+  /** The first message the person typed, up to 4000 characters. */
+  readonly goal: string
+  /** The last assistant reply's text, up to 6000 characters. */
+  readonly changes: string
 }
 
 declare module '@ahel/cordis' {

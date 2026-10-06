@@ -33,7 +33,11 @@ async function bench() {
   new LocaleHolder(ctx)
   const list = vi.fn(() => Promise.resolve({ ok: true as const, value: { entries: [], managementAvailable: true } }))
   const remote = new TestRemote(ctx, {
-    settings: { describe: vi.fn(async () => ({ ok: true as const, value: { writable: true, hasDocument: true, namespaces: [] } })) },
+    // Developer tools on: the Plugins page is a developer surface.
+    settings: { describe: vi.fn(async () => ({ ok: true as const, value: { writable: true, hasDocument: true, namespaces: [{
+      ns: 'ui-settings', schema: { type: 'object', dict: { enabled: { type: 'boolean' } } }, value: { enabled: true },
+      autoGenerate: false, applies: 'live', secrets: [], revision: 0,
+    }] } })) },
     pluginInventory: { list },
     pluginRegistryProbe: { fastest: vi.fn(async () => ({ ok: true as const, value: null })) },
     pluginManager: {

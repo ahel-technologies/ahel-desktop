@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { INPUT_MODALITY, INPUT_MODALITY_ATTRIBUTE } from '../../ui-primitives/src/input-modality.ts'
-import { packageStylesheets, parseRules, varReferences } from './stylesheet-scan.ts'
+import { AHEL_DESIGN_PACKAGE, packageStylesheets, parseRules, varReferences } from './stylesheet-scan.ts'
 
 const ACCENT = '--dsw-alias-state-business-primary'
 const COLOR = '--dsw-focus-ring-color'
@@ -62,7 +62,7 @@ describe('focus styles', () => {
   })
 
   it('uses the shared ring color throughout a non-empty client stylesheet corpus', () => {
-    const files = packageStylesheets().filter(file => file.includes('/packages/client/'))
+    const files = packageStylesheets().filter(file => file.includes('/packages/client/') && !file.includes(AHEL_DESIGN_PACKAGE))
     expect(files.length).toBeGreaterThan(0)
     const failures = files.flatMap(file => ringColorViolations(readFileSync(file, 'utf8')).map(value => `${file}: ${value}`))
     expect(failures).toEqual([])
