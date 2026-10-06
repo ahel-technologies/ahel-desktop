@@ -1,7 +1,7 @@
 {
   "name": "@ahel/dsh-llm-ahel",
   "description": "Ahel-metered models for Ahel Desktop: an OpenAI-compatible pi-ai route authenticated by the ahel.ai account",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publishConfig": {
     "access": "public"
   },

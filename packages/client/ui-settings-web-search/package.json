@@ -1,7 +1,7 @@
 {
   "name": "@ahel/dsh-client-ui-settings-web-search",
   "description": "Settings > General > Web search: Ahel Web Search status and its on switch",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publishConfig": {
     "access": "public"
   },

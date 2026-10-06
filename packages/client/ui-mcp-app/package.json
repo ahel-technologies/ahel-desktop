@@ -1,7 +1,7 @@
 {
   "name": "@ahel/dsh-client-ui-mcp-app",
   "description": "MCP Apps card host: sandboxed ui:// cards for MCP tool results with the MCP Apps postMessage bridge",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publishConfig": {
     "access": "public"
   },

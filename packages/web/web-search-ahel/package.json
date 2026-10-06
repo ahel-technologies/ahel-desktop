@@ -1,7 +1,7 @@
 {
   "name": "@ahel/dsh-web-search-ahel",
   "description": "Ahel Web Search for the web capability seam (ctx.web): web_search and web_fetch through the signed-in ahel.ai account",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publishConfig": {
     "access": "public"
   },

@@ -1,7 +1,7 @@
 {
   "name": "@ahel/dsh-client-ui-local-cli",
   "description": "Detected-on-this-computer rows in Settings > Models: turn on the Claude Code, Codex or Gemini CLI the person already signed into",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publishConfig": {
     "access": "public"
   },
