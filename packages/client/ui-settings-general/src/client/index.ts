@@ -77,6 +77,7 @@ export const inject = ['slots', 'locale', 'connection', 'remote', 'remote.settin
  */
 export function apply(ctx: ClientContext): void {
   // Ahel Desktop hides the coding-view toggle: the product is chat + apps only.
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- a build-time switch; the row stays registered for a future profile.
   if (SHOW_CODING_VIEW_TOGGLE) {
     ctx.slots.inject('settings.general.item', () => ctx.slots.register({
       name: 'settings.general.item', id: 'developer-tools', order: 15, locale: NS,
