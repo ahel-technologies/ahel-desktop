@@ -108,6 +108,8 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ag
   const members = assignees.filter(option => option.type === 'member' && option.id !== 'me')
   const activeRun = run !== null && (run.state === 'running' || run.state === 'waiting_approval' || run.state === 'queued') ? run : null
   const runningHere = activeRun !== null
+  // A run queued on ahel.ai has no chat until a desktop picks it up.
+  const liveSession = activeRun?.sessionId ?? null
 
   return (
     <>
@@ -120,8 +122,8 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ag
             <RunProgress run={run} t={t} />
           </span>
           <span className={css.actions}>
-            {activeRun !== null && (
-              <button type="button" className={`${css.btn} ${css.btnGhost}`} onClick={() => { actions.openSession(activeRun.sessionId) }}>
+            {liveSession !== null && (
+              <button type="button" className={`${css.btn} ${css.btnGhost}`} onClick={() => { actions.openSession(liveSession) }}>
                 {t('openSession')}
               </button>
             )}

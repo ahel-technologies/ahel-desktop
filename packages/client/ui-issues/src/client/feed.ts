@@ -44,7 +44,7 @@ const FILTER: IssuesFilter = { assignee: 'all', project: null, q: '' }
 
 /** The empty feed. */
 export const EMPTY_ISSUES: IssuesState = {
-  phase: 'loading', message: null, issues: [], counts: {}, agentsWorking: 0, filter: FILTER, projects: [], assignees: null, role: null, mine: 0,
+  phase: 'loading', message: null, issues: [], counts: {}, agentsWorking: 0, agentsQueued: 0, filter: FILTER, projects: [], assignees: null, role: null, mine: 0,
   runs: {}, open: null, composer: null, offerRun: null,
 }
 
@@ -62,6 +62,8 @@ export type IssuesFeed = Omit<IssuesInjected, 'run' | 'openSession' | 'openLink'
   reload(): Promise<void>
   /** Post a run's closing summary as Ahel's comment. */
   agentComment(key: string, body: string): void
+  /** Record how many runs wait in `queued` for a desktop, so the header counts only working agents. */
+  queued(count: number): void
 }
 
 /** A Remote failure's message worth showing: ahel.ai's own reason for refusals, nothing for transport failures. */
@@ -216,6 +218,7 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
       if (result.ok) set({ projects: result.value })
       return answer(result)
     },
+    queued: (count) => { if (count !== value.agentsQueued) set({ agentsQueued: count }) },
     report: (key, report) => {
       const run: IssueRun = { ...report, updatedAt: new Date().toISOString() }
       set({ runs: { ...value.runs, [key]: run } })

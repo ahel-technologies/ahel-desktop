@@ -200,6 +200,8 @@ function registerInbox(ctx: Context, account: AhelAccountInjected, summary: Team
   const face: InboxInjected = {
     load: async () => {
       const result = await ctx.remote.ahelTeam.inbox()
+      // A `run_queued` row may be this person's run waiting for this desktop.
+      if (result.ok) ctx.emit('ahel-issues/poll')
       return result.ok ? { ok: true, list: result.value } : inboxFailure(result.error)
     },
     open: async (row) => {

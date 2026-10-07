@@ -37,10 +37,12 @@ export type IssueRunState = 'queued' | 'running' | 'waiting_approval' | 'finishe
 
 /** The run attached to an issue. */
 export interface IssueRun {
-  /** Desktop session the run happens in. */
-  readonly sessionId: string
+  /** Desktop session the run happens in; null while a run requested on ahel.ai waits in `queued` for a desktop. */
+  readonly sessionId: string | null
   /** Null when ahel.ai holds no state for the session. */
   readonly state: IssueRunState | null
+  /** User id of the seat that asked for the run; absent from an older ahel.ai. */
+  readonly requestedBy?: string | null | undefined
   /** Tool calls made so far. */
   readonly steps: number
   /** Expected tool calls; null when unknown. */
@@ -101,7 +103,7 @@ export interface IssuePage {
   readonly nextCursor: string | null
   /** Issues per status for the same filters, ignoring `status` and paging. */
   readonly counts: Readonly<Record<string, number>>
-  /** Agent runs in `running` or `waiting_approval` state across the workspace. */
+  /** Agent runs in `queued`, `running` or `waiting_approval` state across the workspace. */
   readonly agentsWorking: number
 }
 
@@ -177,7 +179,7 @@ export interface IssueAssignees {
  */
 export interface IssueInboxItem {
   readonly id: string
-  readonly type: 'assigned' | 'mentioned' | 'run_finished' | 'run_failed'
+  readonly type: 'assigned' | 'mentioned' | 'run_queued' | 'run_finished' | 'run_failed'
   /** Null when the issue is gone. */
   readonly issueKey: string | null
   readonly issueTitle: string | null

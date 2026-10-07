@@ -4,14 +4,14 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { useSyncExternalStore } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { makeTranslate } from '@ahel/dsh-client-test-runtime'
-import type { IssuePatch } from '@ahel/dsh-ahel-account/types'
+import type { Issue, IssuePage, IssuePatch } from '@ahel/dsh-ahel-account/types'
 import type { IssuesInjected, IssuesPanelIconProps } from '../src/client/contract.ts'
 import { createIssuesFeed } from '../src/client/feed.ts'
 import { IssuesPage } from '../src/client/IssuesPage.tsx'
 import css from '../src/client/Issues.module.css'
 import { IssuesPanelIcon } from '../src/client/PanelIcons.tsx'
 import { en } from '../src/client/locales.ts'
-import { backendOf, PAGE } from './fixture.client.ts'
+import { backendOf, ISSUES, PAGE } from './fixture.client.ts'
 
 afterEach(cleanup)
 
@@ -21,13 +21,13 @@ function ok<T>(value: T) {
   return Promise.resolve({ ok: true as const, value })
 }
 
-async function mount() {
+async function mount(page: IssuePage = PAGE) {
   const update = vi.fn((key: string, patch: IssuePatch) => {
     const issue = PAGE.issues.find(row => row.key === key)!
     return ok({ issue: { ...issue, status: patch.status ?? issue.status } })
   })
   const backend = backendOf({
-    list: vi.fn(() => ok(PAGE)),
+    list: vi.fn(() => ok(page)),
     projects: vi.fn(() => ok([{ id: 'p1', name: 'Website' }])),
     assignees: vi.fn(() => ok({ members: [{ id: 'u2', name: 'Kaarna Pets', avatar: 'KP' }], agents: [{ id: 'ahel', name: 'Ahel', avatar: null, model: 'Claude Sonnet' }] })),
     update,
@@ -89,4 +89,16 @@ it('draws the open-issue count as a trailing pill in the wide sidebar row and on
   wide.unmount()
   const rail = render(<IssuesPanelIcon {...{ size: 18, active: false, useIssues } as unknown as IssuesPanelIconProps} />)
   expect(within(rail.container).getByText('3').className).toBe(css.badge)
+})
+
+it('a run queued on ahel.ai shows Queued on its card and does not count as an agent working', async () => {
+  const queued: Issue = {
+    ...ISSUES[2]!, key: 'AHEL-140', title: 'Draft the release notes', status: 'todo',
+    run: { sessionId: null, state: 'queued', requestedBy: 'u1', steps: 0, totalSteps: 0, updatedAt: '2026-10-07T09:00:00.000Z' },
+  }
+  const { feed } = await mount({ ...PAGE, issues: [...ISSUES, queued], agentsWorking: 3 })
+  await act(async () => { feed.queued(1) })
+  const todo = within(screen.getByRole('region', { name: 'Issues board' })).getByRole('region', { name: 'Todo' })
+  expect(within(todo).getByText('Queued')).toBeTruthy()
+  expect(screen.getByText('2 agents working')).toBeTruthy()
 })

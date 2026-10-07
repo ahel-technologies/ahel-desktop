@@ -468,6 +468,7 @@
 .run { display: inline-flex; align-items: center; gap: 5px; color: var(--ahel-body); font: 400 11.5px var(--font-mono); }
 .run[data-state='waiting_approval'] { color: var(--ahel-amber-ink); }
 .run[data-state='failed'] { color: var(--ahel-red-text); }
+.run[data-state='queued'] { color: var(--ahel-muted); }
 .ringTrack { stroke: var(--ahel-line); }
 .ringFill { stroke: var(--ahel-teal); transition: stroke-dasharray 0.3s; }
 .run[data-state='waiting_approval'] .ringFill { stroke: var(--issue-progress); }

@@ -2,9 +2,10 @@
 import type {} from '@ahel/cordis'
 import type { HandoffReceivedRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
 import type { RemoteResult } from '@ahel/dsh-typert-protocol'
+import type { AhelAccountKey } from '../locales.ts'
 import type { InboxAnswer } from './contract.ts'
 
-// The same event @ahel/dsh-client-ui-issues declares and listens to; the Inbox only emits it.
+// The same events @ahel/dsh-client-ui-issues declares and listens to; the Inbox only emits them.
 declare module '@ahel/cordis' {
   interface Events {
     /**
@@ -13,11 +14,25 @@ declare module '@ahel/cordis' {
      * @param key - the issue key, for example `AHEL-137`.
      */
     'ahel-issues/open'(key: string): void
+    /**
+     * Read the agent's issues now and claim the runs this person queued on ahel.ai, for example after the Inbox read.
+     * @mode emit
+     */
+    'ahel-issues/poll'(): void
   }
 }
 
 /** ahel.ai's Issues page; one issue's detail is `<this>/<key>`. */
 export const WEB_ISSUES = 'https://ahel.ai/app/issues'
+
+/** The kind label and the sentence of each kind of issue row. */
+export const ISSUE_KIND_COPY: Readonly<Record<IssueInboxItem['type'], { readonly label: AhelAccountKey; readonly sentence: AhelAccountKey }>> = {
+  assigned: { label: 'inboxKindAssigned', sentence: 'inboxIssueAssigned' },
+  mentioned: { label: 'inboxKindMentioned', sentence: 'inboxIssueMentioned' },
+  run_queued: { label: 'inboxKindRunQueued', sentence: 'inboxIssueRunQueued' },
+  run_finished: { label: 'inboxKindRunFinished', sentence: 'inboxIssueRunFinished' },
+  run_failed: { label: 'inboxKindRunFailed', sentence: 'inboxIssueRunFailed' },
+}
 
 /** What opening an issue row needs. */
 export interface IssueItemHost {

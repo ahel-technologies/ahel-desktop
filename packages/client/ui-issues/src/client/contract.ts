@@ -29,7 +29,10 @@ export interface IssuesState {
   readonly issues: readonly Issue[]
   /** Issues per status for the current filters. */
   readonly counts: Readonly<Record<string, number>>
+  /** ahel.ai's count of agent runs queued, running or waiting for approval. */
   readonly agentsWorking: number
+  /** Runs queued on ahel.ai for a desktop, among the agent's issues at the last pickup read. */
+  readonly agentsQueued: number
   readonly filter: IssuesFilter
   readonly projects: readonly IssueProject[]
   /** The workspace's seats and agents; null until read. */
@@ -58,7 +61,7 @@ export type IssueDetailLoad =
 
 /** Face of the Issues panel, the New Issue row and the Issues sidebar row. */
 export interface IssuesInjected {
-  /** Re-read the board now. */
+  /** Re-read the board now, then claim the runs this person queued on ahel.ai. */
   refresh(): void
   /** Change some filters; the board re-reads. */
   setFilter(filter: Partial<IssuesFilter>): void

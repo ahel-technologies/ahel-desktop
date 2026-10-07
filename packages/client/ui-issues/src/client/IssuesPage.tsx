@@ -10,7 +10,7 @@ import type { AssigneeFilter, IssuesInjected, IssuesPageProps, IssuesState } fro
 import { Board, IssueList } from './Board.tsx'
 import { Composer } from './Composer.tsx'
 import { IssueDetail } from './IssueDetail.tsx'
-import { currentRun } from './model.ts'
+import { currentRun, workingCount } from './model.ts'
 import { assigneeOptions } from './Parts.tsx'
 import css from './Issues.module.css'
 
@@ -41,6 +41,7 @@ const all = (state: IssuesState): IssuesState => state
 export function IssuesPage(props: IssuesPageView) {
   const { useIssues, t, refresh, setFilter, openIssue, compose, dismissOffer, update, run } = props
   const state = useIssues(all)
+  const working = workingCount(state.agentsWorking, state.agentsQueued)
   const [display, setDisplay] = useState<'board' | 'list'>('board')
   const [filterOpen, setFilterOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
@@ -124,10 +125,10 @@ export function IssuesPage(props: IssuesPageView) {
             ))}
           </div>
           <div className={css.barRight}>
-            {state.agentsWorking > 0 && (
+            {working > 0 && (
               <span className={css.working}>
                 <span className={css.pulse} aria-hidden="true" />
-                {state.agentsWorking === 1 ? t('agentWorking') : t('agentsWorking', { n: String(state.agentsWorking) })}
+                {working === 1 ? t('agentWorking') : t('agentsWorking', { n: String(working) })}
               </span>
             )}
             <div className={css.filterWrap}>

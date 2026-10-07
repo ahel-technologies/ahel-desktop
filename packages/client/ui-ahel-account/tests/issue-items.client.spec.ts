@@ -1,6 +1,7 @@
 import { expect, it, vi } from 'vitest'
 import type { HandoffReceivedRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
-import { inboxEntries, openIssueItem } from '../src/client/team/issue-items.ts'
+import { inboxEntries, ISSUE_KIND_COPY, openIssueItem } from '../src/client/team/issue-items.ts'
+import { en } from '../src/client/locales.ts'
 
 it('an unread issue row shows the issue in the desktop, marks itself read and refreshes the badge', async () => {
   const item: IssueInboxItem = {
@@ -28,4 +29,10 @@ it('merges handoffs and issue updates into one list: newest day first, unread fi
   )
   expect(entries.map(entry => entry.id)).toEqual(['issue:i-today-unread', 'handoff:h-today-read', 'issue:i-yesterday', 'handoff:h-old'])
   expect(entries.map(entry => entry.kind)).toEqual(['issue', 'handoff', 'issue', 'handoff'])
+})
+
+it('a run_queued row reads "Run queued" and names who asked for the run', () => {
+  const copy = ISSUE_KIND_COPY.run_queued
+  expect(en[copy.label]).toBe('Run queued')
+  expect(en[copy.sentence].replace('{actor}', 'Kaarna')).toBe('Kaarna asked Ahel to run it')
 })
