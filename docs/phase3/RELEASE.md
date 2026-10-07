@@ -1,6 +1,6 @@
 # Ahel Desktop releases
 
-macOS releases are signed and notarized once the five secrets under [Signing](#signing) exist; until then, and on Windows, they are unsigned. Assets go to the GitHub releases of this public repository, `ahel-technologies/ahel-desktop`, so electron-updater reads the feed without a token. The workflow publishes with the default `GITHUB_TOKEN` (`contents: write` on the publish job); no extra secret is needed.
+macOS releases are signed and notarized once the six secrets under [Signing](#signing) exist; until then, and on Windows, they are unsigned. Assets go to the GitHub releases of this public repository, `ahel-technologies/ahel-desktop`, so electron-updater reads the feed without a token. The workflow publishes with the default `GITHUB_TOKEN` (`contents: write` on the publish job); no extra secret is needed.
 
 ## Cut a release
 
@@ -45,17 +45,25 @@ Security, because this repository is public:
 
 ## Signing
 
-The `Select macOS signing` step checks five repository secrets. All set: the job writes `.env.macos` and the p12 under `$RUNNER_TEMP`, runs `package:desktop:mac:arm64` (temporary keychain, hardened runtime, every nested Mach-O signed, App and DMG notarized and stapled), checks `spctl` and `stapler validate`, and deletes the credentials. Any missing: the unsigned `:dev` build, with a warning when only some are set.
+The `Signing mode` step checks six repository secrets and sets `signing=full` or `signing=dry` (step output, job output `mac_signing`, one step-summary line).
+
+| Mode | When | Steps | Artifacts |
+|---|---|---|---|
+| `full` | all six secrets non-empty | `Import certificate` writes `.env.macos`, the p12 and `AuthKey_<ASC_KEY_ID>.p8` under `$RUNNER_TEMP` (mode 600); `Package (full)` runs `package:desktop:mac:arm64`: temporary keychain with a random password, hardened runtime and entitlements on every Mach-O, App and DMG notarized concurrently with the API key through `logged-notarytool.mjs`, both stapled; `Check signature, notarization and staple` runs `codesign --verify --deep --strict`, `spctl --assess` and `stapler validate` | `artifacts/`, no `-unsigned` suffix |
+| `dry` | any secret missing or blank | `Package (dry)` runs the unsigned `:dev` build; summary says "Unsigned build: Apple secrets absent" (plus a warning naming the missing secrets when only some are set) | `unsigned-artifacts/`, `-unsigned` suffix, same as before signing existed |
+
+`Remove macOS signing credentials` runs in both modes, also after failure or cancellation: it deletes the p12, the .p8, `.env.macos` and any leftover keychain. The update feed (`latest-mac.yml`, zip, blockmap) and the `publish` input behave the same in both modes.
 
 | Secret | Value | Where Karl gets it |
 |---|---|---|
-| `MAC_CERT_P12_BASE64` | Developer ID Application certificate and private key, p12, Base64 | developer.apple.com/account → Certificates → + → Developer ID Application (needs a CSR from Keychain Access → Certificate Assistant). Install it, then Keychain Access → My Certificates → right-click "Developer ID Application: …" → Export → .p12 with a password. Then `base64 -i cert.p12 \| pbcopy`. |
-| `MAC_CERT_PASSWORD` | the p12 export password | chosen at export |
-| `APPLE_ID` | Apple account email of the developer team member | appleid.apple.com |
-| `APPLE_APP_SPECIFIC_PASSWORD` | app-specific password for notarytool | appleid.apple.com → Sign-In and Security → App-Specific Passwords → + |
+| `APPLE_CERT_P12_BASE64` | Developer ID Application certificate and private key, p12, Base64 | Xcode → Settings → Accounts → select the team → Manage Certificates → + → Developer ID Application. Then Keychain Access → login keychain → My Certificates → right-click "Developer ID Application: …" → Export → .p12 with a password. Then `base64 -i cert.p12 \| pbcopy`. |
+| `APPLE_CERT_PASSWORD` | the p12 export password | chosen at export |
 | `APPLE_TEAM_ID` | 10-character Team ID | developer.apple.com/account → Membership details → Team ID |
+| `ASC_KEY_ID` | App Store Connect API key ID | appstoreconnect.apple.com → Users and Access → Integrations → App Store Connect API → Team Keys → Generate API Key (access: Developer) → Key ID column |
+| `ASC_ISSUER_ID` | issuer UUID of the team's API keys | same page, "Issuer ID" above the key list |
+| `ASC_KEY_P8_BASE64` | the downloaded `AuthKey_<Key ID>.p8`, Base64 | same page → Download (allowed once) → `base64 -i AuthKey_<Key ID>.p8 \| pbcopy` |
 
-Add each: github.com/ahel-technologies/ahel-desktop → Settings → Secrets and variables → Actions → New repository secret. The workflow checks that the certificate's team equals `APPLE_TEAM_ID` and that it is not expired. Delete any one secret to go back to unsigned builds.
+Add each: github.com/ahel-technologies/ahel-desktop → Settings → Secrets and variables → Actions → New repository secret. Values never go into docs, issues, chat or logs; the scripts print names only. The workflow checks that the certificate's team equals `APPLE_TEAM_ID` and that it is not expired, and that the .p8 is an EC private key. Delete any one secret to go back to `dry`.
 
 Entitlements: the app (`apps/desktop/scripts/macos-entitlements.plist`) keeps `allow-jit` and `allow-unsigned-executable-memory` for V8 in Electron and in the Host child that runs Electron as Node, `disable-library-validation` because that Host loads user-installed plugins with native addons, and `audio-input` for dictation. Bundled Node gets `allow-jit` plus `disable-library-validation`; bundled Python gets only `disable-library-validation`: both load native extensions that users install with npm or pip, which carry other signatures.
 

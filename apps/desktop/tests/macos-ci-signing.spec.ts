@@ -1,4 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process'
+import { generateKeyPairSync } from 'node:crypto'
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -7,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   MACOS_SIGNING_SECRETS,
   configureMacOSSigning,
+  decodeAppStoreConnectKey,
   developerIdIdentity,
   formatMacOSDotenv,
   macOSSigningGate,
@@ -34,12 +36,15 @@ const certificate = [
   'Iz/3YA9p9SKn3kqs4CmOBTPH6A==',
   '-----END CERTIFICATE-----',
 ].join('\n')
+// Throwaway P-256 key in the PKCS#8 PEM form App Store Connect downloads as AuthKey_<id>.p8.
+const apiKey = generateKeyPairSync('ec', { namedCurve: 'prime256v1' }).privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()
 const secrets = {
-  MAC_CERT_P12_BASE64: Buffer.from('p12 bytes').toString('base64'),
-  MAC_CERT_PASSWORD: 'p12-export-secret',
-  APPLE_ID: 'release@example.com',
-  APPLE_APP_SPECIFIC_PASSWORD: 'abcd-efgh-ijkl-mnop',
+  APPLE_CERT_P12_BASE64: Buffer.from('p12 bytes').toString('base64'),
+  APPLE_CERT_PASSWORD: 'p12-export-secret',
   APPLE_TEAM_ID: 'ABCDE12345',
+  ASC_KEY_ID: 'KEYID12345',
+  ASC_ISSUER_ID: '69a6de7e-0000-47e3-e053-5b8c7c11a4d1',
+  ASC_KEY_P8_BASE64: Buffer.from(apiKey).toString('base64'),
 }
 const roots: string[] = []
 function temporary(): string {
@@ -50,11 +55,30 @@ function temporary(): string {
 afterEach(() => { for (const path of roots.splice(0)) rmSync(path, { recursive: true, force: true }) })
 
 describe('signing gate', () => {
-  it('signs only when every secret is non-blank', () => {
-    expect(macOSSigningGate(secrets)).toEqual({ signed: true, missing: [] })
-    expect(macOSSigningGate({})).toEqual({ signed: false, missing: [...MACOS_SIGNING_SECRETS] })
-    expect(macOSSigningGate({ ...secrets, APPLE_TEAM_ID: '', MAC_CERT_PASSWORD: '  \n' }))
-      .toEqual({ signed: false, missing: ['MAC_CERT_PASSWORD', 'APPLE_TEAM_ID'] })
+  it('selects full signing only when every secret is non-blank', () => {
+    expect(macOSSigningGate(secrets)).toEqual({ signing: 'full', missing: [] })
+    expect(macOSSigningGate({})).toEqual({ signing: 'dry', missing: [...MACOS_SIGNING_SECRETS] })
+    expect(macOSSigningGate({ ...secrets, ASC_ISSUER_ID: '', APPLE_CERT_PASSWORD: '  \n' }))
+      .toEqual({ signing: 'dry', missing: ['APPLE_CERT_PASSWORD', 'ASC_ISSUER_ID'] })
+  })
+
+  it('reports the mode and the missing names to the workflow without values', () => {
+    const directory = temporary()
+    const output = join(directory, 'output')
+    const summary = join(directory, 'summary')
+    const run = (env: Record<string, string>) => execFileSync(process.execPath, [join(import.meta.dirname, '../scripts/macos-ci-signing.mjs'), 'gate'], {
+      env: { PATH: process.env.PATH, GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: summary, ...env }, encoding: 'utf8',
+    })
+    run({})
+    run({ ...secrets, ASC_KEY_P8_BASE64: '' })
+    const stdout = run(secrets)
+    expect(readFileSync(output, 'utf8')).toBe('signing=dry\nsigning=dry\nsigning=full\n')
+    expect(readFileSync(summary, 'utf8')).toBe([
+      'Unsigned build: Apple secrets absent',
+      'Unsigned build: Apple secrets absent (missing ASC_KEY_P8_BASE64)',
+      'Signed build: Developer ID signature, notarization and stapled tickets', '',
+    ].join('\n'))
+    for (const value of Object.values(secrets)) expect(stdout).not.toContain(value)
   })
 })
 
@@ -81,40 +105,52 @@ describe('dotenv output', () => {
   })
 })
 
+describe('App Store Connect key', () => {
+  it('decodes a Base64 .p8 and rejects other input without echoing it', () => {
+    expect(decodeAppStoreConnectKey(`${secrets.ASC_KEY_P8_BASE64.slice(0, 20)}\n${secrets.ASC_KEY_P8_BASE64.slice(20)}`).toString()).toBe(apiKey)
+    expect(() => decodeAppStoreConnectKey(Buffer.from('not a key').toString('base64'))).toThrow(/^(?!.*not a key).*ASC_KEY_P8_BASE64 is not/u)
+    const rsa = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()
+    expect(() => decodeAppStoreConnectKey(Buffer.from(rsa).toString('base64'))).toThrow('ASC_KEY_P8_BASE64 is not')
+  })
+})
+
 describe('configure', () => {
   it('writes private credential files that the signed package configuration accepts', () => {
     const appRoot = temporary()
     const directory = join(temporary(), 'signing')
     const readCertificates = vi.fn(() => [certificate])
     const emit = vi.fn<(line: string) => void>()
-    const { envFile, certificateFile } = configureMacOSSigning(
-      { ...secrets, MAC_CERT_PASSWORD: `${secrets.MAC_CERT_PASSWORD}\n`, APPLE_ID: ` ${secrets.APPLE_ID} ` },
+    const { envFile, certificateFile, apiKeyFile } = configureMacOSSigning(
+      { ...secrets, APPLE_CERT_PASSWORD: `${secrets.APPLE_CERT_PASSWORD}\n`, ASC_KEY_ID: ` ${secrets.ASC_KEY_ID} ` },
       { appRoot, directory, readCertificates, emit },
     )
-    expect(readCertificates).toHaveBeenCalledWith(certificateFile, secrets.MAC_CERT_PASSWORD)
+    expect(readCertificates).toHaveBeenCalledWith(certificateFile, secrets.APPLE_CERT_PASSWORD)
     expect(readFileSync(certificateFile, 'utf8')).toBe('p12 bytes')
+    expect(readFileSync(apiKeyFile, 'utf8')).toBe(apiKey)
+    expect(apiKeyFile).toBe(join(directory, 'AuthKey_KEYID12345.p8'))
     expect(statSync(directory).mode & 0o777).toBe(0o700)
-    expect(statSync(certificateFile).mode & 0o777).toBe(0o600)
-    expect(statSync(envFile).mode & 0o777).toBe(0o600)
-    expect(emit.mock.calls.map(([line]) => line)).toEqual([
-      `::add-mask::${secrets.MAC_CERT_PASSWORD}`, `::add-mask::${secrets.APPLE_ID}`, `::add-mask::${secrets.APPLE_APP_SPECIFIC_PASSWORD}`,
-    ])
+    for (const file of [certificateFile, apiKeyFile, envFile]) expect(statSync(file).mode & 0o777).toBe(0o600)
+    expect(emit.mock.calls.map(([line]) => line)).toEqual([`::add-mask::${secrets.APPLE_CERT_PASSWORD}`])
     const environment = loadDesktopPackageEnvironment('darwin', {}, appRoot)
     expect(environment).toMatchObject({
       DSH_DESKTOP_MACOS_SIGNING_IDENTITY: 'Example Company OÜ, Ltd (ABCDE12345)',
       DSH_DESKTOP_MACOS_TEAM_ID: 'ABCDE12345',
       CSC_LINK: certificateFile,
-      CSC_KEY_PASSWORD: secrets.MAC_CERT_PASSWORD,
-      APPLE_ID: secrets.APPLE_ID,
-      APPLE_APP_SPECIFIC_PASSWORD: secrets.APPLE_APP_SPECIFIC_PASSWORD,
-      APPLE_TEAM_ID: 'ABCDE12345',
+      CSC_KEY_PASSWORD: secrets.APPLE_CERT_PASSWORD,
+      APPLE_API_KEY: apiKeyFile,
+      APPLE_API_KEY_ID: secrets.ASC_KEY_ID,
+      APPLE_API_ISSUER: secrets.ASC_ISSUER_ID,
     })
+    expect(environment).not.toHaveProperty('APPLE_TEAM_ID')
     expect(() => { validateDesktopPackageEnvironment(environment, { platform: 'darwin', arch: 'arm64' }) }).not.toThrow()
   })
 
-  it('refuses to run with a missing secret or a malformed Team ID', () => {
-    expect(() => configureMacOSSigning({ ...secrets, APPLE_ID: '' }, { appRoot: temporary(), emit: vi.fn() })).toThrow('missing secrets APPLE_ID')
-    expect(() => configureMacOSSigning({ ...secrets, APPLE_TEAM_ID: 'abc' }, { appRoot: temporary(), emit: vi.fn() })).toThrow('10 uppercase')
+  it('refuses to run with a missing secret or a malformed identifier', () => {
+    const run = (env: Record<string, string>) => () => configureMacOSSigning(env, { appRoot: temporary(), emit: vi.fn() })
+    expect(run({ ...secrets, ASC_KEY_ID: '' })).toThrow('missing secrets ASC_KEY_ID')
+    expect(run({ ...secrets, APPLE_TEAM_ID: 'abc' })).toThrow('APPLE_TEAM_ID must contain 10 uppercase')
+    expect(run({ ...secrets, ASC_KEY_ID: 'short' })).toThrow('ASC_KEY_ID must contain 10 uppercase')
+    expect(run({ ...secrets, ASC_ISSUER_ID: 'issuer' })).toThrow('ASC_ISSUER_ID must be a UUID')
   })
 })
 

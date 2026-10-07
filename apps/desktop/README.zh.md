@@ -271,6 +271,21 @@ Mac 打包从 `.env.macos` 读取三个调优字段：
 
 Apple 工具使用 macOS 当前活动网络服务的 HTTP/HTTPS 代理。配置公证代理后，打包会检查代理可达性、保存该服务的设置，在两条产物任务期间启用代理，并在两条任务均结束后恢复原设置。对于原本关闭、服务器为空且端口为零的代理，恢复时仅关闭代理；临时服务器和端口可能保留，但不生效。仅生成目录的打包会在签名目录构建完成后的 App 公证期间启用代理。这会临时影响其他应用，并要求修改系统代理的权限；必须先禁用 PAC、自动发现、SOCKS 及需要认证的代理配置。打包和恢复在读取恢复记录或修改代理前获取同一个用户级 POSIX 文件锁；进程退出会释放锁的持有权，锁文件保留。该锁在首次使用时才加载 `@ahel/node-addon-system/flock`，而不是在脚本启动时加载，因此 `check:package` 和打包入口在未构建 `native/system` 的 checkout 上也能加载；加锁时若宿主 addon 二进制或入口的 JavaScript 缺失，加载器会先运行 `pnpm run build:native-system` 和 `pnpm --dir native/system run build:ts` 再加锁，因此恢复命令在这样的 checkout 上同样可用。这会阻止不同 checkout 的代理事务重叠；其他用户及网络设置工具不得同时修改这些设置。SIGINT/SIGTERM 会等待活动任务结束后恢复。强制终止或恢复失败后，先停止残留公证进程，再运行 `pnpm --dir apps/desktop run restore:mac-proxy`；保存的记录会保留到恢复成功。配置检查仅验证 URL 语法，不修改系统设置或连接代理。
 
+### 发布工作流中的签名与公证
+
+`.github/workflows/desktop-release.yml` 仅在六个仓库 secret 都存在时为 macOS arm64 构建签名；缺少时生成与此前相同的未签名产物，因此没有任何发布步骤依赖这些 secret。其 `Signing mode` 步骤在六个值均非空时设置 `signing=full`，否则设置 `signing=dry`，并写入步骤摘要行“Unsigned build: Apple secrets absent”。full 模式下，`Import certificate` 将 p12 与 App Store Connect API Key 解码为 `$RUNNER_TEMP` 下权限为 0600 的文件，并写入包含 `APPLE_API_KEY`、`APPLE_API_KEY_ID` 和 `APPLE_API_ISSUER` 的 `.env.macos`。随后上文的打包流程使用 hardened runtime 与 entitlements 文件签名，通过 `logged-notarytool.mjs` 并发公证 App 与 DMG，并为二者钉票；`Check signature, notarization and staple` 再次执行 `codesign --verify --deep --strict`、`spctl --assess` 和 `stapler validate`。清理步骤在两种模式下都会删除凭据文件及残留钥匙串，失败或取消后同样执行。dry 模式运行 `package:desktop:mac:arm64:dev`。secret 的值绝不出现在文档、提交或日志中；脚本只输出 secret 名称。发布手册 `docs/phase3/RELEASE.md` 负责模式矩阵。
+
+| Secret | 值 | 创建方式 |
+|---|---|---|
+| `APPLE_CERT_P12_BASE64` | 含私钥的 Developer ID Application 证书，即 .p12 的 Base64 | Xcode → Settings → Accounts → 选择团队 → Manage Certificates → + → Developer ID Application（仅 Account Holder 可创建）。然后在钥匙串访问 → 登录钥匙串 → 我的证书 → 右键“Developer ID Application: …” → 导出 → 设置密码导出为 .p12 → `base64 -i cert.p12 \| pbcopy`。 |
+| `APPLE_CERT_PASSWORD` | .p12 导出密码 | 导出时设定。 |
+| `APPLE_TEAM_ID` | 10 位 Team ID | developer.apple.com → Account → Membership details → Team ID。 |
+| `ASC_KEY_ID` | App Store Connect API Key ID | appstoreconnect.apple.com → Users and Access → Integrations → App Store Connect API → Team Keys → Generate API Key，权限选 Developer（足以公证）→ Key ID 列。首个 Key 需由 Account Holder 在同一页面申请 API 访问权限。 |
+| `ASC_ISSUER_ID` | 团队 Key 的 Issuer ID | 同一页面，Key 列表上方的 Issuer ID。 |
+| `ASC_KEY_P8_BASE64` | 下载的 `AuthKey_<Key ID>.p8` 的 Base64 | 同一页面 → Download（Apple 只允许下载一次）→ `base64 -i AuthKey_<Key ID>.p8 \| pbcopy`。 |
+
+在 github.com/ahel-technologies/ahel-desktop → Settings → Secrets and variables → Actions → New repository secret 中逐个添加，名称使用第一列。`Import certificate` 会拒绝其他团队或已过期的证书、格式错误的 Key ID 或 Issuer ID，以及不是 EC 私钥的 .p8。删除任意一个 secret 即恢复 dry 模式。
+
 ### 未签名 macOS 开发构建
 
 在 Apple Silicon 上，构建用于本地测试的未签名 macOS arm64 应用：
@@ -405,7 +420,7 @@ node apps/desktop/node_modules/pnpm/bin/pnpm.mjs --dir apps/desktop run test:upd
 ## 已知限制
 
 - “使用 Ahel 登录”尚未接入，欢迎页中的该按钮处于禁用状态。Windows 材质效果仍需平台验证。
-- 发布的构建未签名：macOS 显示 Gatekeeper 警告，且在应用带有 Developer ID 签名之前无法应用更新；Windows 显示 SmartScreen，且不验证更新签名。
+- 在发布工作流的六个 Apple secret 配置完成前，发布的构建均未签名：macOS 显示 Gatekeeper 警告，且在应用带有 Developer ID 签名之前无法应用更新；Windows 显示 SmartScreen，且不验证更新签名。
 - 发布签名、公证、更新托管和跨上一版本的已安装产物验证需要生产发布环境。
 - 依赖的生命周期脚本遵循 pnpm 的构建权限；Desktop 不提供单独的审批对话框。
 - 桌面壳与 CLI dsh 共享 `$DSH_HOME` 下的会话、设置、凭据、工作区和存储，但可执行包、插件激活和锁文件彼此隔离。

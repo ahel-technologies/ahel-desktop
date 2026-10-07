@@ -1,8 +1,10 @@
 # Build Ahel Desktop installers from a v* tag and publish them as a GitHub
 # release of this repository, the feed packaged applications read through
 # electron-updater.
-# macOS is signed and notarized when all five MAC_CERT_*/APPLE_* secrets are set
-# and unsigned otherwise; Windows is unsigned. See docs/phase3/RELEASE.md.
+# macOS signing mode: full (signed, notarized, stapled) when all six Apple
+# secrets are set (APPLE_CERT_P12_BASE64, APPLE_CERT_PASSWORD, APPLE_TEAM_ID,
+# ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64), dry (today's unsigned build)
+# otherwise; Windows is unsigned. See docs/phase3/RELEASE.md.
 #
 # macOS builds on the org's self-hosted Mac minis (labels self-hosted, macOS,
 # ARM64, macmini). This repository is public, so this workflow must only ever
@@ -44,6 +46,9 @@ jobs:
     # Tag pushes have no inputs, so they take the self-hosted Mac minis.
     runs-on: ${{ matrix.os == 'mac' && (inputs.mac_runner == 'macos-14' && 'macos-14' || fromJSON('["self-hosted", "macOS", "ARM64", "macmini"]')) || matrix.os }}
     timeout-minutes: 120
+    outputs:
+      # Set by the mac-arm64 leg only; matrix legs combine their outputs.
+      mac_signing: ${{ steps.signing.outputs.signing }}
     env:
       # The smallest mini (M1, 8 GB) also runs other agents; give V8 room without letting it take the box.
       NODE_OPTIONS: ${{ matrix.os == 'mac' && '--max-old-space-size=4096' || '' }}
@@ -136,16 +141,18 @@ jobs:
           node apps/desktop/scripts/set-release-version.mjs "$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      # Secrets cannot appear in `if:`; this step turns their presence into signed=true|false.
-      - name: Select macOS signing
+      # Secrets cannot appear in `if:`; this step turns their presence into signing=full|dry
+      # and writes one step-summary line ("Unsigned build: Apple secrets absent" when dry).
+      - name: Signing mode
         id: signing
         if: runner.os == 'macOS'
         env:
-          MAC_CERT_P12_BASE64: ${{ secrets.MAC_CERT_P12_BASE64 }}
-          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_CERT_P12_BASE64: ${{ secrets.APPLE_CERT_P12_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
         run: node apps/desktop/scripts/macos-ci-signing.mjs gate
 
       - name: Build
@@ -157,28 +164,30 @@ jobs:
       - name: Build native addon
         run: pnpm run build:native-system
 
-      # Writes $RUNNER_TEMP/ahel-macos-signing/developer-id.p12 and apps/desktop/.env.macos (mode 600).
-      # The package command then creates a temporary keychain, imports the p12, sets the key
-      # partition list, signs every nested Mach-O with hardened runtime, notarizes the App and DMG
-      # through @electron/notarize, staples both, and deletes the keychain.
-      - name: Configure macOS signing
-        if: steps.signing.outputs.signed == 'true'
+      # Writes apps/desktop/.env.macos and, under $RUNNER_TEMP/ahel-macos-signing (mode 700), the
+      # p12 and AuthKey_<ASC_KEY_ID>.p8 (mode 600). It checks the certificate's team and expiry.
+      # The package command owns the keychain (scripts/macos-signing-keychain.mjs): a temporary
+      # keychain with a random password, p12 import, set-key-partition-list, prepended to the
+      # search list, passed to electron-builder as CSC_KEYCHAIN, deleted after packaging.
+      - name: Import certificate
+        if: steps.signing.outputs.signing == 'full'
         env:
-          MAC_CERT_P12_BASE64: ${{ secrets.MAC_CERT_P12_BASE64 }}
-          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_CERT_P12_BASE64: ${{ secrets.APPLE_CERT_P12_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
         run: node apps/desktop/scripts/macos-ci-signing.mjs configure
 
-      # Signed builds write artifacts/ and drop the -unsigned suffix; unsigned builds write unsigned-artifacts/.
+      # Full builds write artifacts/ and drop the -unsigned suffix; dry and Windows builds write unsigned-artifacts/.
       - name: Select the package mode
         id: mode
         env:
-          SIGNED: ${{ steps.signing.outputs.signed == 'true' }}
+          SIGNING: ${{ steps.signing.outputs.signing }}
         run: |
           root="apps/desktop/.desktop-build/targets/${{ matrix.target }}"
-          if [ "$SIGNED" = true ]; then
+          if [ "$SIGNING" = full ]; then
             printf '%s\n' "script=package:desktop:mac:arm64" "source=$root/artifacts" "suffix=" "signing=signed" >> "$GITHUB_OUTPUT"
           else
             printf '%s\n' "script=${{ matrix.script }}" "source=$root/unsigned-artifacts" "suffix=-unsigned" "signing=unsigned" >> "$GITHUB_OUTPUT"
@@ -186,7 +195,12 @@ jobs:
 
       # electron-builder's beforeBuild hook runs prepare-windows-installer.ps1 (MSVC on the hosted image).
       # The packaged smoke inside this step runs one replayed chat turn.
-      - name: Package (${{ steps.mode.outputs.signing }})
+      # Full: hardened runtime (codesign --options runtime --timestamp) with the entitlements in
+      # scripts/*-entitlements.plist on every Mach-O, then notarization: the App and the DMG go to
+      # Apple concurrently (xcrun notarytool submit, then wait, through scripts/logged-notarytool.mjs
+      # with --key AuthKey_<id>.p8 --key-id --issuer) and xcrun stapler staples both
+      # (.agents/notes/implemented/process/2026-09-09-parallel-macos-notarization.md).
+      - name: Package (${{ steps.signing.outputs.signing || 'unsigned' }})
         run: pnpm run ${{ steps.mode.outputs.script }}
 
       - name: Check the packaged native addon
@@ -200,7 +214,7 @@ jobs:
       - name: Check the packaged Cua Driver
         if: runner.os == 'macOS'
         env:
-          SIGNED: ${{ steps.signing.outputs.signed == 'true' }}
+          SIGNED: ${{ steps.signing.outputs.signing == 'full' }}
         run: |
           set -euo pipefail
           driver="${{ steps.mode.outputs.source }}/mac-arm64/Ahel Desktop.app/Contents/Resources/cua-driver/cua-driver"
@@ -211,8 +225,8 @@ jobs:
           if [ "$SIGNED" = true ]; then codesign --verify --strict --verbose=2 "$driver"; fi
 
       # The package command already verified both; this repeats Gatekeeper's view in the job log.
-      - name: Verify Gatekeeper acceptance and stapled tickets
-        if: steps.signing.outputs.signed == 'true'
+      - name: Check signature, notarization and staple
+        if: steps.signing.outputs.signing == 'full'
         run: |
           set -euo pipefail
           source="${{ steps.mode.outputs.source }}"
@@ -220,11 +234,13 @@ jobs:
           dmg="$source/ahel-desktop-${{ steps.version.outputs.version }}-${{ matrix.target }}.dmg"
           codesign --verify --deep --strict --verbose=2 "$app"
           codesign --display --entitlements - --xml "$app" | plutil -p - || true
-          spctl -a -vv "$app"
+          spctl --assess --type execute -vv "$app"
           xcrun stapler validate "$app"
-          spctl -a -vv -t install "$dmg"
+          codesign --verify --strict --verbose=2 "$dmg"
+          spctl --assess --type open --context context:primary-signature -vv "$dmg"
           xcrun stapler validate "$dmg"
 
+      # Removes the p12, the .p8 and .env.macos in every mode, also after failure or cancellation.
       - name: Remove macOS signing credentials
         if: always() && runner.os == 'macOS'
         run: |
