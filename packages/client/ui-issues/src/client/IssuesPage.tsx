@@ -88,7 +88,7 @@ export function IssuesPage(props: IssuesPageView) {
   } else if (state.phase === 'loading') body = <p className={`${css.muted} ${css.notice}`} aria-busy="true">{t('loading')}</p>
   else {
     const view = {
-      issues: state.issues, counts: state.counts, runs: state.runs, now, t, agentModel: state.assignees?.agents[0]?.model ?? null,
+      issues: state.issues, counts: state.counts, runs: state.runs, now, t,
       onOpen: (key: string) => { openIssue(key) }, onMove, onAdd: (status: IssueStatus) => { compose(status) },
     }
     body = (
@@ -187,6 +187,7 @@ export function IssuesPage(props: IssuesPageView) {
           projects={state.projects}
           assignees={assignees}
           role={state.role}
+          agentModel={state.assignees?.agents[0]?.model ?? null}
           now={now}
           t={t}
           actions={props}

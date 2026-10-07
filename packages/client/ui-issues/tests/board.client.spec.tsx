@@ -44,7 +44,7 @@ async function mount() {
   return { update, feed }
 }
 
-it('renders the board from the fixture: six columns with counts, cards with key, project, assignee and run', async () => {
+it('renders the board from the fixture: six columns with counts, cards with key, project, assignee and run, the model left to the detail', async () => {
   await mount()
   const board = screen.getByRole('region', { name: 'Issues board' })
   const columns = within(board).getAllByRole('region')
@@ -53,9 +53,17 @@ it('renders the board from the fixture: six columns with counts, cards with key,
   expect(within(progress).getByText('AHEL-137')).toBeTruthy()
   expect(within(progress).getByText('Website')).toBeTruthy()
   expect(within(progress).getByText('4/9')).toBeTruthy()
-  expect(within(progress).getByText('Claude Sonnet')).toBeTruthy()
+  expect(within(progress).getByText('ahel')).toBeTruthy()
+  expect(within(board).queryByText('Claude Sonnet')).toBeNull()
   expect(within(board).getByText('Waiting for approval')).toBeTruthy()
   expect(screen.getByText('2 agents working')).toBeTruthy()
+})
+
+it('the detail shows the agent\'s model under the assignee and a parent example in the workspace\'s prefix', async () => {
+  await mount()
+  await act(async () => { fireEvent.click(screen.getByText('AHEL-137')) })
+  expect(screen.getByText('Runs on Claude Sonnet')).toBeTruthy()
+  expect(screen.getByPlaceholderText('AHEL-1')).toBeTruthy()
 })
 
 it('dropping a card on another column patches its status and moves it at once', async () => {

@@ -442,7 +442,9 @@
 
 .who { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--ahel-body); font-weight: 500; }
 .whoName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.whoModel { color: var(--ahel-muted); font: 400 11px var(--font-mono); }
+/* The agent's name never shrinks; it ellipsizes only past 120 px. */
+.whoAgent .whoName { flex: none; max-width: 120px; }
+.whoModel { color: var(--ahel-muted); font: 400 11px var(--font-mono); overflow-wrap: anywhere; }
 
 .avatar {
   display: inline-flex;

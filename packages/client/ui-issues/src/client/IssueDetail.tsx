@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Issue, IssueActivity, IssueComment, IssuePatch, IssueProject, IssueRun } from '@ahel/dsh-ahel-account/types'
 import type { IssuesAnswer, IssuesInjected } from './contract.ts'
-import { activityText, ago, ALL_STATUSES, isPriority, isStatus, parseLabels, PRIORITIES, priorityKey, statusKey, type Translate } from './model.ts'
+import { activityText, ago, ALL_STATUSES, isPriority, isStatus, parentExample, parseLabels, PRIORITIES, priorityKey, statusKey, type Translate } from './model.ts'
 import { Markdown } from './Markdown.tsx'
 import { assigneeValue, Assignee, RunProgress, StatusIcon, type AssigneeOption } from './Parts.tsx'
 import css from './Issues.module.css'
@@ -23,6 +23,8 @@ export interface IssueDetailProps {
   readonly assignees: readonly AssigneeOption[]
   /** Role in the workspace; Delete shows for owners, and while the role is unknown. */
   readonly role: string | null
+  /** The Ahel agent's model, shown under the assignee of an agent-assigned issue. */
+  readonly agentModel: string | null
   readonly now: number
   readonly t: Translate
   readonly actions: Pick<
@@ -39,7 +41,7 @@ const NEW_PROJECT = '__new__'
  * @param props - the issue key, the board's copy and the actions.
  * @returns the scrim and the drawer.
  */
-export function IssueDetail({ issueKey, live, run, projects, assignees, role, now, t, actions, close }: IssueDetailProps) {
+export function IssueDetail({ issueKey, live, run, projects, assignees, role, agentModel, now, t, actions, close }: IssueDetailProps) {
   const [loaded, setLoaded] = useState<Issue | null>(null)
   const [comments, setComments] = useState<readonly IssueComment[]>([])
   const [activity, setActivity] = useState<readonly IssueActivity[]>([])
@@ -249,6 +251,7 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, no
                 )}
                 {assignees.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
+              {issue.assigneeType === 'agent' && agentModel !== null && <span className={css.whoModel}>{t('agentModel', { model: agentModel })}</span>}
             </label>
             <label className={css.field}>{t('project')}
               <select className={css.select} value={issue.project?.id ?? ''} disabled={busy}
@@ -279,7 +282,7 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, no
                 }} />
             </label>
             <label className={css.field}>{t('parent')}
-              <input className={css.input} defaultValue={issue.parentKey ?? ''} placeholder={t('parentPlaceholder')} key={issue.parentKey ?? ''}
+              <input className={css.input} defaultValue={issue.parentKey ?? ''} placeholder={parentExample(issue.key)} key={issue.parentKey ?? ''}
                 onBlur={(event) => {
                   const parentKey = event.target.value.trim().toUpperCase()
                   if (parentKey !== (issue.parentKey ?? '')) patch({ parentKey: parentKey === '' ? null : parentKey })

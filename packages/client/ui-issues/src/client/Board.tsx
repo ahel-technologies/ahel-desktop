@@ -13,8 +13,6 @@ export interface IssueViewProps {
   readonly counts: Readonly<Record<string, number>>
   readonly runs: Readonly<Record<string, IssueRun>>
   readonly now: number
-  /** The Ahel agent's model, shown beside its name. */
-  readonly agentModel: string | null
   readonly t: Translate
   readonly onOpen: (key: string) => void
   readonly onMove: (key: string, status: IssueStatus) => void
@@ -26,14 +24,14 @@ const DRAG_TYPE = 'application/x-ahel-issue'
 
 /**
  * One card: key, two-line title, project and labels, assignee, run progress and the last change.
+ * The agent's model shows in the detail only.
  * @param props - the issue, its run, the time and the open/drag handlers.
  * @returns the card button.
  */
-function IssueCard({ issue, run, now, agentModel, t, onOpen }: {
+function IssueCard({ issue, run, now, t, onOpen }: {
   issue: Issue
   run: IssueRun | null
   now: number
-  agentModel: string | null
   t: Translate
   onOpen: (key: string) => void
 }) {
@@ -66,8 +64,7 @@ function IssueCard({ issue, run, now, agentModel, t, onOpen }: {
         </span>
       )}
       <span className={css.cardFoot}>
-        <Assignee type={issue.assigneeType} name={issue.assigneeName} avatar={issue.assigneeAvatar}
-          model={issue.assigneeType === 'agent' ? agentModel : null} t={t} />
+        <Assignee type={issue.assigneeType} name={issue.assigneeName} avatar={issue.assigneeAvatar} t={t} />
         <RunProgress run={run} t={t} />
       </span>
       <span className={css.cardFoot}>
@@ -92,7 +89,7 @@ function draggedKey(event: DragEvent): string | null {
  * @param props - the status, its cards and the shared handlers.
  * @returns the column.
  */
-function Column({ status, issues, count, runs, now, agentModel, t, onOpen, onMove, onAdd }: Omit<IssueViewProps, 'issues' | 'counts'> & {
+function Column({ status, issues, count, runs, now, t, onOpen, onMove, onAdd }: Omit<IssueViewProps, 'issues' | 'counts'> & {
   status: IssueStatus
   issues: readonly Issue[]
   count: number
@@ -127,7 +124,7 @@ function Column({ status, issues, count, runs, now, agentModel, t, onOpen, onMov
       </header>
       {issues.length === 0 && <p className={css.columnEmpty}>{t('emptyColumn')}</p>}
       {issues.map(issue => (
-        <IssueCard key={issue.key} issue={issue} run={currentRun(issue, runs[issue.key])} now={now} agentModel={agentModel} t={t}
+        <IssueCard key={issue.key} issue={issue} run={currentRun(issue, runs[issue.key])} now={now} t={t}
           onOpen={onOpen} />
       ))}
     </section>

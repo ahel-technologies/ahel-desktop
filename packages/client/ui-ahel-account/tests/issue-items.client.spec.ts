@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest'
-import type { IssueInboxItem } from '@ahel/dsh-ahel-account/types'
-import { openIssueItem } from '../src/client/team/issue-items.ts'
+import type { HandoffReceivedRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
+import { inboxEntries, openIssueItem } from '../src/client/team/issue-items.ts'
 
 it('an unread issue row shows the issue in the desktop, marks itself read and refreshes the badge', async () => {
   const item: IssueInboxItem = {
@@ -14,4 +14,18 @@ it('an unread issue row shows the issue in the desktop, marks itself read and re
   expect(show).toHaveBeenCalledWith('AHEL-137')
   expect(markRead).toHaveBeenCalledWith('n1')
   expect(refresh).toHaveBeenCalledTimes(1)
+})
+
+it('merges handoffs and issue updates into one list: newest day first, unread first within a day, then newest', () => {
+  const issue = (id: string, createdAt: string, unread: boolean): IssueInboxItem => ({
+    id, type: 'mentioned', issueKey: 'DEMO-3', issueTitle: 'Connect HubSpot', actorType: 'member', actorName: 'Priya', body: null, unread, createdAt,
+  })
+  const handoff = (id: string, updatedAt: string, unread: boolean) =>
+    ({ id, title: 'Q4 pricing', version: 1, status: 'open', unread, updatedAt }) as HandoffReceivedRow
+  const entries = inboxEntries(
+    [handoff('h-old', '2026-10-05T09:00:00', true), handoff('h-today-read', '2026-10-07T11:00:00', false)],
+    [issue('i-today-unread', '2026-10-07T08:00:00', true), issue('i-yesterday', '2026-10-06T20:00:00', false)],
+  )
+  expect(entries.map(entry => entry.id)).toEqual(['issue:i-today-unread', 'handoff:h-today-read', 'issue:i-yesterday', 'handoff:h-old'])
+  expect(entries.map(entry => entry.kind)).toEqual(['issue', 'handoff', 'issue', 'handoff'])
 })

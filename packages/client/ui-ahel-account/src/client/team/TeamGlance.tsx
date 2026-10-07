@@ -11,14 +11,20 @@ import css from './TeamGlance.module.css'
 
 type Translate = TeamHeaderProps['t']
 
-/** Faces drawn before the stack ends in "+n". */
+/** Faces drawn at most; teammates beyond them show as "+n". */
 const FACES_MAX = 4
 
 /** What both surfaces show; null until signed in with a summary. */
 export interface TeamGlance {
   readonly workspace: string
-  /** The caller first; the caller alone while ahel.ai sends no members. */
+  /**
+   * The faces drawn, at most four: teammates in ahel.ai's order (by join
+   * date, so the owner who made the workspace leads), then the caller; the
+   * caller is left out when the workspace has more than four seats.
+   */
   readonly faces: readonly DesktopMember[]
+  /** Teammates beyond the drawn faces, shown as "+n". */
+  readonly more: number
   /** Every active seat; null while ahel.ai sends no members. */
   readonly total: number | null
   /** Pending held calls; null for a Member or a plan without approval rules. */
@@ -36,11 +42,16 @@ export interface TeamGlance {
 export function teamGlance(view: AhelAccountView | null, summary: DesktopSummary | null): TeamGlance | null {
   if (view?.status !== 'signed-in' || summary === null) return null
   const profile = view.profile
-  const self: DesktopMember = summary.me ?? { id: 'me', name: profile?.name ?? null, email: profile?.email ?? '' }
   const members = summary.members ?? null
+  // ahel.ai lists the caller first, so an older ahel.ai without `me` still names them.
+  const self: DesktopMember = summary.me ?? members?.rows[0] ?? { id: 'me', name: profile?.name ?? null, email: profile?.email ?? '' }
+  const others = (members?.rows ?? []).filter(row => row.id !== self.id)
+  const seats = members?.total ?? others.length + 1
+  const faces = seats <= FACES_MAX ? [...others, self].slice(0, FACES_MAX) : others.slice(0, FACES_MAX)
   return {
     workspace: summary.workspace.name,
-    faces: members === null || members.rows.length === 0 ? [self] : members.rows,
+    faces,
+    more: Math.max(seats - (seats <= FACES_MAX ? faces.length : faces.length + 1), 0),
     total: members?.total ?? null,
     approvals: summary.approvals?.rows.length ?? null,
     inbox: summary.inbox?.unread ?? null,
@@ -72,19 +83,17 @@ function plural(n: number, one: AhelAccountKey, many: AhelAccountKey): AhelAccou
 }
 
 /**
- * The overlapping member faces, the caller first; the rest beyond four as "+n".
- * @param props - the faces, the seat count and the size.
+ * The overlapping member faces, then the teammates beyond them as "+n".
+ * @param props - the faces, the count beyond them and the size.
  * @returns the decorative stack.
  */
-function Faces({ faces, total, small }: { faces: readonly DesktopMember[]; total: number | null; small?: boolean }): ReactNode {
-  const shown = faces.slice(0, FACES_MAX)
-  const rest = Math.max((total ?? faces.length) - shown.length, 0)
+function Faces({ faces, more, small }: { faces: readonly DesktopMember[]; more: number; small?: boolean }): ReactNode {
   return (
     <span className={`${css.faces} ${small === true ? css.small : ''}`} aria-hidden="true">
-      {shown.map(member => (
+      {faces.map(member => (
         <span key={member.id} className={css.face} title={member.name ?? member.email}>{initials(member)}</span>
       ))}
-      {rest > 0 && <span className={`${css.face} ${css.more}`}>+{rest}</span>}
+      {more > 0 && <span className={`${css.face} ${css.more}`}>+{more}</span>}
     </span>
   )
 }
@@ -113,7 +122,7 @@ export function TeamHeader({ wide, openMembers, useAccount, useSummary, t }: Tea
   const members = membersText(glance.total, t)
   return (
     <button type="button" className={css.header} title={t('teamSettings')} onClick={() => { openMembers() }}>
-      <Faces faces={glance.faces} total={glance.total} />
+      <Faces faces={glance.faces} more={glance.more} />
       <span className={css.headerText}>
         <span className={css.workspace}>{glance.workspace}</span>
         {members !== null && <span className={css.caption}>{members}</span>}
@@ -153,7 +162,7 @@ export function TeamStrip({ openPanel, openMembers, useAccount, useSummary, t }:
   return (
     <div className={css.strip} role="group" aria-label={t('team')}>
       <button type="button" className={css.tile} title={t('teamSettings')} onClick={() => { openMembers() }}>
-        <Faces faces={glance.faces} total={glance.total} small />
+        <Faces faces={glance.faces} more={glance.more} small />
         <span className={css.count}>{glance.workspace}</span>
         {members !== null && <span>{members}</span>}
       </button>
