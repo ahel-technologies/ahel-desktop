@@ -1,13 +1,13 @@
 /**
  * Turn the release workflow's Apple secrets into the local `.env.macos` the signed package command reads.
  * Usage from `.github/workflows/desktop-release.yml`:
- * `node apps/desktop/scripts/macos-ci-signing.mjs gate` writes `signed=true|false` to `$GITHUB_OUTPUT`;
- * `node apps/desktop/scripts/macos-ci-signing.mjs configure` decodes the p12 under `$RUNNER_TEMP` and writes `.env.macos`.
+ * `node apps/desktop/scripts/macos-ci-signing.mjs gate` writes `signing=full|dry` to `$GITHUB_OUTPUT` and one line to `$GITHUB_STEP_SUMMARY`;
+ * `node apps/desktop/scripts/macos-ci-signing.mjs configure` decodes the p12 and the App Store Connect API key under `$RUNNER_TEMP` and writes `.env.macos`.
  * Neither command prints a secret value.
  */
 
 import { execFileSync } from 'node:child_process'
-import { X509Certificate } from 'node:crypto'
+import { X509Certificate, createPrivateKey } from 'node:crypto'
 import { appendFileSync, chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -16,25 +16,29 @@ import { parseEnv } from 'node:util'
 
 /** GitHub Actions secrets that together enable a signed and notarized macOS build. */
 export const MACOS_SIGNING_SECRETS = Object.freeze([
-  'MAC_CERT_P12_BASE64',
-  'MAC_CERT_PASSWORD',
-  'APPLE_ID',
-  'APPLE_APP_SPECIFIC_PASSWORD',
+  'APPLE_CERT_P12_BASE64',
+  'APPLE_CERT_PASSWORD',
   'APPLE_TEAM_ID',
+  'ASC_KEY_ID',
+  'ASC_ISSUER_ID',
+  'ASC_KEY_P8_BASE64',
 ])
+
+/** Step-summary line of a release built while any Apple secret is absent. */
+export const UNSIGNED_SUMMARY = 'Unsigned build: Apple secrets absent'
 
 const APP_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const DEVELOPER_ID_PREFIX = 'Developer ID Application: '
 const P12_PASSWORD_ENV = 'DSH_CI_P12_PASSWORD'
 
 /**
- * Decide whether the release builds signed; any missing or blank secret selects the unsigned build.
+ * Decide the signing mode; any missing or blank secret selects the unsigned `dry` build.
  * @param {NodeJS.ProcessEnv} env - Step environment carrying the secrets.
- * @returns {{ signed: boolean, missing: string[] }} Mode and the names (never values) of absent secrets.
+ * @returns {{ signing: 'full' | 'dry', missing: string[] }} Mode and the names (never values) of absent secrets.
  */
 export function macOSSigningGate(env) {
   const missing = MACOS_SIGNING_SECRETS.filter(name => (env[name] ?? '').trim() === '')
-  return { signed: missing.length === 0, missing }
+  return { signing: missing.length === 0 ? 'full' : 'dry', missing }
 }
 
 /**
@@ -60,7 +64,7 @@ export function developerIdIdentity(certificates, teamId, now = new Date()) {
     .map(certificate => ({ certificate, name: subjectField(certificate.subject, 'CN') ?? '', team: subjectField(certificate.subject, 'OU') }))
     .filter(entry => entry.name.startsWith(DEVELOPER_ID_PREFIX))
   if (identities.length === 0) {
-    throw new Error('macOS CI signing: MAC_CERT_P12_BASE64 holds no Developer ID Application certificate')
+    throw new Error('macOS CI signing: APPLE_CERT_P12_BASE64 holds no Developer ID Application certificate')
   }
   const owned = identities.filter(entry => entry.team === teamId)
   if (owned.length === 0) {
@@ -111,63 +115,90 @@ export function readP12Certificates(p12Path, password) {
     const certificates = output.match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/gu) ?? []
     if (certificates.length > 0) return certificates
   }
-  throw new Error('macOS CI signing: OpenSSL could not read MAC_CERT_P12_BASE64; check MAC_CERT_PASSWORD and that the export is a p12 with the certificate and its private key')
+  throw new Error('macOS CI signing: OpenSSL could not read APPLE_CERT_P12_BASE64; check APPLE_CERT_PASSWORD and that the export is a p12 with the certificate and its private key')
 }
 
 /**
- * Decode the p12 into a private directory and write the `.env.macos` the signed package command reads.
- * The package command then owns the temporary keychain: create, import, partition list, probe, delete.
+ * Decode the App Store Connect API key that notarytool reads from a file.
+ * @param {string} base64 - `ASC_KEY_P8_BASE64`, the Base64 of the downloaded `AuthKey_<id>.p8`.
+ * @returns {Buffer} PEM PKCS#8 private key bytes.
+ */
+export function decodeAppStoreConnectKey(base64) {
+  const key = Buffer.from(base64.replace(/\s+/gu, ''), 'base64')
+  try {
+    if (createPrivateKey(key).asymmetricKeyType !== 'ec') throw new Error('not an EC key')
+  }
+  catch {
+    // Parser errors can quote key material.
+    throw new Error('macOS CI signing: ASC_KEY_P8_BASE64 is not the Base64 of an App Store Connect API key (.p8)')
+  }
+  return key
+}
+
+/**
+ * Decode the p12 and the API key into a private directory and write the `.env.macos` the signed package command reads.
+ * The package command then owns the temporary keychain: create with a random password, import, partition list, search list, probe, delete.
  * @param {NodeJS.ProcessEnv} env - Step environment carrying all signing secrets.
  * @param {{ appRoot?: string, directory?: string, readCertificates?: typeof readP12Certificates, emit?: (line: string) => void }} options - Paths and injectable helpers.
- * @returns {{ envFile: string, certificateFile: string }} Written credential files, both mode 0600.
+ * @returns {{ envFile: string, certificateFile: string, apiKeyFile: string }} Written credential files, all mode 0600.
  */
 export function configureMacOSSigning(env, options = {}) {
   const { missing } = macOSSigningGate(env)
   if (missing.length > 0) throw new Error(`macOS CI signing: missing secrets ${missing.join(', ')}`)
   // Workflow commands are only interpreted on Actions runners; elsewhere they would print the values.
   const emit = options.emit ?? (line => { if (env.GITHUB_ACTIONS === 'true') process.stdout.write(`${line}\n`) })
-  const stripLineEnd = value => value.replace(/[\r\n]+$/u, '')
-  const password = stripLineEnd(env.MAC_CERT_PASSWORD)
-  const appleId = env.APPLE_ID.trim()
-  const appPassword = env.APPLE_APP_SPECIFIC_PASSWORD.trim()
+  const password = env.APPLE_CERT_PASSWORD.replace(/[\r\n]+$/u, '')
   const teamId = env.APPLE_TEAM_ID.trim()
-  // GitHub masks each stored secret; these lines also mask the normalized forms written below.
-  for (const value of [password, appleId, appPassword]) emit(`::add-mask::${value}`)
+  const keyId = env.ASC_KEY_ID.trim()
+  const issuerId = env.ASC_ISSUER_ID.trim()
+  // GitHub masks each stored secret; this also masks the normalized password written below.
+  emit(`::add-mask::${password}`)
   if (!/^[A-Z0-9]{10}$/u.test(teamId)) throw new Error('macOS CI signing: APPLE_TEAM_ID must contain 10 uppercase letters or digits')
-  const p12 = Buffer.from(env.MAC_CERT_P12_BASE64.replace(/\s+/gu, ''), 'base64')
-  if (p12.length === 0) throw new Error('macOS CI signing: MAC_CERT_P12_BASE64 is not Base64')
+  if (!/^[A-Z0-9]{10}$/u.test(keyId)) throw new Error('macOS CI signing: ASC_KEY_ID must contain 10 uppercase letters or digits')
+  if (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/iu.test(issuerId)) throw new Error('macOS CI signing: ASC_ISSUER_ID must be a UUID')
+  const p12 = Buffer.from(env.APPLE_CERT_P12_BASE64.replace(/\s+/gu, ''), 'base64')
+  if (p12.length === 0) throw new Error('macOS CI signing: APPLE_CERT_P12_BASE64 is not Base64')
+  const apiKey = decodeAppStoreConnectKey(env.ASC_KEY_P8_BASE64)
   const directory = options.directory ?? join(env.RUNNER_TEMP ?? tmpdir(), 'ahel-macos-signing')
   rmSync(directory, { recursive: true, force: true })
   mkdirSync(directory, { recursive: true, mode: 0o700 })
   chmodSync(directory, 0o700)
   const certificateFile = join(directory, 'developer-id.p12')
   writeFileSync(certificateFile, p12, { mode: 0o600 })
+  const apiKeyFile = join(directory, `AuthKey_${keyId}.p8`)
+  writeFileSync(apiKeyFile, apiKey, { mode: 0o600 })
   const identity = developerIdIdentity((options.readCertificates ?? readP12Certificates)(certificateFile, password), teamId)
   const envFile = join(options.appRoot ?? APP_ROOT, '.env.macos')
+  // APPLE_TEAM_ID stays out: in .env.macos it selects the Apple ID notarization strategy.
   writeFileSync(envFile, formatMacOSDotenv({
     DSH_DESKTOP_MACOS_SIGNING_IDENTITY: identity,
     DSH_DESKTOP_MACOS_TEAM_ID: teamId,
     CSC_LINK: certificateFile,
     CSC_KEY_PASSWORD: password,
-    APPLE_ID: appleId,
-    APPLE_APP_SPECIFIC_PASSWORD: appPassword,
-    APPLE_TEAM_ID: teamId,
+    APPLE_API_KEY: apiKeyFile,
+    APPLE_API_KEY_ID: keyId,
+    APPLE_API_ISSUER: issuerId,
   }), { mode: 0o600 })
   chmodSync(envFile, 0o600)
-  return { envFile, certificateFile }
+  return { envFile, certificateFile, apiKeyFile }
 }
 
 if (process.argv[1] !== undefined && import.meta.filename === resolve(process.argv[1])) {
   const command = process.argv[2]
   if (command === 'gate') {
-    const { signed, missing } = macOSSigningGate(process.env)
-    if (signed) process.stdout.write('macOS signing: all signing secrets are set; this release is signed and notarized\n')
-    else if (missing.length === MACOS_SIGNING_SECRETS.length) process.stdout.write('macOS signing: no signing secrets; this release is unsigned\n')
-    else process.stdout.write(`::warning::macOS signing: missing ${missing.join(', ')}; this release is unsigned\n`)
-    if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `signed=${String(signed)}\n`)
+    const { signing, missing } = macOSSigningGate(process.env)
+    if (signing === 'full') process.stdout.write('macOS signing: full; all six Apple secrets are set; this release is signed and notarized\n')
+    else if (missing.length === MACOS_SIGNING_SECRETS.length) process.stdout.write('macOS signing: dry; no Apple secrets; this release is unsigned\n')
+    else process.stdout.write(`::warning::macOS signing: dry; missing ${missing.join(', ')}; this release is unsigned\n`)
+    if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `signing=${signing}\n`)
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      appendFileSync(process.env.GITHUB_STEP_SUMMARY, signing === 'full'
+        ? 'Signed build: Developer ID signature, notarization and stapled tickets\n'
+        : `${UNSIGNED_SUMMARY}${missing.length === MACOS_SIGNING_SECRETS.length ? '' : ` (missing ${missing.join(', ')})`}\n`)
+    }
   } else if (command === 'configure') {
     configureMacOSSigning(process.env)
-    process.stdout.write('macOS signing: wrote .env.macos and the p12 for the Developer ID Application identity of APPLE_TEAM_ID\n')
+    process.stdout.write('macOS signing: wrote .env.macos, the p12 for the Developer ID Application identity of APPLE_TEAM_ID, and the App Store Connect API key\n')
   } else {
     throw new Error('usage: node apps/desktop/scripts/macos-ci-signing.mjs gate|configure')
   }

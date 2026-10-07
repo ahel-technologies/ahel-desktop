@@ -42,14 +42,17 @@
   en: 4cd8a8da6977928d
   zh: 9f624855a2edac37
 /ahel-desktop/package/release-versions:
-  en: efefb6edb7c2582b
-  zh: 9cb222fa8cf0a1b0
+  en: 009422cf3d05464e
+  zh: 52d9a819da2a45d7
 /ahel-desktop/package/runtime-file-selection:
   en: b7a6daf607b053a3
   zh: 81a75f0937a19d58
 /ahel-desktop/package/macos-signing-and-notarization:
   en: 37ca268963acc4bb
   zh: 388f444145509419
+/ahel-desktop/package/signing-and-notarization-in-the-release-workflow:
+  en: bda883ca6bad21b8
+  zh: 2c09f1a05cb7c004
 /ahel-desktop/package/unsigned-macos-development-build:
   en: 31667d6bb9c1f3c4
   zh: 2be9b4b0586b1596
@@ -63,8 +66,8 @@
   en: 777494d3b3dfc5ab
   zh: a9800063afeccbbf
 /ahel-desktop/updates:
-  en: c30f22a479bdbae9
-  zh: b430afe8bc85f3eb
+  en: cbb7a7d4146015a6
+  zh: 3fcdc1d8d9298faf
 /ahel-desktop/updates/local-updater-qualification:
   en: 787c129cbd192f86
   zh: 3d2f789773219ba9
@@ -72,5 +75,5 @@
   en: bf926f512ca79f87
   zh: 0897ef96349df536
 /ahel-desktop/known-limitations:
-  en: 8f8053d450c893c7
-  zh: 455d4cdc093b26b7
+  en: 31464dbfbb9282f2
+  zh: 5ca928c213e13070

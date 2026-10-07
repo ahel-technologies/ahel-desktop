@@ -271,6 +271,21 @@ The proxy fields are independent and reject URL credentials, paths, queries and 
 
 Apple tooling uses the active macOS network service's HTTP/HTTPS proxies. Configured notarization routing checks proxy reachability, saves that service's settings, enables the proxy around both artifact lanes, and restores the saved settings after both lanes settle. An originally disabled proxy with an empty server and port zero is restored by disabling it; the temporary server and port may remain stored but inactive. Directory-only builds apply it to App notarization after the signed directory build. This temporarily affects other applications and requires permission to change system proxies; PAC, auto-discovery, SOCKS and authenticated proxy configurations must be disabled first. Packaging and recovery acquire the same per-user POSIX file lock before reading recovery data or changing proxies; process exit releases ownership, while the lock file remains in place. The lock loads `@ahel/node-addon-system/flock` at first use rather than at script start, so `check:package` and the packaging entry load on a checkout that has not built `native/system`; when the host addon binary or the entry's JavaScript is missing at lock time, the loader runs `pnpm run build:native-system` and `pnpm --dir native/system run build:ts` before locking, so recovery works on such a checkout as well. This prevents overlapping proxy transactions across checkouts; other users and network-setting tools must not change these settings concurrently. SIGINT/SIGTERM wait for active work before restoration. After forced termination or a restoration error, stop any remaining notarization processes and run `pnpm --dir apps/desktop run restore:mac-proxy`; the saved record remains until restoration succeeds. Configuration checks validate URL syntax without changing system settings or contacting the proxy.
 
+### Signing and notarization in the release workflow
+
+`.github/workflows/desktop-release.yml` signs the macOS arm64 build only when six repository secrets exist; without them it builds the same unsigned artifacts as before, so no release step requires the secrets. Its `Signing mode` step sets `signing=full` when all six are non-empty and otherwise `signing=dry`, with the step-summary line "Unsigned build: Apple secrets absent". In full mode, `Import certificate` decodes the p12 and the App Store Connect API key into mode 0600 files under `$RUNNER_TEMP` and writes `.env.macos` with `APPLE_API_KEY`, `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER`. The packaging above then signs with hardened runtime and the entitlements files, notarizes the App and DMG concurrently through `logged-notarytool.mjs`, and staples both; `Check signature, notarization and staple` repeats `codesign --verify --deep --strict`, `spctl --assess`, and `stapler validate`. A cleanup step deletes the credential files and any leftover keychain in both modes, also after failure or cancellation. Dry mode runs `package:desktop:mac:arm64:dev`. Secret values never appear in documentation, commits, or logs; the scripts print only secret names. The release runbook `docs/phase3/RELEASE.md` owns the mode matrix.
+
+| Secret | Value | How to create it |
+|---|---|---|
+| `APPLE_CERT_P12_BASE64` | Developer ID Application certificate with its private key, as Base64 of a .p12 | Xcode → Settings → Accounts → select the team → Manage Certificates → + → Developer ID Application (Account Holder only). Then Keychain Access → login keychain → My Certificates → right-click "Developer ID Application: …" → Export → .p12 with a password → `base64 -i cert.p12 \| pbcopy`. |
+| `APPLE_CERT_PASSWORD` | The .p12 export password | Chosen at export. |
+| `APPLE_TEAM_ID` | 10-character Team ID | developer.apple.com → Account → Membership details → Team ID. |
+| `ASC_KEY_ID` | App Store Connect API key ID | appstoreconnect.apple.com → Users and Access → Integrations → App Store Connect API → Team Keys → Generate API Key, access Developer (enough for notarization) → Key ID column. The first key requires the Account Holder to request API access on the same page. |
+| `ASC_ISSUER_ID` | Issuer ID of the team keys | Same page, Issuer ID above the key list. |
+| `ASC_KEY_P8_BASE64` | Base64 of the downloaded `AuthKey_<Key ID>.p8` | Same page → Download, which Apple allows only once → `base64 -i AuthKey_<Key ID>.p8 \| pbcopy`. |
+
+Add each one at github.com/ahel-technologies/ahel-desktop → Settings → Secrets and variables → Actions → New repository secret, using the name in the first column. `Import certificate` rejects a certificate from another team or an expired one, a malformed Key ID or Issuer ID, and a .p8 that is not an EC private key. Deleting any one secret returns releases to dry mode.
+
 ### Unsigned macOS development build
 
 On Apple Silicon, build an unsigned macOS arm64 application for local testing:
@@ -405,7 +420,7 @@ An unpackaged Electron process uses `.desktop-build/development/project` under i
 ## Known limitations
 
 - Sign in with Ahel is not connected; its welcome button is disabled. Windows material rendering still requires platform QA.
-- Released builds are unsigned: macOS shows a Gatekeeper warning and cannot apply updates until the app carries a Developer ID signature; Windows shows SmartScreen and does not verify update signatures.
+- Released builds stay unsigned until the six Apple secrets of the release workflow exist: macOS shows a Gatekeeper warning and cannot apply updates until the app carries a Developer ID signature; Windows shows SmartScreen and does not verify update signatures.
 - Release signing, notarization, update hosting, and previous-version installed-artifact qualification require the production release environment.
 - Dependency lifecycle scripts follow pnpm’s build permissions; Desktop provides no separate approval dialog.
 - The desktop shell shares sessions, settings, credentials, workspaces, and storage under `$DSH_HOME` with CLI dsh, while executable packages, plugin activation, and lockfiles remain separate.

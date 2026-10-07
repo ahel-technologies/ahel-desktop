@@ -1,14 +1,17 @@
 /** Release-workflow gate and `.env.macos` writer for macOS Developer ID signing. */
 
 /** GitHub Actions secrets that together enable a signed and notarized macOS build. */
-export const MACOS_SIGNING_SECRETS: readonly ['MAC_CERT_P12_BASE64', 'MAC_CERT_PASSWORD', 'APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID']
+export const MACOS_SIGNING_SECRETS: readonly ['APPLE_CERT_P12_BASE64', 'APPLE_CERT_PASSWORD', 'APPLE_TEAM_ID', 'ASC_KEY_ID', 'ASC_ISSUER_ID', 'ASC_KEY_P8_BASE64']
+
+/** Step-summary line of a release built while any Apple secret is absent. */
+export const UNSIGNED_SUMMARY: 'Unsigned build: Apple secrets absent'
 
 /**
- * Decide whether the release builds signed; any missing or blank secret selects the unsigned build.
+ * Decide the signing mode; any missing or blank secret selects the unsigned `dry` build.
  * @param env Step environment carrying the secrets.
  * @returns Mode and the names (never values) of absent secrets.
  */
-export function macOSSigningGate(env: NodeJS.ProcessEnv): { signed: boolean, missing: string[] }
+export function macOSSigningGate(env: NodeJS.ProcessEnv): { signing: 'full' | 'dry', missing: string[] }
 
 /**
  * Select the Developer ID Application certificate for the release team.
@@ -35,14 +38,21 @@ export function formatMacOSDotenv(settings: Readonly<Record<string, string>>): s
 export function readP12Certificates(p12Path: string, password: string): string[]
 
 /**
- * Decode the p12 into a private directory and write the `.env.macos` the signed package command reads.
+ * Decode the App Store Connect API key that notarytool reads from a file.
+ * @param base64 `ASC_KEY_P8_BASE64`, the Base64 of the downloaded `AuthKey_<id>.p8`.
+ * @returns PEM PKCS#8 private key bytes.
+ */
+export function decodeAppStoreConnectKey(base64: string): Buffer
+
+/**
+ * Decode the p12 and the API key into a private directory and write the `.env.macos` the signed package command reads.
  * @param env Step environment carrying all signing secrets.
  * @param options Paths and injectable helpers.
- * @returns Written credential files, both mode 0600.
+ * @returns Written credential files, all mode 0600.
  */
 export function configureMacOSSigning(env: NodeJS.ProcessEnv, options?: {
   appRoot?: string
   directory?: string
   readCertificates?: typeof readP12Certificates
   emit?: (line: string) => void
-}): { envFile: string, certificateFile: string }
+}): { envFile: string, certificateFile: string, apiKeyFile: string }
