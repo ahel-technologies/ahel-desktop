@@ -80,6 +80,8 @@ export interface SidebarPanelIconOwnerProps {
   size: number
   /** Whether this panel is selected in the main column. */
   active: boolean
+  /** Whether the row is the wide column's (glyph and title); false or absent is the collapsed rail's glyph alone. */
+  wide?: boolean
 }
 
 /** Serializable metadata for one active global panel list registration. */

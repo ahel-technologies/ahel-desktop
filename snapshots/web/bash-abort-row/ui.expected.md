@@ -19,5 +19,5 @@
 - 'button "Access mode, current: Full access"': Full access
 - button "Select model, current DeepSeek-V4-Flash": DeepSeek-V4-Flash
 - button "Send message" [disabled]
-- button "1 turns 1 steps"
+- button "1 turn · 1 step"
 - button "20 tok · Cache hit 0%": 20 tokCache hit 0%

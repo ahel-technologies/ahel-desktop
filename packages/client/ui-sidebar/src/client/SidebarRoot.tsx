@@ -68,7 +68,7 @@ function PanelRow({ id, label, wide, usePanelInfo, selectPanel, renderSlot }: Pa
         onClick={() => { selectPanel(id) }}
       >
         <span className={css.panelGlyph} aria-hidden="true">
-          {renderSlot('sidebar.panellist', { size: wide ? 16 : 18, active }, { only: id })}
+          {renderSlot('sidebar.panellist', { size: wide ? 16 : 18, active, wide }, { only: id })}
         </span>
         {wide && (
           <span className={clsx(css.panelTitle, css.wide)}>

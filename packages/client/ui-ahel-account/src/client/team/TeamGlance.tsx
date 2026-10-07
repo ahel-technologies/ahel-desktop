@@ -49,15 +49,14 @@ export function teamGlance(view: AhelAccountView | null, summary: DesktopSummary
 }
 
 /**
- * Up to two initials: the first letters of the name's first and last words, else the email's first letter.
+ * Up to two initials: the first letters of the display name's first two words
+ * ("Karl Hendrik" is "KH"), else the email's first letter.
  * @param member - one seat.
  * @returns the initials, upper-cased.
  */
 export function initials(member: DesktopMember): string {
   const words = member.name?.trim().split(/\s+/).filter(Boolean) ?? []
-  const first = words[0]?.charAt(0) ?? member.email.charAt(0)
-  const last = words.length > 1 ? words.at(-1)?.charAt(0) ?? '' : ''
-  const letters = `${first}${last}`
+  const letters = words.length === 0 ? member.email.charAt(0) : words.slice(0, 2).map(word => word.charAt(0)).join('')
   return letters === '' ? '?' : letters.toUpperCase()
 }
 

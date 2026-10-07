@@ -11,25 +11,28 @@
 }
 
 .face {
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 22px;
   height: 22px;
+  box-sizing: border-box;
+  /* A hairline in the surface colour separates the overlapping faces. */
+  border: 0.5px solid var(--dsw-specific-sidebar-fill);
   border-radius: 50%;
   corner-shape: round;
   background: var(--dsw-alias-button-primary-fill);
   color: var(--dsw-alias-label-primary-foreground);
-  /* A ring in the surface colour separates the overlapping faces. */
-  box-shadow: 0 0 0 2px var(--dsw-specific-sidebar-fill);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.02em;
 }
 
+/* Each face covers at most 4px of the one before, so every initial stays readable. */
 .face + .face {
-  margin-left: -6px;
+  margin-left: -4px;
 }
 
 .more {
@@ -40,12 +43,12 @@
 .small .face {
   width: 18px;
   height: 18px;
-  font-size: 9px;
-  box-shadow: 0 0 0 2px var(--dsw-alias-bg-base);
+  border-color: var(--dsw-alias-bg-base);
+  font-size: 8px;
 }
 
 .small .face + .face {
-  margin-left: -5px;
+  margin-left: -3px;
 }
 
 .header {
@@ -71,7 +74,7 @@
 }
 
 .header:hover .face {
-  box-shadow: 0 0 0 2px var(--dsw-alias-interactive-bg-hover-solid);
+  border-color: var(--dsw-alias-interactive-bg-hover-solid);
 }
 
 .headerText {
