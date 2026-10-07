@@ -291,10 +291,12 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
 
 /**
  * Report the state of the desktop chat that works on one issue; ahel.ai moves the issue's status with it.
+ * The first report on a queued run claims it; when another session holds the run, ahel.ai answers 409 `run_claimed`.
  * @param key - the issue.
  * @param report - the session, its state and the steps so far.
  * @returns the issue after the report.
- * @throws RemoteError `ahel-issues/*`.
+ * @throws RemoteError `ahel-issues/refused` with `details.error === 'run_claimed'` when another session holds the run,
+ *   or another `ahel-issues/*`.
  */
 @Remote async run(key: string, report: IssueRunReport): Promise<IssueWriteAnswer>
 

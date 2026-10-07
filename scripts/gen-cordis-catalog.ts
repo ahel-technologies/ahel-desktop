@@ -268,6 +268,8 @@ export const EVENT_SCOPE_PAGE: Record<string, string> = {
  */
 export const EVENT_WALK_EXEMPTIONS: Record<string, string> = {
   'ahel-issues/open': 'client-face navigation signal (open one issue) — packages/client/ui-issues/src/client/index.ts owns the API; the Inbox in ui-ahel-account emits it',
+  'ahel-issues/poll': 'client-face navigation signal (open one issue) — packages/client/ui-issues/src/client/index.ts owns the API; the Inbox in ui-ahel-account emits it',
+  'ahel-issues/run-started': 'client-face navigation signal (open one issue) — packages/client/ui-issues/src/client/index.ts owns the API; the Inbox in ui-ahel-account emits it',
   'command/executed': 'client-face local command acknowledgment — packages/client/ui-commands/README.md owns the API',
   'connection/reset': 'client-face transport signal — packages/api/session-controller/README.md owns the API',
   'locale/change': 'client-face locale switch signal — packages/client/locale/README.md owns the API',
