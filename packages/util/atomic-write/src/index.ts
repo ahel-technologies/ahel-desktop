@@ -12,7 +12,7 @@
  */
 
 import { createHash, randomBytes } from 'node:crypto'
-import { lstat, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { chmod, lstat, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 
 const WINDOWS_TRANSIENT_RENAME_ERRORS: ReadonlySet<string> = new Set(['EACCES', 'EBUSY', 'EPERM'])
@@ -49,7 +49,9 @@ async function renameAtomicTemp(temp: string, filename: string): Promise<void> {
 export interface WriteFileAtomicOptions {
   /**
    * Permission bits stamped on the fresh temp inode and carried through the
-   * rename (subject to the process umask, like every fresh inode).
+   * rename. The temp is chmodded to exactly these bits before the rename, so
+   * neither the process umask nor a filesystem default (an ACL or a
+   * Kubernetes `fsGroup` volume) changes the committed mode.
    */
   mode: number
   /**
@@ -86,6 +88,7 @@ export async function writeFileAtomic(filename: string, content: string, options
   const temp = `${filename}.${randomBytes(6).toString('hex')}.tmp`
   try {
     await writeFile(temp, content, { mode: options.mode, flag: 'wx' })
+    await chmod(temp, options.mode)
     await renameAtomicTemp(temp, filename)
   } catch (error) {
     await rm(temp, { force: true })

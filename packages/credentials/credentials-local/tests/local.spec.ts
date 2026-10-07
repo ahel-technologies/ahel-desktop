@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@ahel/cordis'
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { credentialRef } from '@ahel/dsh-credentials'
@@ -176,6 +176,28 @@ describe('layer ladder', () => {
     // world-readable file would make the 0600 the provider writes meaningless.
     await expect(ctx.plugin(LocalCredentialProvider, { path, watch: false }))
       .rejects.toThrow(/readable beyond its owner \(mode 644\)/)
+  })
+
+  it.skipIf(process.platform === 'win32')('narrows its own group-readable document to 0600 and loads it', async () => {
+    const dir = await tempDir()
+    const path = join(dir, '.credentials.yaml')
+    await writeCredentials(path, 'version: 1\nrefs:\n  DSH_CRED_TEST: stored\n')
+    // A Kubernetes fsGroup volume re-applies group read/write on every mount.
+    await chmod(path, 0o660)
+    const ctx = await boot({ path, watch: false })
+    expect(await ctx.credentials.resolve(KEY)).toEqual({ value: 'stored', source: 'file' })
+    expect((await stat(path)).mode & 0o777).toBe(0o600)
+  })
+
+  it.skipIf(process.platform === 'win32')('still refuses a document with group and other bits set', async () => {
+    const dir = await tempDir()
+    const path = join(dir, '.credentials.yaml')
+    await writeCredentials(path, 'version: 1\nrefs:\n  DSH_CRED_TEST: leaked\n')
+    await chmod(path, 0o664)
+    const ctx = new Context()
+    await expect(ctx.plugin(LocalCredentialProvider, { path, watch: false }))
+      .rejects.toThrow(/readable beyond its owner \(mode 664\)/)
+    expect((await stat(path)).mode & 0o777).toBe(0o664)
   })
 
   it('propagates a permission check that fails for a reason other than absence', async () => {

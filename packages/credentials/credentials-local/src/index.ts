@@ -38,7 +38,8 @@
 import { Context, Service } from '@ahel/cordis'
 import z from '@ahel/schemastery'
 import { watch as chokidarWatch } from 'chokidar'
-import { mkdir, readFile, stat } from 'node:fs/promises'
+import { chmod, mkdir, readFile, stat } from 'node:fs/promises'
+import type { Stats } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { Document, isMap, isScalar, parseDocument, type YAMLError } from 'yaml'
 import { withFileLock, writeFileAtomic } from '@ahel/dsh-atomic-write'
@@ -96,6 +97,9 @@ export function resolveSpec(config: Config): ResolvedSpec {
 /** Permission bits outside the owner; a credentials document must have none of them. */
 const GROUP_OTHER_BITS = 0o077
 
+/** Permission bits for other OS users; a document with any of them is refused, never repaired. */
+const OTHER_BITS = 0o007
+
 /**
  * How long a record write waits for the cross-process writer lock. A record
  * mutation runs its caller's decision while holding the lock, and for the
@@ -118,16 +122,23 @@ const DOCUMENT_LOCK_WAIT_MS = 30_000
  * and silently serving secrets out of a world-readable file would make the
  * mode the provider promises meaningless.
  *
+ * A file this process's user owns whose only extra bits are group bits is
+ * narrowed to owner-only and accepted, with one log line: a Kubernetes
+ * `fsGroup` volume re-applies group read/write to every file on each mount,
+ * so a hosted Host would otherwise refuse its own document on every restart.
+ * Other-user bits, or a file owned by another user, still throw.
+ *
  * POSIX only: Windows has no mode to inspect — its ACLs are not expressible
  * here — so the check is skipped rather than faked, and the file's protection
  * there is whatever the create and replace APIs express.
  * @param filename - absolute path of the document.
- * @throws when the path hierarchy is invalid or the file exists with group or other permission bits set.
+ * @param logger - receives the one-line notice when group bits are removed.
+ * @throws when the path hierarchy is invalid, or the file exists with other-user bits set, or with group bits set and another owner.
  */
-async function assertOwnerOnly(filename: string): Promise<void> {
-  let mode: number
+async function assertOwnerOnly(filename: string, logger: Context['logger']): Promise<void> {
+  let stats: Stats
   try {
-    mode = (await stat(filename)).mode
+    stats = await stat(filename)
   } catch (error) {
     if (!isENOENT(error)) throw error
     await canonicalizeWatchPath(filename)
@@ -136,10 +147,16 @@ async function assertOwnerOnly(filename: string): Promise<void> {
   /* v8 ignore next -- POSIX coverage cannot take the Windows peer; native Windows coverage does. */
   if (process.platform === 'win32') return
   /* v8 ignore start -- Windows has no POSIX mode enforcement; POSIX behavior tests enforce this peer. */
-  const offending = mode & GROUP_OTHER_BITS
-  if (offending === 0) return
+  const mode = stats.mode & 0o777
+  if ((mode & GROUP_OTHER_BITS) === 0) return
+  if ((mode & OTHER_BITS) === 0 && stats.uid === process.getuid?.()) {
+    const repaired = mode & ~GROUP_OTHER_BITS
+    await chmod(filename, repaired)
+    logger.info('credentials-local: removed group permissions from %s (mode %s -> %s)', filename, mode.toString(8), repaired.toString(8))
+    return
+  }
   throw new Error(
-    `credentials-local: ${filename} is readable beyond its owner (mode ${(mode & 0o777).toString(8)});`
+    `credentials-local: ${filename} is readable beyond its owner (mode ${mode.toString(8)});`
     + ` run "chmod 600 ${filename}" before starting again`,
   )
   /* v8 ignore stop */
@@ -789,7 +806,7 @@ export class LocalCredentialProvider extends CredentialProvider {
    * the layout change without a hand edit.
    */
   private async loadInitial(): Promise<void> {
-    await assertOwnerOnly(this.spec.filename)
+    await assertOwnerOnly(this.spec.filename, this.ctx.logger)
     let text: string
     try {
       text = await readFile(this.spec.filename, 'utf8')
@@ -861,7 +878,7 @@ export class LocalCredentialProvider extends CredentialProvider {
   private async reconcileFromDisk(): Promise<void> {
     // Re-checked on every reload and before every write: an external editor or
     // a restored backup can loosen the mode after boot.
-    await assertOwnerOnly(this.spec.filename)
+    await assertOwnerOnly(this.spec.filename, this.ctx.logger)
     let text: string | undefined
     try {
       text = await readFile(this.spec.filename, 'utf8')
