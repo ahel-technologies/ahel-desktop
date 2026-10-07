@@ -1,0 +1,59 @@
+{
+  "name": "@ahel/dsh-computer-use-action-gate",
+  "description": "Approval gate for desktop computer use: reads run, every state-changing action waits for an approval card, hard-blocked targets are refused",
+  "version": "0.1.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/computer-use/action-gate"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./types": {
+      "types": "./lib/types/types.d.ts",
+      "default": "./lib/types/types.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@ahel/cordis": "workspace:~",
+    "@ahel/cordis-plugin-loader": "workspace:~",
+    "@ahel/dsh-agent": "workspace:*",
+    "@ahel/dsh-settings": "workspace:*",
+    "@ahel/dsh-tools": "workspace:*",
+    "@ahel/dsh-user-approval": "workspace:*"
+  },
+  "dependencies": {
+    "@ahel/schemastery": "workspace:~"
+  },
+  "devDependencies": {
+    "@ahel/cordis": "workspace:~",
+    "@ahel/cordis-plugin-loader": "workspace:~",
+    "@ahel/dsh-agent": "workspace:*",
+    "@ahel/dsh-agent-loop": "workspace:*",
+    "@ahel/dsh-llm": "workspace:*",
+    "@ahel/dsh-session": "workspace:*",
+    "@ahel/dsh-session-projection": "workspace:*",
+    "@ahel/dsh-settings": "workspace:*",
+    "@ahel/dsh-system-prompt": "workspace:*",
+    "@ahel/dsh-tools": "workspace:*",
+    "@ahel/dsh-user-approval": "workspace:*",
+    "@ahel/dsh-util-values": "workspace:*"
+  }
+}

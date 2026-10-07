@@ -272,6 +272,21 @@
     - id: ui-mcp-app
       name: '@ahel/dsh-client-ui-mcp-app'
 
+    # Computer use approvals (Desktop only): the gate in front of the Cua
+    # Driver MCP server `ahel-computer` (reads run, every write waits for a
+    # click on its card, hard blocks first), and its card, stop control,
+    # activity log and blocked-apps row. Every call is refused while
+    # `computerUse.enabled` is off (docs/phase4/COMPUTER-USE.md).
+    - id: computer-use-gate
+      name: '@ahel/dsh-computer-use-action-gate'
+      disabled: !!js "ctx.get('profileContext')?.name !== 'desktop'"
+      config:
+        serverName: ahel-computer
+
+    - id: ui-computer-use
+      name: '@ahel/dsh-client-ui-computer-use'
+      disabled: !!js "ctx.get('profileContext')?.name !== 'desktop'"
+
     # Ahel account: one ahel.ai sign-in (credential AHEL_ACCOUNT) shared by
     # the Ahel MCP server and Ahel-metered models. mcp-ahel connects only while
     # signed in and drops its tools on sign-out. URL is mcp.ahel.ai/mcp because
