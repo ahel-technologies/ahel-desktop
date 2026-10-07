@@ -3,44 +3,47 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-model-selection/README.md
 /:
-  en: f39813648aeef5a0
-  zh: eea25094e8bfc031
+  en: 81f45275352a4583
+  zh: 1bffe4a89582e7c7
 /ahel-dsh-client-ui-model-selection:
   en: 858cffb546a64ee0
   zh: 782126609ba5918c
 /ahel-dsh-client-ui-model-selection/summary:
-  en: 2fb361ef704528fb
-  zh: 2537d2afb4d2cb45
+  en: 7bea1e90ccc23487
+  zh: f5ee690ec3a276f8
 /ahel-dsh-client-ui-model-selection/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
 /ahel-dsh-client-ui-model-selection/use-this-package:
-  en: cac9aa99cad5ba74
-  zh: 7dcfdd38ddc6fba5
-/ahel-dsh-client-ui-model-selection/use-this-package/model-and-effort:
-  en: d7c7b9bc065fa36d
-  zh: 2165e2d650e0dce7
-/ahel-dsh-client-ui-model-selection/use-this-package/unroutable-sessions:
-  en: 7b605f17afe4de77
-  zh: 6059ea2419cb5a39
-/ahel-dsh-client-ui-model-selection/use-this-package/selection-failures:
-  en: 2cfcb0352a380466
-  zh: 543650336ce22e4a
+  en: f865a8da43bb97b8
+  zh: 4c79ee3c191cad2e
+/ahel-dsh-client-ui-model-selection/use-this-package/the-list:
+  en: 1e8d99282409055e
+  zh: f4033d60b1b2cd16
+/ahel-dsh-client-ui-model-selection/use-this-package/footer:
+  en: 43ec33e0d57350af
+  zh: 0e4c290656f053fe
+/ahel-dsh-client-ui-model-selection/use-this-package/balance-chip:
+  en: 15860a83ea0e438e
+  zh: 72e6432d9d7890e2
+/ahel-dsh-client-ui-model-selection/use-this-package/unroutable-sessions-and-failures:
+  en: 0063aaf30e0b63d5
+  zh: 03f039a656a0d8ed
 /ahel-dsh-client-ui-model-selection/understand-the-implementation:
-  en: 05ec85eb92d8ece4
-  zh: 78c0e4764bffa003
+  en: 47eea7b311004970
+  zh: 4bc2beec7e0e9bd7
 /ahel-dsh-client-ui-model-selection/further-exploration:
   en: 14acd4692e923480
   zh: ff89aed852aa0da8
 /ahel-dsh-client-ui-model-selection/model-experience:
-  en: 782f79ed910f426a
-  zh: 54a2e3e32a747544
+  en: b00ad38c1efd3e7c
+  zh: 0f6529f85f9cae2b
 /ahel-dsh-client-ui-model-selection/model-experience/kv-cache-effect:
   en: 68e54c00412a40d1
   zh: 0ac96f57fd194d96
 /ahel-dsh-client-ui-model-selection/known-limitations-and-deferred-work:
-  en: 75b37954ceacd92a
-  zh: a49d0361486e35c4
+  en: a536f121584e5b82
+  zh: 68602e940378976a
 /ahel-dsh-client-ui-model-selection/known-limitations-and-deferred-work/dev-note:
-  en: e67f633dc6fe7773
-  zh: 3bb0c20c93f16f98
+  en: 63c9cb449060d8b6
+  zh: 7345b25b0adfd02e

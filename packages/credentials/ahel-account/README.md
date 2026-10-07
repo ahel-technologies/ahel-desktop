@@ -5,6 +5,8 @@ kind: "package-reference"
 
 # @ahel/dsh-ahel-account
 
+English | [中文](README.zh.md)
+
 ## Summary
 
 The ahel.ai account for Ahel Desktop. One browser sign-in stores one OAuth grant under the credential reference `AHEL_ACCOUNT`; the Ahel MCP server (`dsh-mcp-client` with `auth.credentialRef: AHEL_ACCOUNT`) and Ahel models (`dsh-llm-ahel`) both use it.
@@ -18,6 +20,7 @@ The ahel.ai account for Ahel Desktop. One browser sign-in stores one OAuth grant
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
 - [Dev Note](#dev-note)
 
+<a id="use-this-package"></a>
 ## Use this package
 
 ```yaml
@@ -41,7 +44,7 @@ The ahel.ai account for Ahel Desktop. One browser sign-in stores one OAuth grant
 | `hostedSignInPath` | `/chat/` | Path on `appOrigin` a launched Host's Sign in reloads |
 | `hostedSignOutPath` | `/app/settings` | Path on `appOrigin` a launched Host's Sign out opens |
 
-The service is `ctx.ahelAccount`; the Remote namespace `ahelAccount` exposes `state()`, `signIn()`, `cancelSignIn(id)`, `signOut()`, `profile()` and the `watch` stream. Host code also has `accessToken()` (refreshes on demand), `revalidate()` (forces one refresh after a 401) and `setOpener(fn)`.
+The service is `ctx.ahelAccount`; the Remote namespace `ahelAccount` exposes `state()`, `signIn()`, `cancelSignIn(id)`, `signOut()`, `profile()` and the `watch` stream. Host code also has `accessToken()` (refreshes on demand), `revalidate()` (forces one refresh after a 401), `setOpener(fn)` and `reportBilling(billing)`. `dsh-llm-ahel` calls `reportBilling` with each metered request's hold and settle; the view's `billing` then carries the latest one (phase, Session, model, held, charged and balance cents) to `watch` subscribers without emitting `ahel-account/changed`. Signing out or choosing another workspace clears it.
 
 Sign-in copies the `ahel` CLI flow: discovery, a loopback listener on `127.0.0.1:<random port>/callback`, a fresh dynamic client registration per sign-in (a fixed client id would stay revoked forever), PKCE S256, scopes `openid profile email offline_access`, then `GET /api/mcp/profile`. `signIn()` resolves once the authorize URL exists and returns it in `attempt.authorizeUrl`; the opener set with `setOpener` opens it, otherwise it is logged. Sign-out calls `POST /api/mcp/revoke`, then deletes the credential even if the revoke failed.
 
@@ -51,6 +54,7 @@ ahel.ai's hosted chat starts one Host per person and hands it the person's sign-
 
 A Host launched this way reports `hosted: { signInUrl, signOutUrl }` in the view. `signIn()` and `signOut()` refuse, because the person's ahel.ai session owns the grant; the client sends Sign in to `signInUrl` (a fresh launch) and Sign out to `signOutUrl`. Hosts started without the variable report `hosted: null`.
 
+<a id="catalog-the-ahelcatalog-namespace"></a>
 ## Catalog: the `ahelCatalog` namespace
 
 A child service, `ctx.ahelCatalog`, gives the desktop the ahel.ai Discover catalog and the person's installs. Its Remote namespace `ahelCatalog` exposes six methods.
@@ -60,22 +64,26 @@ A child service, `ctx.ahelCatalog`, gives the desktop the ahel.ai Discover catal
 - Failures are `RemoteError` codes: `ahel-catalog/busy` (HTTP 429), `ahel-catalog/unreachable`, `ahel-catalog/signed-out`, and `ahel-catalog/refused`, whose message is ahel.ai's own sentence.
 - The gateway has no uninstall tool, so removing an app is done on ahel.ai at `/app/apps`.
 
+<a id="team-the-ahelteam-namespace"></a>
 ## Team: the `ahelTeam` namespace
 
 A child service, `ctx.ahelTeam`, calls ahel.ai's `/api/desktop/*` routes with this account's bearer and the selected `?workspace=`; it refreshes once after a 401.
-- Methods: `summary()` (approvals, unread handoffs, balance), `decideApproval(id, decision, note)`, `signIns()`, `connectPanel(app)`, `connect(app, values)`, `disconnect(app)`, `inbox()`, `openHandoff(id)`, `prepareHandoff(draft)`, `shareHandoff(share)` and `markHandoffDone(id)`.
+- Methods: `summary()` (approvals, unread handoffs, balance, `defaultModel`), `models()` (`GET /api/llm/v1/models` with ahel.ai's facts per model: short name, maker, best-for line, typical message price, the workspace's approximate last charge), `workspaceModel()` and `setWorkspaceModel(model)` (`GET`/`PUT /api/desktop/workspace/model`; owner or team lead only), `decideApproval(id, decision, note)`, `signIns()`, `connectPanel(app)`, `connect(app, values)`, `disconnect(app)`, `inbox()`, `openHandoff(id)`, `prepareHandoff(draft)`, `shareHandoff(share)` and `markHandoffDone(id)`.
 - Errors: `ahel-team/signed-out`, `ahel-team/outdated` (ahel.ai has no `/api/desktop` yet: show "Update ahel.ai"), `ahel-team/forbidden`, `ahel-team/refused`, `ahel-team/busy` and `ahel-team/unreachable`; refusal messages are ahel.ai's own sentences.
 - `connect` sends key values only to `POST /api/desktop/connect`, never logs them and never puts them in an error.
 
+<a id="model-experience"></a>
 ## Model Experience
 
 None. The package adds no tools, prompt text or session events.
 
+<a id="known-limitations-and-deferred-work"></a>
 ## Known Limitations and Deferred Work
 
 - The grant is stored by the credentials provider in use (`credentials-local`: `$DSH_HOME/.credentials.yaml`, mode 600). A Keychain-backed provider is Phase 3.
 - No workspace picker: ahel.ai pins the token to the person's single seat or oldest membership.
 
+<a id="dev-note"></a>
 ### Dev Note
 
 Maintainers change this package with the ahel.ai API: the `/api/mcp/*`, `/api/public/catalog-search` and `/api/desktop/*` shapes live in `src/types.ts`, and the catalog generator lists them in `scripts/gen-cordis-catalog.ts`.

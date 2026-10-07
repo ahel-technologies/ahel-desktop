@@ -75,6 +75,14 @@ Account service; the default export loads it as a plugin.
 @Remote async state(): Promise<AhelAccountView>
 
 /**
+ * Host-only: record one metered model request's hold or settle. Subscribers
+ * of `watch` receive a new view; `ahel-account/changed` does not fire,
+ * because the sign-in and the workspace are unchanged.
+ * @param billing - the amounts the Ahel model route read from ahel.ai.
+ */
+reportBilling(billing: AhelBilling): void
+
+/**
  * Choose the ahel.ai workspace the MCP server and Ahel models act in, and
  * save it in settings.
  * @param id - one of the profile's workspace ids, or null for the account default.
@@ -347,6 +355,29 @@ Child service of `AhelAccount`; the Remote namespace `ahelTeam`.
  * @throws RemoteError `ahel-team/*`.
  */
 @Remote async summary(): Promise<DesktopSummary>
+
+/**
+ * The workspace's metered models with ahel.ai's facts: short name, maker,
+ * "best for" line, typical message price and the workspace's last charge.
+ * @returns the rows in ahel.ai's order; `ahel` is null from an ahel.ai that sends no facts.
+ * @throws RemoteError `ahel-team/*`.
+ */
+@Remote async models(): Promise<AhelMeteredModel[]>
+
+/**
+ * The workspace's default metered model, where new chats start.
+ * @returns the default; `defaultModel` is null when the owner chose none.
+ * @throws RemoteError `ahel-team/outdated` from an ahel.ai without the route.
+ */
+@Remote async workspaceModel(): Promise<AhelWorkspaceModel>
+
+/**
+ * Set the workspace's default metered model. Only the owner or an admin may.
+ * @param model - a model id from `models()`, or null to clear the default.
+ * @returns the stored default.
+ * @throws RemoteError `ahel-team/forbidden` for a Member, `ahel-team/refused` for an unknown model.
+ */
+@Remote async setWorkspaceModel(model: string | null): Promise<AhelWorkspaceModel>
 
 /**
  * Approve or decline one held call. Nothing runs here: approve opens a one-hour

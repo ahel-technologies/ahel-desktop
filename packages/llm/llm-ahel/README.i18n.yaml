@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/llm/llm-ahel/README.md
+/:
+  en: d2f5843f28340e53
+  zh: 60de6eb6c194b4bd
+/ahel-dsh-llm-ahel:
+  en: 70cad7460e96ee30
+  zh: 762c87458d130db2
+/ahel-dsh-llm-ahel/summary:
+  en: 83b1af5eb069f08e
+  zh: 5f18b9b6991b7565
+/ahel-dsh-llm-ahel/table-of-contents:
+  en: 2e89ddb1e73218cb
+  zh: 5b9aa0e046408356
+/ahel-dsh-llm-ahel/use-this-package:
+  en: 4e51c86fdaa3d7a4
+  zh: ff3f501e0e42ef45
+/ahel-dsh-llm-ahel/model-experience:
+  en: 23419feb6c237a70
+  zh: 4909cf9d0885d5e2
+/ahel-dsh-llm-ahel/known-limitations-and-deferred-work:
+  en: 1833e609a79d9945
+  zh: 97e17df79ad72521
+/ahel-dsh-llm-ahel/known-limitations-and-deferred-work/dev-note:
+  en: 56bccfeaf6a6d336
+  zh: e7199bd686d858fd

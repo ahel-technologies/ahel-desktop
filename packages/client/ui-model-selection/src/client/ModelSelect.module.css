@@ -1,5 +1,8 @@
 .root {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -49,19 +52,6 @@
   white-space: nowrap;
 }
 
-/* Effort value beside the model name (mock's 'High': same 13/20/400, caption
-   tone). Adaptive priority: the huge shrink factor makes the effort absorb
-   all deficit first — it ellipsizes away to nothing before the model name
-   loses a single pixel, and the chevron stays snug throughout. */
-.triggerEffort {
-  flex-shrink: 1000;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--dsw-alias-label-caption);
-}
-
 /* The Models glyph replaces the text when the composer row cannot fit it. */
 .triggerIcon {
   display: var(--dsh-composer-model-icon-display, none);
@@ -70,8 +60,7 @@
 
 /* The composer measures expanded row demand and owns these display variables.
    Outside a composer, the trigger retains its text. */
-.triggerLabel,
-.triggerEffort {
+.triggerLabel {
   display: var(--dsh-composer-model-text-display, block);
 }
 
@@ -95,10 +84,8 @@
   flex-direction: column;
   /* Let the visible pane's rows set the card width, but keep pathological ids
      and narrow screens inside a bounded card where ellipsis remains. */
-  width: max-content;
-  min-width: min(240px, calc(100vw - 32px));
-  max-width: min(420px, calc(100vw - 32px));
-  max-height: min(360px, calc(100vh - 96px));
+  width: min(460px, calc(100vw - 32px));
+  max-height: min(560px, calc(100vh - 96px));
   overflow: hidden;
   padding: 4px;
   /* Surface tokens match the Menu primitive card (ui-primitives
@@ -213,73 +200,63 @@
   color: var(--dsw-alias-label-caption);
 }
 
+.searchKeys {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  color: var(--dsw-alias-label-caption);
+  font-size: 11px;
+  pointer-events: none;
+}
+
 .groups {
+  position: relative;
   min-height: 0;
   overflow-y: auto;
 }
 
-.option {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: auto;
-  min-width: 100%;
-  min-height: 34px;
-  padding: 5px 7px;
-  border: none;
-  border-radius: var(--dsw-radius-md);
-  outline: none;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
+.priceHeader {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  color: var(--dsw-alias-label-caption);
+  font-size: 11px;
+  line-height: 16px;
+  font-style: normal;
 }
 
-.option:not(.modelOption):hover:not(:disabled),
-.option:focus-visible,
-.optionActive:not(:disabled) {
+/* Name and price on the first line, "best for" on the second, where it is billed on the third. */
+.row {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  grid-template-areas:
+    'check name price'
+    '. hint hint'
+    '. source source';
+  column-gap: 8px;
+  row-gap: 1px;
+  padding: 7px 8px;
+  border-radius: var(--dsw-radius-md);
+  color: var(--dsw-alias-label-primary);
+  cursor: pointer;
+  outline: none;
+}
+
+.rowActive:not([aria-disabled='true']) {
   background: var(--dsw-alias-interactive-bg-hover);
 }
 
-/* Selection marker is the trailing check, not a fill — matches the Menu
- * primitive's selected treatment. */
-.selected {
-  background: transparent;
-}
-
-.option:disabled,
-.unavailable {
-  color: var(--dsw-alias-label-dimmed);
+.row[aria-disabled='true'] {
   cursor: default;
 }
 
-.unavailable .retry {
-  color: var(--dsw-alias-label-tertiary);
-  font-size: 11px;
-}
-
-.optionCopy {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.modelName {
-  overflow: hidden;
-  color: inherit;
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 400;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .check {
+  grid-area: check;
   display: grid;
   place-items: center;
-  flex: 0 0 14px;
+  align-self: center;
   color: var(--dsw-alias-label-primary);
 }
 
@@ -288,50 +265,185 @@
   height: 14px;
 }
 
-/* Two-level root cells use the same compact rhythm as the model rows. */
-.cell {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: auto;
-  min-width: 100%;
-  height: 34px;
-  padding: 0 8px;
-  border: none;
-  border-radius: var(--dsw-radius-md);
-  background: transparent;
-  color: var(--dsw-alias-label-primary);
+.rowName {
+  grid-area: name;
+  min-width: 0;
+  overflow: hidden;
   font-size: 13px;
-  line-height: 20px;
-  cursor: pointer;
-  text-align: left;
-  outline: none;
+  line-height: 18px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.cell:hover,
-.cell:focus-visible {
+.defaultBadge {
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: 999px;
+  corner-shape: round;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 10px;
+  line-height: 14px;
+  vertical-align: 1px;
+}
+
+.rowPrice {
+  grid-area: price;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rowPriceKey,
+.rowSourceKey {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.rowHint {
+  grid-area: hint;
+  overflow: hidden;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowSource {
+  grid-area: source;
+  color: var(--dsw-alias-label-caption);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.billingSwitch,
+.efforts {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: 999px;
+  corner-shape: round;
+}
+
+.billingSwitch {
+  grid-area: source;
+  justify-self: start;
+  margin-top: 3px;
+}
+
+.billingSwitch button,
+.efforts button {
+  padding: 1px 8px;
+  border: none;
+  border-radius: 999px;
+  corner-shape: round;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font: inherit;
+  font-size: 11px;
+  line-height: 16px;
+  cursor: pointer;
+}
+
+.efforts button {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.billingSwitch button:hover:not(:disabled),
+.efforts button:hover:not(:disabled) {
   background: var(--dsw-alias-interactive-bg-hover);
 }
 
-.cellLabel {
-  flex: 0 0 auto;
-  white-space: nowrap;
+.billingSwitch button[aria-pressed='true'],
+.efforts button[aria-pressed='true'] {
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: 0 0 0 0.5px var(--dsw-alias-border-l2);
 }
 
-.cellValue {
-  flex: 1 1 auto;
+.billingSwitch button:disabled,
+.efforts button:disabled {
+  cursor: default;
+}
+
+.foot {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px 8px 6px;
+  border-top: 0.5px solid var(--dsw-alias-border-l1);
+}
+
+.footRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.footLabel {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: right;
-  color: var(--dsw-alias-label-tertiary);
 }
 
-.cellChevron {
+.footLabel small,
+.footNote {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.fine {
+  margin: 0;
+  color: var(--dsw-alias-label-caption);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+/* The balance chip beside the trigger. */
+.chip {
+  display: var(--dsh-composer-model-text-display, inline-flex);
   flex: 0 0 auto;
-  width: 12px;
-  height: 12px;
-  color: var(--dsw-alias-menu-icon);
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: 999px;
+  corner-shape: round;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chipDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--dsw-alias-label-caption);
+}
+
+.chipHeld {
+  color: var(--dsw-alias-state-warn-label);
+}
+
+.chipHeld .chipDot {
+  background: var(--dsw-alias-state-warn-primary);
+}
+
+.chipKey .chipDot {
+  background: var(--dsw-alias-state-success-primary);
 }

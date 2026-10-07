@@ -9,6 +9,9 @@
  * the menu shows one disabled "connecting" row and the read is retried.
  * Balance (402), availability (403) and sign-in (401) refusals become
  * failures with the codes below, which the Ahel account UI turns into notices.
+ * Each chat request's hold (response headers) and settle (the answer's
+ * `ahel.billing` event, removed before the stream parser reads the answer)
+ * go to `ctx.ahelAccount.reportBilling`, which the composer's balance reads.
  *
  * @module @ahel/dsh-llm-ahel
  */
@@ -21,8 +24,8 @@ import type {
   PreparedAdapterCall, ResolvedRetryPolicy, StreamChunk,
 } from '@ahel/dsh-llm'
 import { PiAiAdapter, resolveProfiles } from '@ahel/dsh-llm-pi-ai'
-import type { PiAiAdapterOptions, PiAiModelProfile, ResolvedPiAiProviderProfile } from '@ahel/dsh-llm-pi-ai'
-import type {} from '@ahel/dsh-ahel-account'
+import type { PiAiAdapterOptions, PiAiFetchCall, PiAiModelProfile, ResolvedPiAiProviderProfile } from '@ahel/dsh-llm-pi-ai'
+import type { AhelBilling } from '@ahel/dsh-ahel-account'
 import type {} from '@ahel/dsh-agent-default-model'
 
 /** Cordis plugin name. */
@@ -188,6 +191,139 @@ async function* readableStream(stream: AsyncIterable<StreamChunk>, unauthorized:
   }
 }
 
+/** The amounts of one `ahel.billing` event or `ahel_billing` member, in integer US cents. */
+export interface AhelBillingAmounts {
+  chargedCents: number | null
+  heldCents: number | null
+  balanceCents: number | null
+}
+
+const amount = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+
+const headerAmount = (value: string | null): number | null => {
+  if (value === null || value.trim() === '') return null
+  return amount(Number(value))
+}
+
+/**
+ * Read the amounts of one billing object.
+ * @param value - `{ chargedCents, heldCents, balanceCents }`.
+ * @returns the amounts, or undefined when no field is a number.
+ */
+function billingAmounts(value: unknown): AhelBillingAmounts | undefined {
+  if (!isRecord(value)) return undefined
+  const amounts = { chargedCents: amount(value.chargedCents), heldCents: amount(value.heldCents), balanceCents: amount(value.balanceCents) }
+  return amounts.chargedCents === null && amounts.heldCents === null && amounts.balanceCents === null ? undefined : amounts
+}
+
+/**
+ * Read one SSE event block as ahel.ai's billing event:
+ * `data: {"object":"ahel.billing","chargedCents":n,"heldCents":0,"balanceCents":n}`.
+ * @param block - the event's lines, without the blank separator line.
+ * @returns the amounts, or undefined when the block is any other event.
+ */
+export function billingEventOf(block: string): AhelBillingAmounts | undefined {
+  const data = block.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => line.slice(5).trimStart()).join('\n')
+  if (!data.includes('ahel.billing')) return undefined
+  let value: unknown
+  try {
+    value = JSON.parse(data)
+  } catch (_notJson) {
+    // Not the billing event; the block passes through unchanged.
+    return undefined
+  }
+  return isRecord(value) && value.object === 'ahel.billing' ? billingAmounts(value) : undefined
+}
+
+/**
+ * Remove ahel.ai's billing events from an SSE body, handing each to `onBilling`;
+ * every other event passes through byte for byte in order.
+ * @param body - the response body.
+ * @param onBilling - receives each billing event's amounts.
+ * @returns the body without billing events.
+ */
+export function stripBillingEvents(
+  body: ReadableStream<Uint8Array>, onBilling: (amounts: AhelBillingAmounts) => void,
+): ReadableStream<Uint8Array> {
+  const decoder = new TextDecoder()
+  const encoder = new TextEncoder()
+  let buffer = ''
+  const separator = /\r?\n\r?\n/
+  const drain = (controller: TransformStreamDefaultController<Uint8Array>, final: boolean): void => {
+    let out = ''
+    for (let match = separator.exec(buffer); match !== null; match = separator.exec(buffer)) {
+      const block = buffer.slice(0, match.index)
+      const end = match.index + match[0].length
+      const amounts = billingEventOf(block)
+      if (amounts === undefined) out += buffer.slice(0, end)
+      else onBilling(amounts)
+      buffer = buffer.slice(end)
+    }
+    if (final && buffer !== '') {
+      const amounts = billingEventOf(buffer)
+      if (amounts === undefined) out += buffer
+      else onBilling(amounts)
+      buffer = ''
+    }
+    if (out !== '') controller.enqueue(encoder.encode(out))
+  }
+  return body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      buffer += decoder.decode(chunk, { stream: true })
+      drain(controller, false)
+    },
+    flush(controller) {
+      buffer += decoder.decode()
+      drain(controller, true)
+    },
+  }))
+}
+
+/**
+ * The fetch the Ahel route's chat requests use: it reads the hold from the
+ * `x-ahel-held-cents` / `x-ahel-balance-cents` response headers, then removes
+ * the settle from the answer (the SSE `ahel.billing` event, or the JSON
+ * `ahel_billing` member) so the stream parser never sees it.
+ * @param report - receives the hold and the settle.
+ * @param base - the fetch to wrap.
+ * @returns the wrapping fetch.
+ */
+export function billingFetch(
+  report: (phase: AhelBilling['phase'], amounts: AhelBillingAmounts) => void,
+  base: typeof globalThis.fetch = globalThis.fetch,
+): typeof globalThis.fetch {
+  return async (input, init) => {
+    const response = await base(input, init)
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    if (!response.ok || !new URL(url).pathname.endsWith('/chat/completions')) return response
+    const held: AhelBillingAmounts = { chargedCents: null, heldCents: headerAmount(response.headers.get('x-ahel-held-cents')), balanceCents: headerAmount(response.headers.get('x-ahel-balance-cents')) }
+    if (held.heldCents !== null || held.balanceCents !== null) report('held', held)
+    const headers = new Headers(response.headers)
+    headers.delete('content-length')
+    headers.delete('content-encoding')
+    const rewrapped = { status: response.status, statusText: response.statusText, headers }
+    const type = response.headers.get('content-type') ?? ''
+    if (type.includes('text/event-stream') && response.body !== null) {
+      return new Response(stripBillingEvents(response.body, (amounts) => { report('settled', amounts) }), rewrapped)
+    }
+    if (!type.includes('json')) return response
+    const text = await response.text()
+    let value: unknown
+    try {
+      value = JSON.parse(text)
+    } catch (_notJson) {
+      // The SDK reports the unreadable body itself.
+      return new Response(text, rewrapped)
+    }
+    if (!isRecord(value) || !('ahel_billing' in value)) return new Response(text, rewrapped)
+    const { ahel_billing: billing, ...answer } = value
+    const amounts = billingAmounts(billing)
+    if (amounts !== undefined) report('settled', amounts)
+    return new Response(JSON.stringify(answer), rewrapped)
+  }
+}
+
 /** Delegates to the pi-ai adapter and rewrites Ahel refusals in its streams; refuses every call until the model list is read. */
 class AhelAdapter extends LlmAdapter {
   constructor(
@@ -267,6 +403,9 @@ export function apply(ctx: Context, config: Config): void {
       return token
     },
     auth: NO_AMBIENT_AUTH,
+    fetch: (call: PiAiFetchCall) => billingFetch((phase, amounts) => {
+      ctx.ahelAccount.reportBilling({ phase, sessionId: call.sessionId ?? null, model: call.model, ...amounts, at: Date.now() })
+    }),
   }), config.displayName, () => models === undefined ? config.connectingLabel : undefined, async () => {
     try {
       await ctx.ahelAccount.revalidate()

@@ -1,0 +1,31 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-command-palette/README.md
+/:
+  en: 8f635bc51b76e2a8
+  zh: 9a830525614e9cf9
+/ahel-dsh-client-ui-command-palette:
+  en: 62a0fd0c9d089a46
+  zh: d23e3657653ceec7
+/ahel-dsh-client-ui-command-palette/summary:
+  en: ebb5acfb640c9a9f
+  zh: f940c4c0ae467c94
+/ahel-dsh-client-ui-command-palette/table-of-contents:
+  en: 2e89ddb1e73218cb
+  zh: 5b9aa0e046408356
+/ahel-dsh-client-ui-command-palette/use-this-package:
+  en: f3ee79478cc616ea
+  zh: a11917cb68d823c0
+/ahel-dsh-client-ui-command-palette/model-experience:
+  en: 3120df665299c634
+  zh: e2dc75ed76d271bc
+/ahel-dsh-client-ui-command-palette/model-experience/kv-cache-effect:
+  en: ca75c51c89c2c9b0
+  zh: a0e9f8d52b4b62ee
+/ahel-dsh-client-ui-command-palette/known-limitations-and-deferred-work:
+  en: 45a016995dd5ca0e
+  zh: de679cfc3e862964
+/ahel-dsh-client-ui-command-palette/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

@@ -140,7 +140,8 @@ async function bench(locale: 'zh' | 'en' = 'zh') {
     sessionId: SessionId
     session: {
       sessionId: SessionId
-      getSnapshot: () => { blank: boolean }
+      getSnapshot: () => { blank: boolean; running: boolean }
+      subscribe: (listener: () => void) => () => void
       projections: { faceOf: () => SnapshotStore<ModelSelectionProjection | undefined> }
     }
     ctx: Context
@@ -169,7 +170,12 @@ async function bench(locale: 'zh' | 'en' = 'zh') {
     projections.set(id, projection)
     const binding = {
       sessionId: id,
-      session: { sessionId: id, getSnapshot: () => ({ blank }), projections: { faceOf: () => projection } },
+      session: {
+        sessionId: id,
+        getSnapshot: () => ({ blank, running: false }),
+        subscribe: () => () => undefined,
+        projections: { faceOf: () => projection },
+      },
       ctx: handle.ctx,
     }
     bindings.set(id, binding)
@@ -225,24 +231,24 @@ describe('ui-model-selection dual entry', () => {
     expect(b.seat().locale).toBe('model')
   })
 
-  it.each(['zh', 'en'] as const)('shows names and providers without catalog descriptions (%s)', async (locale) => {
+  it.each(['zh', 'en'] as const)('shows short names grouped by maker with where each is billed (%s)', async (locale) => {
     const b = await bench(locale)
     b.mint('s1')
     const options = await b.popup().options(projection('s1'), new AbortController().signal)
-    expect(options.map((o: SelectOption) => o.label)).toEqual([
-      'Claude Haiku', 'Claude Opus', 'External Flash',
-    ])
-    expect(options.map(option => option.group?.label)).toEqual(['Anthropic', 'Anthropic', 'External Provider'])
-    expect(options.every(option => option.detail === undefined)).toBe(true)
+    expect(options.map((o: SelectOption) => o.label)).toEqual(['Claude Haiku', 'Claude Opus', 'Claude Haiku'])
+    expect(options.map(option => option.group?.label)).toEqual(['Anthropic', 'Anthropic', 'Anthropic'])
+    expect(options.map(option => option.detail)).toEqual(locale === 'zh'
+      ? ['你的密钥 · Anthropic', '你的密钥 · Anthropic', '你的密钥 · External Provider']
+      : ['your key · Anthropic', 'your key · Anthropic', 'your key · External Provider'])
     expect(b.popup().searchMode).toBe('fuzzy-label')
     expect(options[0]?.active).toBe(true)
     expect(options[1]?.active).toBeUndefined()
     expect(b.popup().searchLabels?.()).toEqual(locale === 'zh'
-      ? { placeholder: '搜索模型…', empty: '还没有模型，请在“设置 → 模型”中添加', noResults: '没有匹配的模型。' }
-      : { placeholder: 'Search models…', empty: 'No models yet. Add one in Settings → Models.', noResults: 'No matching models.' })
+      ? { placeholder: '搜索模型', empty: '还没有模型，请在“设置 → 模型”中添加', noResults: '没有匹配的模型。' }
+      : { placeholder: 'Search models', empty: 'No models yet. Add one in Settings → Models.', noResults: 'No matching models.' })
   })
 
-  it('keeps popup provider groups in catalog order', async () => {
+  it('keeps catalog order within one maker group', async () => {
     const b = await bench()
     try {
       b.setGroups([
@@ -251,8 +257,8 @@ describe('ui-model-selection dual entry', () => {
       b.remote.emit('llm/adapters-updated', [])
       b.mint('s1')
       const options = await b.popup().options(projection('s1'), new AbortController().signal)
-      expect([...new Set(options.map(option => option.group?.name))])
-        .toEqual(['external', 'anthropic', 'last-provider'])
+      expect(options.map(option => option.id))
+        .toEqual(['external/claude-haiku', 'anthropic/claude-haiku', 'anthropic/claude-opus', 'last-provider/claude-haiku'])
     } finally {
       await b.ctx.fiber.dispose()
     }

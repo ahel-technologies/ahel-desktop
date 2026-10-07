@@ -22,6 +22,7 @@ const textEvents = [
   '{"choices":[{"delta":{"role":"assistant","content":""},"index":0,"finish_reason":null}]}',
   '{"choices":[{"delta":{"content":"hello from ahel"},"index":0,"finish_reason":null}]}',
   '{"choices":[{"delta":{},"index":0,"finish_reason":"stop"}],"usage":{"prompt_tokens":3,"completion_tokens":3}}',
+  '{"object":"ahel.billing","choices":[],"chargedCents":3,"heldCents":0,"balanceCents":1237}',
   '[DONE]',
 ]
 
@@ -41,7 +42,7 @@ async function fakeProxy() {
         return
       }
       if (++completions === 1) {
-        response.writeHead(200, { 'content-type': 'text/event-stream' })
+        response.writeHead(200, { 'content-type': 'text/event-stream', 'x-ahel-held-cents': '25', 'x-ahel-balance-cents': '1240' })
         for (const event of textEvents) response.write(`data: ${event}\n\n`)
         response.end()
         return
@@ -94,8 +95,16 @@ it('serves Ahel models with the account bearer and explains a 402', async () => 
   expect(ctx.llm.listProviders()).toContainEqual(expect.objectContaining({ id: 'ahel', name: 'Ahel' }))
   expect(proxy.seen[0]).toMatchObject({ method: 'GET', path: '/api/llm/v1/models', headers: { authorization: 'Bearer access-1' } })
 
+  const views: unknown[] = []
+  const reported = ctx.ahelAccount.reportBilling.bind(ctx.ahelAccount)
+  ctx.ahelAccount.reportBilling = (billing) => { views.push(billing); reported(billing) }
   const answer = await ask(ctx)
   expect(answer.message.content).toEqual([{ type: 'text', text: 'hello from ahel' }])
+  expect(views).toEqual([
+    expect.objectContaining({ phase: 'held', model: 'test/model-a', heldCents: 25, balanceCents: 1240, chargedCents: null }),
+    expect.objectContaining({ phase: 'settled', model: 'test/model-a', heldCents: 0, balanceCents: 1237, chargedCents: 3 }),
+  ])
+  expect((await ctx.ahelAccount.state()).billing).toMatchObject({ phase: 'settled', balanceCents: 1237 })
   expect(answer.finish).toEqual({ kind: 'stop' })
   expect(proxy.seen.at(-1)).toMatchObject({ method: 'POST', path: '/api/llm/v1/chat/completions', headers: { authorization: 'Bearer access-1' } })
 

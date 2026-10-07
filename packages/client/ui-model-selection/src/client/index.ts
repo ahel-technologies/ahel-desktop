@@ -22,8 +22,12 @@ import type {} from '@ahel/dsh-client-locale/client'
 import type {} from '@ahel/dsh-client-ui-renderer/client'
 import type {} from '@ahel/dsh-client-ui-session/client'
 import type { TranslateNS } from '@ahel/dsh-client-ui-slots'
+import type { ShortcutCommandId } from '@ahel/dsh-client-shortcuts/client'
 import { IconDataOutlineRegular } from '@ahel/dsh-client-ui-primitives'
+import type { ActiveBilling } from './billing.ts'
+import { formatPrice } from './billing.ts'
 import type { ModelDirectoryState } from './directory.ts'
+import { pickerGroups, preferredRoute } from './rows.ts'
 import { ModelDirectoryResolver } from './service.ts'
 import type { ModelSelectInjected } from './slots.ts'
 import { ModelSelect } from './ModelSelect.tsx'
@@ -34,6 +38,16 @@ export type { ModelDirectoryState } from './directory.ts'
 export { ModelDirectoryResolver } from './service.ts'
 export type { ModelSelectInjected } from './slots.ts'
 export type { ModelKey } from './locales.ts'
+export { balanceChip, formatCents, formatPrice } from './billing.ts'
+export type {
+  ActiveBilling, BalanceChip, MeteredModelFacts, ModelBillingFrame, ModelBillingSource, ModelBillingState,
+} from './billing.ts'
+export { pickerGroups, preferredRoute, rowOf, searchGroups } from './rows.ts'
+export type { PickerGroup, PickerRoute, PickerRow } from './rows.ts'
+export { modelIdentity, readableModelName, staticModelFacts } from './names.ts'
+
+/** Shortcut command id of the composer picker. */
+const OPEN_PICKER = 'model.open' as ShortcutCommandId
 
 declare module '@ahel/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -47,18 +61,26 @@ function rowId(providerId: string, modelId: string): string {
   return `${providerId}/${modelId}`
 }
 
-/** Flatten the directory into popup rows; failure rows are listed for visibility but never selectable. */
-function optionsOf(directory: ModelDirectoryState, t: TranslateNS<'model'>): SelectOption[] {
+/**
+ * Flatten the directory into popup rows grouped by maker, one row per model
+ * on the route a pick takes; failure rows are listed for visibility but never selectable.
+ */
+function optionsOf(directory: ModelDirectoryState, billing: ActiveBilling | null, t: TranslateNS<'model'>): SelectOption[] {
   const rows: SelectOption[] = []
-  for (const group of directory.groups) {
-    for (const model of group.models) {
+  for (const group of pickerGroups(directory.groups, billing)) {
+    for (const row of group.rows) {
+      const route = preferredRoute(row, directory.current)
+      const detail = route.metered && billing !== null
+        ? row.typicalCents === undefined ? undefined : t('option.metered', { price: formatPrice(row.typicalCents), name: billing.state.name })
+        : t('option.own', { provider: route.providerName })
       rows.push({
-        id: rowId(group.id, model.id),
-        label: model.name,
-        group: { name: group.id, label: group.name },
+        id: rowId(route.provider, route.model),
+        label: row.shortName,
+        group: { name: group.maker, label: group.maker },
+        ...detail === undefined ? {} : { detail },
         ...(directory.current !== null
-          && directory.current.provider === group.id
-          && directory.current.model === model.id
+          && directory.current.provider === route.provider
+          && directory.current.model === route.model
           ? { active: true } : {}),
       })
     }
@@ -142,7 +164,7 @@ export function apply(ctx: ClientContext): void {
           if (sessions.subagentAddress(session.sessionId) !== undefined) {
             throw new Error('model selection is unavailable for addressed subagent sessions')
           }
-          return optionsOf(await models.directoryFor(session.sessionId).load(), t)
+          return optionsOf(await models.directoryFor(session.sessionId).load(), models.billing.getSnapshot(), t)
         },
         onSelect: async (option, session) => {
           if (sessions.subagentAddress(session.sessionId) !== undefined) {
@@ -173,6 +195,9 @@ export function apply(ctx: ClientContext): void {
       inject: (sessionId): ModelSelectInjected => {
         const directory = models.directoryFor(sessionId)
         const available = sessions.subagentAddress(sessionId) === undefined
+        const binding = sessions.binding(sessionId)
+        /* v8 ignore next -- directoryFor already failed loud for a Session without a binding. */
+        if (binding === undefined) throw new Error(`ui-model-selection: session "${String(sessionId)}" resolved no binding`)
         return {
           available,
           directory: directory.store,
@@ -182,8 +207,33 @@ export function apply(ctx: ClientContext): void {
           select: (selection: ModelSelection) => available
             ? directory.select(selection)
             : Promise.resolve(undefined),
+          billing: models.billing,
+          session: binding.session,
+          remembered: models.remembered,
+          sessionKey: String(sessionId),
+          setRemembered: (on: boolean) => { models.setRemembered(sessionId, on) },
+          registerOpener: open => models.registerOpener(sessionId, open),
+          shortcutKeys: () => scope.get('shortcuts')?.catalog.getSnapshot().find(entry => entry.id === OPEN_PICKER)?.keys ?? [],
         }
       },
     }, ModelSelect))
+  })
+
+  // ⌥⌘/ (Ctrl+Alt+/) opens the picker of the chat in view; ⌘/ stays the shortcut reference. Linux Web keeps the browser's keys.
+  ctx.inject(['shortcuts', 'modelDirectories'], (scope: ClientContext) => {
+    const binding = { code: 'Slash', modifiers: ['primary', 'alt'] } as const
+    scope.effect(() => scope.shortcuts.register({
+      id: OPEN_PICKER,
+      label: () => t('shortcut.open'),
+      aliases: ['model', 'switch model', 'model picker'],
+      defaults: {
+        'desktop:macos': binding, 'desktop:windows': binding, 'desktop:linux': binding, 'web:macos': binding, 'web:windows': binding,
+      },
+      regions: ['page', 'editable'],
+      modals: [],
+      resolve: () => scope.modelDirectories.hasPicker()
+        ? { status: 'handled', run: () => { scope.modelDirectories.openPicker() } }
+        : { status: 'blocked', reason: t('shortcut.noPicker') },
+    }), 'ui-model-selection: open-picker shortcut')
   })
 }

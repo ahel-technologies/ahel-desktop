@@ -16,6 +16,7 @@
     { "path": "../ui-chat/tsconfig.client.json" },
     { "path": "../ui-conversation/tsconfig.client.json" },
     { "path": "../ui-layout" },
+    { "path": "../ui-model-selection" },
     { "path": "../ui-primitives" },
     { "path": "../ui-renderer" },
     { "path": "../ui-sidebar" },

@@ -53,6 +53,58 @@ export interface AhelAccountView {
    * and sign-out then happen on ahel.ai. Absent or null elsewhere.
    */
   readonly hosted?: AhelHostedPages | null
+  /**
+   * The latest metered model request's money, as the Ahel model route read it
+   * from ahel.ai: the hold at send, then the settled charge. Absent or null
+   * until a metered request runs in this workspace on this Host.
+   */
+  readonly billing?: AhelBilling | null
+}
+
+/** One metered model request's money as ahel.ai reported it; integer US cents. */
+export interface AhelBilling {
+  /** `held`: read from the response headers at send; `settled`: read from the answer's billing event. */
+  readonly phase: 'held' | 'settled'
+  /** The Session the request belonged to; null when the caller named none. */
+  readonly sessionId: string | null
+  /** Model id on the Ahel route. */
+  readonly model: string
+  /** Amount on hold for the request; 0 once settled. */
+  readonly heldCents: number | null
+  /** Amount charged at settle; null while held. */
+  readonly chargedCents: number | null
+  /** Workspace balance after the hold or the settle. */
+  readonly balanceCents: number | null
+  /** When the Host read it, epoch milliseconds. */
+  readonly at: number
+}
+
+/** ahel.ai's facts for one metered model (`ahel` on a `GET /api/llm/v1/models` row); a field ahel.ai did not send is null. */
+export interface AhelModelFacts {
+  /** Name without the maker prefix, e.g. "Claude Sonnet 5.5". */
+  readonly shortName: string | null
+  /** Maker shown as the group label, e.g. "Anthropic". */
+  readonly maker: string | null
+  /** One line on what the model is good at. */
+  readonly bestFor: string | null
+  /** Price of a typical message (8k tokens in, 1k out, fee included), in cents; may be fractional. */
+  readonly typicalMessageCents: number | null
+  /** This workspace's approximate last charge for the model (marked up, may be fractional), in cents. */
+  readonly lastChargeCents: number | null
+}
+
+/** One row of `GET /api/llm/v1/models`. */
+export interface AhelMeteredModel {
+  readonly id: string
+  readonly name: string
+  /** Null from an ahel.ai that sends no facts yet. */
+  readonly ahel: AhelModelFacts | null
+}
+
+/** `GET/PUT /api/desktop/workspace/model`: the workspace's default metered model. */
+export interface AhelWorkspaceModel {
+  /** Model id on the Ahel route; null when the owner chose none. */
+  readonly defaultModel: string | null
 }
 
 /** ahel.ai pages that own sign-in and sign-out for a Host launched by the hosted chat. */
@@ -296,6 +348,8 @@ export interface DesktopSummary {
   readonly members?: { readonly total: number; readonly rows: readonly DesktopMember[] } | null
   /** Switched-on rows of the Your apps inventory; absent from an older ahel.ai. */
   readonly apps?: { readonly installed: number } | null
+  /** The workspace's default metered model id; absent from an older ahel.ai, null when unset. */
+  readonly defaultModel?: string | null
   readonly at: string
 }
 

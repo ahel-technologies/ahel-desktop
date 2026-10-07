@@ -55,6 +55,7 @@
     "@ahel/dsh-client-ui-chat": "workspace:*",
     "@ahel/dsh-client-ui-conversation": "workspace:*",
     "@ahel/dsh-client-ui-layout": "workspace:*",
+    "@ahel/dsh-client-ui-model-selection": "workspace:*",
     "@ahel/dsh-client-ui-primitives": "workspace:*",
     "@ahel/dsh-client-ui-renderer": "workspace:*",
     "@ahel/dsh-client-ui-settings-models": "workspace:*",

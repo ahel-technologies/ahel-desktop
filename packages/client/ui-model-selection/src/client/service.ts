@@ -18,8 +18,43 @@ import type { Context } from '@ahel/cordis'
 import type { SessionBinding } from '@ahel/dsh-api-session-controller/client'
 import type { SessionId } from '@ahel/dsh-session/types'
 import { WeakMapWithValues } from '@ahel/dsh-util-values'
+import { createSnapshotStore, type ObservableSnapshot, type SnapshotStore } from '@ahel/dsh-client-store'
+import type { ActiveBilling, ModelBillingSource } from './billing.ts'
 import { ModelCatalogDirectory } from './catalog.ts'
 import { connectingProvider, ModelDirectory } from './directory.ts'
+import type { ModelDirectoryState } from './directory.ts'
+import { pickerGroups, type PickerGroup } from './rows.ts'
+
+/** localStorage key of the per-chat "Remember for this chat" choices. */
+const REMEMBER_KEY = 'dsh.model-selection.remember'
+
+/** Most chats whose choice is kept; older entries drop out first. */
+const REMEMBER_LIMIT = 500
+
+/** One composer picker that the open-picker shortcut can open. */
+interface PickerOpener {
+  readonly sessionId: SessionId
+  readonly open: () => void
+}
+
+function readRemembered(): Readonly<Record<string, boolean>> {
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(REMEMBER_KEY) ?? '{}')
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return {}
+    return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean'))
+  } catch (_unavailable) {
+    // Storage is blocked or holds something else; every chat starts without a remembered choice.
+    return {}
+  }
+}
+
+function writeRemembered(value: Readonly<Record<string, boolean>>): void {
+  try {
+    window.localStorage.setItem(REMEMBER_KEY, JSON.stringify(value))
+  } catch (_unavailable) {
+    // Storage is blocked; the choice lasts for this page only.
+  }
+}
 
 declare module '@ahel/cordis' {
   interface Context {
@@ -39,6 +74,94 @@ export class ModelDirectoryResolver extends Service {
 
   private readonly live: LiveState = { directories: new WeakMapWithValues() }
   private readonly catalog: ModelCatalogDirectory
+  private readonly billingStore: SnapshotStore<ActiveBilling | null> = createSnapshotStore<ActiveBilling | null>(null, { flush: 'sync' })
+  private readonly rememberStore: SnapshotStore<Readonly<Record<string, boolean>>> = createSnapshotStore(readRemembered(), { flush: 'sync' })
+  private readonly openers = new Set<PickerOpener>()
+
+  /** The registered metering source with its current state; null without one. */
+  get billing(): ObservableSnapshot<ActiveBilling | null> {
+    return this.billingStore
+  }
+
+  /** Per-chat "Remember for this chat" choices; a chat without an entry has made none. */
+  get remembered(): ObservableSnapshot<Readonly<Record<string, boolean>>> {
+    return this.rememberStore
+  }
+
+  /**
+   * Register the metering account the picker shows prices, the workspace default and the balance for.
+   * One source is active; a later registration replaces an earlier one until it is disposed.
+   * @param source - the metering account.
+   * @returns the disposer withdrawing it.
+   */
+  registerBilling(source: ModelBillingSource): () => void {
+    const sync = (): void => {
+      this.billingStore.set({
+        provider: source.provider, state: source.state.getSnapshot(), refreshBalance: () => { source.refreshBalance() },
+      })
+    }
+    const stop = source.state.subscribe(sync)
+    sync()
+    return () => {
+      stop()
+      if (this.billingStore.getSnapshot()?.provider === source.provider) this.billingStore.set(null)
+    }
+  }
+
+  /**
+   * Store whether one chat keeps its own model or follows the workspace default.
+   * @param sessionId - the chat.
+   * @param on - true keeps the chat's choice.
+   */
+  setRemembered(sessionId: SessionId, on: boolean): void {
+    const key = String(sessionId)
+    const kept = Object.entries(this.rememberStore.getSnapshot()).filter(([other]) => other !== key)
+    const next = Object.fromEntries([...kept.slice(-(REMEMBER_LIMIT - 1)), [key, on]])
+    this.rememberStore.set(next)
+    writeRemembered(next)
+  }
+
+  /**
+   * Make one mounted composer picker reachable by the open-picker shortcut.
+   * @param sessionId - the picker's chat.
+   * @param open - opens the picker and focuses it.
+   * @returns the disposer.
+   */
+  registerOpener(sessionId: SessionId, open: () => void): () => void {
+    const entry = { sessionId, open }
+    this.openers.add(entry)
+    return () => { this.openers.delete(entry) }
+  }
+
+  /**
+   * The picker's maker groups for one directory snapshot, under the active metering source.
+   * @param state - a Session's directory snapshot.
+   * @returns maker groups with short names and merged routes.
+   */
+  groupsFor(state: ModelDirectoryState): PickerGroup[] {
+    return pickerGroups(state.groups, this.billingStore.getSnapshot())
+  }
+
+  /**
+   * Whether the open-picker shortcut has a composer picker to open.
+   * @returns true while at least one composer picker is mounted.
+   */
+  hasPicker(): boolean {
+    return this.openers.size > 0
+  }
+
+  /**
+   * Open the picker of the chat in the main view, else of the last mounted picker.
+   * @returns whether a picker opened.
+   */
+  openPicker(): boolean {
+    const rows = this.ctx.sessions.list.getSnapshot().byId
+    const main = Object.values(rows).find(row => (row.retainedBy.mainView ?? 0) > 0)?.id
+    const openers = [...this.openers]
+    const target = openers.find(opener => opener.sessionId === main) ?? openers.at(-1)
+    target?.open()
+    return target !== undefined
+  }
 
   /**
    * @param ctx - owning root context (the service registers itself as `models`).
@@ -86,6 +209,7 @@ export class ModelDirectoryResolver extends Service {
       directory.dispose()
       live.directories.delete(binding)
     }, 'ui-model-selection: session directory')
+    actx.effect(() => this.followDefault(sessionId, directory, binding), 'ui-model-selection: workspace default for new chats')
     const conversation = this.ctx.get('conversation')
     const locale = this.ctx.get('locale')
     if (conversation !== undefined && locale !== undefined) {
@@ -115,5 +239,39 @@ export class ModelDirectoryResolver extends Service {
       }, 'ui-model-selection: connecting composer block')
     }
     return directory
+  }
+
+  /**
+   * Start a blank chat on the workspace default unless it remembers its own
+   * choice: once per default, after the catalog lists that model.
+   * @param sessionId - the chat.
+   * @param directory - its directory.
+   * @param binding - its Client binding.
+   * @returns the disposer of the watch.
+   */
+  private followDefault(sessionId: SessionId, directory: ModelDirectory, binding: SessionBinding): () => void {
+    let tried: string | undefined
+    const sync = (): void => {
+      const billing = this.billingStore.getSnapshot()
+      const model = billing?.state.signedIn === true ? billing.state.defaultModel : undefined
+      if (billing === null || typeof model !== 'string') return
+      if (this.rememberStore.getSnapshot()[String(sessionId)] === true || !binding.session.getSnapshot().blank) return
+      const state = directory.store.getSnapshot()
+      if (state.status !== 'ready' || state.pending !== null) return
+      if (state.current?.provider === billing.provider && state.current.model === model) return
+      const entry = state.groups.find(group => group.id === billing.provider)?.models.find(candidate => candidate.id === model)
+      const key = `${billing.provider}/${model}`
+      if (entry === undefined || tried === key) return
+      tried = key
+      const effort = entry.reasoning?.defaultEffort
+      void directory.select({ provider: billing.provider, model, ...effort === undefined ? {} : { reasoningEffort: effort } })
+        .catch(() => { /* surfaced on the store */ })
+    }
+    const stops = [
+      directory.store.subscribe(sync), this.billingStore.subscribe(sync),
+      this.rememberStore.subscribe(sync), binding.session.subscribe(sync),
+    ]
+    sync()
+    return () => { for (const stop of stops) stop() }
   }
 }
