@@ -9,10 +9,16 @@
   ],
   "references": [
     { "path": "../../../vendor/cordis" },
+    { "path": "../../api/remotes/tsconfig.client.json" },
+    { "path": "../../credentials/ahel-account" },
     { "path": "../locale/tsconfig.client.json" },
+    { "path": "../ui-ahel-account" },
+    { "path": "../ui-conversation/tsconfig.client.json" },
+    { "path": "../ui-layout" },
     { "path": "../ui-primitives" },
     { "path": "../ui-renderer" },
     { "path": "../ui-sidebar" },
-    { "path": "../ui-slots" }
+    { "path": "../ui-slots" },
+    { "path": "../ui-theme/tsconfig.client.json" }
   ]
 }

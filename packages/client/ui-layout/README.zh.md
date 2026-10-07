@@ -33,6 +33,8 @@ kind: "package-reference"
 
 root 作用域的单一 `shell.bottom` slot 横跨三列下方的整行。占用方控制自身高度与显隐；三列按该高度缩短，空内容不预留空间。切换主面板时保留底部组件。列宽拖拽手柄止于底部内容上方，`shell.overlay` 仍覆盖整个框架。默认组合不占用此 slot。
 
+root 作用域的单一 `shell.aside` slot 是中间列尾侧的一列，位于主面板与右侧栏之间。占用方决定自身宽度，并按主面板决定是否渲染；空内容不预留空间，切换主面板时保留该组件。托管聊天的对话列是随附的占用方；默认组合不占用此 slot。
+
 <a id="window-chrome-seat"></a>
 ### 窗口 chrome 座
 

@@ -65,6 +65,15 @@
 .centerCol {
   min-width: 0;
   display: flex;
+  overflow: hidden;
+}
+
+/* The main panel keeps the column's full height; a `shell.aside` occupant
+   takes its own width after it. */
+.centerMain {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   overflow: hidden;
 }

@@ -3898,12 +3898,27 @@ importers:
       '@ahel/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@ahel/dsh-ahel-account':
+        specifier: workspace:*
+        version: link:../../credentials/ahel-account
+      '@ahel/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
       '@ahel/dsh-client-locale':
         specifier: workspace:*
         version: link:../locale
       '@ahel/dsh-client-test-runtime':
         specifier: workspace:*
         version: link:../../test-support/client-runtime
+      '@ahel/dsh-client-ui-ahel-account':
+        specifier: workspace:*
+        version: link:../ui-ahel-account
+      '@ahel/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
+      '@ahel/dsh-client-ui-layout':
+        specifier: workspace:*
+        version: link:../ui-layout
       '@ahel/dsh-client-ui-primitives':
         specifier: workspace:*
         version: link:../ui-primitives
@@ -3916,12 +3931,21 @@ importers:
       '@ahel/dsh-client-ui-slots':
         specifier: workspace:*
         version: link:../ui-slots
+      '@ahel/dsh-client-ui-theme':
+        specifier: workspace:*
+        version: link:../ui-theme
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.3.2(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/react':
         specifier: ~18.3.1
         version: 18.3.31
+      '@types/react-dom':
+        specifier: ~18.3.0
+        version: 18.3.7(@types/react@18.3.31)
+      clsx:
+        specifier: ^2.0.0
+        version: 2.1.1
       react:
         specifier: ^18.2.0
         version: 18.3.1

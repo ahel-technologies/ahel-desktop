@@ -1,6 +1,6 @@
 {
   "name": "@ahel/dsh-client-ui-hosted-chat",
-  "description": "Hosted chat at ahel.ai/chat: the sidebar's Workspace row and brand link back to app.ahel.ai",
+  "description": "Hosted chat at ahel.ai/chat: the app rail on the left, the chat list and Waiting on you beside the Conversation, the page-header greeting",
   "version": "0.1.2",
   "publishConfig": {
     "access": "public"
@@ -28,9 +28,14 @@
   "dsh": {
     "client": {
       "inject": [
+        "@ahel/dsh-api-remotes",
         "@ahel/dsh-client-locale",
+        "@ahel/dsh-client-ui-ahel-account",
+        "@ahel/dsh-client-ui-conversation",
+        "@ahel/dsh-client-ui-layout",
         "@ahel/dsh-client-ui-renderer",
-        "@ahel/dsh-client-ui-sidebar"
+        "@ahel/dsh-client-ui-sidebar",
+        "@ahel/dsh-client-ui-theme"
       ],
       "platform": "web"
     }
@@ -45,14 +50,22 @@
   },
   "devDependencies": {
     "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-ahel-account": "workspace:*",
+    "@ahel/dsh-api-remotes": "workspace:*",
     "@ahel/dsh-client-locale": "workspace:*",
     "@ahel/dsh-client-test-runtime": "workspace:*",
+    "@ahel/dsh-client-ui-ahel-account": "workspace:*",
+    "@ahel/dsh-client-ui-conversation": "workspace:*",
+    "@ahel/dsh-client-ui-layout": "workspace:*",
     "@ahel/dsh-client-ui-primitives": "workspace:*",
     "@ahel/dsh-client-ui-renderer": "workspace:*",
     "@ahel/dsh-client-ui-sidebar": "workspace:*",
     "@ahel/dsh-client-ui-slots": "workspace:*",
+    "@ahel/dsh-client-ui-theme": "workspace:*",
     "@testing-library/react": "^16.1.0",
     "@types/react": "~18.3.1",
+    "@types/react-dom": "~18.3.0",
+    "clsx": "^2.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

@@ -33,6 +33,8 @@ Global panels occupy the root-scoped `main` keyed slot; `conversation` is the re
 
 The single root-scoped `shell.bottom` slot spans the full width below the three columns. Its occupant controls its own height and visibility; the columns shrink by that height, and empty content reserves no space. Main-panel navigation preserves the bottom component. Column resize handles stop above it, while `shell.overlay` covers the whole frame. The default composition leaves this slot empty.
 
+The single root-scoped `shell.aside` slot is a column at the centre's trailing edge, between the main panel and the right column. Its occupant owns its width and decides per main panel whether it renders; empty content reserves no space, and main-panel navigation preserves it. The hosted chat's chat column is the shipped occupant; the default composition leaves this slot empty.
+
 <a id="window-chrome-seat"></a>
 ### Window-chrome seat
 
