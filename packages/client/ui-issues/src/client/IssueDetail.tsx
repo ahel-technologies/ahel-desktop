@@ -23,8 +23,8 @@ export interface IssueDetailProps {
   readonly assignees: readonly AssigneeOption[]
   /** Role in the workspace; Delete shows for owners, and while the role is unknown. */
   readonly role: string | null
-  /** The Ahel agent's model, shown under the assignee of an agent-assigned issue. */
-  readonly agentModel: string | null
+  /** The model the run's chat uses, shown under the assignee of an agent-assigned issue; null hides the hint. */
+  readonly runModel: string | null
   readonly now: number
   readonly t: Translate
   readonly actions: Pick<
@@ -39,9 +39,9 @@ const NEW_PROJECT = '__new__'
 /**
  * Render the drawer.
  * @param props - the issue key, the board's copy and the actions.
- * @returns the scrim and the drawer.
+ * @returns the click-through scrim and the drawer.
  */
-export function IssueDetail({ issueKey, live, run, projects, assignees, role, agentModel, now, t, actions, close }: IssueDetailProps) {
+export function IssueDetail({ issueKey, live, run, projects, assignees, role, runModel, now, t, actions, close }: IssueDetailProps) {
   const [loaded, setLoaded] = useState<Issue | null>(null)
   const [comments, setComments] = useState<readonly IssueComment[]>([])
   const [activity, setActivity] = useState<readonly IssueActivity[]>([])
@@ -55,6 +55,7 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ag
   const [newProject, setNewProject] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const generation = useRef(0)
+  const drawer = useRef<HTMLElement>(null)
   const issue = live ?? loaded
 
   const { detail } = actions
@@ -71,10 +72,18 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ag
 
   useEffect(() => { setError(null); setLoaded(null); load() }, [load])
   useEffect(() => { if (issue !== null) setTitle(issue.title) }, [issue?.title])
+  // The scrim lets clicks through, so cards, chats and the sidebar stay usable; a press outside the drawer closes it.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => { if (event.key === 'Escape') close() }
+    const onPress = (event: PointerEvent): void => {
+      if (event.target instanceof Node && drawer.current?.contains(event.target) !== true) close()
+    }
     window.addEventListener('keydown', onKey)
-    return () => { window.removeEventListener('keydown', onKey) }
+    window.addEventListener('pointerdown', onPress, true)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('pointerdown', onPress, true)
+    }
   }, [close])
 
   /** Run one write, show ahel.ai's reason on a refusal, and re-read the comments and activity. */
@@ -92,8 +101,8 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ag
   if (issue === null) {
     return (
       <>
-        <div className={css.scrim} onClick={close} />
-        <aside className={css.drawer} aria-label={issueKey}>
+        <div className={`${css.scrim} ${css.scrimPassive}`} aria-hidden="true" />
+        <aside ref={drawer} className={css.drawer} aria-label={issueKey}>
           <header className={css.drawerHead}>
             <span className={css.key}>{issueKey}</span>
             <button type="button" className={`${css.btn} ${css.btnGhost}`} onClick={close}>{t('close')}</button>
@@ -106,15 +115,17 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ag
 
   const owner = role === null || role === 'OWNER'
   const members = assignees.filter(option => option.type === 'member' && option.id !== 'me')
-  const activeRun = run !== null && (run.state === 'running' || run.state === 'waiting_approval' || run.state === 'queued') ? run : null
+  const activeRun = run !== null && (run.state === 'running' || run.state === 'waiting_approval' || run.state === 'waiting_input' || run.state === 'queued')
+    ? run
+    : null
   const runningHere = activeRun !== null
   // A run queued on ahel.ai has no chat until a desktop picks it up.
   const liveSession = activeRun?.sessionId ?? null
 
   return (
     <>
-      <div className={css.scrim} onClick={close} />
-      <aside className={css.drawer} aria-label={`${issue.key} ${issue.title}`}>
+      <div className={`${css.scrim} ${css.scrimPassive}`} aria-hidden="true" />
+      <aside ref={drawer} className={css.drawer} aria-label={`${issue.key} ${issue.title}`}>
         <header className={css.drawerHead}>
           <span className={css.cardTop} style={{ gap: 10 }}>
             <StatusIcon status={issue.status} />
@@ -253,7 +264,7 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ag
                 )}
                 {assignees.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
-              {issue.assigneeType === 'agent' && agentModel !== null && <span className={css.whoModel}>{t('agentModel', { model: agentModel })}</span>}
+              {issue.assigneeType === 'agent' && runModel !== null && <span className={css.whoModel}>{t('agentModel', { model: runModel })}</span>}
             </label>
             <label className={css.field}>{t('project')}
               <select className={css.select} value={issue.project?.id ?? ''} disabled={busy}

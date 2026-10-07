@@ -29,7 +29,7 @@ export interface IssuesState {
   readonly issues: readonly Issue[]
   /** Issues per status for the current filters. */
   readonly counts: Readonly<Record<string, number>>
-  /** Agent runs running or waiting for approval across the workspace, as ahel.ai counts them. */
+  /** Agent runs running or waiting for the person across the workspace, as ahel.ai counts them. */
   readonly agentsWorking: number
   /** Agent runs queued on ahel.ai for a desktop across the workspace; 0 from an ahel.ai that does not count them. */
   readonly agentsQueued: number
@@ -43,6 +43,8 @@ export interface IssuesState {
   readonly mine: number
   /** Runs this window started, newer than the server's copy until the next read. */
   readonly runs: Readonly<Record<string, IssueRun>>
+  /** The model label of each chat a run of this window works in, by session id; a chat whose model is unknown is absent. */
+  readonly models: Readonly<Record<string, string>>
   /** The issue whose detail is open. */
   readonly open: string | null
   /** Set while New Issue is open; `status` preselects the column it was opened from. */

@@ -4,14 +4,16 @@
  * the account's bearer and the selected `?workspace=`. An ahel.ai without
  * those routes answers every method with `ahel-issues/outdated`; a write the
  * person's role does not allow answers `ahel-issues/forbidden` carrying
- * ahel.ai's reason.
+ * ahel.ai's reason. Runs this Host reported live (running or waiting) and
+ * never ended are reported `failed` with the reason `desktop closed` when the
+ * Host stops, within {@link CLOSE_DEADLINE_MS}.
  */
 
 import type { Context } from '@ahel/cordis'
 import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type {
   Issue, IssueActivity, IssueActorType, IssueAssignees, IssueComment, IssueDraft, IssuePage, IssuePatch, IssueProject, IssueQuery,
-  IssueRunReport, IssueWriteAnswer,
+  IssueRunReport, IssueRunState, IssueWriteAnswer,
 } from './issues-types.ts'
 
 declare module '@ahel/cordis' {
@@ -27,6 +29,15 @@ export interface IssuesConfig {
 }
 
 const DEADLINE_MS = 15_000
+
+/** The closing `failed` reports of a stopping Host get this long in all. */
+const CLOSE_DEADLINE_MS = 3_000
+
+/** The reason a run left live by a stopping Host is reported with. */
+const CLOSED_REASON = 'desktop closed'
+
+/** Run states that keep a run live on ahel.ai. */
+const LIVE_STATES: ReadonlySet<IssueRunState> = new Set(['running', 'waiting_approval', 'waiting_input'])
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
@@ -46,6 +57,15 @@ function sentence(value: unknown): string | null {
 function wireFields(fields: IssueDraft | IssuePatch): Record<string, unknown> {
   const { project, ...rest } = fields
   return project === undefined ? rest : { ...rest, projectId: project }
+}
+
+/**
+ * Whether a caught value is ahel.ai's 4xx refusal raised by `settle`.
+ * @param error - the caught value.
+ * @returns true for `ahel-issues/refused`.
+ */
+function isRefusal(error: unknown): error is RemoteError<'ahel-issues/refused'> {
+  return error instanceof RemoteError && error.code === 'ahel-issues/refused'
 }
 
 /** One path segment for an issue key. */
@@ -73,6 +93,10 @@ function isIssue(value: unknown): value is Issue {
 export class AhelIssues extends TypertRemoteService {
   static inject = ['ahelAccount']
   private readonly origin: string
+  /** The last report of each run this Host reported live and has not ended, by issue key. */
+  private readonly live = new Map<string, IssueRunReport>()
+  /** Set once ahel.ai refused `waiting_input`; later reports send `waiting_approval` at once. */
+  private waitingInputRefused = false
 
   /**
    * @param ctx - Host context carrying `ahelAccount`.
@@ -81,6 +105,7 @@ export class AhelIssues extends TypertRemoteService {
   constructor(ctx: Context, config: IssuesConfig) {
     super(ctx, 'ahelIssues')
     this.origin = config.appOrigin
+    ctx.effect(() => async () => { await this.closeLiveRuns() }, 'ahel-issues: fail live runs on stop')
   }
 
   /**
@@ -196,6 +221,7 @@ export class AhelIssues extends TypertRemoteService {
   /**
    * Report the state of the desktop chat that works on one issue; ahel.ai moves the issue's status with it.
    * The first report on a queued run claims it; when another session holds the run, ahel.ai answers 409 `run_claimed`.
+   * An ahel.ai that refuses `waiting_input` (400) gets the same report as `waiting_approval`.
    * @param key - the issue.
    * @param report - the session, its state and the steps so far.
    * @returns the issue after the report.
@@ -204,7 +230,36 @@ export class AhelIssues extends TypertRemoteService {
    */
   @Remote
   async run(key: string, report: IssueRunReport): Promise<IssueWriteAnswer> {
-    return { issue: writtenIssue(await this.call('POST', issuePath(key, '/run'), report)) }
+    let sent = report.state === 'waiting_input' && this.waitingInputRefused ? { ...report, state: 'waiting_approval' as const } : report
+    let answer: unknown
+    try {
+      answer = await this.call('POST', issuePath(key, '/run'), sent)
+    } catch (error) {
+      if (!isRefusal(error)) throw error
+      if (sent.state === 'waiting_input' && error.details.status === 400) {
+        this.waitingInputRefused = true
+        sent = { ...sent, state: 'waiting_approval' }
+        answer = await this.call('POST', issuePath(key, '/run'), sent)
+      } else {
+        if (error.details.error === 'run_claimed') this.live.delete(key)
+        throw error
+      }
+    }
+    if (LIVE_STATES.has(sent.state)) this.live.set(key, sent)
+    else if (this.live.get(key)?.sessionId === sent.sessionId) this.live.delete(key)
+    return { issue: writtenIssue(answer) }
+  }
+
+  /** Report every live run `failed` with {@link CLOSED_REASON}; gives up after {@link CLOSE_DEADLINE_MS}. */
+  private async closeLiveRuns(): Promise<void> {
+    const runs = [...this.live]
+    this.live.clear()
+    if (runs.length === 0) return
+    const signal = AbortSignal.timeout(CLOSE_DEADLINE_MS)
+    const reports = Promise.allSettled(runs.map(([key, last]) => this.call('POST', issuePath(key, '/run'), {
+      sessionId: last.sessionId, state: 'failed', steps: last.steps, totalSteps: last.totalSteps, reason: CLOSED_REASON,
+    } satisfies IssueRunReport, signal)))
+    await Promise.race([reports, new Promise((resolve) => { signal.addEventListener('abort', resolve, { once: true }) })])
   }
 
   /**
@@ -257,8 +312,8 @@ export class AhelIssues extends TypertRemoteService {
     return typeof answer.updated === 'number' ? answer.updated : 0
   }
 
-  /** Call one route with the account's bearer; one refresh after the route's own 401. */
-  private async call(method: Method, path: string, payload?: unknown): Promise<unknown> {
+  /** Call one route with the account's bearer; one refresh after the route's own 401; `deadline` replaces the 15 s timeout. */
+  private async call(method: Method, path: string, payload?: unknown, deadline?: AbortSignal): Promise<unknown> {
     const url = new URL(path, this.origin)
     const workspace = await this.ctx.ahelAccount.workspace()
     if (workspace !== undefined) url.searchParams.set('workspace', workspace)
@@ -270,7 +325,7 @@ export class AhelIssues extends TypertRemoteService {
       if (payload !== undefined) headers['Content-Type'] = 'application/json'
       try {
         response = await fetch(url, {
-          method, headers, redirect: 'error', signal: AbortSignal.timeout(DEADLINE_MS),
+          method, headers, redirect: 'error', signal: deadline ?? AbortSignal.timeout(DEADLINE_MS),
           ...payload === undefined ? {} : { body: JSON.stringify(payload) },
         })
       } catch (error) {

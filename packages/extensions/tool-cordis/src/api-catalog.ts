@@ -598,7 +598,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: '@Remote async run(key: string, report: IssueRunReport): Promise<IssueWriteAnswer>',
-        description: 'Report the state of the desktop chat that works on one issue; ahel.ai moves the issue\'s status with it. The first report on a queued run claims it; when another session holds the run, ahel.ai answers 409 `run_claimed`.',
+        description: 'Report the state of the desktop chat that works on one issue; ahel.ai moves the issue\'s status with it. The first report on a queued run claims it; when another session holds the run, ahel.ai answers 409 `run_claimed`. An ahel.ai that refuses `waiting_input` (400) gets the same report as `waiting_approval`.',
         parameters: [{ name: 'key', description: 'the issue.' }, { name: 'report', description: 'the session, its state and the steps so far.' }],
         returns: 'the issue after the report.',
         throws: ['RemoteError `ahel-issues/refused` with `details.error === \'run_claimed\'` when another session holds the run, or another `ahel-issues/*`.'],
@@ -6095,7 +6095,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'IssueInboxItem',
-    declaration: 'export interface IssueInboxItem {\n    readonly id: string;\n    readonly type: \'assigned\' | \'mentioned\' | \'run_queued\' | \'run_finished\' | \'run_failed\';\n    readonly issueKey: string | null;\n    readonly issueTitle: string | null;\n    readonly actorType: IssueActorType;\n    readonly actorName: string;\n    readonly body: string | null;\n    readonly unread: boolean;\n    readonly createdAt: string;\n}',
+    declaration: 'export interface IssueInboxItem {\n    readonly id: string;\n    readonly type: \'assigned\' | \'mentioned\' | \'run_queued\' | \'run_waiting_input\' | \'run_finished\' | \'run_failed\';\n    readonly issueKey: string | null;\n    readonly issueTitle: string | null;\n    readonly actorType: IssueActorType;\n    readonly actorName: string;\n    readonly body: string | null;\n    readonly unread: boolean;\n    readonly createdAt: string;\n}',
   },
   {
     name: 'IssuePage',
@@ -6123,11 +6123,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'IssueRunReport',
-    declaration: 'export interface IssueRunReport {\n    readonly sessionId: string;\n    readonly state: IssueRunState;\n    readonly steps: number;\n    readonly totalSteps: number | null;\n}',
+    declaration: 'export interface IssueRunReport {\n    readonly sessionId: string;\n    readonly state: IssueRunState;\n    readonly steps: number;\n    readonly totalSteps: number | null;\n    readonly reason?: string | undefined;\n}',
   },
   {
     name: 'IssueRunState',
-    declaration: 'export type IssueRunState = \'queued\' | \'running\' | \'waiting_approval\' | \'finished\' | \'failed\';',
+    declaration: 'export type IssueRunState = \'queued\' | \'running\' | \'waiting_approval\' | \'waiting_input\' | \'finished\' | \'failed\';',
   },
   {
     name: 'IssueStatus',

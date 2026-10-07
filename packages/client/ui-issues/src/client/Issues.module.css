@@ -567,6 +567,11 @@
   background: var(--issue-scrim);
 }
 
+/* The detail drawer's scrim only dims: presses reach the cards and chats beneath it. */
+.scrimPassive {
+  pointer-events: none;
+}
+
 .drawer {
   position: fixed;
   z-index: 21;

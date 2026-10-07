@@ -45,12 +45,12 @@ const FILTER: IssuesFilter = { assignee: 'all', project: null, q: '' }
 /** The empty feed. */
 export const EMPTY_ISSUES: IssuesState = {
   phase: 'loading', message: null, issues: [], counts: {}, agentsWorking: 0, agentsQueued: 0, filter: FILTER, projects: [], assignees: null, role: null, mine: 0,
-  runs: {}, open: null, composer: null, offerRun: null,
+  runs: {}, models: {}, open: null, composer: null, offerRun: null,
 }
 
 /** Run states a run report moves the issue's status to; ahel.ai applies the same moves. */
 const RUN_STATUS: Partial<Record<IssueRunReport['state'], IssueStatus>> = {
-  running: 'in_progress', waiting_approval: 'blocked', finished: 'in_review',
+  running: 'in_progress', waiting_approval: 'blocked', waiting_input: 'blocked', finished: 'in_review',
 }
 
 /** The feed and the face actions it backs. */
@@ -60,6 +60,12 @@ export type IssuesFeed = Omit<IssuesInjected, 'run' | 'openSession' | 'openLink'
   report(key: string, report: IssueRunReport): void
   /** Re-read the account, then the board. */
   reload(): Promise<void>
+  /**
+   * Record the model a run's chat uses.
+   * @param sessionId - the chat.
+   * @param label - the model's display name, or null when unknown.
+   */
+  noteModel(sessionId: string, label: string | null): void
   /** Post a run's closing summary as Ahel's comment. */
   agentComment(key: string, body: string): void
   /**
@@ -233,6 +239,11 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
       return { ok: true, issue: read, comments: comments.ok ? comments.value : [], activity: activity.ok ? activity.value : [] }
     },
     comment: async (key, body) => answer(await backend.comment(key, body, 'member')),
+    noteModel: (sessionId, label) => {
+      if ((value.models[sessionId] ?? null) === label) return
+      const { [sessionId]: _old, ...rest } = value.models
+      set({ models: label === null ? rest : { ...rest, [sessionId]: label } })
+    },
     agentComment: (key, body) => { void backend.comment(key, body, 'agent').catch(() => undefined) },
     createProject: async (name) => {
       const result = await backend.createProject(name)

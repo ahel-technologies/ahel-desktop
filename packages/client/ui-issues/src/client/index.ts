@@ -7,7 +7,10 @@
  * The feed re-reads every 60 s while the window has focus and on focus.
  * While signed in, the pickup (pickup.ts) claims the runs this person queued
  * on ahel.ai every 30 s, on focus, after a board read and on
- * `ahel-issues/poll`, and announces each with `ahel-issues/run-started`.
+ * `ahel-issues/poll`, opens each one's chat without changing the person's
+ * view, and announces it with `ahel-issues/run-started` and a toast. The
+ * detail names the model a run's chat uses, read from ui-model-selection
+ * when that plugin is loaded.
  * Other packages open an issue with the `ahel-issues/open` event.
  */
 import type { Context } from '@ahel/cordis'
@@ -22,6 +25,7 @@ import type {} from '@ahel/dsh-client-locale/client'
 import type {} from '@ahel/dsh-client-ui-renderer/client'
 import type {} from '@ahel/dsh-client-ui-session/client'
 import type {} from '@ahel/dsh-client-ui-workspace/client'
+import type {} from '@ahel/dsh-client-ui-model-selection/client'
 import type { Issue, IssueRunReport } from '@ahel/dsh-ahel-account/types'
 import type { IssuesInjected } from './contract.ts'
 import { createIssuesFeed, type IssuesAccount } from './feed.ts'
@@ -30,6 +34,7 @@ import { IssuesPanelIcon } from './PanelIcons.tsx'
 import { issueUrl, runSeed } from './model.ts'
 import { createPickup } from './pickup.ts'
 import { startRun, type RunHost, type RunSession, type RunStart } from './run.ts'
+import { createPickupToast, PickupToast } from './PickupToast.tsx'
 import { en, NS, zh } from './locales.ts'
 
 export type {
@@ -121,12 +126,39 @@ function register(ctx: Context): void {
   }
   const feed = createIssuesFeed(ctx.remote.ahelIssues, account)
 
+  /**
+   * Record the model a run's chat uses while the run holds the chat.
+   * @returns the stop, a no-op without ui-model-selection or a resolved session scope.
+   */
+  const watchModel = (sessionId: SessionId): (() => void) => {
+    const resolver = ctx.get('modelDirectories')
+    if (resolver === undefined) return () => undefined
+    let directory: ReturnType<typeof resolver.directoryFor>
+    try {
+      directory = resolver.directoryFor(sessionId)
+    } catch (_unscoped) {
+      // The session's scope is not resolved; the detail shows no model hint.
+      return () => undefined
+    }
+    const sync = (): void => {
+      const { current, groups } = directory.store.getSnapshot()
+      const group = current === null ? undefined : groups.find(row => row.id === current.provider)
+      const model = group?.models.find(row => row.id === current?.model)
+      feed.noteModel(sessionId, model?.name ?? null)
+    }
+    const off = directory.store.subscribe(sync)
+    sync()
+    void directory.load().catch(() => undefined)
+    return off
+  }
+
   const runHost: RunHost = {
-    openChat: async () => {
+    openChat: async (reveal) => {
       const target = recentWorkspace(ctx.workspaces.list.getSnapshot().items, ctx.sessions.list.getSnapshot().byId)
       if (target === undefined) return null
       let opened: SessionId | undefined
-      await ctx.uiWorkspace.openWorkspace(target, (id) => { opened = id })
+      if (reveal) await ctx.uiWorkspace.openWorkspace(target, (id) => { opened = id })
+      else opened = await ctx.sessions.create({ workspaceId: target })
       if (opened === undefined) return null
       const reference = ctx.sessions.retain(opened, { source: 'issueRun' })
       try {
@@ -139,13 +171,19 @@ function register(ctx: Context): void {
             return session.prompt([{ type: 'text', text }], 'queue', undefined, handle.requestId)
           },
         }
-        return { sessionId: opened, binding, release: () => { reference.release() } }
+        const stopModel = watchModel(opened)
+        return { sessionId: opened, binding, release: () => { stopModel(); reference.release() } }
       } catch (error) {
         reference.release()
         throw error
       }
     },
-    waiting: id => ctx.uiSession.sessionStatus.getSnapshot().get(id as SessionId)?.pendingInteraction !== undefined,
+    waiting: (id) => {
+      const kind = ctx.uiSession.sessionStatus.getSnapshot().get(id as SessionId)?.pendingInteraction?.kind
+      // Questions wait for an answer; approvals, plan reviews and other kinds wait for a decision.
+      if (kind === undefined) return null
+      return kind === 'question' ? 'waiting_input' : 'waiting_approval'
+    },
     subscribeWaiting: listener => ctx.uiSession.sessionStatus.subscribe(listener),
     discard: (sessionId) => {
       void ctx.uiWorkspace.archiveSession(sessionId as SessionId).catch((error: unknown) => {
@@ -160,6 +198,16 @@ function register(ctx: Context): void {
     (summary) => { feed.agentComment(issue.key, summary) },
     claim,
   )
+
+  const toast = createPickupToast()
+  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+    name: 'shell.overlay', id: 'ahel-issues.pickup-toast', locale: NS,
+    inject: () => ({
+      hooks: toast.hooks,
+      dismiss: toast.dismiss,
+      openSession: (sessionId: string) => { ctx.uiWorkspace.openSession(sessionId as SessionId) },
+    }),
+  }, PickupToast))
 
   // The person's user id names who asked for a queued run; it is read once per sign-in.
   let me: Promise<string | null> | undefined
@@ -177,6 +225,7 @@ function register(ctx: Context): void {
       const started = await launch(issue, report => feed.claim(issue.key, report))
       if (started.ok) {
         ctx.emit('ahel-issues/run-started', issue.key, issue.title, started.sessionId)
+        toast.show(issue.key, started.sessionId)
         return 'started'
       }
       return started.reason === 'claimed' ? 'taken' : 'failed'

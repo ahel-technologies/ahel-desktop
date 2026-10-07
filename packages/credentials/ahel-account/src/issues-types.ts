@@ -32,8 +32,12 @@ export type IssuePriority = 'none' | 'low' | 'medium' | 'high' | 'urgent'
 /** Who an issue is assigned to or created by: a teammate or an agent. */
 export type IssueActorType = 'member' | 'agent'
 
-/** State of the run that works on an issue in a desktop chat. */
-export type IssueRunState = 'queued' | 'running' | 'waiting_approval' | 'finished' | 'failed'
+/**
+ * State of the run that works on an issue in a desktop chat: `waiting_approval`
+ * while a held tool call waits for the person, `waiting_input` while the chat
+ * asks the person a question.
+ */
+export type IssueRunState = 'queued' | 'running' | 'waiting_approval' | 'waiting_input' | 'finished' | 'failed'
 
 /** The run attached to an issue. */
 export interface IssueRun {
@@ -107,7 +111,7 @@ export interface IssuePage {
   readonly nextCursor: string | null
   /** Issues per status for the same filters, ignoring `status` and paging. */
   readonly counts: Readonly<Record<string, number>>
-  /** Agent runs in `running` or `waiting_approval` state across the workspace, ignoring the filters. */
+  /** Agent runs in `running`, `waiting_approval` or `waiting_input` state across the workspace, ignoring the filters. */
   readonly agentsWorking: number
   /** Agent runs in `queued` state across the workspace, ignoring the filters; null from an ahel.ai that does not count them apart. */
   readonly agentsQueued: number | null
@@ -185,7 +189,7 @@ export interface IssueAssignees {
  */
 export interface IssueInboxItem {
   readonly id: string
-  readonly type: 'assigned' | 'mentioned' | 'run_queued' | 'run_finished' | 'run_failed'
+  readonly type: 'assigned' | 'mentioned' | 'run_queued' | 'run_waiting_input' | 'run_finished' | 'run_failed'
   /** Null when the issue is gone. */
   readonly issueKey: string | null
   readonly issueTitle: string | null
@@ -203,6 +207,8 @@ export interface IssueRunReport {
   readonly state: IssueRunState
   readonly steps: number
   readonly totalSteps: number | null
+  /** Why a `failed` run ended, for example `desktop closed`; an ahel.ai that does not store it ignores it. */
+  readonly reason?: string | undefined
 }
 
 /** The issue after a write; null when ahel.ai answered without it. */

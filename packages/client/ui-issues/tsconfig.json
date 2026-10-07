@@ -19,6 +19,7 @@
     { "path": "../locale/tsconfig.client.json" },
     { "path": "../store" },
     { "path": "../ui-layout" },
+    { "path": "../ui-model-selection" },
     { "path": "../ui-primitives" },
     { "path": "../ui-renderer" },
     { "path": "../ui-session" },
