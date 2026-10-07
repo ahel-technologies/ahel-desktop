@@ -86,7 +86,7 @@ The package is built on one separation: the atomic commit owns the swap, and the
 
 ### Why the swap stays safe
 
-- **Fresh inode, caller-stated mode** — the temp carries `mode` through the rename, so narrowing a wider-permission file has no chmod race. `mode` is required so the permission decision stays visible at every call site.
+- **Fresh inode, caller-stated mode** — the temp is chmodded to exactly `mode` and carries it through the rename, so narrowing a wider-permission file has no chmod race and the umask cannot change the result. `mode` is required so the permission decision stays visible at every call site.
 - **Readers never contend** — the rename commit is atomic, so a reader needs no lock.
 - **A contender deletes only an exited holder's lock** — age cannot distinguish a crashed owner from a paused live writer, but a missing process can.
 

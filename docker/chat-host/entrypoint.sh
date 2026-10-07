@@ -10,6 +10,14 @@ set -eu
 # environment, so nothing the person can configure turns it back on.
 export DSH_MCP_STDIO=off
 
+# New files are owner-only. The volume's fsGroup re-applies group read/write
+# on every mount, and the Host refuses a group-readable credentials document
+# (builds before the in-process repair), so narrow it before the Host starts.
+umask 077
+if [ -f "$DSH_HOME/.credentials.yaml" ]; then
+  chmod 600 "$DSH_HOME/.credentials.yaml"
+fi
+
 mkdir -p "$DSH_HOME/workspaces"
 cd "$DSH_HOME/workspaces"
 
