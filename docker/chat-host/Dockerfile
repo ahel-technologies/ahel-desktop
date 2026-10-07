@@ -15,8 +15,9 @@ ARG NODE_VERSION=22
 
 FROM node:${NODE_VERSION}-bookworm AS build
 # The build context carries no .git; the client build records this commit instead.
+# DSH_CLIENT_TITLE names the browser tab: "ahel", "<chat title> — ahel".
 ARG DSH_CLIENT_COMMIT_HASH=0000000
-ENV CI=1 DSH_TELEMETRY_DISABLED=1 DSH_CLIENT_COMMIT_HASH=${DSH_CLIENT_COMMIT_HASH}
+ENV CI=1 DSH_TELEMETRY_DISABLED=1 DSH_CLIENT_COMMIT_HASH=${DSH_CLIENT_COMMIT_HASH} DSH_CLIENT_TITLE=ahel
 WORKDIR /src
 RUN corepack enable
 COPY . .

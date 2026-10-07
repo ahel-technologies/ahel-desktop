@@ -8,7 +8,7 @@ import { afterEach, expect, it } from 'vitest'
 import { Context } from '@ahel/cordis'
 import { credentialRef } from '@ahel/dsh-credentials'
 import { LocalCredentialProvider } from '@ahel/dsh-credentials-local'
-import { parseOAuthGrant } from '@ahel/dsh-mcp-client'
+import { parseOAuthGrant, writeOAuthGrant } from '@ahel/dsh-mcp-client'
 import AhelAccount from '../src/index.ts'
 
 const cleanups: Array<() => Promise<unknown>> = []
@@ -23,7 +23,7 @@ async function body(request: IncomingMessage): Promise<string> {
 }
 
 /** A fake ahel.ai: discovery, registration, token (code + refresh), profile and revoke. */
-async function fakeAhel() {
+async function fakeAhel(name?: string) {
   const seen = { registrations: [] as Array<Record<string, unknown>>, tokenForms: [] as URLSearchParams[], revoked: [] as string[] }
   let issued = 0
   const server = createServer((request, response) => {
@@ -54,7 +54,7 @@ async function fakeAhel() {
         }
         case '/api/mcp/profile':
           if (request.headers.authorization?.startsWith('Bearer access-') !== true) return json(401, { error: 'unauthorized' })
-          return json(200, { user: { email: 'person@example.test' }, memberships: [{ id: 't1', name: 'Team', slug: 'team', role: 'OWNER' }] })
+          return json(200, { user: { email: 'person@example.test', name }, memberships: [{ id: 't1', name: 'Team', slug: 'team', role: 'OWNER' }] })
         case '/api/mcp/revoke':
           seen.revoked.push(request.headers.authorization ?? '')
           return json(200, { ok: true })
@@ -157,5 +157,37 @@ it('refuses a malformed launch token and stays signed out', async () => {
   const ctx = await launchAccount(ahel.origin, '{"refresh_token":"no-client"}')
   expect(process.env.DSH_TEST_LAUNCH_TOKEN).toBeUndefined()
   expect((await ctx.ahelAccount.state()).status).toBe('signed-out')
+  expect(ahel.seen.tokenForms).toHaveLength(0)
+})
+
+it('re-reads a kept grant\'s profile once at boot', async () => {
+  const ahel = await fakeAhel('Karl Hendrik')
+  const home = await mkdtemp(join(tmpdir(), 'dsh-ahel-account-'))
+  cleanups.push(() => rm(home, { recursive: true, force: true }))
+  const ctx = new Context()
+  const credentials = ctx.plugin(LocalCredentialProvider, { path: join(home, 'credentials.yaml'), watch: false })
+  await credentials
+  await writeOAuthGrant(ctx.credentials, credentialRef('AHEL_ACCOUNT'), {
+    version: 1,
+    issuer: ahel.origin,
+    token_endpoint: `${ahel.origin}/api/auth/mcp/token`,
+    client_id: 'client-kept',
+    access_token: 'access-kept',
+    refresh_token: 'refresh-kept',
+    expires_at: Date.now() + 3_600_000,
+    profile: { email: 'person@example.test', name: 'Admin', workspaces: [] },
+  })
+  const plugin = ctx.plugin(AhelAccount, { appOrigin: ahel.origin })
+  await plugin
+  cleanups.push(async () => { await plugin.dispose(); await credentials.dispose() })
+
+  const states = new AbortController()
+  cleanups.push(async () => { states.abort() })
+  for await (const view of ctx.ahelAccount.watch(states.signal)) if (view.profile?.name === 'Karl Hendrik') break
+  expect((await ctx.ahelAccount.state()).profile).toEqual({
+    email: 'person@example.test', name: 'Karl Hendrik', workspaces: [{ id: 't1', name: 'Team', slug: 'team', role: 'OWNER' }],
+  })
+  expect(parseOAuthGrant((await ctx.credentials.resolve(credentialRef('AHEL_ACCOUNT')))!.value))
+    .toMatchObject({ client_id: 'client-kept', access_token: 'access-kept', refresh_token: 'refresh-kept' })
   expect(ahel.seen.tokenForms).toHaveLength(0)
 })
