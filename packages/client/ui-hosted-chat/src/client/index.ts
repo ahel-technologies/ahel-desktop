@@ -146,6 +146,7 @@ export function apply(ctx: Context): void {
   }
   let selectWorkspace: (id: string) => Promise<void> = () => Promise.reject(new Error('ui-hosted-chat: the Ahel account is not mounted'))
   let signOut: () => Promise<void> = async () => {}
+  let openBilling: () => void = () => {}
 
   const face: HostedShellInjected = {
     selectPanel: (id) => {
@@ -160,6 +161,7 @@ export function apply(ctx: Context): void {
       pinAppWorkspace(id)
     },
     signOut: () => signOut(),
+    openBilling: () => { openBilling() },
     openChatSettings: () => {
       const first = [...ctx.slots.entriesOfSlot('settings.section')]
         .sort((a, b) => (a.options.order ?? 0) - (b.options.order ?? 0))[0]?.options.id
@@ -199,7 +201,9 @@ export function apply(ctx: Context): void {
     inner.effect(() => {
       selectWorkspace = id => ui.selectWorkspace(id)
       signOut = () => ui.signOut()
+      openBilling = () => { ui.openBilling() }
       return () => {
+        openBilling = () => {}
         selectWorkspace = () => Promise.reject(new Error('ui-hosted-chat: the Ahel account is not mounted'))
         signOut = async () => {}
       }

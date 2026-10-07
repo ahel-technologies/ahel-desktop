@@ -384,6 +384,24 @@
   margin-bottom: 4px;
 }
 
+.balance {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 8px 6px;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l3);
+  margin-bottom: 4px;
+}
+
+.balance .option {
+  margin: 2px -8px 0;
+}
+
+.low {
+  color: var(--dsw-static-deepseek-500);
+  font-size: 12px;
+}
+
 .identityName {
   font-size: 13px;
   font-weight: 500;

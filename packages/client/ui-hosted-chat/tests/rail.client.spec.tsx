@@ -30,7 +30,8 @@ const view: AhelAccountView = {
 
 const summary: TeamSummaryState = {
   summary: {
-    workspace: { id: 'w1', name: 'Ahel', role: 'OWNER' }, approvals: null, inbox: { unread: 3 }, credits: null,
+    workspace: { id: 'w1', name: 'Ahel', role: 'OWNER' }, approvals: null, inbox: { unread: 3 },
+    credits: { visible: true, balanceCents: 1240, workspaceSpentTodayCents: 300, low: true, lowThresholdCents: 2000, canTopUp: true, topUpUrl: 'https://ahel.ai/app/settings' },
     apps: { installed: 30 }, at: '2026-10-07T20:00:00Z',
   },
   outdated: false, error: null,
@@ -44,7 +45,7 @@ function rail(overrides: Partial<HostedRailProps> = {}) {
     usePanelInfo: hook({ activePanelId: null }), useAccount: hook(view), useSummary: hook(summary),
     useWaitingIssues: hook([]), useTheme: hook('system'), useChatSeat: hook(null),
     selectPanel: vi.fn(), selectWorkspace: vi.fn(async () => {}), signOut: vi.fn(async () => {}), cycleTheme: vi.fn(),
-    openIssue: vi.fn(), setChatSeat: vi.fn(), openChatSettings: vi.fn(), t,
+    openIssue: vi.fn(), setChatSeat: vi.fn(), openChatSettings: vi.fn(), openBilling: vi.fn(), t,
     ...overrides,
   } as HostedRailProps
   render(<HostedRail {...props} />)
@@ -87,6 +88,11 @@ describe('hosted chat app rail', () => {
     expect(props.selectPanel).toHaveBeenCalledWith('ahel-inbox')
     fireEvent.click(screen.getByRole('button', { name: 'Theme: System' }))
     expect(props.cycleTheme).toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /^Account menu/ }))
+    expect(screen.getByText('Balance $12.40 · Today $3')).toBeTruthy()
+    expect(screen.getByText('Balance is low')).toBeTruthy()
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Top up' }))
+    expect(props.openBilling).toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: /^Account menu/ }))
     fireEvent.click(screen.getByRole('menuitem', { name: 'Chat settings' }))
     expect(props.openChatSettings).toHaveBeenCalled()

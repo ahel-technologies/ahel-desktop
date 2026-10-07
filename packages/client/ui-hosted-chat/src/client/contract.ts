@@ -23,6 +23,8 @@ export interface HostedShellInjected {
   selectWorkspace(id: string): Promise<void>
   /** Sign out the way the account menu does. */
   signOut(): Promise<void>
+  /** Open the workspace's ahel.ai billing page; does nothing before the account is mounted. */
+  openBilling(): void
   /** Open the in-app settings window the way its shortcut does, on its first section. */
   openChatSettings(): void
   /** Step the theme preference System, Light, Dark, System. */

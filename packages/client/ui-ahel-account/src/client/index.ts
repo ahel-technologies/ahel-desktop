@@ -184,6 +184,7 @@ function register(ctx: Context): void {
     selectWorkspace: id => injected.selectWorkspace(id),
     signOut: () => injected.signOut(),
     refreshSummary: () => { team.refresh() },
+    openBilling: () => { injected.openBilling() },
   }
   ctx.effect(() => {
     const dispose = ctx.reflect.provide('ahelAccountUi', ui)

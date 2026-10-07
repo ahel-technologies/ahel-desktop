@@ -83,11 +83,11 @@ function formatCents(cents: number): string {
 
 /**
  * The signed-in account entry: "name · email" on the wide rail, the initial on
- * the collapsed one, opening a menu with the balance and Chat settings.
+ * the collapsed one, opening a menu with the balance, Top up and Chat settings.
  */
 function AccountEntry({
-  wide, useAccount, useSummary, openChatSettings, t,
-}: Pick<HostedRailProps, 'wide' | 'useAccount' | 'useSummary' | 'openChatSettings' | 't'>): ReactNode {
+  wide, useAccount, useSummary, openChatSettings, openBilling, t,
+}: Pick<HostedRailProps, 'wide' | 'useAccount' | 'useSummary' | 'openChatSettings' | 'openBilling' | 't'>): ReactNode {
   const email = useAccount(view => view?.profile?.email ?? null)
   const profileName = useAccount(view => view?.profile?.name ?? null)
   const liveName = useSummary(state => state.summary?.me?.name ?? null)
@@ -109,8 +109,22 @@ function AccountEntry({
           <div className={css.identity}>
             {name !== null && <div className={css.identityName}>{name}</div>}
             {email !== null && <div className={css.identityCaption}>{email}</div>}
-            {credits?.visible === true && <div className={css.identityCaption}>{t('balance', { amount: formatCents(credits.balanceCents) })}</div>}
           </div>
+          {credits?.visible === true && (
+            <div className={css.balance}>
+              <div className={css.identityCaption}>
+                {t('balanceToday', { amount: formatCents(credits.balanceCents), spent: formatCents(credits.workspaceSpentTodayCents) })}
+              </div>
+              {credits.low && <div className={css.low}>{t('balanceLow')}</div>}
+              {credits.canTopUp
+                ? (
+                  <button type="button" role="menuitem" className={css.option} onClick={() => { setOpen(false); openBilling() }}>
+                    <span className={css.optionName}>{t('topUp')}</span>
+                  </button>
+                )
+                : <div className={css.identityCaption}>{t('askOwnerTopUp')}</div>}
+            </div>
+          )}
           <button type="button" role="menuitem" className={css.option} onClick={() => { setOpen(false); openChatSettings() }}>
             <IconSettingsOutlineRegular size={14} />
             <span className={css.optionName}>{t('chatSettings')}</span>

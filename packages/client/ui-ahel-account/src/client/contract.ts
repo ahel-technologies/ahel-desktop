@@ -52,6 +52,8 @@ export interface AhelAccountUi {
   signOut(): Promise<void>
   /** Re-read the team summary now. */
   refreshSummary(): void
+  /** Open the workspace's ahel.ai billing page, as the account menu's Top up does; does nothing until the summary shows credits. */
+  openBilling(): void
 }
 
 /** Props of the sidebar footer account entry. */
