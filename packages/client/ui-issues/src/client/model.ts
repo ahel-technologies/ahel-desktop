@@ -136,6 +136,15 @@ export function parseLabels(value: string): string[] {
   return [...new Set(value.split(',').map(label => label.trim()).filter(Boolean))]
 }
 
+/**
+ * An example parent key in the workspace's own prefix.
+ * @param key - the current issue's key, for example `DEMO-7`.
+ * @returns the prefix's first issue, for example `DEMO-1`.
+ */
+export function parentExample(key: string): string {
+  return `${key.replace(/-\d+$/, '')}-1`
+}
+
 /** Initials for an avatar without a picture. */
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)

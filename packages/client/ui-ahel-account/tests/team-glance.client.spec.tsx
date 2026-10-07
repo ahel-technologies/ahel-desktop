@@ -76,9 +76,24 @@ describe('team at a glance', () => {
     const view = render(<TeamHeader {...props} />)
     expect(screen.getByText('Ahel')).toBeTruthy()
     expect(screen.getByText('6 members')).toBeTruthy()
-    expect([...view.container.querySelectorAll('[aria-hidden="true"] > span')].map(item => item.textContent)).toEqual(['KS', 'P', 'R', '+3'])
+    expect([...view.container.querySelectorAll('[aria-hidden="true"] > span')].map(item => item.textContent)).toEqual(['P', 'R', '+3'])
     fireEvent.click(screen.getByRole('button'))
     expect(props.openMembers).toHaveBeenCalledOnce()
+  })
+
+  it('draws four teammates in join order and leaves the caller out of a five-seat stack, keeping the real count', () => {
+    const rows = [
+      { id: 'u1', name: 'Karl Soone', email: 'karl@ahel.ai' },
+      { id: 'u2', name: 'Maarja Tamm', email: 'maarja@ahel.ai' },
+      { id: 'u3', name: 'Jonas Berg', email: 'jonas@ahel.ai' },
+      { id: 'u4', name: 'Priya Nair', email: 'priya@ahel.ai' },
+      { id: 'u5', name: 'Tomás Oliveira', email: 'tomas@ahel.ai' },
+    ]
+    const five: TeamSummaryState = { ...state, summary: { ...summary, members: { total: 5, rows } } }
+    const props = { ...face(), useSummary: (select => select(five)) as TeamHeaderProps['useSummary'], wide: true } as TeamHeaderProps
+    const view = render(<TeamHeader {...props} />)
+    expect([...view.container.querySelectorAll('[aria-hidden="true"] > span')].map(item => item.textContent)).toEqual(['MT', 'JB', 'PN', 'TO'])
+    expect(screen.getByText('5 members')).toBeTruthy()
   })
 
   it('tells same-first-name teammates apart by the first letters of their first two words', () => {
@@ -112,7 +127,7 @@ describe('team at a glance', () => {
     const props = face() as TeamStripProps
     render(<TeamStrip {...props} />)
     const tiles = screen.getAllByRole('button').map(tile => tile.textContent)
-    expect(tiles).toEqual(['KSPR+3Ahel6 members', '0open approvals', '2in your inbox', '1app connected'])
+    expect(tiles).toEqual(['PR+3Ahel6 members', '0open approvals', '2in your inbox', '1app connected'])
     fireEvent.click(screen.getByText('in your inbox'))
     expect(props.openPanel).toHaveBeenCalledWith('inbox')
   })

@@ -35,19 +35,27 @@ export function StatusIcon({ status, size = 14 }: { status: IssueStatus; size?: 
 }
 
 /**
+ * The agent's display name: the "ahel" wordmark for the built-in agent, else the name ahel.ai sent.
+ * @param name - ahel.ai's agent name, or null.
+ * @param t - dictionary.
+ * @returns the name to show.
+ */
+export function agentLabel(name: string | null, t: Translate): string {
+  return name === null || name.trim().toLowerCase() === AGENT.id ? t('agentName') : name
+}
+
+/**
  * Who an issue is assigned to: the Ahel tile and name for the agent, a picture or initials for a teammate.
  * @param props - the issue's assignee fields and the dictionary.
  * @returns avatar and name.
  */
-export function Assignee({ type, name, avatar, model, compact, t }: {
+export function Assignee({ type, name, avatar, compact, t }: {
   type: IssueActorType | null
   /** Picture only, for comment authors whose name shows beside it. */
   compact?: boolean
   name: string | null
   /** A picture URL or initials. */
   avatar: string | null | undefined
-  /** The model the agent runs on, when known. */
-  model?: string | null
   t: Translate
 }) {
   if (type === null) {
@@ -55,10 +63,9 @@ export function Assignee({ type, name, avatar, model, compact, t }: {
   }
   if (type === 'agent') {
     return (
-      <span className={css.who}>
+      <span className={`${css.who} ${css.whoAgent}`}>
         <AhelTile size={20} />
-        {compact !== true && <span className={css.whoName}>{name ?? t('agentName')}</span>}
-        {model !== undefined && model !== null && <span className={css.whoModel}>{model}</span>}
+        {compact !== true && <span className={css.whoName}>{agentLabel(name, t)}</span>}
       </span>
     )
   }

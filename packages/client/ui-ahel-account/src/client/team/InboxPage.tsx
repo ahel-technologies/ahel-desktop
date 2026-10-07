@@ -1,9 +1,9 @@
-/** The Inbox main panel: handoffs teammates shared with you, each opened into a new session, and the ones you sent. */
+/** The Inbox main panel: handoffs teammates shared with you and issue updates in one list, newest first, and the handoffs you sent. */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { HandoffList, HandoffReceivedRow, HandoffSentRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
 import type { InboxInjected, InboxLoad, InboxPageProps } from './contract.ts'
 import type { AhelAccountKey } from '../locales.ts'
-import { WEB_ISSUES } from './issue-items.ts'
+import { inboxEntries, WEB_ISSUES } from './issue-items.ts'
 import catalog from '../catalog/Catalog.module.css'
 import css from './Team.module.css'
 
@@ -82,6 +82,7 @@ function ReceivedItem({ row, now, open, markDone, openUrl, reload, t }: {
         {done && <span className={css.tag}>{t('inboxDone')}</span>}
       </p>
       <p className={css.meta}>
+        <span className={css.kind}>{t('inboxKindHandoff')}</span>
         <span className={css.who}>{t('inboxFrom', { from: row.from })}</span>
         <span>{ago(row.updatedAt, now, t)}</span>
       </p>
@@ -109,6 +110,14 @@ const ISSUE_KIND: Record<IssueInboxItem['type'], AhelAccountKey> = {
   run_failed: 'inboxIssueRunFailed',
 }
 
+/** The kind label of each issue row. */
+const ISSUE_KIND_LABEL: Record<IssueInboxItem['type'], AhelAccountKey> = {
+  assigned: 'inboxKindAssigned',
+  mentioned: 'inboxKindMentioned',
+  run_finished: 'inboxKindRunFinished',
+  run_failed: 'inboxKindRunFailed',
+}
+
 /**
  * One issue row: who did what, Open issue (shows it in the desktop and marks the row read) and its ahel.ai page.
  * @param props - the row, the face's actions and the dictionary.
@@ -133,6 +142,7 @@ function IssueItem({ item, now, openIssue, openUrl, reload, t }: {
         <span>{key === null ? t('inboxIssueGone') : `${key} · ${item.issueTitle ?? ''}`}</span>
       </p>
       <p className={css.meta}>
+        <span className={css.kind} data-kind={item.type}>{t(ISSUE_KIND_LABEL[item.type])}</span>
         <span className={css.who}>{t(ISSUE_KIND[item.type], { actor: item.actorName })}</span>
         <span>{ago(item.createdAt, now, t)}</span>
       </p>
@@ -265,7 +275,7 @@ export function InboxPage({ load, open, openIssue, markDone, openUrl, openWebInb
 }
 
 /**
- * Received handoffs, then the sent ones collapsed under "You sent".
+ * Received handoffs and issue updates in one list, then the sent handoffs collapsed under "You sent".
  * @param props - the list and the row actions.
  * @returns both lists.
  */
@@ -279,25 +289,14 @@ function InboxLists({ list, now, open, openIssue, markDone, openUrl, reload, t }
   reload: () => void
   t: Translate
 }) {
-  // Open work first, then by most recent change.
-  const received = [...list.received].sort((a, b) =>
-    Number(a.status === 'done') - Number(b.status === 'done') || b.updatedAt.localeCompare(a.updatedAt))
   const sent = [...list.sent].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   // An older ahel.ai sends no `items`; null means it could not read them.
   const items = list.items
+  const entries = inboxEntries(list.received, items ?? [])
   return (
     <>
       {items === null && <p className={css.next}>{t('inboxIssuesUnavailable')}</p>}
-      {items !== undefined && items !== null && items.length > 0 && (
-        <section aria-label={t('inboxIssues')}>
-          <ul className={`${css.list} ${css.listTight}`}>
-            {items.map(item => (
-              <IssueItem key={item.id} item={item} now={now} openIssue={openIssue} openUrl={openUrl} reload={reload} t={t} />
-            ))}
-          </ul>
-        </section>
-      )}
-      {received.length === 0
+      {entries.length === 0
         ? (
           <div className={catalog.empty}>
             <b>{t('inboxEmpty')}</b>
@@ -305,9 +304,12 @@ function InboxLists({ list, now, open, openIssue, markDone, openUrl, reload, t }
         )
         : (
           <ul className={sent.length > 0 ? `${css.list} ${css.listTight}` : css.list}>
-            {received.map(row => (
-              <ReceivedItem key={row.id} row={row} now={now} open={open} markDone={markDone} openUrl={openUrl} reload={reload} t={t} />
-            ))}
+            {entries.map(entry => entry.kind === 'handoff'
+              ? (
+                <ReceivedItem key={entry.id} row={entry.row} now={now} open={open} markDone={markDone} openUrl={openUrl}
+                  reload={reload} t={t} />
+              )
+              : <IssueItem key={entry.id} item={entry.item} now={now} openIssue={openIssue} openUrl={openUrl} reload={reload} t={t} />)}
           </ul>
         )}
       {sent.length > 0 && (

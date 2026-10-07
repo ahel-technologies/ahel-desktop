@@ -1,6 +1,6 @@
-/** Issue rows of the Inbox: open one in the desktop's Issues panel and mark it read. */
+/** Issue rows of the Inbox: the one list they share with received handoffs, and opening one in the desktop's Issues panel. */
 import type {} from '@ahel/cordis'
-import type { IssueInboxItem } from '@ahel/dsh-ahel-account/types'
+import type { HandoffReceivedRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
 import type { RemoteResult } from '@ahel/dsh-typert-protocol'
 import type { InboxAnswer } from './contract.ts'
 
@@ -42,4 +42,43 @@ export async function openIssueItem(host: IssueItemHost, item: IssueInboxItem): 
   host.refresh()
   if (result.ok) return { ok: true }
   return { ok: false, outdated: result.error.code === 'ahel-issues/outdated', message: null }
+}
+
+/** One Inbox row: a received handoff or an issue update. */
+export type InboxEntry =
+  | { readonly kind: 'handoff'; readonly id: string; readonly at: string; readonly unread: boolean; readonly row: HandoffReceivedRow }
+  | { readonly kind: 'issue'; readonly id: string; readonly at: string; readonly unread: boolean; readonly item: IssueInboxItem }
+
+/**
+ * The local calendar day of a timestamp, for grouping.
+ * @param iso - the timestamp.
+ * @returns `YYYY-M-D` in local time, or the input when it does not parse.
+ */
+function localDay(iso: string): string {
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime()) ? iso : `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+}
+
+/**
+ * Merge received handoffs and issue updates into one list: newest day first,
+ * unread before read within a day, then newest first.
+ * @param received - the received handoffs.
+ * @param items - the issue updates.
+ * @returns the rows in display order.
+ */
+export function inboxEntries(received: readonly HandoffReceivedRow[], items: readonly IssueInboxItem[]): InboxEntry[] {
+  const entries: InboxEntry[] = [
+    ...received.map(row => ({ kind: 'handoff' as const, id: `handoff:${row.id}`, at: row.updatedAt, unread: row.unread, row })),
+    ...items.map(item => ({ kind: 'issue' as const, id: `issue:${item.id}`, at: item.createdAt, unread: item.unread, item })),
+  ]
+  const time = (entry: InboxEntry): number => {
+    const ms = Date.parse(entry.at)
+    return Number.isNaN(ms) ? 0 : ms
+  }
+  return entries.sort((a, b) => {
+    const dayA = localDay(a.at)
+    const dayB = localDay(b.at)
+    if (dayA !== dayB) return time(b) - time(a)
+    return Number(b.unread) - Number(a.unread) || time(b) - time(a)
+  })
 }

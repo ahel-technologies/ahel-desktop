@@ -102,6 +102,18 @@
 
 .who { color: var(--ahel-body); font-weight: 500; }
 
+.kind {
+  padding: 0 8px;
+  border: 1px solid var(--ahel-line);
+  border-radius: var(--ahel-radius-chip);
+  background: var(--ahel-soft);
+  color: var(--ahel-body);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.kind[data-kind='run_failed'] { color: var(--ahel-red-text); }
+
 .rule {
   padding: 1px 8px;
   border-radius: var(--ahel-radius-chip);
