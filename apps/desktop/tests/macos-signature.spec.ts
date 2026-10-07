@@ -49,9 +49,9 @@ describe('desktop macOS release signature', () => {
       'com.apple.security.cs.disable-library-validation', 'com.apple.security.device.audio-input']) {
       expect(entitlements).toContain(`<key>${key}</key>\n    <true/>`)
     }
-    // runtime, icon, the two license files, the Cua Driver and its notices.
-    expect(config.extraResources).toHaveLength(6)
-    expect(config.extraResources.map((entry: { to: string }) => entry.to)).toEqual(expect.arrayContaining(['cua-driver', 'licenses/cua-driver']))
+    // runtime, icon, the three license files, the Cua Driver and its notices.
+    expect(config.extraResources).toHaveLength(7)
+    expect(config.extraResources.map((entry: { to: string }) => entry.to)).toEqual(expect.arrayContaining(['licenses/NOTICE', 'cua-driver', 'licenses/cua-driver']))
     expect(entitlements).toContain('<key>com.apple.security.automation.apple-events</key>\n    <true/>')
     expect(config.mac.extendInfo.NSAppleEventsUsageDescription).toContain('computer use')
     expect(config.extraResources[0]?.to).toBe('runtime')

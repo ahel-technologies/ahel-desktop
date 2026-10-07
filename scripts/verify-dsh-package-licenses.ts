@@ -1,5 +1,6 @@
 /**
- * Enforce the MIT license declaration for repository-owned DSH npm packages.
+ * Enforce the license declaration for repository-owned DSH npm packages: MIT for
+ * packages inherited from DeepSeek Harness, Apache-2.0 for Ahel-authored ones (see NOTICE).
  * @module scripts/verify-dsh-package-licenses
  */
 
@@ -8,12 +9,13 @@ import { resolve, sep } from 'node:path'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const DSH_PACKAGE_NAME = /^@ahel\/dsh(?:-|$)/
+const ALLOWED_LICENSES: ReadonlySet<unknown> = new Set(['MIT', 'Apache-2.0'])
 
 /** Result of checking every DSH package reachable through the root workspace list. */
 export interface DshPackageLicenseReport {
   /** Number of DSH package manifests checked. */
   packageCount: number
-  /** Repository-relative diagnostics for non-MIT declarations. */
+  /** Repository-relative diagnostics for declarations other than MIT or Apache-2.0. */
   failures: string[]
 }
 
@@ -52,7 +54,7 @@ function printable(value: unknown): string {
 /**
  * Check every DSH npm package declared by the repository workspace.
  * @param root - absolute repository root containing the workspace package.json.
- * @returns the checked package count and every non-MIT declaration.
+ * @returns the checked package count and every declaration other than MIT or Apache-2.0.
  */
 export function inspectDshPackageLicenses(root: string): DshPackageLicenseReport {
   let packageCount = 0
@@ -64,10 +66,10 @@ export function inspectDshPackageLicenses(root: string): DshPackageLicenseReport
     if (typeof name !== 'string' || !DSH_PACKAGE_NAME.test(name)) continue
 
     packageCount++
-    if (manifest.license !== 'MIT') {
+    if (!ALLOWED_LICENSES.has(manifest.license)) {
       const normalizedFile = file.split(sep).join('/')
       failures.push(
-        `${normalizedFile}: ${name} must declare "license": "MIT"; found ${printable(manifest.license)}.`,
+        `${normalizedFile}: ${name} must declare "license": "MIT" or "Apache-2.0"; found ${printable(manifest.license)}.`,
       )
     }
   }
@@ -78,12 +80,12 @@ export function inspectDshPackageLicenses(root: string): DshPackageLicenseReport
 if (process.argv[1] && import.meta.filename === resolve(process.argv[1])) {
   const report = inspectDshPackageLicenses(ROOT)
   if (report.failures.length > 0) {
-    process.stderr.write('verify-dsh-package-licenses: non-MIT DSH package declarations found:\n')
+    process.stderr.write('verify-dsh-package-licenses: DSH package declarations other than MIT or Apache-2.0 found:\n')
     for (const failure of report.failures) process.stderr.write(`  ${failure}\n`)
     process.exitCode = 1
   } else {
     process.stdout.write(
-      `verify-dsh-package-licenses: ${String(report.packageCount)} DSH package(s) checked; all declare MIT.\n`,
+      `verify-dsh-package-licenses: ${String(report.packageCount)} DSH package(s) checked; all declare MIT or Apache-2.0.\n`,
     )
   }
 }
