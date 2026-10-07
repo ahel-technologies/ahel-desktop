@@ -24,14 +24,18 @@ pnpm run package:desktop:mac:arm64:dev
 
 The unsigned app lands under `apps/desktop/.desktop-build/`. See the [development guide](docs/development.md) and [AGENTS.md](AGENTS.md) for the rest.
 
+## What is open and what is hosted
+
+The desktop client in this repository is open source. The ahel connector (MCP), the chat gateway, the catalog, the knowledge data and billing are the hosted [ahel.ai](https://ahel.ai) service and are not in this repository.
+
 ## Contributing and security
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues as described in [SECURITY.md](SECURITY.md).
 
-## License
+## Licence
 
-[MIT](LICENSE). Third-party dependencies and their licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Code written by Ahel Technologies OÜ is licensed under the [Apache License 2.0](LICENSE). Code inherited from [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) by DeepSeek stays under the MIT License; [NOTICE](NOTICE) keeps its copyright notice and explains how to tell the two apart. Third-party dependencies and their licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Bundled fonts are licensed under the SIL Open Font License.
 
-Built on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (MIT) by DeepSeek. DeepSeek Harness is a trademark of DeepSeek; this project is not affiliated with or endorsed by DeepSeek.
+## Trademarks
 
-Bundled fonts are licensed under the SIL Open Font License. The Ahel tile and wordmark are trademarks of Ahel Technologies OÜ and are not covered by the MIT license.
+The ahel name, the tile and the wordmark are trademarks of Ahel Technologies OÜ and are not covered by either license; forks must rename and replace them, as [TRADEMARK.md](TRADEMARK.md) describes. DeepSeek Harness is a trademark of DeepSeek; this project is not affiliated with or endorsed by DeepSeek.
