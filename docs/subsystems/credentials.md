@@ -292,6 +292,7 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
 /**
  * Report the state of the desktop chat that works on one issue; ahel.ai moves the issue's status with it.
  * The first report on a queued run claims it; when another session holds the run, ahel.ai answers 409 `run_claimed`.
+ * An ahel.ai that refuses `waiting_input` (400) gets the same report as `waiting_approval`.
  * @param key - the issue.
  * @param report - the session, its state and the steps so far.
  * @returns the issue after the report.

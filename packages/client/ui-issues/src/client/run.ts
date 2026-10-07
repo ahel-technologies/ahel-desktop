@@ -2,10 +2,13 @@
  * Run with Ahel: open a new chat in the most recent folder, send the issue as
  * its first message, and report the chat's state to ahel.ai as the issue's
  * run. The turn ending normally reports `finished`, an error `failed`, a
- * pending approval or question `waiting_approval`, and its answer `running`
- * again. Steps are the tool calls made so far; the expected total stays
- * unknown because the goal package keeps rounds, not steps. A run that
- * claims a run queued on ahel.ai sends its first report through `claim` and
+ * held tool call `waiting_approval`, a question to the person
+ * `waiting_input`, and the answer `running` again. While the run is live the
+ * current state is reported again every {@link KEEP_ALIVE_MS}, so ahel.ai's
+ * sweep of runs without reports leaves it alone. Steps are the tool calls
+ * made so far; the expected total stays unknown because the goal package
+ * keeps rounds, not steps. A run that claims a run queued on ahel.ai opens
+ * its chat without showing it, sends its first report through `claim` and
  * waits for the answer before the issue reaches the chat: when another
  * session holds the run, the new chat is archived unused.
  */
@@ -42,15 +45,19 @@ export interface RunSession {
   send(text: string): Promise<RemoteResult<{ accepted: true }>>
 }
 
+/** What a chat waits for: a held tool call, or the person's answer to a question. */
+export type RunWait = 'waiting_approval' | 'waiting_input'
+
 /** What a run needs from the Client: a new chat and whether it waits for the person. */
 export interface RunHost {
   /**
    * Open a new chat and hold it.
+   * @param reveal - show the chat in the main panel; false leaves the person's view as it is.
    * @returns its id, the binding and the release, or null without a folder to open it in.
    */
-  openChat(): Promise<{ sessionId: string; binding: RunSession; release: () => void } | null>
-  /** Whether the chat shows an approval or question that waits for the person. */
-  waiting(sessionId: string): boolean
+  openChat(reveal: boolean): Promise<{ sessionId: string; binding: RunSession; release: () => void } | null>
+  /** What the chat waits for from the person, or null while it waits for nothing. */
+  waiting(sessionId: string): RunWait | null
   /** Observe `waiting` changes. */
   subscribeWaiting(listener: () => void): () => void
   /** Archive a chat a run opened and never used. */
@@ -64,6 +71,9 @@ export type RunStart =
 
 /** Steps are reported at most this often while the state stays the same. */
 const STEP_REPORT_MS = 3_000
+
+/** A live run reports its state again this often; ahel.ai fails a live run after 30 minutes without a report. */
+const KEEP_ALIVE_MS = 5 * 60_000
 
 /** Count tool calls in some event entries. */
 function toolCalls(entries: readonly RunEntry[]): number {
@@ -96,6 +106,7 @@ export function lastReply(entries: readonly RunEntry[]): string {
  * @param report - sends one run report; failures are the caller's to log.
  * @param summarise - receives the closing reply of a finished run, to post as Ahel's comment.
  * @param claim - sends the first report to claim a queued run; resolves false when another session holds it.
+ *   A claimed run's chat opens without being shown.
  * @returns whether the chat started (`claimed` when another session holds the run); tracking continues until the first turn settles.
  */
 export async function startRun(
@@ -105,7 +116,7 @@ export async function startRun(
   summarise?: (text: string) => void,
   claim?: (report: IssueRunReport) => Promise<boolean>,
 ): Promise<RunStart> {
-  const chat = await host.openChat()
+  const chat = await host.openChat(claim === undefined)
   if (chat === null) return { ok: false, reason: 'no-workspace', message: null }
   const { sessionId, binding, release } = chat
   const session = binding.session
@@ -163,10 +174,14 @@ export async function startRun(
   const onWaiting = (): void => {
     if (ended) return
     const waiting = host.waiting(sessionId)
-    if (waiting && state !== 'waiting_approval') send('waiting_approval', true)
-    else if (!waiting && state === 'waiting_approval') send('running', true)
+    if (waiting !== null && state !== waiting) send(waiting, true)
+    else if (waiting === null && (state === 'waiting_approval' || state === 'waiting_input')) send('running', true)
   }
-  disposers.push(session.subscribe(onSession), binding.eventSource.subscribe(onEvents), host.subscribeWaiting(onWaiting))
+  const keepAlive = setInterval(() => { if (!ended) send(state, true) }, KEEP_ALIVE_MS)
+  disposers.push(
+    session.subscribe(onSession), binding.eventSource.subscribe(onEvents), host.subscribeWaiting(onWaiting),
+    () => { clearInterval(keepAlive) },
+  )
 
   let result: RemoteResult<{ accepted: true }>
   try {

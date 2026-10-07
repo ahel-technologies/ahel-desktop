@@ -3083,6 +3083,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       'client-ui-ahel-account ShareHandoffDialog id \'ahel-share\'',
       'client-ui-chat QuotaNoticeHost id \'chat.quota-notice\'',
       'client-ui-command-palette PaletteOverlay id \'command-palette\'',
+      'client-ui-issues PickupToast id \'ahel-issues.pickup-toast\'',
       'client-ui-local-cli LocalCliToast id \'local-cli.toast\'',
       'client-ui-plugin-manager PluginRefreshToast id \'plugin-manager.refresh-toast\'',
       'client-ui-schedule ScheduleDeleteToast id \'schedule.delete-toast\'',

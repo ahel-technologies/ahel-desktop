@@ -52,6 +52,7 @@ export const en = {
   runRunning: 'Ahel is working',
   runQueued: 'Queued',
   runWaiting: 'Waiting for approval',
+  runNeedsAnswer: 'Needs your answer',
   runFinished: 'Run finished',
   runFailed: 'Run failed',
   empty: 'No issues yet. Press C or New issue to add one.',
@@ -127,6 +128,8 @@ export const en = {
   activityCommented: 'commented',
   activityRun: 'run: {to}',
   runSummaryEmpty: 'The run finished without a summary.',
+  runPickedUp: 'Ahel started {key} in a new chat',
+  runPickedUpOpen: 'Open it',
 }
 
 /** Dictionary keys. */
@@ -180,6 +183,7 @@ export const zh: Record<IssuesKey, string> = {
   runRunning: 'Ahel 正在处理',
   runQueued: '排队中',
   runWaiting: '等待批准',
+  runNeedsAnswer: '需要你的回答',
   runFinished: '运行完成',
   runFailed: '运行失败',
   empty: '还没有议题。按 C 或点击“新建议题”添加。',
@@ -255,6 +259,8 @@ export const zh: Record<IssuesKey, string> = {
   activityCommented: '发表了评论',
   activityRun: '运行：{to}',
   runSummaryEmpty: '运行已完成，但没有总结。',
+  runPickedUp: 'Ahel 已在新对话中开始处理 {key}',
+  runPickedUpOpen: '打开',
 }
 
 declare module '@ahel/dsh-client-ui-slots' {

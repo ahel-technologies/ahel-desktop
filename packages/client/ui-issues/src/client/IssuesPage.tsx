@@ -64,6 +64,10 @@ export function IssuesPage(props: IssuesPageView) {
 
   const assignees = useMemo(() => assigneeOptions(state.assignees, state.issues, t), [state.assignees, state.issues, t])
   const openIssueRow: Issue | undefined = state.open === null ? undefined : state.issues.find(row => row.key === state.open)
+  const openLocalRun = state.open === null ? undefined : state.runs[state.open]
+  const openRun = openIssueRow === undefined ? openLocalRun ?? null : currentRun(openIssueRow, openLocalRun)
+  const openSessionId = openRun?.sessionId ?? null
+  const openRunModel = openSessionId === null ? null : state.models[openSessionId] ?? null
   const offered = state.offerRun === null ? undefined : state.issues.find(row => row.key === state.offerRun)
   const filtered = state.filter.project !== null || state.filter.q.trim() !== ''
 
@@ -184,11 +188,11 @@ export function IssuesPage(props: IssuesPageView) {
         <IssueDetail
           issueKey={state.open}
           live={openIssueRow}
-          run={openIssueRow === undefined ? state.runs[state.open] ?? null : currentRun(openIssueRow, state.runs[state.open])}
+          run={openRun}
           projects={state.projects}
           assignees={assignees}
           role={state.role}
-          agentModel={state.assignees?.agents[0]?.model ?? null}
+          runModel={openRunModel}
           now={now}
           t={t}
           actions={props}

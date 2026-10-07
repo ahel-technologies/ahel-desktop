@@ -59,6 +59,7 @@
     "@ahel/dsh-client-store": "workspace:*",
     "@ahel/dsh-client-test-runtime": "workspace:*",
     "@ahel/dsh-client-ui-layout": "workspace:*",
+    "@ahel/dsh-client-ui-model-selection": "workspace:*",
     "@ahel/dsh-client-ui-primitives": "workspace:*",
     "@ahel/dsh-client-ui-renderer": "workspace:*",
     "@ahel/dsh-client-ui-session": "workspace:*",

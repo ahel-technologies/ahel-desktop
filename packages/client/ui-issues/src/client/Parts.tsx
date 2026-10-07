@@ -83,8 +83,8 @@ export function Assignee({ type, name, avatar, compact, t }: {
 /**
  * A run's progress: "Queued" while it waits for a desktop to pick it up, a
  * ring filled steps/total while it works (a spinning quarter while the total
- * is unknown), "Waiting for approval" while a confirmation waits, and the end
- * state once it settled.
+ * is unknown), "Waiting for approval" while a held tool call waits, "Needs your
+ * answer" while the chat asks the person a question, and the end state once it settled.
  * @param props - the run and the dictionary.
  * @returns the progress, or nothing without a run.
  */
@@ -92,6 +92,7 @@ export function RunProgress({ run, t }: { run: IssueRun | null; t: Translate }) 
   if (run === null || run.state === null) return null
   if (run.state === 'queued') return <span className={css.run} data-state="queued">{t('runQueued')}</span>
   if (run.state === 'waiting_approval') return <span className={css.waiting}>{t('runWaiting')}</span>
+  if (run.state === 'waiting_input') return <span className={css.waiting}>{t('runNeedsAnswer')}</span>
   if (run.state === 'finished' || run.state === 'failed') {
     return <span className={css.run} data-state={run.state}>{t(run.state === 'finished' ? 'runFinished' : 'runFailed')}</span>
   }

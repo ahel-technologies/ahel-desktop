@@ -30,6 +30,7 @@ export const ISSUE_KIND_COPY: Readonly<Record<IssueInboxItem['type'], { readonly
   assigned: { label: 'inboxKindAssigned', sentence: 'inboxIssueAssigned' },
   mentioned: { label: 'inboxKindMentioned', sentence: 'inboxIssueMentioned' },
   run_queued: { label: 'inboxKindRunQueued', sentence: 'inboxIssueRunQueued' },
+  run_waiting_input: { label: 'inboxKindRunWaitingInput', sentence: 'inboxIssueRunWaitingInput' },
   run_finished: { label: 'inboxKindRunFinished', sentence: 'inboxIssueRunFinished' },
   run_failed: { label: 'inboxKindRunFailed', sentence: 'inboxIssueRunFailed' },
 }

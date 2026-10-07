@@ -3,7 +3,7 @@ import type { IssueRunReport } from '@ahel/dsh-ahel-account/types'
 import { makeTranslate } from '@ahel/dsh-client-test-runtime'
 import { en } from '../src/client/locales.ts'
 import { runSeed, type Translate } from '../src/client/model.ts'
-import { startRun, type RunEntry, type RunHost, type RunSession } from '../src/client/run.ts'
+import { startRun, type RunEntry, type RunHost, type RunSession, type RunWait } from '../src/client/run.ts'
 import { RemoteError } from '@ahel/dsh-typert-protocol'
 import { createIssuesFeed } from '../src/client/feed.ts'
 import { backendOf, ISSUES } from './fixture.client.ts'
@@ -16,7 +16,7 @@ function fakeChat() {
   let lastAgentError: string | null = null
   let entries: readonly RunEntry[] = []
   let change: { kind: string; entries?: readonly RunEntry[] } = { kind: 'replace' }
-  let waiting = false
+  let waiting: RunWait | null = null
   const sessionListeners = new Set<() => void>()
   const eventListeners = new Set<() => void>()
   const waitListeners = new Set<() => void>()
@@ -34,8 +34,9 @@ function fakeChat() {
   }
   const release = vi.fn()
   const discard = vi.fn()
+  const openChat = vi.fn((_reveal: boolean) => Promise.resolve({ sessionId: 'chat-1', binding, release }))
   const host: RunHost = {
-    openChat: () => Promise.resolve({ sessionId: 'chat-1', binding, release }),
+    openChat,
     waiting: () => waiting,
     subscribeWaiting: (listener) => { waitListeners.add(listener); return () => { waitListeners.delete(listener) } },
     discard,
@@ -46,7 +47,7 @@ function fakeChat() {
     for (const l of eventListeners) l()
   }
   return {
-    host, send, release, discard,
+    host, send, release, discard, openChat,
     setRunning(next: boolean, error: string | null = null) {
       running = next
       lastAgentError = error
@@ -54,7 +55,7 @@ function fakeChat() {
     },
     reply(text: string) { append([{ event: { type: 'assistant/message', data: { message: { content: [{ type: 'text', text }] } } } }]) },
     toolCall() { append([{ event: { type: 'tool/call' } }]) },
-    setWaiting(next: boolean) { waiting = next; for (const l of waitListeners) l() },
+    setWaiting(next: RunWait | null) { waiting = next; for (const l of waitListeners) l() },
   }
 }
 
@@ -74,8 +75,8 @@ it('seeds a new chat with the issue and reports running, waiting_approval, runni
 
   chat.setRunning(true)
   chat.toolCall()
-  chat.setWaiting(true)
-  chat.setWaiting(false)
+  chat.setWaiting('waiting_approval')
+  chat.setWaiting(null)
   chat.toolCall()
   chat.reply('Drafted the checklist. Please review.')
   chat.setRunning(false)
@@ -100,4 +101,27 @@ it('a claim ahel.ai answers 409 run_claimed drops the new chat unused: no seed, 
   expect(chat.release).toHaveBeenCalledTimes(1)
   expect(chat.discard).toHaveBeenCalledWith('chat-1')
   expect(feed.state.getSnapshot().runs).toEqual({})
+})
+
+it('a question reports waiting_input, a live run reports again every 5 minutes, and a claimed run opens its chat unshown', async () => {
+  vi.useFakeTimers()
+  try {
+    const chat = fakeChat()
+    const reports: IssueRunReport[] = []
+    const claim = vi.fn((_report: IssueRunReport) => Promise.resolve(true))
+    await startRun(chat.host, runSeed(ISSUES[2]!, t), (report) => { reports.push(report) }, undefined, claim)
+    expect(chat.openChat).toHaveBeenCalledWith(false)
+    chat.setRunning(true)
+    chat.toolCall()
+    chat.setWaiting('waiting_input')
+    vi.advanceTimersByTime(5 * 60_000)
+    expect(reports.map(report => report.state)).toEqual(['waiting_input', 'waiting_input'])
+    expect(reports.at(-1)).toMatchObject({ sessionId: 'chat-1', steps: 1 })
+    chat.setWaiting(null)
+    chat.setRunning(false)
+    vi.advanceTimersByTime(5 * 60_000)
+    expect(reports.map(report => report.state)).toEqual(['waiting_input', 'waiting_input', 'running', 'finished'])
+  } finally {
+    vi.useRealTimers()
+  }
 })

@@ -10,6 +10,7 @@ import { createIssuesFeed } from '../src/client/feed.ts'
 import { IssuesPage } from '../src/client/IssuesPage.tsx'
 import css from '../src/client/Issues.module.css'
 import { IssuesPanelIcon } from '../src/client/PanelIcons.tsx'
+import { createPickupToast, PickupToast, type PickupToastProps } from '../src/client/PickupToast.tsx'
 import { en } from '../src/client/locales.ts'
 import { backendOf, ISSUES, PAGE } from './fixture.client.ts'
 
@@ -59,11 +60,29 @@ it('renders the board from the fixture: six columns with counts, cards with key,
   expect(screen.getByText('2 agents working')).toBeTruthy()
 })
 
-it('the detail shows the agent\'s model under the assignee and a parent example in the workspace\'s prefix', async () => {
-  await mount()
+it('the detail shows the model the run\'s chat uses under the assignee and a parent example in the workspace\'s prefix', async () => {
+  const { feed } = await mount()
   await act(async () => { fireEvent.click(screen.getByText('AHEL-137')) })
-  expect(screen.getByText('Runs on Claude Sonnet')).toBeTruthy()
+  expect(screen.queryByText(/^Runs on/)).toBeNull()
+  await act(async () => { feed.noteModel('s1', 'Anthropic: Claude Sonnet 5') })
+  expect(screen.getByText('Runs on Anthropic: Claude Sonnet 5')).toBeTruthy()
   expect(screen.getByPlaceholderText('AHEL-1')).toBeTruthy()
+})
+
+it('a run waiting on a question reads Needs your answer, and a press on another card while the detail is open opens that card', async () => {
+  const asking: Issue = { ...ISSUES[3]!, run: { ...ISSUES[3]!.run!, state: 'waiting_input' } }
+  await mount({ ...PAGE, issues: ISSUES.map(row => (row.key === asking.key ? asking : row)) })
+  const blocked = within(screen.getByRole('region', { name: 'Issues board' })).getByRole('region', { name: 'Blocked' })
+  expect(within(blocked).getByText('Needs your answer')).toBeTruthy()
+  await act(async () => { fireEvent.click(screen.getByText('AHEL-137')) })
+  expect(screen.getByRole('complementary', { name: /^AHEL-137 / })).toBeTruthy()
+  const card = screen.getAllByText('AHEL-134')[0]!
+  await act(async () => {
+    fireEvent.pointerDown(card)
+    fireEvent.click(card)
+  })
+  expect(screen.queryByRole('complementary', { name: /^AHEL-137 / })).toBeNull()
+  expect(screen.getByRole('complementary', { name: /^AHEL-134 / })).toBeTruthy()
 })
 
 it('dropping a card on another column patches its status and moves it at once', async () => {
@@ -101,4 +120,18 @@ it('a run queued on ahel.ai shows Queued on its card, and the header shows the w
   expect(within(todo).getByText('Queued')).toBeTruthy()
   expect(screen.getByText('2 agents working')).toBeTruthy()
   expect(screen.getByText('1 queued')).toBeTruthy()
+})
+
+it('a picked-up run shows a banner whose Open it shows the chat', () => {
+  const toast = createPickupToast()
+  const openSession = vi.fn()
+  const useToast = ((selector: (state: ReturnType<typeof toast.hooks.toast.getSnapshot>) => unknown) =>
+    useSyncExternalStore(listener => toast.hooks.toast.subscribe(listener), () => selector(toast.hooks.toast.getSnapshot()))) as PickupToastProps['useToast']
+  const props = { useToast, dismiss: toast.dismiss, openSession, t: makeTranslate(en) } as PickupToastProps
+  render(<PickupToast {...props} />)
+  act(() => { toast.show('DEMO-10', 'chat-9') })
+  expect(screen.getByText('Ahel started DEMO-10 in a new chat')).toBeTruthy()
+  fireEvent.click(screen.getByText('Open it'))
+  expect(openSession).toHaveBeenCalledWith('chat-9')
+  expect(screen.queryByText('Ahel started DEMO-10 in a new chat')).toBeNull()
 })

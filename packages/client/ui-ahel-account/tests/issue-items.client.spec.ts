@@ -36,3 +36,9 @@ it('a run_queued row reads "Run queued" and names who asked for the run', () => 
   expect(en[copy.label]).toBe('Run queued')
   expect(en[copy.sentence].replace('{actor}', 'Kaarna')).toBe('Kaarna asked Ahel to run it')
 })
+
+it('a run_waiting_input row reads "Needs your answer"', () => {
+  const copy = ISSUE_KIND_COPY.run_waiting_input
+  expect(en[copy.label]).toBe('Needs your answer')
+  expect(en[copy.sentence].replace('{actor}', 'Ahel')).toBe('Ahel needs your answer to go on')
+})

@@ -34,6 +34,9 @@ async function mockIssuesApi() {
         json(200, { issue: { ...issue, ...patch } }); return
       }
       if (url.pathname === '/api/desktop/issues/AHEL-137/run' && request.method === 'POST') {
+        if ((JSON.parse(body) as { state?: string }).state === 'waiting_input') {
+          json(400, { error: 'invalid_input', detail: 'state is queued, running, waiting_approval, finished or failed.' }); return
+        }
         json(200, { ...issue, status: 'in_progress', run: { ...JSON.parse(body) as object, updatedAt: '2026-10-06T09:00:00.000Z' } }); return
       }
       if (url.pathname === '/api/desktop/handoffs' && request.method === 'POST') {
@@ -78,4 +81,26 @@ it('lists, patches, reports a run, marks an Inbox row read, and carries ahel.ai\
 
   expect(await issues.readItem('n1')).toBe(1)
   expect(JSON.parse(api.seen.at(-1)!.body)).toEqual({ operation: 'item_read', id: 'n1' })
+})
+
+it('sends waiting_input as waiting_approval to an ahel.ai that refuses it, and reports a live run failed when the Host stops', async () => {
+  const api = await mockIssuesApi()
+  const ctx = new Context()
+  ctx.provide('ahelAccount', {
+    workspace: () => Promise.resolve('t1'),
+    accessToken: () => Promise.resolve('access-1'),
+    revalidate: () => Promise.resolve(),
+  })
+  const plugin = ctx.plugin(AhelIssues, { appOrigin: api.origin })
+  await plugin
+  const issues = ctx.ahelIssues
+
+  const asked = await issues.run('AHEL-137', { sessionId: 's1', state: 'waiting_input', steps: 3, totalSteps: null })
+  expect(asked.issue).toMatchObject({ run: { state: 'waiting_approval' } })
+  expect(api.seen.map(row => (JSON.parse(row.body) as { state: string }).state)).toEqual(['waiting_input', 'waiting_approval'])
+  await issues.run('AHEL-137', { sessionId: 's1', state: 'waiting_input', steps: 4, totalSteps: null })
+  expect(JSON.parse(api.seen.at(-1)!.body)).toMatchObject({ state: 'waiting_approval', steps: 4 })
+
+  await plugin.dispose()
+  expect(JSON.parse(api.seen.at(-1)!.body)).toEqual({ sessionId: 's1', state: 'failed', steps: 4, totalSteps: null, reason: 'desktop closed' })
 })

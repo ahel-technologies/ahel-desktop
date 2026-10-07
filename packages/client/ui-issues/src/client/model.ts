@@ -156,7 +156,7 @@ export function initials(name: string): string {
 }
 
 const RUN_KEY: Record<IssueRunState, IssuesKey> = {
-  queued: 'runQueued', running: 'runRunning', waiting_approval: 'runWaiting', finished: 'runFinished', failed: 'runFailed',
+  queued: 'runQueued', running: 'runRunning', waiting_approval: 'runWaiting', waiting_input: 'runNeedsAnswer', finished: 'runFinished', failed: 'runFailed',
 }
 
 /**
