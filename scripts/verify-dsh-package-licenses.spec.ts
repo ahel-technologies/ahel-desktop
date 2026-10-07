@@ -43,7 +43,7 @@ describe('DSH package license gate', () => {
     expect(inspectDshPackageLicenses(root)).toEqual({
       packageCount: 3,
       failures: [
-        'packages/core/agent/package.json: @ahel/dsh-agent must declare "license": "MIT"; found "BSD-3-Clause".',
+        'packages/core/agent/package.json: @ahel/dsh-agent must declare "license": "MIT" or "Apache-2.0"; found "BSD-3-Clause".',
       ],
     })
   })
@@ -53,7 +53,7 @@ describe('DSH package license gate', () => {
     writeManifest(root, 'packages/core/agent/package.json', { name: '@ahel/dsh-agent' })
 
     expect(inspectDshPackageLicenses(root).failures).toEqual([
-      'packages/core/agent/package.json: @ahel/dsh-agent must declare "license": "MIT"; found undefined.',
+      'packages/core/agent/package.json: @ahel/dsh-agent must declare "license": "MIT" or "Apache-2.0"; found undefined.',
     ])
   })
 })

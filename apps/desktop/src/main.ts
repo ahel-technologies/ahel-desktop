@@ -377,10 +377,10 @@ async function main(): Promise<void> {
   }
   // Copy comes from the same locale as the update prompts so the dialog
   // chrome and its content never mix languages.
-  // LICENSE and THIRD_PARTY_NOTICES.md ship in Resources/licenses; development reads the repository root.
+  // LICENSE, NOTICE and THIRD_PARTY_NOTICES.md ship in Resources/licenses; development reads the repository root.
   const licensesDirectory = development ? join(app.getAppPath(), '..', '..') : join(process.resourcesPath, 'licenses')
   const openLicenses = async (): Promise<void> => {
-    for (const name of ['LICENSE', 'THIRD_PARTY_NOTICES.md']) {
+    for (const name of ['LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md']) {
       const failure = await shell.openPath(join(licensesDirectory, name))
       if (failure !== '') console.error(`desktop licenses: ${name}: ${failure}`)
     }

@@ -143,8 +143,9 @@ export function createElectronBuilderConfig(
     extraResources: [
       { from: buildPaths.runtime, to: 'runtime' },
       { from: fileURLToPath(new URL('../resources/icon-windows.png', import.meta.url)), to: 'icon.png' },
-      // MIT terms and third-party notices, opened from About and the Licenses menu item.
+      // License terms and third-party notices, opened from About and the Licenses menu item.
       { from: fileURLToPath(new URL('../../../LICENSE', import.meta.url)), to: 'licenses/LICENSE' },
+      { from: fileURLToPath(new URL('../../../NOTICE', import.meta.url)), to: 'licenses/NOTICE' },
       { from: fileURLToPath(new URL('../../../THIRD_PARTY_NOTICES.md', import.meta.url)), to: 'licenses/THIRD_PARTY_NOTICES.md' },
       // Computer use: the pinned Cua Driver (prepare-cua-driver.ts) and its notices, macOS only for now.
       ...(resolvedPlatform === 'darwin' ? [

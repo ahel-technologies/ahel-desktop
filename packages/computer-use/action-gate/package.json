@@ -30,7 +30,7 @@
     "lib/types/**/*.js",
     "lib/types/**/*.d.ts"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "peerDependencies": {
     "@ahel/cordis": "workspace:~",
     "@ahel/cordis-plugin-loader": "workspace:~",

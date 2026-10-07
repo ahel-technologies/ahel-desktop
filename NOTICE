@@ -49,9 +49,8 @@ alone does not tell inherited code from new code. Use these rules instead:
   Third-party code bundled inside these packages keeps its own license, as
   listed under "Other third-party notices" below.
 
-The `license` field in each workspace package.json reads "MIT", the value
-inherited from deepseek-harness. It has not been changed per package; the
-rules above and this NOTICE identify which terms apply.
+The `license` field in each package.json tells them apart: the packages listed
+above declare "Apache-2.0", and inherited packages keep "MIT".
 
 deepseek-harness (MIT License)
 ------------------------------
