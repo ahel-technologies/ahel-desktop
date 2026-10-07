@@ -100,17 +100,6 @@ export function currentRun(issue: Issue, local: IssueRun | undefined): IssueRun 
   return local.updatedAt >= issue.run.updatedAt ? local : issue.run
 }
 
-/**
- * Agents at work for the board's header: ahel.ai's count also holds runs
- * still queued for a desktop, which are not working yet.
- * @param agentsWorking - ahel.ai's count of queued, running and waiting runs.
- * @param agentsQueued - queued runs among the agent's issues at the last read.
- * @returns the runs that are running or waiting for approval.
- */
-export function workingCount(agentsWorking: number, agentsQueued: number): number {
-  return Math.max(0, agentsWorking - agentsQueued)
-}
-
 /** Translate function shape this package's helpers take. */
 export type Translate = (key: IssuesKey, params?: Record<string, string>) => string
 

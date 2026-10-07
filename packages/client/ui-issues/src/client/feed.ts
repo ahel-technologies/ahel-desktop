@@ -10,7 +10,7 @@ import type {
   IssueRunReport, IssueStatus, IssueWriteAnswer,
 } from '@ahel/dsh-ahel-account/types'
 import type { HostObservable } from '@ahel/dsh-client-ui-slots'
-import type { RemoteResult } from '@ahel/dsh-typert-protocol'
+import type { RemoteFailure, RemoteResult } from '@ahel/dsh-typert-protocol'
 import type { IssueDetailLoad, IssuesAnswer, IssuesFilter, IssuesInjected, IssuesState } from './contract.ts'
 import { CLOSED } from './model.ts'
 
@@ -62,13 +62,25 @@ export type IssuesFeed = Omit<IssuesInjected, 'run' | 'openSession' | 'openLink'
   reload(): Promise<void>
   /** Post a run's closing summary as Ahel's comment. */
   agentComment(key: string, body: string): void
-  /** Record how many runs wait in `queued` for a desktop, so the header counts only working agents. */
-  queued(count: number): void
+  /**
+   * Send the report that claims a queued run and record it locally once ahel.ai took it.
+   * @returns false when ahel.ai answered 409 `run_claimed`: another session holds the run; nothing is recorded.
+   */
+  claim(key: string, report: IssueRunReport): Promise<boolean>
 }
 
 /** A Remote failure's message worth showing: ahel.ai's own reason for refusals, nothing for transport failures. */
 function reason(error: { code: string; message: string }): string | null {
   return error.code === 'ahel-issues/forbidden' || error.code === 'ahel-issues/refused' ? error.message : null
+}
+
+/**
+ * Whether a run report was refused because another session holds the run.
+ * @param error - the Remote failure.
+ * @returns true for ahel.ai's 409 `run_claimed`.
+ */
+export function isRunClaimed(error: RemoteFailure): boolean {
+  return error.code === 'ahel-issues/refused' && error.details.error === 'run_claimed'
 }
 
 /**
@@ -122,7 +134,7 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
       if (cursor === null) break
     }
     if (page === undefined) return
-    set({ phase: 'ready', message: null, issues, counts: page.counts, agentsWorking: page.agentsWorking })
+    set({ phase: 'ready', message: null, issues, counts: page.counts, agentsWorking: page.agentsWorking, agentsQueued: page.agentsQueued ?? 0 })
   }
   const readMine = async (): Promise<void> => {
     const result = await backend.list({ assigneeType: 'member', assigneeId: 'me', limit: 1 })
@@ -152,6 +164,15 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
     await Promise.all([readBoard(), readMine(), readProjects(), readAssignees()])
   }
   const refresh = (): void => { void reload().catch(() => undefined) }
+
+  // A run report shows on the board at once, before ahel.ai answers.
+  const remember = (key: string, report: IssueRunReport): void => {
+    const run: IssueRun = { ...report, updatedAt: new Date().toISOString() }
+    set({ runs: { ...value.runs, [key]: run } })
+    const issue = value.issues.find(row => row.key === key)
+    const status = RUN_STATUS[report.state]
+    if (issue !== undefined && status !== undefined && issue.status !== status) replaceIssue({ ...issue, status })
+  }
 
   const answer = (result: RemoteResult<unknown>): IssuesAnswer =>
     result.ok ? { ok: true } : { ok: false, message: reason(result.error) }
@@ -218,13 +239,15 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
       if (result.ok) set({ projects: result.value })
       return answer(result)
     },
-    queued: (count) => { if (count !== value.agentsQueued) set({ agentsQueued: count }) },
+    claim: async (key, report) => {
+      const result = await backend.run(key, report)
+      if (!result.ok && isRunClaimed(result.error)) return false
+      remember(key, report)
+      if (result.ok && result.value.issue !== null) replaceIssue(result.value.issue)
+      return true
+    },
     report: (key, report) => {
-      const run: IssueRun = { ...report, updatedAt: new Date().toISOString() }
-      set({ runs: { ...value.runs, [key]: run } })
-      const issue = value.issues.find(row => row.key === key)
-      const status = RUN_STATUS[report.state]
-      if (issue !== undefined && status !== undefined && issue.status !== status) replaceIssue({ ...issue, status })
+      remember(key, report)
       void backend.run(key, report).then((result) => {
         if (result.ok && result.value.issue !== null) replaceIssue(result.value.issue)
       }).catch(() => undefined)

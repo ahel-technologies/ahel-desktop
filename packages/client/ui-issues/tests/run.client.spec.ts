@@ -4,7 +4,9 @@ import { makeTranslate } from '@ahel/dsh-client-test-runtime'
 import { en } from '../src/client/locales.ts'
 import { runSeed, type Translate } from '../src/client/model.ts'
 import { startRun, type RunEntry, type RunHost, type RunSession } from '../src/client/run.ts'
-import { ISSUES } from './fixture.client.ts'
+import { RemoteError } from '@ahel/dsh-typert-protocol'
+import { createIssuesFeed } from '../src/client/feed.ts'
+import { backendOf, ISSUES } from './fixture.client.ts'
 
 const t = makeTranslate(en) as Translate
 
@@ -31,10 +33,12 @@ function fakeChat() {
     send,
   }
   const release = vi.fn()
+  const discard = vi.fn()
   const host: RunHost = {
     openChat: () => Promise.resolve({ sessionId: 'chat-1', binding, release }),
     waiting: () => waiting,
     subscribeWaiting: (listener) => { waitListeners.add(listener); return () => { waitListeners.delete(listener) } },
+    discard,
   }
   const append = (added: readonly RunEntry[]): void => {
     entries = [...entries, ...added]
@@ -42,7 +46,7 @@ function fakeChat() {
     for (const l of eventListeners) l()
   }
   return {
-    host, send, release,
+    host, send, release, discard,
     setRunning(next: boolean, error: string | null = null) {
       running = next
       lastAgentError = error
@@ -80,4 +84,20 @@ it('seeds a new chat with the issue and reports running, waiting_approval, runni
   expect(reports.at(-1)).toMatchObject({ sessionId: 'chat-1', steps: 2, totalSteps: null })
   expect(summarise).toHaveBeenCalledWith('Drafted the checklist. Please review.')
   expect(chat.release).toHaveBeenCalledTimes(1)
+})
+
+it('a claim ahel.ai answers 409 run_claimed drops the new chat unused: no seed, no local run, the chat archived', async () => {
+  const chat = fakeChat()
+  const refused = new RemoteError('ahel-issues/refused', 'Session desk-b already has this run.', { status: 409, error: 'run_claimed' })
+  const run = vi.fn((_key: string, _report: IssueRunReport) => Promise.resolve({ ok: false as const, error: refused }))
+  const feed = createIssuesFeed(backendOf({ run }), () => Promise.resolve({ signedIn: true, role: 'OWNER' }))
+  const report = vi.fn()
+  const started = await startRun(chat.host, runSeed(ISSUES[2]!, t), report, undefined, next => feed.claim('AHEL-137', next))
+  expect(started).toEqual({ ok: false, reason: 'claimed', message: null })
+  expect(run).toHaveBeenCalledWith('AHEL-137', { sessionId: 'chat-1', state: 'running', steps: 0, totalSteps: null })
+  expect(chat.send).not.toHaveBeenCalled()
+  expect(report).not.toHaveBeenCalled()
+  expect(chat.release).toHaveBeenCalledTimes(1)
+  expect(chat.discard).toHaveBeenCalledWith('chat-1')
+  expect(feed.state.getSnapshot().runs).toEqual({})
 })

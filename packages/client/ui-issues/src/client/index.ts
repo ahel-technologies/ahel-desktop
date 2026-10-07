@@ -22,7 +22,7 @@ import type {} from '@ahel/dsh-client-locale/client'
 import type {} from '@ahel/dsh-client-ui-renderer/client'
 import type {} from '@ahel/dsh-client-ui-session/client'
 import type {} from '@ahel/dsh-client-ui-workspace/client'
-import type { Issue } from '@ahel/dsh-ahel-account/types'
+import type { Issue, IssueRunReport } from '@ahel/dsh-ahel-account/types'
 import type { IssuesInjected } from './contract.ts'
 import { createIssuesFeed, type IssuesAccount } from './feed.ts'
 import { IssuesPage } from './IssuesPage.tsx'
@@ -147,10 +147,19 @@ function register(ctx: Context): void {
     },
     waiting: id => ctx.uiSession.sessionStatus.getSnapshot().get(id as SessionId)?.pendingInteraction !== undefined,
     subscribeWaiting: listener => ctx.uiSession.sessionStatus.subscribe(listener),
+    discard: (sessionId) => {
+      void ctx.uiWorkspace.archiveSession(sessionId as SessionId).catch((error: unknown) => {
+        console.warn('[ui-issues] could not archive an unused run chat:', error)
+      })
+    },
   }
 
-  const launch = async (issue: Issue): Promise<RunStart> => await startRun(runHost, runSeed(issue, t),
-    (report) => { feed.report(issue.key, report) }, (summary) => { feed.agentComment(issue.key, summary) })
+  const launch = async (issue: Issue, claim?: (report: IssueRunReport) => Promise<boolean>): Promise<RunStart> => await startRun(
+    runHost, runSeed(issue, t),
+    (report) => { feed.report(issue.key, report) },
+    (summary) => { feed.agentComment(issue.key, summary) },
+    claim,
+  )
 
   // The person's user id names who asked for a queued run; it is read once per sign-in.
   let me: Promise<string | null> | undefined
@@ -165,11 +174,13 @@ function register(ctx: Context): void {
       })
     },
     claim: async (issue) => {
-      const started = await launch(issue)
-      if (started.ok) ctx.emit('ahel-issues/run-started', issue.key, issue.title, started.sessionId)
-      return started.ok
+      const started = await launch(issue, report => feed.claim(issue.key, report))
+      if (started.ok) {
+        ctx.emit('ahel-issues/run-started', issue.key, issue.title, started.sessionId)
+        return 'started'
+      }
+      return started.reason === 'claimed' ? 'taken' : 'failed'
     },
-    queued: (count) => { feed.queued(count) },
   })
   let lastPickup = 0
   const pick = (force: boolean): void => {

@@ -90,6 +90,10 @@ export interface IssueQuery {
   readonly assigneeId?: string | undefined
   /** Project id. */
   readonly project?: string | undefined
+  /** Only issues whose run is in this state. */
+  readonly runState?: IssueRunState | undefined
+  /** Only runs this seat asked for: a user id, or `me`. */
+  readonly requestedBy?: string | undefined
   /** Free text over key, title and description. */
   readonly q?: string | undefined
   readonly cursor?: string | undefined
@@ -103,8 +107,10 @@ export interface IssuePage {
   readonly nextCursor: string | null
   /** Issues per status for the same filters, ignoring `status` and paging. */
   readonly counts: Readonly<Record<string, number>>
-  /** Agent runs in `queued`, `running` or `waiting_approval` state across the workspace. */
+  /** Agent runs in `running` or `waiting_approval` state across the workspace, ignoring the filters. */
   readonly agentsWorking: number
+  /** Agent runs in `queued` state across the workspace, ignoring the filters; null from an ahel.ai that does not count them apart. */
+  readonly agentsQueued: number | null
 }
 
 /** Fields of a new issue. */

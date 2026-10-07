@@ -4,7 +4,10 @@
  * run. The turn ending normally reports `finished`, an error `failed`, a
  * pending approval or question `waiting_approval`, and its answer `running`
  * again. Steps are the tool calls made so far; the expected total stays
- * unknown because the goal package keeps rounds, not steps.
+ * unknown because the goal package keeps rounds, not steps. A run that
+ * claims a run queued on ahel.ai sends its first report through `claim` and
+ * waits for the answer before the issue reaches the chat: when another
+ * session holds the run, the new chat is archived unused.
  */
 import type { IssueRunReport, IssueRunState } from '@ahel/dsh-ahel-account/types'
 import type { RemoteResult } from '@ahel/dsh-typert-protocol'
@@ -50,12 +53,14 @@ export interface RunHost {
   waiting(sessionId: string): boolean
   /** Observe `waiting` changes. */
   subscribeWaiting(listener: () => void): () => void
+  /** Archive a chat a run opened and never used. */
+  discard(sessionId: string): void
 }
 
 /** How a run start ended. */
 export type RunStart =
   | { readonly ok: true; readonly sessionId: string }
-  | { readonly ok: false; readonly reason: 'no-workspace' | 'failed'; readonly message: string | null }
+  | { readonly ok: false; readonly reason: 'no-workspace' | 'failed' | 'claimed'; readonly message: string | null }
 
 /** Steps are reported at most this often while the state stays the same. */
 const STEP_REPORT_MS = 3_000
@@ -90,13 +95,15 @@ export function lastReply(entries: readonly RunEntry[]): string {
  * @param seed - the chat's first message.
  * @param report - sends one run report; failures are the caller's to log.
  * @param summarise - receives the closing reply of a finished run, to post as Ahel's comment.
- * @returns whether the chat started; tracking continues until the first turn settles.
+ * @param claim - sends the first report to claim a queued run; resolves false when another session holds it.
+ * @returns whether the chat started (`claimed` when another session holds the run); tracking continues until the first turn settles.
  */
 export async function startRun(
   host: RunHost,
   seed: string,
   report: (report: IssueRunReport) => void,
   summarise?: (text: string) => void,
+  claim?: (report: IssueRunReport) => Promise<boolean>,
 ): Promise<RunStart> {
   const chat = await host.openChat()
   if (chat === null) return { ok: false, reason: 'no-workspace', message: null }
@@ -112,7 +119,16 @@ export async function startRun(
     reported = now
     report({ sessionId, state, steps, totalSteps: null })
   }
-  send('running', true)
+  if (claim === undefined) {
+    send('running', true)
+  } else {
+    reported = Date.now()
+    if (!await claim({ sessionId, state, steps, totalSteps: null })) {
+      release()
+      host.discard(sessionId)
+      return { ok: false, reason: 'claimed', message: null }
+    }
+  }
 
   let ended = false
   const disposers: (() => void)[] = []

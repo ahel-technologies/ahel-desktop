@@ -91,14 +91,14 @@ it('draws the open-issue count as a trailing pill in the wide sidebar row and on
   expect(within(rail.container).getByText('3').className).toBe(css.badge)
 })
 
-it('a run queued on ahel.ai shows Queued on its card and does not count as an agent working', async () => {
+it('a run queued on ahel.ai shows Queued on its card, and the header shows the working and queued counts ahel.ai sends', async () => {
   const queued: Issue = {
     ...ISSUES[2]!, key: 'AHEL-140', title: 'Draft the release notes', status: 'todo',
     run: { sessionId: null, state: 'queued', requestedBy: 'u1', steps: 0, totalSteps: 0, updatedAt: '2026-10-07T09:00:00.000Z' },
   }
-  const { feed } = await mount({ ...PAGE, issues: [...ISSUES, queued], agentsWorking: 3 })
-  await act(async () => { feed.queued(1) })
+  await mount({ ...PAGE, issues: [...ISSUES, queued], agentsWorking: 2, agentsQueued: 1 })
   const todo = within(screen.getByRole('region', { name: 'Issues board' })).getByRole('region', { name: 'Todo' })
   expect(within(todo).getByText('Queued')).toBeTruthy()
   expect(screen.getByText('2 agents working')).toBeTruthy()
+  expect(screen.getByText('1 queued')).toBeTruthy()
 })

@@ -29,9 +29,9 @@ export interface IssuesState {
   readonly issues: readonly Issue[]
   /** Issues per status for the current filters. */
   readonly counts: Readonly<Record<string, number>>
-  /** ahel.ai's count of agent runs queued, running or waiting for approval. */
+  /** Agent runs running or waiting for approval across the workspace, as ahel.ai counts them. */
   readonly agentsWorking: number
-  /** Runs queued on ahel.ai for a desktop, among the agent's issues at the last pickup read. */
+  /** Agent runs queued on ahel.ai for a desktop across the workspace; 0 from an ahel.ai that does not count them. */
   readonly agentsQueued: number
   readonly filter: IssuesFilter
   readonly projects: readonly IssueProject[]

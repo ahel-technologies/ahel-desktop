@@ -4,8 +4,10 @@
  * it in `queued` with no session and `requestedBy` set to that seat, and the
  * Ahel Desktop of the person who asked claims it by starting Run with Ahel,
  * whose first `running` report carries the new chat's session. A run someone
- * else asked for is left to their desktop. ahel.ai fails a queued run no
- * desktop reports within 60 minutes.
+ * else asked for is left to their desktop. The claim is atomic on ahel.ai:
+ * when another session got the run first, ahel.ai answers 409 `run_claimed`
+ * and the new chat is dropped unused. ahel.ai fails a queued run no desktop
+ * reports within 60 minutes.
  */
 import type { Issue, IssuePage, IssueQuery, IssueWriteAnswer } from '@ahel/dsh-ahel-account/types'
 import type { RemoteResult } from '@ahel/dsh-typert-protocol'
@@ -39,13 +41,17 @@ export function queuedRunId(issue: Issue): string {
  * its run waits without a session, the signed-in person asked for it, and this
  * desktop has not claimed that run already.
  * @param issue - the issue as read.
- * @param me - the signed-in person's user id.
- * @param claimed - runs this desktop claimed, by `queuedRunId`.
+ * @param me - the signed-in person's user id, or null when ahel.ai already answered only this person's runs (`requestedBy=me`).
+ * @param claimed - runs this desktop claimed or saw taken, by `queuedRunId`.
  * @returns true when the run is this desktop's to start.
  */
-export function shouldClaim(issue: Issue, me: string, claimed: ReadonlySet<string>): boolean {
-  return issue.assigneeType === 'agent' && isQueued(issue) && issue.run?.requestedBy === me && !claimed.has(queuedRunId(issue))
+export function shouldClaim(issue: Issue, me: string | null, claimed: ReadonlySet<string>): boolean {
+  return issue.assigneeType === 'agent' && isQueued(issue) && (me === null || issue.run?.requestedBy === me)
+    && !claimed.has(queuedRunId(issue))
 }
+
+/** How one claim ended: the chat started, another session holds the run, or the start failed and may be retried. */
+export type ClaimOutcome = 'started' | 'taken' | 'failed'
 
 /** What a pickup reads and does. */
 export interface PickupHost {
@@ -53,15 +59,13 @@ export interface PickupHost {
   list(query: IssueQuery): Promise<RemoteResult<IssuePage>>
   /** `ahelIssues.get`, to see that a run is still queued right before claiming it. */
   get(key: string): Promise<RemoteResult<IssueWriteAnswer>>
-  /** The signed-in person's user id, or null while unknown. */
+  /** The signed-in person's user id, or null while unknown; read only when ahel.ai ignores the run filters. */
   me(): Promise<string | null>
   /**
    * Start Run with Ahel for the issue; its first report claims the run.
-   * @returns whether the chat started.
+   * @returns how the claim ended.
    */
-  claim(issue: Issue): Promise<boolean>
-  /** Receives the number of queued runs among the agent's issues after each read. */
-  queued(count: number): void
+  claim(issue: Issue): Promise<ClaimOutcome>
 }
 
 /** A pickup: one read and its claims per `poll`. */
@@ -71,7 +75,10 @@ export interface Pickup {
 }
 
 /**
- * Create the pickup; claimed runs are remembered for the life of this Client.
+ * Create the pickup; claimed runs, and runs another session took, are remembered for the life of this Client.
+ * It asks ahel.ai for this person's queued runs (`runState=queued&requestedBy=me`); an ahel.ai that answers
+ * runs in other states, or no `agentsQueued`, ignored those filters, and the pickup then matches the
+ * person's user id against the agent issues it answered.
  * @param host - the reads and the run start.
  * @returns the pickup.
  */
@@ -79,18 +86,21 @@ export function createPickup(host: PickupHost): Pickup {
   const claimed = new Set<string>()
   let busy = false
 
-  const readAgentIssues = async (): Promise<Issue[] | null> => {
+  /** Read up to MAX_PAGES pages; `filtered` is false when ahel.ai ignored the run filters. */
+  const read = async (query: IssueQuery): Promise<{ issues: Issue[]; filtered: boolean } | null> => {
     const issues: Issue[] = []
+    let filtered = true
     let cursor: string | null = null
     for (let n = 0; n < MAX_PAGES; n++) {
-      const query: IssueQuery = { assigneeType: 'agent', limit: PAGE_SIZE }
       const result = await host.list(cursor === null ? query : { ...query, cursor })
       if (!result.ok) return null
       issues.push(...result.value.issues)
+      // An ahel.ai without the filters also sends no `agentsQueued`.
+      if (result.value.agentsQueued === null) filtered = false
       cursor = result.value.nextCursor
       if (cursor === null) break
     }
-    return issues
+    return { issues, filtered: filtered && issues.every(isQueued) }
   }
 
   const claimOne = async (issue: Issue): Promise<void> => {
@@ -99,7 +109,19 @@ export function createPickup(host: PickupHost): Pickup {
     if (current === null || !isQueued(current) || queuedRunId(current) !== queuedRunId(issue)) return
     const id = queuedRunId(current)
     claimed.add(id)
-    if (!await host.claim(current)) claimed.delete(id)
+    if (await host.claim(current) === 'failed') claimed.delete(id)
+  }
+
+  /** Queued runs to consider and whose they must be: null when ahel.ai answered only this person's runs. */
+  const candidates = async (): Promise<{ issues: Issue[]; me: string | null } | null> => {
+    // An ahel.ai that ignores runState and requestedBy answers every agent issue, which is the fallback read.
+    const page = await read({ assigneeType: 'agent', runState: 'queued', requestedBy: 'me', limit: PAGE_SIZE })
+    if (page === null) return null
+    if (page.filtered) return { issues: page.issues, me: null }
+    const queued = page.issues.filter(issue => isQueued(issue) && typeof issue.run?.requestedBy === 'string')
+    if (queued.length === 0) return { issues: [], me: null }
+    const me = await host.me()
+    return me === null ? null : { issues: queued, me }
   }
 
   return {
@@ -107,15 +129,10 @@ export function createPickup(host: PickupHost): Pickup {
       if (busy) return
       busy = true
       try {
-        const issues = await readAgentIssues()
-        if (issues === null) return
-        const queued = issues.filter(issue => issue.assigneeType === 'agent' && isQueued(issue))
-        host.queued(queued.length)
-        if (!queued.some(issue => typeof issue.run?.requestedBy === 'string')) return
-        const me = await host.me()
-        if (me === null) return
-        for (const issue of queued) {
-          if (shouldClaim(issue, me, claimed)) await claimOne(issue)
+        const found = await candidates()
+        if (found === null) return
+        for (const issue of found.issues) {
+          if (shouldClaim(issue, found.me, claimed)) await claimOne(issue)
         }
       } finally {
         busy = false
