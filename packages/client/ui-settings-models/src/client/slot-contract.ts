@@ -1,5 +1,5 @@
 /**
- * Models-page extension slots — the two seats through which a plugin
+ * Models-page extension slots — the three seats through which a plugin
  * distributed outside this repository adds UI to the Models settings section
  * without editing it.
  *
@@ -32,6 +32,12 @@ declare module '@ahel/dsh-client-ui-slots' {
      */
     'settings.models.provider-card': { kind: 'keyed'; scope: 'root'; owner: ProviderCardExtrasOwnerProps }
     /**
+     * Ordered extension area at the top of the section, above the provider
+     * rows (the workspace's default model). Without a registrant the area
+     * renders nothing.
+     */
+    'settings.models.header': { kind: 'list'; scope: 'root'; owner: ModelsFooterOwnerProps }
+    /**
      * Ordered extension area after the provider rows and the add controls.
      * Without a registrant the area renders nothing.
      */
@@ -49,7 +55,7 @@ export interface ProviderCardExtrasOwnerProps {
   keyConfigured: boolean
 }
 
-/** Owner share of the footer area (the section supplies nothing). */
+/** Owner share of the header and footer areas (the section supplies nothing). */
 export interface ModelsFooterOwnerProps {
   /** Marker field: footer owner props are intentionally empty. */
   children?: never

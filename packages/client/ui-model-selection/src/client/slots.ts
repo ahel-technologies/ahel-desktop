@@ -6,7 +6,8 @@
  */
 import type { RemoteResult } from '@ahel/dsh-typert-protocol'
 import type { ModelSelection } from '@ahel/dsh-api-remotes/client'
-import type { SnapshotStore } from '@ahel/dsh-client-store'
+import type { ObservableSnapshot, SnapshotStore } from '@ahel/dsh-client-store'
+import type { ActiveBilling } from './billing.ts'
 import type { ModelDirectoryState } from './directory.ts'
 
 /** Injected business face of the composer model seat. */
@@ -23,4 +24,25 @@ export interface ModelSelectInjected {
    * @returns the Host outcome, or undefined when this Session cannot select a model.
    */
   select: (selection: ModelSelection) => Promise<RemoteResult<void> | undefined>
+  /** The registered metering account and its state; null without one. */
+  billing: ObservableSnapshot<ActiveBilling | null>
+  /** The Session's run state; the chip reads "held" while a turn runs. */
+  session: ObservableSnapshot<{ readonly running: boolean }>
+  /** Per-chat "Remember for this chat" choices, keyed by Session id. */
+  remembered: ObservableSnapshot<Readonly<Record<string, boolean>>>
+  /** This chat's key in {@link remembered}. */
+  sessionKey: string
+  /**
+   * Store this chat's "Remember for this chat" choice.
+   * @param on - true keeps the chat's own model.
+   */
+  setRemembered: (on: boolean) => void
+  /**
+   * Make this picker reachable by the open-picker shortcut.
+   * @param open - opens the picker.
+   * @returns the disposer.
+   */
+  registerOpener: (open: () => void) => () => void
+  /** @returns the open-picker shortcut's effective keycaps; empty while unbound. */
+  shortcutKeys: () => readonly string[]
 }

@@ -34,7 +34,7 @@ import {
   authorizeUrl, createPkce, discover, exchange, fetchProfile, randomState, register, revoke, SignInError, startLoopbackListener,
 } from './signin.ts'
 import type { HttpOptions, LoopbackListener } from './signin.ts'
-import type { AhelAccountView, AhelHostedPages, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView } from './types.ts'
+import type { AhelAccountView, AhelBilling, AhelHostedPages, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView } from './types.ts'
 
 export { AhelCatalog } from './catalog.ts'
 export type { CatalogConfig } from './catalog.ts'
@@ -58,7 +58,8 @@ export type {
   VaultDisconnected, VaultSignIn, VaultSignInList,
 } from './types.ts'
 export type {
-  AhelAccountView, AhelHostedPages, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView, AhelSignInErrorCode, AhelWorkspace,
+  AhelAccountView, AhelBilling, AhelHostedPages, AhelMeteredModel, AhelModelFacts, AhelProfile, AhelSignInAttemptId, AhelSignInAttemptView,
+  AhelSignInErrorCode, AhelWorkspace, AhelWorkspaceModel,
 } from './types.ts'
 
 declare module '@ahel/cordis' {
@@ -199,6 +200,8 @@ export class AhelAccount extends TypertRemoteService {
   private launched: Promise<void> = Promise.resolve()
   /** ahel.ai's pages when the hosted chat launched this Host. */
   private hosted: AhelHostedPages | null = null
+  /** The latest metered request's money; reaches `watch` subscribers only. */
+  private billing: AhelBilling | null = null
 
   /**
    * @param ctx - Host context with the credentials service.
@@ -294,7 +297,19 @@ export class AhelAccount extends TypertRemoteService {
       workspace: profile === null ? null : this.selectedWorkspace(profile) ?? null,
       reachable: this.reachable,
       hosted: this.hosted,
+      billing: grant === undefined ? null : this.billing,
     }
+  }
+
+  /**
+   * Host-only: record one metered model request's hold or settle. Subscribers
+   * of `watch` receive a new view; `ahel-account/changed` does not fire,
+   * because the sign-in and the workspace are unchanged.
+   * @param billing - the amounts the Ahel model route read from ahel.ai.
+   */
+  reportBilling(billing: AhelBilling): void {
+    this.billing = billing
+    for (const listener of this.listeners) listener()
   }
 
   /**
@@ -319,6 +334,8 @@ export class AhelAccount extends TypertRemoteService {
       return next
     })
     await this.mirrorWorkspace()
+    // The amounts belong to the workspace that was selected.
+    this.billing = null
     this.changed()
     return this.state()
   }
@@ -395,6 +412,7 @@ export class AhelAccount extends TypertRemoteService {
       }
       await this.ctx.credentials.unset(this.ref)
     }
+    this.billing = null
     return this.state()
   }
 

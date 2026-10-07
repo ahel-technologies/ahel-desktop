@@ -2,15 +2,17 @@
  * Remote namespace `ahelTeam`: the team side of the signed-in ahel.ai
  * workspace over ahel.ai's `/api/desktop/*` routes, with the account's own
  * bearer and the selected `?workspace=`: held calls to approve, the vault's
- * key Connect form and sign-ins, teammate handoffs, and the balance line.
- * An ahel.ai without those routes answers every route method with
+ * key Connect form and sign-ins, teammate handoffs, the balance line, the
+ * metered model facts of `/api/llm/v1/models` and the workspace's default
+ * model. An ahel.ai without those routes answers every route method with
  * `ahel-team/outdated`. `sessionDraft` reads a local chat only.
  */
 
 import type { Context } from '@ahel/cordis'
 import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type {
-  ApprovalDecision, DesktopSummary, HandoffDraft, HandoffList, HandoffRead, HandoffReview, HandoffSent, HandoffSessionDraft, HandoffShare,
+  AhelMeteredModel, AhelModelFacts, AhelWorkspaceModel, ApprovalDecision, DesktopSummary,
+  HandoffDraft, HandoffList, HandoffRead, HandoffReview, HandoffSent, HandoffSessionDraft, HandoffShare,
   KeyConnectAnswer, KeyConnectSaved, VaultDisconnected, VaultSignInList,
 } from './types.ts'
 
@@ -51,6 +53,46 @@ function record(value: unknown): Record<string, unknown> {
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value !== '' ? value : null
+}
+
+function cents(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
+}
+
+/**
+ * Read the `ahel` facts of one model row; a missing or malformed field is null.
+ * @param value - the row's `ahel` member.
+ * @returns the facts, or null when the row carries none.
+ */
+function modelFacts(value: unknown): AhelModelFacts | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
+  const facts = record(value)
+  return {
+    shortName: text(facts.shortName),
+    maker: text(facts.maker),
+    bestFor: text(facts.bestFor),
+    typicalMessageCents: cents(facts.typicalMessageCents),
+    lastChargeCents: cents(facts.lastChargeCents),
+  }
+}
+
+/**
+ * Read `GET /api/llm/v1/models`: `{ data: [{ id, name, ahel }] }`.
+ * @param value - the response JSON.
+ * @returns the rows with an id, in the server's order.
+ */
+export function parseMeteredModels(value: unknown): AhelMeteredModel[] {
+  const data = record(value).data
+  if (!Array.isArray(data)) return []
+  return data.flatMap((row): AhelMeteredModel[] => {
+    const fields = record(row)
+    const id = text(fields.id)
+    return id === null ? [] : [{ id, name: text(fields.name) ?? id, ahel: modelFacts(fields.ahel) }]
+  })
+}
+
+function workspaceModel(value: unknown): AhelWorkspaceModel {
+  return { defaultModel: text(record(value).defaultModel) }
 }
 
 /** The part of `ctx.sessionQuery` a handoff draft reads; the service is optional in a composition. */
@@ -111,6 +153,38 @@ export class AhelTeam extends TypertRemoteService {
   @Remote
   async summary(): Promise<DesktopSummary> {
     return await this.api('GET', '/api/desktop/summary') as DesktopSummary
+  }
+
+  /**
+   * The workspace's metered models with ahel.ai's facts: short name, maker,
+   * "best for" line, typical message price and the workspace's last charge.
+   * @returns the rows in ahel.ai's order; `ahel` is null from an ahel.ai that sends no facts.
+   * @throws RemoteError `ahel-team/*`.
+   */
+  @Remote
+  async models(): Promise<AhelMeteredModel[]> {
+    return parseMeteredModels(await this.api('GET', '/api/llm/v1/models'))
+  }
+
+  /**
+   * The workspace's default metered model, where new chats start.
+   * @returns the default; `defaultModel` is null when the owner chose none.
+   * @throws RemoteError `ahel-team/outdated` from an ahel.ai without the route.
+   */
+  @Remote
+  async workspaceModel(): Promise<AhelWorkspaceModel> {
+    return workspaceModel(await this.api('GET', '/api/desktop/workspace/model'))
+  }
+
+  /**
+   * Set the workspace's default metered model. Only the owner or an admin may.
+   * @param model - a model id from `models()`, or null to clear the default.
+   * @returns the stored default.
+   * @throws RemoteError `ahel-team/forbidden` for a Member, `ahel-team/refused` for an unknown model.
+   */
+  @Remote
+  async setWorkspaceModel(model: string | null): Promise<AhelWorkspaceModel> {
+    return workspaceModel(await this.api('PUT', '/api/desktop/workspace/model', { defaultModel: model }))
   }
 
   /**
@@ -267,7 +341,7 @@ export class AhelTeam extends TypertRemoteService {
   }
 
   /** Call one `/api/desktop` route with the account's bearer; refresh once after a 401 from the route itself. */
-  private async api(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, payload?: unknown): Promise<unknown> {
+  private async api(method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', path: string, payload?: unknown): Promise<unknown> {
     const url = new URL(path, this.appOrigin)
     const workspace = await this.ctx.ahelAccount.workspace()
     if (workspace !== undefined) url.searchParams.set('workspace', workspace)

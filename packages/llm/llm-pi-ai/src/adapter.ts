@@ -101,6 +101,20 @@ export interface PiAiAdapterOptions {
    * conversion because its stored replay state is unusable by this build.
    */
   onReplayDegrade?: (detail: { provider: string; model: string; reason: string }) => void
+  /**
+   * HTTP implementation for one stream call's provider requests; `undefined`
+   * keeps pi-ai's `globalThis.fetch`. A route that reads its own response
+   * headers or rewrites its own response body supplies it.
+   */
+  fetch?: (call: PiAiFetchCall) => typeof globalThis.fetch | undefined
+}
+
+/** The stream call a {@link PiAiAdapterOptions.fetch} implementation serves. */
+export interface PiAiFetchCall {
+  readonly provider: string
+  readonly model: string
+  /** The Harness Session the request belongs to, when the caller named one. */
+  readonly sessionId?: string
 }
 
 /** The two auth injectables a pi-ai collection is built with. */
@@ -354,6 +368,11 @@ export class PiAiAdapter extends LlmAdapter {
       options.reasoningEffort ?? profile.reasoning,
     )
     const apiKey = await this.config.resolveApiKey(options.provider, profile)
+    const callFetch = this.config.fetch?.({
+      provider: options.provider,
+      model: options.model,
+      ...options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) },
+    })
 
     const consumer = new AbortController()
     const upstream = options.signal === undefined
@@ -390,6 +409,7 @@ export class PiAiAdapter extends LlmAdapter {
         ...options.temperature === undefined ? {} : { temperature: options.temperature },
         ...options.maxTokens === undefined ? {} : { maxTokens: options.maxTokens },
         ...options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) },
+        ...callFetch === undefined ? {} : { fetch: callFetch },
         signal: watchdog.signal,
         // Profile headers are deployment-owned; attribution names are
         // Harness-owned and therefore win collisions.

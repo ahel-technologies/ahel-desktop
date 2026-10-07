@@ -3009,6 +3009,9 @@ importers:
       '@ahel/dsh-client-ui-layout':
         specifier: workspace:*
         version: link:../ui-layout
+      '@ahel/dsh-client-ui-model-selection':
+        specifier: workspace:*
+        version: link:../ui-model-selection
       '@ahel/dsh-client-ui-primitives':
         specifier: workspace:*
         version: link:../ui-primitives
@@ -4352,6 +4355,9 @@ importers:
       '@ahel/dsh-client-product-analytics':
         specifier: workspace:*
         version: link:../product-analytics
+      '@ahel/dsh-client-shortcuts':
+        specifier: workspace:*
+        version: link:../shortcuts
       '@ahel/dsh-client-store':
         specifier: workspace:*
         version: link:../store

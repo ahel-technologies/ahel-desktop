@@ -30,6 +30,7 @@
       "inject": [
         "@ahel/dsh-api-session-controller",
         "@ahel/dsh-client-locale",
+        "@ahel/dsh-client-shortcuts",
         "@ahel/dsh-client-ui-commands",
         "@ahel/dsh-api-remotes"
       ],
@@ -48,6 +49,7 @@
     "@ahel/dsh-api-remotes": "workspace:*",
     "@ahel/dsh-api-session-controller": "workspace:*",
     "@ahel/dsh-client-locale": "workspace:*",
+    "@ahel/dsh-client-shortcuts": "workspace:*",
     "@ahel/dsh-client-test-runtime": "workspace:*",
     "@ahel/dsh-client-ui-commands": "workspace:*",
     "@ahel/dsh-client-ui-conversation": "workspace:*",

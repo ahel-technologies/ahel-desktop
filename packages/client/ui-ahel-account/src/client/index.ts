@@ -3,7 +3,9 @@
  * namespace, keeps one live account view from its `watch` stream, and fills
  * the sidebar footer (account menu, offline banner), the blank-session
  * greeting's first name, the running-status pulse mark, the Settings > Models
- * footer (the Ahel row beside bring-your-own-key providers), the starter
+ * footer (the Ahel row beside bring-your-own-key providers) and header (the
+ * workspace's default model), the model picker's metering source (prices,
+ * default model, balance and each request's hold and settle), the starter
  * prompts below the blank-session composer, the rows for Ahel model
  * refusals in the transcript, the Discover panel over the Host's
  * `ahelCatalog` namespace, and over `ahelTeam`'s summary the balance line
@@ -30,6 +32,9 @@ import { BrandPulseMark } from './BrandPulseMark.tsx'
 import { registerCatalog } from './catalog/apply.ts'
 import { registerTeam } from './team/apply.ts'
 import { registerTeamSummary } from './team/summary.ts'
+import { AHEL_PROVIDER, createAhelModelSource } from './models/source.ts'
+import { DefaultModelRow, type DefaultModelInjected } from './models/DefaultModelRow.tsx'
+import type {} from '@ahel/dsh-client-ui-model-selection/client'
 import { en, NS, zh } from './locales.ts'
 
 export type {
@@ -37,6 +42,8 @@ export type {
   StarterPromptsProps,
 } from './contract.ts'
 export type { AhelAccountKey } from './locales.ts'
+export type { DefaultModelInjected, DefaultModelRowProps } from './models/DefaultModelRow.tsx'
+export type { AhelModelSource, DefaultModelView } from './models/source.ts'
 export type { CatalogPanelId, DiscoverInjected, DiscoverPageProps } from './catalog/contract.ts'
 export type {
   ApprovalAnswer, ApprovalsInjected, ApprovalsPageProps, ApprovalsPanelIconProps, InboxAnswer, InboxInjected, InboxLoad, InboxPageProps,
@@ -109,6 +116,17 @@ function register(ctx: Context): void {
     for await (const frame of stream) { publish(frame.value); frame.accept() }
   })().catch(() => undefined)
   const team = registerTeamSummary(ctx, account)
+  const modelSource = createAhelModelSource(ctx, account, team)
+  // The picker reads prices, the workspace default and the balance once ui-model-selection is loaded.
+  ctx.inject(['modelDirectories'], (inner) => {
+    inner.effect(() => inner.modelDirectories.registerBilling({
+      provider: AHEL_PROVIDER, state: modelSource.billing, refreshBalance: () => { modelSource.refreshBalance() },
+    }), 'ui-ahel-account: model billing source')
+  })
+  const defaultModel: DefaultModelInjected = {
+    setDefault: model => modelSource.setDefault(model),
+    hooks: { models: modelSource.view },
+  }
 
   const injected: AhelAccountInjected = {
     signIn: async () => {
@@ -152,6 +170,9 @@ function register(ctx: Context): void {
   ctx.slots.inject('settings.models.footer', () => ctx.slots.register({
     name: 'settings.models.footer', id: 'ahel-models', order: 0, locale: NS, inject: () => injected,
   }, ModelsRow))
+  ctx.slots.inject('settings.models.header', () => ctx.slots.register({
+    name: 'settings.models.header', id: 'ahel-default-model', order: 0, locale: NS, inject: () => defaultModel,
+  }, DefaultModelRow))
   ctx.slots.inject('conversation.hero.dock', () => ctx.slots.register({
     name: 'conversation.hero.dock', id: 'ahel-starters', order: 0, locale: NS, inject: () => injected,
   }, StarterPrompts))

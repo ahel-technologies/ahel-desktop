@@ -420,6 +420,11 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'a snapshot without tokens.',
       },
       {
+        signature: 'reportBilling(billing: AhelBilling): void',
+        description: 'Host-only: record one metered model request\'s hold or settle. Subscribers of `watch` receive a new view; `ahel-account/changed` does not fire, because the sign-in and the workspace are unchanged.',
+        parameters: [{ name: 'billing', description: 'the amounts the Ahel model route read from ahel.ai.' }],
+      },
+      {
         signature: '@Remote async selectWorkspace(id: string | null): Promise<AhelAccountView>',
         description: 'Choose the ahel.ai workspace the MCP server and Ahel models act in, and save it in settings.',
         parameters: [{ name: 'id', description: 'one of the profile\'s workspace ids, or null for the account default.' }],
@@ -644,6 +649,27 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [],
         returns: 'the summary; a part ahel.ai could not read is null.',
         throws: ['RemoteError `ahel-team/*`.'],
+      },
+      {
+        signature: '@Remote async models(): Promise<AhelMeteredModel[]>',
+        description: 'The workspace\'s metered models with ahel.ai\'s facts: short name, maker, "best for" line, typical message price and the workspace\'s last charge.',
+        parameters: [],
+        returns: 'the rows in ahel.ai\'s order; `ahel` is null from an ahel.ai that sends no facts.',
+        throws: ['RemoteError `ahel-team/*`.'],
+      },
+      {
+        signature: '@Remote async workspaceModel(): Promise<AhelWorkspaceModel>',
+        description: 'The workspace\'s default metered model, where new chats start.',
+        parameters: [],
+        returns: 'the default; `defaultModel` is null when the owner chose none.',
+        throws: ['RemoteError `ahel-team/outdated` from an ahel.ai without the route.'],
+      },
+      {
+        signature: '@Remote async setWorkspaceModel(model: string | null): Promise<AhelWorkspaceModel>',
+        description: 'Set the workspace\'s default metered model. Only the owner or an admin may.',
+        parameters: [{ name: 'model', description: 'a model id from `models()`, or null to clear the default.' }],
+        returns: 'the stored default.',
+        throws: ['RemoteError `ahel-team/forbidden` for a Member, `ahel-team/refused` for an unknown model.'],
       },
       {
         signature: '@Remote async decideApproval(id: string, decision: \'approved\' | \'declined\', note: string | null): Promise<ApprovalDecision>',
@@ -4895,7 +4921,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AhelAccountView',
-    declaration: 'export interface AhelAccountView {\n    readonly status: \'signed-out\' | \'signed-in\';\n    readonly profile: AhelProfile | null;\n    readonly attempt: AhelSignInAttemptView | null;\n    readonly workspace: string | null;\n    readonly reachable: boolean;\n    readonly hosted?: AhelHostedPages | null;\n}',
+    declaration: 'export interface AhelAccountView {\n    readonly status: \'signed-out\' | \'signed-in\';\n    readonly profile: AhelProfile | null;\n    readonly attempt: AhelSignInAttemptView | null;\n    readonly workspace: string | null;\n    readonly reachable: boolean;\n    readonly hosted?: AhelHostedPages | null;\n    readonly billing?: AhelBilling | null;\n}',
+  },
+  {
+    name: 'AhelBilling',
+    declaration: 'export interface AhelBilling {\n    readonly phase: \'held\' | \'settled\';\n    readonly sessionId: string | null;\n    readonly model: string;\n    readonly heldCents: number | null;\n    readonly chargedCents: number | null;\n    readonly balanceCents: number | null;\n    readonly at: number;\n}',
   },
   {
     name: 'AhelHostedPages',
@@ -4908,6 +4938,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AhelJson',
     declaration: 'export type AhelJson = string | number | boolean | null | readonly AhelJson[] | {\n    readonly [key: string]: AhelJson;\n};',
+  },
+  {
+    name: 'AhelMeteredModel',
+    declaration: 'export interface AhelMeteredModel {\n    readonly id: string;\n    readonly name: string;\n    readonly ahel: AhelModelFacts | null;\n}',
+  },
+  {
+    name: 'AhelModelFacts',
+    declaration: 'export interface AhelModelFacts {\n    readonly shortName: string | null;\n    readonly maker: string | null;\n    readonly bestFor: string | null;\n    readonly typicalMessageCents: number | null;\n    readonly lastChargeCents: number | null;\n}',
   },
   {
     name: 'AhelProfile',
@@ -4928,6 +4966,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AhelWorkspace',
     declaration: 'export interface AhelWorkspace {\n    readonly id: string;\n    readonly name: string;\n    readonly slug: string;\n    readonly role: string;\n}',
+  },
+  {
+    name: 'AhelWorkspaceModel',
+    declaration: 'export interface AhelWorkspaceModel {\n    readonly defaultModel: string | null;\n}',
   },
   {
     name: 'AnyHook',
@@ -5575,7 +5617,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'DesktopSummary',
-    declaration: 'export interface DesktopSummary {\n    readonly workspace: {\n        readonly id: string;\n        readonly name: string;\n        readonly role: string;\n    };\n    readonly approvals: {\n        readonly rows: readonly ApprovalRow[];\n    } | null;\n    readonly inbox: {\n        readonly unread: number;\n    } | null;\n    readonly credits: DesktopCredits | null;\n    readonly me?: DesktopMember | null;\n    readonly members?: {\n        readonly total: number;\n        readonly rows: readonly DesktopMember[];\n    } | null;\n    readonly apps?: {\n        readonly installed: number;\n    } | null;\n    readonly at: string;\n}',
+    declaration: 'export interface DesktopSummary {\n    readonly workspace: {\n        readonly id: string;\n        readonly name: string;\n        readonly role: string;\n    };\n    readonly approvals: {\n        readonly rows: readonly ApprovalRow[];\n    } | null;\n    readonly inbox: {\n        readonly unread: number;\n    } | null;\n    readonly credits: DesktopCredits | null;\n    readonly me?: DesktopMember | null;\n    readonly members?: {\n        readonly total: number;\n        readonly rows: readonly DesktopMember[];\n    } | null;\n    readonly apps?: {\n        readonly installed: number;\n    } | null;\n    readonly defaultModel?: string | null;\n    readonly at: string;\n}',
   },
   {
     name: 'DeveloperMessage',

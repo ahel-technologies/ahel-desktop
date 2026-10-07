@@ -223,22 +223,31 @@ function registerModelSource(ctx: Context, registry: PaletteRegistry, t: Transla
       const target = directory()
       if (target === undefined) return []
       const state = target.store.getSnapshot()
-      return state.groups.flatMap(group => group.models.map((model): PaletteCommand => {
-        const active = state.current?.provider === group.id && state.current.model === model.id
-        const effort = active ? state.current?.reasoningEffort ?? model.reasoning?.defaultEffort : model.reasoning?.defaultEffort
-        return {
-          id: `model:${group.id}/${model.id}`,
-          title: t('model', { name: model.name }),
-          subtitle: group.name,
-          keywords: ['switch model', model.id],
+      const resolver = ctx.get('modelDirectories')
+      /* v8 ignore next -- directory() resolved through the same service. */
+      if (resolver === undefined) return []
+      // One row per model, on the route a pick in the composer takes: the one in use, else the metered one.
+      return resolver.groupsFor(state).flatMap(group => group.rows.flatMap((row): PaletteCommand[] => {
+        const inUse = [row.metered, row.own]
+          .find(r => r !== undefined && r.provider === state.current?.provider && r.model === state.current.model)
+        const route = inUse ?? row.metered ?? row.own
+        /* v8 ignore next -- a row always has a route. */
+        if (route === undefined) return []
+        const active = state.current?.provider === route.provider && state.current.model === route.model
+        const effort = active ? state.current?.reasoningEffort ?? route.reasoning?.defaultEffort : route.reasoning?.defaultEffort
+        return [{
+          id: `model:${route.provider}/${route.model}`,
+          title: t('model', { name: row.shortName }),
+          subtitle: group.maker,
+          keywords: ['switch model', group.maker, route.model],
           recency: active ? 1 : 0,
           active,
           run: async () => {
-            const choice = { provider: group.id, model: model.id, ...(effort === undefined ? {} : { reasoningEffort: effort }) }
+            const choice = { provider: route.provider, model: route.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) }
             const result = await target.select(choice)
             if (!result.ok) throw result.error
           },
-        }
+        }]
       }))
     },
   }), 'ui-command-palette: models')
