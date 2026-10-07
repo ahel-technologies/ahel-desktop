@@ -481,6 +481,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     declaredBy: 'factory \'conversation.content\' (client-ui-conversation), so it exists while that definition is registered',
     occupants: [
       'client-ui-approval ApprovalPanel',
+      'client-ui-computer-use ComputerUseApprovalCard',
       'client-ui-subagent SubagentReadOnlyComposer',
       'client-ui-user-questions QuestionComposer',
     ],
@@ -579,6 +580,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     occupants: [
       'client-ui-chat ActivityPill id \'activity\'',
       'client-ui-chat UsagePill id \'usage\'',
+      'client-ui-computer-use ComputerUseDock id \'computer-use\'',
     ],
     replaceRisk: 'none',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'conversation.composer.dock\', () => ctx.slots.register(\n      { name: \'conversation.composer.dock\', id: \'my-entry\', order: 100, label: \'My entry\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
@@ -1980,6 +1982,8 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       'client-ui-ahel-account ApprovalsPage',
       'client-ui-ahel-account InboxPage',
       'client-ui-conversation ConversationPanel key \'conversation\'',
+      'client-ui-issues IssuesPage',
+      'client-ui-issues NewIssuePage',
       'client-ui-plugin-manager PluginManagerPage',
       'client-ui-schedule TaskManagerPage',
     ],
@@ -2625,6 +2629,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       'client-ui-chat LinkOpeningRow id \'link-opening\'',
       'client-ui-chat PerformanceUsageRow id \'performance-usage\'',
       'client-ui-chat TranscriptViewRow id \'transcript-view\'',
+      'client-ui-computer-use ComputerUseSettingsRow id \'computer-use-blocked-apps\'',
       'client-ui-conversation EnterBehaviorRow id \'composer-enter\'',
       'client-ui-notifications NotificationsRow id \'notifications\'',
       'client-ui-permission-presets PermissionRow id \'permission\'',
@@ -3386,7 +3391,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       },
     ],
     ownerProps: [
-      '/** Icon presentation supplied by the global panel row. */\nexport interface SidebarPanelIconOwnerProps {\n  /** Requested square edge in pixels. */\n  size: number\n  /** Whether this panel is selected in the main column. */\n  active: boolean\n}',
+      '/** Icon presentation supplied by the global panel row. */\nexport interface SidebarPanelIconOwnerProps {\n  /** Requested square edge in pixels. */\n  size: number\n  /** Whether this panel is selected in the main column. */\n  active: boolean\n  /** Whether the row is the wide column\'s (glyph and title); false or absent is the collapsed rail\'s glyph alone. */\n  wide?: boolean\n}',
     ],
     ownerPropsReferences: [],
     standardProps: [
@@ -3407,6 +3412,8 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       'client-ui-ahel-account AppsPanelIcon',
       'client-ui-ahel-account ApprovalsPanelIcon',
       'client-ui-ahel-account InboxPanelIcon',
+      'client-ui-issues NewIssuePanelIcon',
+      'client-ui-issues IssuesPanelIcon',
       'client-ui-plugin-manager PluginsPanelIcon',
       'client-ui-schedule TaskManagerIcon',
     ],
