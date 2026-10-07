@@ -536,6 +536,104 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'ahelIssues',
+    summary: 'Child service of `AhelAccount`; the Remote namespace `ahelIssues`.',
+    description: 'Child service of `AhelAccount`; the Remote namespace `ahelIssues`.',
+    methods: [
+      {
+        signature: '@Remote async list(query: IssueQuery): Promise<IssuePage>',
+        description: 'One page of issues with per-status counts and the number of agents at work.',
+        parameters: [{ name: 'query', description: 'filters; `assigneeId: \'me\'` is the signed-in person.' }],
+        returns: 'the page.',
+        throws: ['RemoteError `ahel-issues/*`.'],
+      },
+      {
+        signature: '@Remote async create(draft: IssueDraft): Promise<IssueWriteAnswer>',
+        description: 'Create an issue.',
+        parameters: [{ name: 'draft', description: 'its fields.' }],
+        returns: 'the stored issue.',
+        throws: ['RemoteError `ahel-issues/refused` for invalid fields.'],
+      },
+      {
+        signature: '@Remote async get(key: string): Promise<IssueWriteAnswer>',
+        description: 'Read one issue.',
+        parameters: [{ name: 'key', description: 'for example `AHEL-137`.' }],
+        returns: 'the issue.',
+        throws: ['RemoteError `ahel-issues/refused` for an unknown key.'],
+      },
+      {
+        signature: '@Remote async update(key: string, patch: IssuePatch): Promise<IssueWriteAnswer>',
+        description: 'Change some fields of one issue.',
+        parameters: [{ name: 'key', description: 'the issue.' }, { name: 'patch', description: 'only the fields to change.' }],
+        returns: 'the issue after the change.',
+        throws: ['RemoteError `ahel-issues/forbidden` with ahel.ai\'s reason when the role may not edit it.'],
+      },
+      {
+        signature: '@Remote async deleteIssue(key: string): Promise<IssueWriteAnswer>',
+        description: 'Delete one issue; ahel.ai allows it for owners only. (`remove` is reserved by the Remote namespace service.)',
+        parameters: [{ name: 'key', description: 'the issue.' }],
+        returns: 'nothing.',
+        throws: ['RemoteError `ahel-issues/forbidden` with ahel.ai\'s reason.'],
+      },
+      {
+        signature: '@Remote async comments(key: string): Promise<readonly IssueComment[]>',
+        description: 'The comments on one issue, oldest first.',
+        parameters: [{ name: 'key', description: 'the issue.' }],
+        returns: 'the comments.',
+        throws: ['RemoteError `ahel-issues/*`.'],
+      },
+      {
+        signature: '@Remote async comment(key: string, body: string, authorType: IssueActorType): Promise<readonly IssueComment[]>',
+        description: 'Post a comment as the signed-in person, or for the Ahel agent (a run\'s summary).',
+        parameters: [{ name: 'key', description: 'the issue.' }, { name: 'body', description: 'markdown.' }, { name: 'authorType', description: '`agent` shows the comment as Ahel\'s; the person still owns it.' }],
+        returns: 'the comments after the post.',
+        throws: ['RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.'],
+      },
+      {
+        signature: '@Remote async activity(key: string): Promise<readonly IssueActivity[]>',
+        description: 'The activity log of one issue, oldest first.',
+        parameters: [{ name: 'key', description: 'the issue.' }],
+        returns: 'the activity lines.',
+        throws: ['RemoteError `ahel-issues/*`.'],
+      },
+      {
+        signature: '@Remote async run(key: string, report: IssueRunReport): Promise<IssueWriteAnswer>',
+        description: 'Report the state of the desktop chat that works on one issue; ahel.ai moves the issue\'s status with it.',
+        parameters: [{ name: 'key', description: 'the issue.' }, { name: 'report', description: 'the session, its state and the steps so far.' }],
+        returns: 'the issue after the report.',
+        throws: ['RemoteError `ahel-issues/*`.'],
+      },
+      {
+        signature: '@Remote async assignees(): Promise<IssueAssignees>',
+        description: 'Who issues can be assigned to: the workspace\'s seats and the Ahel agent with its model.',
+        parameters: [],
+        returns: 'the members and agents.',
+        throws: ['RemoteError `ahel-issues/*`.'],
+      },
+      {
+        signature: '@Remote async projects(): Promise<readonly IssueProject[]>',
+        description: 'The workspace\'s projects.',
+        parameters: [],
+        returns: 'the projects.',
+        throws: ['RemoteError `ahel-issues/*`.'],
+      },
+      {
+        signature: '@Remote async createProject(name: string): Promise<readonly IssueProject[]>',
+        description: 'Create a project.',
+        parameters: [{ name: 'name', description: 'its name.' }],
+        returns: 'the projects after the create.',
+        throws: ['RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.'],
+      },
+      {
+        signature: '@Remote async readItem(id: string): Promise<number>',
+        description: 'Mark one issue row of the Inbox read.',
+        parameters: [{ name: 'id', description: '`IssueInboxItem.id`.' }],
+        returns: 'how many rows changed.',
+        throws: ['RemoteError `ahel-issues/*`.'],
+      },
+    ],
+  },
+  {
     key: 'ahelTeam',
     summary: 'Child service of `AhelAccount`; the Remote namespace `ahelTeam`.',
     description: 'Child service of `AhelAccount`; the Remote namespace `ahelTeam`.',
@@ -5598,7 +5696,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'HandoffList',
-    declaration: 'export interface HandoffList {\n    readonly view: \'handoff_list\';\n    readonly scope: \'all\' | \'received\' | \'sent\';\n    readonly received: readonly HandoffReceivedRow[];\n    readonly sent: readonly HandoffSentRow[];\n    readonly detail: string;\n}',
+    declaration: 'export interface HandoffList {\n    readonly view: \'handoff_list\';\n    readonly scope: \'all\' | \'received\' | \'sent\';\n    readonly received: readonly HandoffReceivedRow[];\n    readonly sent: readonly HandoffSentRow[];\n    readonly detail: string;\n    readonly items?: readonly IssueInboxItem[] | null;\n}',
   },
   {
     name: 'HandoffRead',
@@ -5771,6 +5869,82 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'InvokeRemoteRequest',
     declaration: 'export interface InvokeRemoteRequest {\n    readonly namespace: string;\n    readonly method: string;\n    readonly args: Readonly<Record<string, unknown>>;\n    readonly uplink?: AsyncIterable<unknown>;\n    readonly peer?: PeerScope;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'Issue',
+    declaration: 'export interface Issue {\n    readonly key: string;\n    readonly title: string;\n    readonly description: string;\n    readonly status: IssueStatus;\n    readonly priority: IssuePriority;\n    readonly assigneeType: IssueActorType | null;\n    readonly assigneeId: string | null;\n    readonly assigneeName: string | null;\n    readonly assigneeAvatar: string | null;\n    readonly project: IssueProject | null;\n    readonly labels: readonly string[];\n    readonly parentKey: string | null;\n    readonly creatorType: IssueActorType;\n    readonly creatorName: string;\n    readonly createdAt: string;\n    readonly updatedAt: string;\n    readonly run: IssueRun | null;\n    readonly commentCount: number;\n}',
+  },
+  {
+    name: 'IssueActivity',
+    declaration: 'export interface IssueActivity {\n    readonly id: string;\n    readonly kind: IssueActivityKind;\n    readonly actorType: IssueActorType;\n    readonly actorName: string;\n    readonly from: string | null;\n    readonly to: string | null;\n    readonly createdAt: string;\n}',
+  },
+  {
+    name: 'IssueActivityKind',
+    declaration: 'export type IssueActivityKind = \'created\' | \'title\' | \'description\' | \'status\' | \'priority\' | \'assignee\' | \'project\' | \'labels\' | \'parent\' | \'commented\' | \'run\';',
+  },
+  {
+    name: 'IssueActorType',
+    declaration: 'export type IssueActorType = \'member\' | \'agent\';',
+  },
+  {
+    name: 'IssueAssignee',
+    declaration: 'export interface IssueAssignee {\n    readonly id: string;\n    readonly name: string;\n    readonly avatar: string | null;\n}',
+  },
+  {
+    name: 'IssueAssignees',
+    declaration: 'export interface IssueAssignees {\n    readonly members: readonly IssueAssignee[];\n    readonly agents: readonly (IssueAssignee & {\n        readonly model: string | null;\n    })[];\n}',
+  },
+  {
+    name: 'IssueComment',
+    declaration: 'export interface IssueComment {\n    readonly id: string;\n    readonly authorType: IssueActorType;\n    readonly authorName: string;\n    readonly authorAvatar?: string | null | undefined;\n    readonly body: string;\n    readonly createdAt: string;\n}',
+  },
+  {
+    name: 'IssueDraft',
+    declaration: 'export interface IssueDraft {\n    readonly title: string;\n    readonly description: string;\n    readonly status: IssueStatus;\n    readonly priority: IssuePriority;\n    readonly assigneeType: IssueActorType | null;\n    readonly assigneeId: string | null;\n    readonly project: string | null;\n}',
+  },
+  {
+    name: 'IssueInboxItem',
+    declaration: 'export interface IssueInboxItem {\n    readonly id: string;\n    readonly type: \'assigned\' | \'mentioned\' | \'run_finished\' | \'run_failed\';\n    readonly issueKey: string | null;\n    readonly issueTitle: string | null;\n    readonly actorType: IssueActorType;\n    readonly actorName: string;\n    readonly body: string | null;\n    readonly unread: boolean;\n    readonly createdAt: string;\n}',
+  },
+  {
+    name: 'IssuePage',
+    declaration: 'export interface IssuePage {\n    readonly issues: readonly Issue[];\n    readonly nextCursor: string | null;\n    readonly counts: Readonly<Record<string, number>>;\n    readonly agentsWorking: number;\n}',
+  },
+  {
+    name: 'IssuePatch',
+    declaration: 'export interface IssuePatch {\n    readonly title?: string | undefined;\n    readonly description?: string | undefined;\n    readonly status?: IssueStatus | undefined;\n    readonly priority?: IssuePriority | undefined;\n    readonly assigneeType?: IssueActorType | null | undefined;\n    readonly assigneeId?: string | null | undefined;\n    readonly project?: string | null | undefined;\n    readonly labels?: readonly string[] | undefined;\n    readonly parentKey?: string | null | undefined;\n}',
+  },
+  {
+    name: 'IssuePriority',
+    declaration: 'export type IssuePriority = \'none\' | \'low\' | \'medium\' | \'high\' | \'urgent\';',
+  },
+  {
+    name: 'IssueProject',
+    declaration: 'export interface IssueProject {\n    readonly id: string;\n    readonly name: string;\n}',
+  },
+  {
+    name: 'IssueQuery',
+    declaration: 'export interface IssueQuery {\n    readonly status?: IssueStatus | undefined;\n    readonly assigneeType?: IssueActorType | \'none\' | undefined;\n    readonly assigneeId?: string | undefined;\n    readonly project?: string | undefined;\n    readonly q?: string | undefined;\n    readonly cursor?: string | undefined;\n    readonly limit?: number | undefined;\n}',
+  },
+  {
+    name: 'IssueRun',
+    declaration: 'export interface IssueRun {\n    readonly sessionId: string;\n    readonly state: IssueRunState | null;\n    readonly steps: number;\n    readonly totalSteps: number | null;\n    readonly updatedAt: string;\n}',
+  },
+  {
+    name: 'IssueRunReport',
+    declaration: 'export interface IssueRunReport {\n    readonly sessionId: string;\n    readonly state: IssueRunState;\n    readonly steps: number;\n    readonly totalSteps: number | null;\n}',
+  },
+  {
+    name: 'IssueRunState',
+    declaration: 'export type IssueRunState = \'queued\' | \'running\' | \'waiting_approval\' | \'finished\' | \'failed\';',
+  },
+  {
+    name: 'IssueStatus',
+    declaration: 'export type IssueStatus = \'backlog\' | \'todo\' | \'in_progress\' | \'in_review\' | \'blocked\' | \'done\' | \'cancelled\';',
+  },
+  {
+    name: 'IssueWriteAnswer',
+    declaration: 'export interface IssueWriteAnswer {\n    readonly issue: Issue | null;\n}',
   },
   {
     name: 'JobAppendOptions',

@@ -352,6 +352,10 @@
     - id: ui-ahel-account
       name: '@ahel/dsh-client-ui-ahel-account'
 
+    # Team issues over the account's ahelIssues namespace: board, detail, New Issue, Run with Ahel.
+    - id: ui-issues
+      name: '@ahel/dsh-client-ui-issues'
+
     # Detected-on-this-computer rows in Settings > Models, after the Ahel row.
     - id: ui-local-cli
       name: '@ahel/dsh-client-ui-local-cli'

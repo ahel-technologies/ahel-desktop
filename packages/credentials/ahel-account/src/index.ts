@@ -29,6 +29,7 @@ import type { StoredOAuthGrant } from '@ahel/dsh-mcp-client'
 import { Remote, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import { AhelCatalog } from './catalog.ts'
 import { AhelTeam } from './team.ts'
+import { AhelIssues } from './issues.ts'
 import {
   authorizeUrl, createPkce, discover, exchange, fetchProfile, randomState, register, revoke, SignInError, startLoopbackListener,
 } from './signin.ts'
@@ -39,6 +40,12 @@ export { AhelCatalog } from './catalog.ts'
 export type { CatalogConfig } from './catalog.ts'
 export { AhelTeam } from './team.ts'
 export type { TeamConfig } from './team.ts'
+export { AhelIssues } from './issues.ts'
+export type { IssuesConfig } from './issues.ts'
+export type {
+  Issue, IssueActivity, IssueActivityKind, IssueActorType, IssueAssignee, IssueAssignees, IssueComment, IssueDraft, IssueInboxItem,
+  IssuePage, IssuePatch, IssuePriority, IssueProject, IssueQuery, IssueRun, IssueRunReport, IssueRunState, IssueStatus, IssueWriteAnswer,
+} from './issues-types.ts'
 export type {
   CatalogBrowsePage, CatalogBrowseQuery, CatalogCapability, CatalogFactPart, CatalogGroup, CatalogInstalled, CatalogInstallResult,
   CatalogConcept, CatalogPart, CatalogRow, CatalogRowState, CatalogRowTile, CatalogSort, CatalogSwitchResult, KnowledgeProduct,
@@ -225,6 +232,7 @@ export class AhelAccount extends TypertRemoteService {
     }
     ctx.plugin(AhelCatalog, { appOrigin: this.appOrigin, resource: this.resource })
     ctx.plugin(AhelTeam, { appOrigin: this.appOrigin })
+    ctx.plugin(AhelIssues, { appOrigin: this.appOrigin })
     ctx.on('credentials/reference-updated', (ref) => { if (ref === this.ref) this.changed() })
     ctx.on('loader/volatile-update', () => {
       this.changed()

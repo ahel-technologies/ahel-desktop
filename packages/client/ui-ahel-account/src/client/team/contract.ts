@@ -1,6 +1,6 @@
 /** The team summary poll shared by the account menu and the team panels, and the Approvals and Inbox panel faces. */
 import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@ahel/dsh-client-ui-slots'
-import type { AhelAccountView, DesktopSummary, HandoffList, HandoffReceivedRow } from '@ahel/dsh-ahel-account/types'
+import type { AhelAccountView, DesktopSummary, HandoffList, HandoffReceivedRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
 import type {} from '@ahel/dsh-client-ui-layout/client'
 import type {} from '@ahel/dsh-client-ui-sidebar/client'
 import type {} from '@ahel/dsh-client-ui-conversation/client'
@@ -83,6 +83,11 @@ export interface InboxInjected {
    * @param row - the received handoff.
    */
   open(row: HandoffReceivedRow): Promise<InboxAnswer>
+  /**
+   * Show an issue row's issue in the desktop's Issues panel and mark the row read.
+   * @param item - the issue row.
+   */
+  openIssue(item: IssueInboxItem): Promise<InboxAnswer>
   /**
    * Mark one received handoff done.
    * @param id - `HandoffReceivedRow.id`.

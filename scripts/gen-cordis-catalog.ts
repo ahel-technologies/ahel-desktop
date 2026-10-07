@@ -81,6 +81,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   ahelAccount: 'credentials.md',
   ahelCatalog: 'credentials.md',
   ahelTeam: 'credentials.md',
+  ahelIssues: 'credentials.md',
   credentials: 'credentials.md',
   credentialsController: 'credentials.md',
   settingsController: 'settings.md',
@@ -261,6 +262,7 @@ export const EVENT_SCOPE_PAGE: Record<string, string> = {
  * exemption cannot mask another declaration in that scope.
  */
 export const EVENT_WALK_EXEMPTIONS: Record<string, string> = {
+  'ahel-issues/open': 'client-face navigation signal (open one issue) — packages/client/ui-issues/src/client/index.ts owns the API; the Inbox in ui-ahel-account emits it',
   'command/executed': 'client-face local command acknowledgment — packages/client/ui-commands/README.md owns the API',
   'connection/reset': 'client-face transport signal — packages/api/session-controller/README.md owns the API',
   'locale/change': 'client-face locale switch signal — packages/client/locale/README.md owns the API',
@@ -869,6 +871,17 @@ export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   KnowledgeProduct: 'owned by packages/credentials/ahel-account/src/types.ts',
   VaultDisconnected: 'owned by packages/credentials/ahel-account/src/types.ts',
   VaultSignInList: 'owned by packages/credentials/ahel-account/src/types.ts',
+  IssueActivity: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
+  IssueActorType: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
+  IssueAssignees: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
+  IssueComment: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
+  IssueDraft: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
+  IssuePage: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
+  IssuePatch: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
+  IssueProject: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
+  IssueQuery: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
+  IssueRunReport: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
+  IssueWriteAnswer: 'owned by packages/credentials/ahel-account/src/issues-types.ts',
   ExternalOpener: 'desktop browser opener seam is owned by packages/credentials/ahel-account/src/index.ts',
   LocalCliView: 'detected local CLI row is owned by packages/llm/llm-local-cli/src/types.ts',
   LocalCliId: 'local CLI identifier is owned by packages/llm/llm-local-cli/src/types.ts',

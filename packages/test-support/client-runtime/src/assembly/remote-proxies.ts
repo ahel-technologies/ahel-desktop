@@ -28,7 +28,7 @@ const PREFIX = 'remote.'
  * under the same `remote.<ns>` would make that mount fail as a conflict. Their
  * calls still reach the mock through the mounted contract.
  */
-const SELF_MOUNTED_NAMESPACES = new Set(['ahelAccount', 'ahelCatalog', 'ahelTeam', 'localCli', 'speech'])
+const SELF_MOUNTED_NAMESPACES = new Set(['ahelAccount', 'ahelCatalog', 'ahelIssues', 'ahelTeam', 'localCli', 'speech'])
 
 /**
  * Namespaces to provide: every `remote.<ns>` a roster module injects, plus the

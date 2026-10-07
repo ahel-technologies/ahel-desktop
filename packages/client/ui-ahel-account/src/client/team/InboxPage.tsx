@@ -1,8 +1,9 @@
 /** The Inbox main panel: handoffs teammates shared with you, each opened into a new session, and the ones you sent. */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { HandoffList, HandoffReceivedRow, HandoffSentRow } from '@ahel/dsh-ahel-account/types'
+import type { HandoffList, HandoffReceivedRow, HandoffSentRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
 import type { InboxInjected, InboxLoad, InboxPageProps } from './contract.ts'
 import type { AhelAccountKey } from '../locales.ts'
+import { WEB_ISSUES } from './issue-items.ts'
 import catalog from '../catalog/Catalog.module.css'
 import css from './Team.module.css'
 
@@ -100,6 +101,61 @@ function ReceivedItem({ row, now, open, markDone, openUrl, reload, t }: {
   )
 }
 
+/** The sentence for each kind of issue row. */
+const ISSUE_KIND: Record<IssueInboxItem['type'], AhelAccountKey> = {
+  assigned: 'inboxIssueAssigned',
+  mentioned: 'inboxIssueMentioned',
+  run_finished: 'inboxIssueRunFinished',
+  run_failed: 'inboxIssueRunFailed',
+}
+
+/**
+ * One issue row: who did what, Open issue (shows it in the desktop and marks the row read) and its ahel.ai page.
+ * @param props - the row, the face's actions and the dictionary.
+ * @returns the list item.
+ */
+function IssueItem({ item, now, openIssue, openUrl, reload, t }: {
+  item: IssueInboxItem
+  now: number
+  openIssue: InboxInjected['openIssue']
+  openUrl: InboxInjected['openUrl']
+  reload: () => void
+  t: Translate
+}) {
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState<RowNotice | null>(null)
+  const key = item.issueKey
+  const body = item.body === null ? '' : firstLine(item.body)
+  return (
+    <li className={css.row} data-unread={item.unread || undefined}>
+      <p className={css.title}>
+        {item.unread && <span className={css.dot} role="img" aria-label={t('inboxUnread')} />}
+        <span>{key === null ? t('inboxIssueGone') : `${key} · ${item.issueTitle ?? ''}`}</span>
+      </p>
+      <p className={css.meta}>
+        <span className={css.who}>{t(ISSUE_KIND[item.type], { actor: item.actorName })}</span>
+        <span>{ago(item.createdAt, now, t)}</span>
+      </p>
+      {body !== '' && <p className={css.next}>{body}</p>}
+      {notice !== null && <p className={css.result} data-tone="refused" role="alert">{notice.text}</p>}
+      <div className={css.actions}>
+        <button type="button" className={`${catalog.btn} ${catalog.btnPrimary}`} disabled={busy} onClick={() => {
+          setBusy(true)
+          setNotice(null)
+          void openIssue(item).then((answer) => {
+            if (answer.ok) { reload(); return }
+            setNotice({ text: answer.outdated ? t('inboxOutdated') : answer.message ?? t('inboxFailed') })
+          }).finally(() => { setBusy(false) })
+        }}>{t('inboxOpenIssue')}</button>
+        {key !== null && (
+          <button type="button" className={`${catalog.btn} ${catalog.btnGhost}`}
+            onClick={() => { openUrl(`${WEB_ISSUES}/${encodeURIComponent(key)}`) }}>{t('inboxViewWeb')}</button>
+        )}
+      </div>
+    </li>
+  )
+}
+
 /**
  * One handoff this person sent, with whether it was read.
  * @param props - the row, the face's link opener and the dictionary.
@@ -135,7 +191,7 @@ function SentItem({ row, now, openUrl, t }: {
  * @param props - composed slot props: the Inbox face, its hooks and `t`.
  * @returns the page.
  */
-export function InboxPage({ load, open, markDone, openUrl, openWebInbox, signIn, useAccount, t }: InboxPageProps) {
+export function InboxPage({ load, open, openIssue, markDone, openUrl, openWebInbox, signIn, useAccount, t }: InboxPageProps) {
   const view = useAccount(value => value)
   const [answer, setAnswer] = useState<InboxLoad | null>(null)
   const [now, setNow] = useState(() => Date.now())
@@ -188,7 +244,10 @@ export function InboxPage({ load, open, markDone, openUrl, openWebInbox, signIn,
     else if (answer.reason === 'refused') body = notice(answer.message ?? t('inboxFailed'), { label: t('openAhel'), run: openWebInbox })
     else body = notice(answer.message ?? t('inboxFailed'), { label: t('inboxRetry'), run: reload })
   } else {
-    body = <InboxLists list={answer.list} now={now} open={open} markDone={markDone} openUrl={openUrl} reload={reload} t={t} />
+    body = (
+      <InboxLists list={answer.list} now={now} open={open} openIssue={openIssue} markDone={markDone} openUrl={openUrl}
+        reload={reload} t={t} />
+    )
   }
 
   return (
@@ -210,10 +269,11 @@ export function InboxPage({ load, open, markDone, openUrl, openWebInbox, signIn,
  * @param props - the list and the row actions.
  * @returns both lists.
  */
-function InboxLists({ list, now, open, markDone, openUrl, reload, t }: {
+function InboxLists({ list, now, open, openIssue, markDone, openUrl, reload, t }: {
   list: HandoffList
   now: number
   open: InboxInjected['open']
+  openIssue: InboxInjected['openIssue']
   markDone: InboxInjected['markDone']
   openUrl: InboxInjected['openUrl']
   reload: () => void
@@ -223,8 +283,20 @@ function InboxLists({ list, now, open, markDone, openUrl, reload, t }: {
   const received = [...list.received].sort((a, b) =>
     Number(a.status === 'done') - Number(b.status === 'done') || b.updatedAt.localeCompare(a.updatedAt))
   const sent = [...list.sent].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  // An older ahel.ai sends no `items`; null means it could not read them.
+  const items = list.items
   return (
     <>
+      {items === null && <p className={css.next}>{t('inboxIssuesUnavailable')}</p>}
+      {items !== undefined && items !== null && items.length > 0 && (
+        <section aria-label={t('inboxIssues')}>
+          <ul className={`${css.list} ${css.listTight}`}>
+            {items.map(item => (
+              <IssueItem key={item.id} item={item} now={now} openIssue={openIssue} openUrl={openUrl} reload={reload} t={t} />
+            ))}
+          </ul>
+        </section>
+      )}
       {received.length === 0
         ? (
           <div className={catalog.empty}>
