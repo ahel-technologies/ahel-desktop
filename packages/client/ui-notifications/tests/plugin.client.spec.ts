@@ -17,6 +17,7 @@ afterEach(() => {
 
 function fakeContext() {
   const events = new Map<string, (...args: never[]) => void>()
+  const clientEvents = new Map<string, (...args: never[]) => void>()
   const disposers: (() => void)[] = []
   const registered: { name: string; id: string }[] = []
   const openSession = vi.fn()
@@ -24,6 +25,10 @@ function fakeContext() {
   let pending = new Map<string, { running: boolean; pendingInteraction: unknown; completionUnread: boolean }>()
   const ctx = {
     effect: (body: () => (() => void) | undefined) => { const dispose = body(); if (dispose) disposers.push(dispose) },
+    on: (name: string, listener: (...args: never[]) => void) => {
+      clientEvents.set(name, listener)
+      return () => { clientEvents.delete(name) }
+    },
     inject: (_deps: readonly string[], body: (inner: unknown) => void) => { body(ctx) },
     locale: {
       register: () => () => undefined,
@@ -56,9 +61,10 @@ function fakeContext() {
     layout: { panelInfo: { getSnapshot: () => ({ activePanelId: null }) } },
   }
   const emit = (name: string, ...args: unknown[]) => { (events.get(name) as ((...values: unknown[]) => void) | undefined)?.(...args) }
+  const fire = (name: string, ...args: unknown[]) => { (clientEvents.get(name) as ((...values: unknown[]) => void) | undefined)?.(...args) }
   const setPending = (next: typeof pending) => { pending = next; for (const listener of statusListeners) listener() }
   const dispose = () => { for (const disposer of disposers) disposer() }
-  return { ctx: ctx as unknown as Context, emit, setPending, registered, openSession, dispose }
+  return { ctx: ctx as unknown as Context, emit, fire, setPending, registered, openSession, dispose }
 }
 
 it('posts through the Desktop bridge and opens the Session on click', async () => {
@@ -88,5 +94,19 @@ it('posts through the Desktop bridge and opens the Session on click', async () =
 
   click?.('s1')
   expect(fake.openSession).toHaveBeenCalledWith('s1')
+  fake.dispose()
+})
+
+it('announces a run this desktop picked up from ahel.ai, opening its chat on click', () => {
+  const posted: unknown[] = []
+  vi.stubGlobal('dshDesktopNotifications', {
+    show: async (note: unknown) => { posted.push(note); return true },
+    onClick: () => () => undefined,
+  })
+  vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+  const fake = fakeContext()
+  apply(fake.ctx)
+  fake.fire('ahel-issues/run-started', 'AHEL-140', 'Draft the release notes', 's9')
+  expect(posted).toEqual([{ title: 'Run started: AHEL-140 Draft the release notes', body: '', target: 's9' }])
   fake.dispose()
 })

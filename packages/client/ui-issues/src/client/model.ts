@@ -87,14 +87,16 @@ export function groupByStatus(issues: readonly Issue[]): Record<IssueStatus, Iss
 }
 
 /**
- * The newer of the server's run and the one this window reported.
+ * The newer of the server's run and the one this window reported. A run
+ * queued on ahel.ai after this window's run (no session yet) is compared by time.
  * @param issue - the issue as read.
  * @param local - the run this window started, if any.
  * @returns the run to show.
  */
 export function currentRun(issue: Issue, local: IssueRun | undefined): IssueRun | null {
   if (local === undefined) return issue.run
-  if (issue.run === null || issue.run.sessionId !== local.sessionId) return local
+  if (issue.run === null) return local
+  if (issue.run.sessionId !== null && issue.run.sessionId !== local.sessionId) return local
   return local.updatedAt >= issue.run.updatedAt ? local : issue.run
 }
 

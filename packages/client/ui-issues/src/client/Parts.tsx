@@ -81,14 +81,16 @@ export function Assignee({ type, name, avatar, compact, t }: {
 }
 
 /**
- * A run's progress: a ring filled steps/total while it works (a spinning
- * quarter while the total is unknown), "Waiting for approval" while a
- * confirmation waits, and the end state once it settled.
+ * A run's progress: "Queued" while it waits for a desktop to pick it up, a
+ * ring filled steps/total while it works (a spinning quarter while the total
+ * is unknown), "Waiting for approval" while a confirmation waits, and the end
+ * state once it settled.
  * @param props - the run and the dictionary.
  * @returns the progress, or nothing without a run.
  */
 export function RunProgress({ run, t }: { run: IssueRun | null; t: Translate }) {
   if (run === null || run.state === null) return null
+  if (run.state === 'queued') return <span className={css.run} data-state="queued">{t('runQueued')}</span>
   if (run.state === 'waiting_approval') return <span className={css.waiting}>{t('runWaiting')}</span>
   if (run.state === 'finished' || run.state === 'failed') {
     return <span className={css.run} data-state={run.state}>{t(run.state === 'finished' ? 'runFinished' : 'runFailed')}</span>
@@ -99,7 +101,7 @@ export function RunProgress({ run, t }: { run: IssueRun | null; t: Translate }) 
   const circumference = 2 * Math.PI * 6
   const label = total !== null ? t('runSteps', { steps: String(run.steps), total: String(total) }) : t('runStepsOnly', { steps: String(run.steps) })
   return (
-    <span className={css.run} data-state={run.state} title={run.state === 'queued' ? t('runQueued') : t('runRunning')}>
+    <span className={css.run} data-state={run.state} title={t('runRunning')}>
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style={{ transform: 'rotate(-90deg)' }}>
         <circle cx="8" cy="8" r="6" fill="none" strokeWidth="2" className={css.ringTrack} />
         <circle cx="8" cy="8" r="6" fill="none" strokeWidth="2" strokeLinecap="round" className={css.ringFill}

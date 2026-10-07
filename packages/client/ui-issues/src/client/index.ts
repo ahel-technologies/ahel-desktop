@@ -5,6 +5,9 @@
  * count of open issues assigned to the person, and Run with Ahel, which seeds
  * a new chat with the issue and reports the chat's state as the issue's run.
  * The feed re-reads every 60 s while the window has focus and on focus.
+ * While signed in, the pickup (pickup.ts) claims the runs this person queued
+ * on ahel.ai every 30 s, on focus, after a board read and on
+ * `ahel-issues/poll`, and announces each with `ahel-issues/run-started`.
  * Other packages open an issue with the `ahel-issues/open` event.
  */
 import type { Context } from '@ahel/cordis'
@@ -19,12 +22,14 @@ import type {} from '@ahel/dsh-client-locale/client'
 import type {} from '@ahel/dsh-client-ui-renderer/client'
 import type {} from '@ahel/dsh-client-ui-session/client'
 import type {} from '@ahel/dsh-client-ui-workspace/client'
+import type { Issue, IssueRunReport } from '@ahel/dsh-ahel-account/types'
 import type { IssuesInjected } from './contract.ts'
 import { createIssuesFeed, type IssuesAccount } from './feed.ts'
 import { IssuesPage } from './IssuesPage.tsx'
 import { IssuesPanelIcon } from './PanelIcons.tsx'
 import { issueUrl, runSeed } from './model.ts'
-import { startRun, type RunHost, type RunSession } from './run.ts'
+import { createPickup } from './pickup.ts'
+import { startRun, type RunHost, type RunSession, type RunStart } from './run.ts'
 import { en, NS, zh } from './locales.ts'
 
 export type {
@@ -41,6 +46,19 @@ declare module '@ahel/cordis' {
      * @param key - the issue key, for example `AHEL-137`.
      */
     'ahel-issues/open'(key: string): void
+    /**
+     * Read the agent's issues now and claim the runs this person queued on ahel.ai, for example after the Inbox read.
+     * @mode emit
+     */
+    'ahel-issues/poll'(): void
+    /**
+     * This desktop picked up a run queued on ahel.ai and started its chat.
+     * @mode emit
+     * @param key - the issue key.
+     * @param title - the issue title.
+     * @param sessionId - the chat the run happens in.
+     */
+    'ahel-issues/run-started'(key: string, title: string, sessionId: string): void
   }
 }
 
@@ -55,6 +73,12 @@ const POLL_MS = 60_000
 
 /** Window focus re-reads at most this often. */
 const FOCUS_REFRESH_MS = 5_000
+
+/** Pickup period while signed in, focused or not. */
+const PICKUP_MS = 30_000
+
+/** Pickups triggered by focus, board reads or the Inbox happen at most this often. */
+const PICKUP_GAP_MS = 5_000
 
 /** Sidebar order: between Approvals (-5) and Inbox (-4). */
 const ISSUES_ORDER = -4.5
@@ -81,7 +105,7 @@ function recentWorkspace(workspaces: readonly WorkspaceView[], sessions: Session
 
 /**
  * Register the feed, the panels, the sidebar rows and Run with Ahel.
- * @param ctx - Client context with the mounted `ahelIssues` and `ahelAccount` namespaces and the Session services.
+ * @param ctx - Client context with the mounted `ahelIssues`, `ahelAccount` and `ahelTeam` namespaces and the Session services.
  */
 function register(ctx: Context): void {
   const t = ctx.locale.bind(NS)
@@ -123,12 +147,60 @@ function register(ctx: Context): void {
     },
     waiting: id => ctx.uiSession.sessionStatus.getSnapshot().get(id as SessionId)?.pendingInteraction !== undefined,
     subscribeWaiting: listener => ctx.uiSession.sessionStatus.subscribe(listener),
+    discard: (sessionId) => {
+      void ctx.uiWorkspace.archiveSession(sessionId as SessionId).catch((error: unknown) => {
+        console.warn('[ui-issues] could not archive an unused run chat:', error)
+      })
+    },
   }
+
+  const launch = async (issue: Issue, claim?: (report: IssueRunReport) => Promise<boolean>): Promise<RunStart> => await startRun(
+    runHost, runSeed(issue, t),
+    (report) => { feed.report(issue.key, report) },
+    (summary) => { feed.agentComment(issue.key, summary) },
+    claim,
+  )
+
+  // The person's user id names who asked for a queued run; it is read once per sign-in.
+  let me: Promise<string | null> | undefined
+  const pickup = createPickup({
+    list: query => ctx.remote.ahelIssues.list(query),
+    get: key => ctx.remote.ahelIssues.get(key),
+    me: () => {
+      me ??= ctx.remote.ahelTeam.summary().then(result => (result.ok ? result.value.me?.id ?? null : null), () => null)
+      return me.then((id) => {
+        if (id === null) me = undefined
+        return id
+      })
+    },
+    claim: async (issue) => {
+      const started = await launch(issue, report => feed.claim(issue.key, report))
+      if (started.ok) {
+        ctx.emit('ahel-issues/run-started', issue.key, issue.title, started.sessionId)
+        return 'started'
+      }
+      return started.reason === 'claimed' ? 'taken' : 'failed'
+    },
+  })
+  let lastPickup = 0
+  const pick = (force: boolean): void => {
+    if (feed.state.getSnapshot().phase === 'signed-out') return
+    if (!force && Date.now() - lastPickup < PICKUP_GAP_MS) return
+    lastPickup = Date.now()
+    void pickup.poll().catch((error: unknown) => { console.warn('[ui-issues] queued run pickup failed:', error) })
+  }
+  ctx.effect(() => feed.state.subscribe(() => {
+    if (feed.state.getSnapshot().phase === 'signed-out') me = undefined
+  }), 'ui-issues: forget the person on sign-out')
 
   const openLink = (url: string): void => { if (/^https?:\/\//.test(url)) window.open(url, '_blank', 'noopener,noreferrer') }
 
+  const refresh = (): void => {
+    void feed.reload().then(() => { pick(false) }, () => undefined)
+  }
+
   const face: IssuesInjected = {
-    refresh: feed.refresh,
+    refresh,
     setFilter: feed.setFilter,
     openIssue: feed.openIssue,
     compose: feed.compose,
@@ -141,8 +213,7 @@ function register(ctx: Context): void {
     createProject: feed.createProject,
     run: async (issue) => {
       try {
-        const started = await startRun(runHost, runSeed(issue, t), (report) => { feed.report(issue.key, report) },
-          (summary) => { feed.agentComment(issue.key, summary) })
+        const started = await launch(issue)
         if (started.ok) { feed.openIssue(null); return { ok: true } }
         return { ok: false, message: started.reason === 'no-workspace' ? t('noWorkspace') : started.message }
       } catch (error) {
@@ -189,19 +260,23 @@ function register(ctx: Context): void {
     ctx.layout.selectPanel(ISSUES_ID)
   })
 
-  // Reads: now, every 60 s while focused, and on focus.
+  ctx.on('ahel-issues/poll', () => { pick(false) })
+
+  // Reads: now, every 60 s while focused, and on focus; each board read is followed by a pickup.
   let lastRead = 0
   const read = (): void => {
     lastRead = Date.now()
-    feed.refresh()
+    refresh()
   }
   read()
   ctx.effect(() => {
     const timer = setInterval(() => { if (document.hasFocus()) read() }, POLL_MS)
+    const pickupTimer = setInterval(() => { pick(true) }, PICKUP_MS)
     const onFocus = (): void => { if (Date.now() - lastRead >= FOCUS_REFRESH_MS) read() }
     window.addEventListener('focus', onFocus)
     return () => {
       clearInterval(timer)
+      clearInterval(pickupTimer)
       window.removeEventListener('focus', onFocus)
     }
   }, 'ui-issues: poll')
@@ -213,5 +288,5 @@ function register(ctx: Context): void {
  */
 export function apply(ctx: Context): void {
   ctx.effect(() => ctx.locale.register(NS, { en, zh }), 'ui-issues: dictionaries')
-  ctx.inject(['remote.ahelIssues', 'remote.ahelAccount', 'sessions', 'workspaces', 'uiWorkspace', 'uiSession'], (inner) => { register(inner) })
+  ctx.inject(['remote.ahelIssues', 'remote.ahelAccount', 'remote.ahelTeam', 'sessions', 'workspaces', 'uiWorkspace', 'uiSession'], (inner) => { register(inner) })
 }

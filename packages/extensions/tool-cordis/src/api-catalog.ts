@@ -598,10 +598,10 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: '@Remote async run(key: string, report: IssueRunReport): Promise<IssueWriteAnswer>',
-        description: 'Report the state of the desktop chat that works on one issue; ahel.ai moves the issue\'s status with it.',
+        description: 'Report the state of the desktop chat that works on one issue; ahel.ai moves the issue\'s status with it. The first report on a queued run claims it; when another session holds the run, ahel.ai answers 409 `run_claimed`.',
         parameters: [{ name: 'key', description: 'the issue.' }, { name: 'report', description: 'the session, its state and the steps so far.' }],
         returns: 'the issue after the report.',
-        throws: ['RemoteError `ahel-issues/*`.'],
+        throws: ['RemoteError `ahel-issues/refused` with `details.error === \'run_claimed\'` when another session holds the run, or another `ahel-issues/*`.'],
       },
       {
         signature: '@Remote async assignees(): Promise<IssueAssignees>',
@@ -6095,11 +6095,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'IssueInboxItem',
-    declaration: 'export interface IssueInboxItem {\n    readonly id: string;\n    readonly type: \'assigned\' | \'mentioned\' | \'run_finished\' | \'run_failed\';\n    readonly issueKey: string | null;\n    readonly issueTitle: string | null;\n    readonly actorType: IssueActorType;\n    readonly actorName: string;\n    readonly body: string | null;\n    readonly unread: boolean;\n    readonly createdAt: string;\n}',
+    declaration: 'export interface IssueInboxItem {\n    readonly id: string;\n    readonly type: \'assigned\' | \'mentioned\' | \'run_queued\' | \'run_finished\' | \'run_failed\';\n    readonly issueKey: string | null;\n    readonly issueTitle: string | null;\n    readonly actorType: IssueActorType;\n    readonly actorName: string;\n    readonly body: string | null;\n    readonly unread: boolean;\n    readonly createdAt: string;\n}',
   },
   {
     name: 'IssuePage',
-    declaration: 'export interface IssuePage {\n    readonly issues: readonly Issue[];\n    readonly nextCursor: string | null;\n    readonly counts: Readonly<Record<string, number>>;\n    readonly agentsWorking: number;\n}',
+    declaration: 'export interface IssuePage {\n    readonly issues: readonly Issue[];\n    readonly nextCursor: string | null;\n    readonly counts: Readonly<Record<string, number>>;\n    readonly agentsWorking: number;\n    readonly agentsQueued: number | null;\n}',
   },
   {
     name: 'IssuePatch',
@@ -6115,11 +6115,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'IssueQuery',
-    declaration: 'export interface IssueQuery {\n    readonly status?: IssueStatus | undefined;\n    readonly assigneeType?: IssueActorType | \'none\' | undefined;\n    readonly assigneeId?: string | undefined;\n    readonly project?: string | undefined;\n    readonly q?: string | undefined;\n    readonly cursor?: string | undefined;\n    readonly limit?: number | undefined;\n}',
+    declaration: 'export interface IssueQuery {\n    readonly status?: IssueStatus | undefined;\n    readonly assigneeType?: IssueActorType | \'none\' | undefined;\n    readonly assigneeId?: string | undefined;\n    readonly project?: string | undefined;\n    readonly runState?: IssueRunState | undefined;\n    readonly requestedBy?: string | undefined;\n    readonly q?: string | undefined;\n    readonly cursor?: string | undefined;\n    readonly limit?: number | undefined;\n}',
   },
   {
     name: 'IssueRun',
-    declaration: 'export interface IssueRun {\n    readonly sessionId: string;\n    readonly state: IssueRunState | null;\n    readonly steps: number;\n    readonly totalSteps: number | null;\n    readonly updatedAt: string;\n}',
+    declaration: 'export interface IssueRun {\n    readonly sessionId: string | null;\n    readonly state: IssueRunState | null;\n    readonly requestedBy?: string | null | undefined;\n    readonly steps: number;\n    readonly totalSteps: number | null;\n    readonly updatedAt: string;\n}',
   },
   {
     name: 'IssueRunReport',

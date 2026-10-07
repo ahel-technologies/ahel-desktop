@@ -130,6 +130,7 @@ export function IssuesPage(props: IssuesPageView) {
                 {state.agentsWorking === 1 ? t('agentWorking') : t('agentsWorking', { n: String(state.agentsWorking) })}
               </span>
             )}
+            {state.agentsQueued > 0 && <span className={css.queued}>{t('agentsQueued', { n: String(state.agentsQueued) })}</span>}
             <div className={css.filterWrap}>
               <button type="button" className={`${css.btn} ${css.btnSecondary}`} aria-expanded={filterOpen}
                 data-active={filtered || undefined} onClick={() => { setFilterOpen(!filterOpen) }}>

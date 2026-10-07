@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { HandoffList, HandoffReceivedRow, HandoffSentRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
 import type { InboxInjected, InboxLoad, InboxPageProps } from './contract.ts'
 import type { AhelAccountKey } from '../locales.ts'
-import { inboxEntries, WEB_ISSUES } from './issue-items.ts'
+import { inboxEntries, ISSUE_KIND_COPY, WEB_ISSUES } from './issue-items.ts'
 import catalog from '../catalog/Catalog.module.css'
 import css from './Team.module.css'
 
@@ -102,22 +102,6 @@ function ReceivedItem({ row, now, open, markDone, openUrl, reload, t }: {
   )
 }
 
-/** The sentence for each kind of issue row. */
-const ISSUE_KIND: Record<IssueInboxItem['type'], AhelAccountKey> = {
-  assigned: 'inboxIssueAssigned',
-  mentioned: 'inboxIssueMentioned',
-  run_finished: 'inboxIssueRunFinished',
-  run_failed: 'inboxIssueRunFailed',
-}
-
-/** The kind label of each issue row. */
-const ISSUE_KIND_LABEL: Record<IssueInboxItem['type'], AhelAccountKey> = {
-  assigned: 'inboxKindAssigned',
-  mentioned: 'inboxKindMentioned',
-  run_finished: 'inboxKindRunFinished',
-  run_failed: 'inboxKindRunFailed',
-}
-
 /**
  * One issue row: who did what, Open issue (shows it in the desktop and marks the row read) and its ahel.ai page.
  * @param props - the row, the face's actions and the dictionary.
@@ -142,8 +126,8 @@ function IssueItem({ item, now, openIssue, openUrl, reload, t }: {
         <span>{key === null ? t('inboxIssueGone') : `${key} · ${item.issueTitle ?? ''}`}</span>
       </p>
       <p className={css.meta}>
-        <span className={css.kind} data-kind={item.type}>{t(ISSUE_KIND_LABEL[item.type])}</span>
-        <span className={css.who}>{t(ISSUE_KIND[item.type], { actor: item.actorName })}</span>
+        <span className={css.kind} data-kind={item.type}>{t(ISSUE_KIND_COPY[item.type].label)}</span>
+        <span className={css.who}>{t(ISSUE_KIND_COPY[item.type].sentence, { actor: item.actorName })}</span>
         <span>{ago(item.createdAt, now, t)}</span>
       </p>
       {body !== '' && <p className={css.next}>{body}</p>}

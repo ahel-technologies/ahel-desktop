@@ -1,6 +1,7 @@
 /**
  * System notifications when a chat needs the person and the window is not focused: a reply
- * is ready, an approval or question card is waiting, or a teammate handed over a chat.
+ * is ready, an approval or question card is waiting, a teammate handed over a chat, or this
+ * desktop started a run the person queued on ahel.ai (`ahel-issues/run-started`).
  * Ahel Desktop posts them from the Electron main process; a browser uses Web notifications.
  */
 import type { Context as ClientContext } from '@ahel/cordis'
@@ -19,7 +20,21 @@ import { InboxNotifications } from './inbox.ts'
 import { platformNotifier } from './notifier.ts'
 import { inboxReader, lastResponse, normalizeSettings, text, waitOf } from './reading.ts'
 import { NotificationsRow, type NotificationsRowInjected } from './NotificationsRow.tsx'
-import { DEFAULT_SETTINGS, SessionNotifications, type NotificationSettings, type PendingWait, type SystemNotification } from './watcher.ts'
+import { clip, DEFAULT_SETTINGS, SessionNotifications, type NotificationSettings, type PendingWait, type SystemNotification } from './watcher.ts'
+
+// The same event @ahel/dsh-client-ui-issues declares and emits; this plugin only listens.
+declare module '@ahel/cordis' {
+  interface Events {
+    /**
+     * This desktop picked up a run queued on ahel.ai and started its chat.
+     * @mode emit
+     * @param key - the issue key.
+     * @param title - the issue title.
+     * @param sessionId - the chat the run happens in.
+     */
+    'ahel-issues/run-started'(key: string, title: string, sessionId: string): void
+  }
+}
 
 declare module '@ahel/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -110,11 +125,15 @@ export function apply(ctx: ClientContext): void {
     }
     const offWaits = ctx.uiSession.sessionStatus.subscribe(reconcileWaits)
     reconcileWaits()
+    const offRun = ctx.on('ahel-issues/run-started', (key, title, sessionId) => {
+      post({ title: clip(t('note.runStarted', { key, title })), body: '', target: sessionId })
+    })
 
     return () => {
       offStatus()
       offError()
       offWaits()
+      offRun()
       offClick()
       sessions.dispose()
     }
