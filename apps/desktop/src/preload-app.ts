@@ -8,6 +8,7 @@ import { syncNativeTheme } from './preload-theme.ts'
 import { syncWindowsAppearance } from './preload-windows.ts'
 import { createDesktopBrowserBridge } from './preload-browser.ts'
 import './preload-notifications.ts'
+import type { WindowCaptureBridge, WindowCaptureResult, WindowCaptureShortcut, WindowCaptureShortcutResult } from '@ahel/dsh-window-capture/protocol'
 
 function createProductApi(): DshDesktopProductApi {
   return {
@@ -88,6 +89,19 @@ if (location.protocol === `${SCHEME}:` && location.hostname === 'app') {
   contextBridge.exposeInMainWorld('__DSH_HOST_PATHS__', {
     pathFor: (file: File) => webUtils.getPathForFile(file),
   })
+  // Window capture: the composer plugin dsh-client-ui-window-capture reads this bridge.
+  contextBridge.exposeInMainWorld('__DSH_WINDOW_CAPTURE__', {
+    shortcut: () => ipcRenderer.invoke(DESKTOP_IPC.windowCaptureShortcut) as Promise<WindowCaptureShortcut>,
+    setShortcut: accelerator =>
+      ipcRenderer.invoke(DESKTOP_IPC.windowCaptureSetShortcut, accelerator) as Promise<WindowCaptureShortcutResult>,
+    capture: () => ipcRenderer.invoke(DESKTOP_IPC.windowCaptureNow) as Promise<WindowCaptureResult>,
+    take: () => ipcRenderer.invoke(DESKTOP_IPC.windowCaptureTake) as Promise<WindowCaptureResult | null>,
+    onCaptured(listener) {
+      const handle = (): void => { listener() }
+      ipcRenderer.on(DESKTOP_IPC.windowCaptured, handle)
+      return () => { ipcRenderer.off(DESKTOP_IPC.windowCaptured, handle) }
+    },
+  } satisfies WindowCaptureBridge)
   contextBridge.exposeInMainWorld('dshDesktopBoot', {
     ready: () => ipcRenderer.invoke(DESKTOP_IPC.boot) as Promise<unknown>,
     failed: (message: string) => ipcRenderer.invoke(DESKTOP_IPC.bootFailed, message) as Promise<void>,

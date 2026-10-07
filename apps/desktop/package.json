@@ -72,6 +72,7 @@
     "@ahel/dsh-client-ui-theme": "workspace:*",
     "@ahel/dsh-client-shortcuts": "workspace:*",
     "@ahel/dsh-atomic-write": "workspace:*",
-    "@ahel/dsh-ahel-account": "workspace:*"
+    "@ahel/dsh-ahel-account": "workspace:*",
+    "@ahel/dsh-window-capture": "workspace:*"
   }
 }

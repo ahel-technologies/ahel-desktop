@@ -28,6 +28,9 @@
     },
     {
       "path": "../../packages/credentials/ahel-account"
+    },
+    {
+      "path": "../../packages/capture/window-capture"
     }
   ],
   "exclude": [

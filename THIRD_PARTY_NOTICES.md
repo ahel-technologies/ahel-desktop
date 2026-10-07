@@ -147,6 +147,10 @@ pnpm applies local patches to the following packages at install time, so shipped
 
 The optional experimental Inspector distributes a locally compiled copy of [chrome-devtools-frontend 1.0.1638082](https://www.npmjs.com/package/chrome-devtools-frontend/v/1.0.1638082), from upstream revision [0e1186138ed519d9659c1874bf6375eca4483c72](https://chromium.googlesource.com/devtools/devtools-frontend/+/0e1186138ed519d9659c1874bf6375eca4483c72). The build includes the Chromium [BSD-3-Clause license](packages/experimental/inspector/assets/devtools/LICENSE) and the third-party license and notice files supplied by the npm source. The Chromium root license does not replace those dependencies' licenses.
 
+## Adapted source
+
+[`packages/capture/window-capture/src/mac.ts`](packages/capture/window-capture/src/mac.ts) adapts the macOS front-window lookup script and the `screencapture` arguments of [T3 Code](https://github.com/pingdotgg/t3code) (`apps/desktop/src/snapShot/ActiveWindow.ts` and `MacSnapShot.ts` at revision f21d6da51c9aa78ea12e7f13a378f55f1e63cb38), Copyright (c) 2026 T3 Tools Inc., used under the MIT License. Its copyright notice and permission notice are kept in [`packages/capture/window-capture/LICENSE-t3code`](packages/capture/window-capture/LICENSE-t3code).
+
 
 ## LGPL image library (libvips)
 
