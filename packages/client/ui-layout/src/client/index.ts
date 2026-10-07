@@ -93,6 +93,14 @@ declare module '@ahel/dsh-client-ui-slots' {
      */
     'shell.bottom': { kind: 'single'; scope: 'root' }
     /**
+     * A column at the centre's trailing edge, between the main panel and the
+     * right column, for example a deployment's chat list beside the
+     * Conversation. Empty content reserves no space. The occupant owns its
+     * width and decides per main panel whether it renders; it receives no
+     * Session binding and remains mounted across main-panel navigation.
+     */
+    'shell.aside': { kind: 'single'; scope: 'root' }
+    /**
      * Frame-wide floating layer, above every column and outside their scroll
      * containers. Deliberately generic and unowned by any feature: a badge, a
      * toast stack or a status pill all belong here, and entries order among
@@ -183,6 +191,7 @@ export function apply(ctx: ClientContext): void {
         'main': { kind: 'keyed', scope: 'root' },
         'rightbar': { kind: 'single', scope: 'root' },
         'shell.bottom': { kind: 'single', scope: 'root' },
+        'shell.aside': { kind: 'single', scope: 'root' },
         'shell.overlay': { kind: 'list', scope: 'root' },
         'shell.leading': { kind: 'single', scope: 'root' },
       },

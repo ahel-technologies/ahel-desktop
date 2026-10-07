@@ -68,6 +68,15 @@ declare module '@ahel/dsh-client-ui-slots' {
      * receives the column state and renders nothing it has no room for.
      */
     'sidebar.header': { kind: 'list'; scope: 'root'; owner: SidebarHeaderOwnerProps }
+    /**
+     * The column under the brand row. Declared by this package's 'sidebar'
+     * entry; without an occupant the shell renders its own header entries,
+     * New Session, panel rows, browsing region and foot. An occupant replaces
+     * all of them, for example a deployment's fixed navigation rail, and
+     * places whichever of the shell's parts it keeps through the render
+     * functions it receives, including outside the column through a portal.
+     */
+    'sidebar.body': { kind: 'single'; scope: 'root'; owner: SidebarBodyOwnerProps }
   }
 }
 
@@ -137,6 +146,24 @@ export interface SidebarHeaderOwnerProps {
   wide: boolean
 }
 
+/** Owner share of the column body occupant: the column state and the shell's own parts. */
+export interface SidebarBodyOwnerProps {
+  /** Whether the sidebar renders wide content (false = 56px rail). */
+  wide: boolean
+  /** Expand a collapsed column; does nothing while it is open. */
+  expandSidebar: () => void
+  /** Start a New Session, as the shell's own New Session button does. */
+  startSession: () => void
+  /** @returns the `sidebar.header` entries at the column's current width. */
+  renderHeader: () => ReactNode
+  /** @returns the `sidebar.workspaces` browsing region at full width, for a column of its own. */
+  renderWorkspaces: () => ReactNode
+  /** @returns the `sidebar.footer.action` entries at the column's current width. */
+  renderFooterActions: () => ReactNode
+  /** @returns the `sidebar.settings` seat at the column's current width. */
+  renderSettings: () => ReactNode
+}
+
 /** Owner share of an action rendered beside Settings at the sidebar foot. */
 export interface SidebarFooterActionOwnerProps {
   /** Whether the sidebar renders wide content (false = 56px rail). */
@@ -179,5 +206,6 @@ export type SidebarRootComponentProps =
     | 'sidebar.settings'
     | 'sidebar.footer.action'
     | 'sidebar.header'
+    | 'sidebar.body'
   >
   & InjectFace<SidebarRootInjected> & PropsLocale<'sidebar'>

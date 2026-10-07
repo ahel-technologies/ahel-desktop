@@ -170,6 +170,7 @@ export function SidebarRoot({
   }, [pointerInside])
 
   const buildVersion = localBuildVersion()
+  const expandSidebar = (): void => { if (collapsed) toggleSidebar() }
 
   const darwinDesktop = isDarwinDesktop()
   // Rail resting state is the brand mark; hovering swaps in the panel icon
@@ -257,63 +258,79 @@ export function SidebarRoot({
         {!darwinDesktop && toggle}
       </div>
 
-      {renderSlot('sidebar.header', { wide })}
+      {/* A `sidebar.body` occupant replaces everything under the brand row and
+          places the shell's parts it keeps through these render functions. */}
+      {renderSlot('sidebar.body', {
+        wide,
+        expandSidebar,
+        startSession: () => { startSession() },
+        renderHeader: () => renderSlot('sidebar.header', { wide }),
+        renderWorkspaces: () => renderSlot('sidebar.workspaces', { wide: true, expandSidebar }),
+        renderFooterActions: () => renderSlot('sidebar.footer.action', { wide }),
+        renderSettings: () => renderSlot('sidebar.settings', { wide }),
+      }, {
+        fallback: (
+          <>
+            {renderSlot('sidebar.header', { wide })}
 
-      {/* The label fades before the hover/focus shortcut, including on translucent backgrounds. */}
-      <Tooltip label={t('session.new.label')} shortcutKeys={newShortcut?.keys} delayMs={500} side={captionTooltipSide} disabled={wide}>
-        <button
-          type="button"
-          className={css.newSession}
-          aria-label={t('session.new.label')}
-          aria-keyshortcuts={newShortcut?.aria}
-          onClick={() => { startSession() }}
-        >
-          <span className={css.newSessionLabelMask}><span className={css.newSessionContent}>
-            {wide
-              ? <IconNewChatOutlineMedium size={14} />
-              : <IconNewChatOutlineRegular size={windowsTitlebar ? 16 : 18} />}
-            {wide && <span className={clsx(css.newSessionLabel, css.wide)}>{t('session.new')}</span>}
-          </span></span>
-          {wide && newShortcut !== undefined && newShortcut.keys.length > 0 && <span className={css.newSessionShortcut} aria-hidden="true">
-            <ShortcutKeys keys={newShortcut.keys} />
-          </span>}
-        </button>
-      </Tooltip>
+            {/* The label fades before the hover/focus shortcut, including on translucent backgrounds. */}
+            <Tooltip label={t('session.new.label')} shortcutKeys={newShortcut?.keys} delayMs={500} side={captionTooltipSide} disabled={wide}>
+              <button
+                type="button"
+                className={css.newSession}
+                aria-label={t('session.new.label')}
+                aria-keyshortcuts={newShortcut?.aria}
+                onClick={() => { startSession() }}
+              >
+                <span className={css.newSessionLabelMask}><span className={css.newSessionContent}>
+                  {wide
+                    ? <IconNewChatOutlineMedium size={14} />
+                    : <IconNewChatOutlineRegular size={windowsTitlebar ? 16 : 18} />}
+                  {wide && <span className={clsx(css.newSessionLabel, css.wide)}>{t('session.new')}</span>}
+                </span></span>
+                {wide && newShortcut !== undefined && newShortcut.keys.length > 0 && <span className={css.newSessionShortcut} aria-hidden="true">
+                  <ShortcutKeys keys={newShortcut.keys} />
+                </span>}
+              </button>
+            </Tooltip>
 
-      {panels.length > 0 && (
-        <nav className={css.panelList} aria-label={t('panels.label')}>
-          {panels.map(({ id, label }) => (
-            <PanelRow
-              key={id}
-              id={id}
-              label={label}
-              wide={wide}
-              usePanelInfo={usePanelInfo}
-              selectPanel={selectPanel}
-              renderSlot={renderSlot}
-            />
-          ))}
-        </nav>
-      )}
+            {panels.length > 0 && (
+              <nav className={css.panelList} aria-label={t('panels.label')}>
+                {panels.map(({ id, label }) => (
+                  <PanelRow
+                    key={id}
+                    id={id}
+                    label={label}
+                    wide={wide}
+                    usePanelInfo={usePanelInfo}
+                    selectPanel={selectPanel}
+                    renderSlot={renderSlot}
+                  />
+                ))}
+              </nav>
+            )}
 
-      {/* The browsing region fills the column between the controls and the
-          foot in both states; its rail icon column rides the same slot. */}
-      <div className={css.regionArea}>
-        {renderSlot('sidebar.workspaces', {
-          wide,
-          expandSidebar: () => { if (collapsed) toggleSidebar() },
-        })}
-      </div>
+            {/* The browsing region fills the column between the controls and the
+                foot in both states; its rail icon column rides the same slot. */}
+            <div className={css.regionArea}>
+              {renderSlot('sidebar.workspaces', {
+                wide,
+                expandSidebar,
+              })}
+            </div>
 
-      {/* Footer actions stack above Settings in both sidebar widths. */}
-      <div className={css.footArea}>
-        <div className={css.footerActions}>
-          {renderSlot('sidebar.footer.action', { wide })}
-        </div>
-        <div className={css.settingsArea}>
-          {renderSlot('sidebar.settings', { wide })}
-        </div>
-      </div>
+            {/* Footer actions stack above Settings in both sidebar widths. */}
+            <div className={css.footArea}>
+              <div className={css.footerActions}>
+                {renderSlot('sidebar.footer.action', { wide })}
+              </div>
+              <div className={css.settingsArea}>
+                {renderSlot('sidebar.settings', { wide })}
+              </div>
+            </div>
+          </>
+        ),
+      })}
     </div>
   )
 }

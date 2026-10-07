@@ -33,6 +33,29 @@ export interface AhelAccountInjected {
   }
 }
 
+/**
+ * The `ahelAccountUi` client service: the live account view, the shared team
+ * summary poll and the account actions, for a shell that composes its own
+ * account surfaces, for example the hosted chat's navigation rail.
+ */
+export interface AhelAccountUi {
+  /** The latest account view, or null before the first frame. */
+  readonly account: HostObservable<AhelAccountView | null>
+  /** The shared team summary poll: workspace, balance, approvals, unread handoffs and installed apps. */
+  readonly summary: HostObservable<TeamSummaryState>
+  /**
+   * Choose the workspace the Ahel MCP server and models act in; the view and the summary follow at once.
+   * @param id - workspace id, or null for the account default.
+   */
+  selectWorkspace(id: string | null): Promise<void>
+  /** Sign out the way the account menu does; a hosted chat hands it to ahel.ai. */
+  signOut(): Promise<void>
+  /** Re-read the team summary now. */
+  refreshSummary(): void
+  /** Open the workspace's ahel.ai billing page, as the account menu's Top up does; does nothing until the summary shows credits. */
+  openBilling(): void
+}
+
 /** Props of the sidebar footer account entry. */
 export type AccountMenuProps = PropsRuntime<'sidebar.footer.action'> & InjectFace<AhelAccountInjected> & PropsLocale<'ahel-account'>
 

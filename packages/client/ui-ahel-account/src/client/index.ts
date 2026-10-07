@@ -20,7 +20,7 @@ import type {} from '@ahel/dsh-api-remotes/client'
 import type {} from '@ahel/dsh-client-locale/client'
 import type {} from '@ahel/dsh-client-ui-renderer/client'
 import ahelAccountRemote from '@ahel/dsh-ahel-account/remote'
-import type { AhelAccountInjected } from './contract.ts'
+import type { AhelAccountInjected, AhelAccountUi } from './contract.ts'
 import { AccountMenu } from './AccountMenu.tsx'
 import { AhelQuotaNotice, AhelTurnError, claimAhelFailure } from './AhelNotices.tsx'
 import { ModelsRow } from './ModelsRow.tsx'
@@ -33,8 +33,8 @@ import { registerTeamSummary } from './team/summary.ts'
 import { en, NS, zh } from './locales.ts'
 
 export type {
-  AccountMenuProps, AhelAccountInjected, AhelFailureCode, AhelQuotaNoticeProps, AhelTurnErrorProps, HeroGreetingProps, ModelsRowProps,
-  StarterPromptsProps,
+  AccountMenuProps, AhelAccountInjected, AhelAccountUi, AhelFailureCode, AhelQuotaNoticeProps, AhelTurnErrorProps, HeroGreetingProps,
+  ModelsRowProps, StarterPromptsProps,
 } from './contract.ts'
 export type { AhelAccountKey } from './locales.ts'
 export type { CatalogPanelId, DiscoverInjected, DiscoverPageProps } from './catalog/contract.ts'
@@ -42,6 +42,13 @@ export type {
   ApprovalAnswer, ApprovalsInjected, ApprovalsPageProps, ApprovalsPanelIconProps, InboxAnswer, InboxInjected, InboxLoad, InboxPageProps,
   InboxPanelIconProps, TeamGlanceInjected, TeamGlanceTarget, TeamHeaderProps, TeamStripProps, TeamSummary, TeamSummaryState,
 } from './team/contract.ts'
+
+declare module '@ahel/cordis' {
+  interface Context {
+    /** The account view, the team summary and the account actions; provided once the Ahel Remote namespaces are mounted. */
+    ahelAccountUi: AhelAccountUi
+  }
+}
 
 /** Required services: the Remote mount, slots, dictionaries and the main-panel layout. */
 export const inject = ['remote', 'slots', 'locale', 'layout']
@@ -134,6 +141,8 @@ function register(ctx: Context): void {
     selectWorkspace: async (id) => {
       const result = await ctx.remote.ahelAccount.selectWorkspace(id)
       if (!result.ok) throw result.error
+      // The answer already carries the applied choice; the header and the summary must not wait for the watch stream.
+      publish(result.value)
     },
     openLink,
     openModels: () => { ctx.emit('settings/open-section', 'models') },
@@ -169,6 +178,19 @@ function register(ctx: Context): void {
   }, AhelQuotaNotice))
   registerCatalog(ctx, injected)
   registerTeam(ctx, injected, team)
+  const ui: AhelAccountUi = {
+    account,
+    summary: team.state,
+    selectWorkspace: id => injected.selectWorkspace(id),
+    signOut: () => injected.signOut(),
+    refreshSummary: () => { team.refresh() },
+    openBilling: () => { injected.openBilling() },
+  }
+  ctx.effect(() => {
+    const dispose = ctx.reflect.provide('ahelAccountUi', ui)
+    // provide()'s disposer settles asynchronously; teardown is synchronous fire-and-forget.
+    return () => { void dispose() }
+  }, 'ui-ahel-account: ahelAccountUi service')
 }
 
 /**

@@ -1,0 +1,44 @@
+/* The page header sits in the hero's centered headline row: eyebrow above
+   the title, the title keeping the headline's 26px type. */
+.header {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.eyebrow {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--dsw-alias-label-primary);
+}
+
+/* The brand red full stop, as on ahel.ai's page titles. */
+.stop {
+  color: var(--dsw-static-deepseek-500);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.noMark {
+  display: none;
+}
+
+/* The hero wraps its mark in a fixed-size pulse box inside a hover box; with
+   this plugin's empty marker in the mark's seat, the whole hover box goes. */
+:global(span):has(> :global([data-brand-pulse]) > .noMark) {
+  display: none;
+}

@@ -62,6 +62,7 @@ function mountShell({ collapsed = false, width = 300, shortcuts = [], brandLink 
         options?: { fallback?: ReactNode },
       ) => {
         if (key === 'sidebar.brand.link') return brandLink === undefined ? options?.fallback : brandLink(owner as never)
+        if (key === 'sidebar.body') return options?.fallback
         if (key === 'sidebar.brand.mark') return brandMark
         if (key === 'sidebar.brand.name') return brandName
         if (key === 'sidebar.toggle.badge') return null

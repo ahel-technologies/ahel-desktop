@@ -45,7 +45,7 @@ function mountColumn(): { column: HTMLElement; quiet: () => boolean } {
       usePanelInfo={usePanelInfo} selectPanel={() => {}} usePanels={selector => selector([])} useShortcuts={selector => selector([])}
       useResource={useResource} useWorkspaces={neverHook}
       startSession={vi.fn()} toggleSidebar={vi.fn()} t={t}
-      renderSlot={((key: string, owner: SidebarSectionOwnerProps, options?: { fallback?: ReactNode }) => key === 'sidebar.brand.link'
+      renderSlot={((key: string, owner: SidebarSectionOwnerProps, options?: { fallback?: ReactNode }) => key === 'sidebar.brand.link' || key === 'sidebar.body'
         ? options?.fallback
         : <div data-testid="region" data-wide={owner.wide} />) as SidebarRootComponentProps['renderSlot']}
     />,

@@ -37,6 +37,10 @@ The expanded brand row renders `sidebar.brand.mark` and `sidebar.brand.name` as 
 
 Plugins add an icon component to the root-scoped `sidebar.panellist` list with an `id`, optional `order`, and a string or locale-aware `label`. The same id addresses the component registered in the layout's root-scoped `main` keyed slot; selecting a missing main entry throws without changing the current selection. The label supplies plain visible text, the accessible name, and the collapsed tooltip. Each row reads its own selected state through `usePanelInfo`; moving DOM focus to search or a directory picker does not change the displayed panel or its selected row. With no registrations, neither the list nor spacing for it is rendered. The shipped composition registers no example panel.
 
+### Replacing the column body
+
+A deployment that draws its own navigation registers one component into the root-scoped single `sidebar.body` slot. The shell then renders the brand row and that occupant only: header entries, New Session, panel rows, the browsing region and the foot leave the column. The occupant receives the column width state, `expandSidebar`, `startSession`, and render functions for the shell's own parts (`renderHeader`, `renderWorkspaces`, `renderFooterActions`, `renderSettings`); `renderWorkspaces` draws the browsing region at full width, so the occupant may place it in a column of its own through a portal. Panel registrations stay registered and reachable through the command palette. The hosted chat's [app rail](../ui-hosted-chat/src/client/Rail.tsx) is the shipped occupant.
+
 ### Collapse behavior
 
 The sidebar and conversation-header toggles show the effective shortcut from the command catalog in their hover and keyboard-focus tooltips and `aria-keyshortcuts`. An unbound command shows only the action label.

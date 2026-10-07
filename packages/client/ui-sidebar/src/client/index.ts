@@ -16,7 +16,7 @@ import { SidebarRoot } from './SidebarRoot.tsx'
 import { en, zh, type SidebarKey } from './locales.ts'
 
 export type {
-  SidebarBrandLinkOwnerProps, SidebarBrandMarkOwnerProps, SidebarBrandNameOwnerProps, SidebarFooterActionOwnerProps,
+  SidebarBodyOwnerProps, SidebarBrandLinkOwnerProps, SidebarBrandMarkOwnerProps, SidebarBrandNameOwnerProps, SidebarFooterActionOwnerProps,
   SidebarHeaderOwnerProps, SidebarPanelIconOwnerProps, SidebarPanelMetadata,
   SidebarRootComponentProps, SidebarRootInjected, SidebarSectionOwnerProps, SidebarSettingsOwnerProps,
 } from './contract/slots.ts'
@@ -86,6 +86,7 @@ export function apply(ctx: ClientContext): void {
       'sidebar.settings': { kind: 'single', scope: 'root' },
       'sidebar.footer.action': { kind: 'list', scope: 'root' },
       'sidebar.header': { kind: 'list', scope: 'root' },
+      'sidebar.body': { kind: 'single', scope: 'root' },
     },
     inject: injectProps,
   }, SidebarRoot))

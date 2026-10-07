@@ -132,8 +132,10 @@
 }
 
 /* Collapse phase 1: the whole frozen-width content fades out in place over
-   150ms; at settle the children unmount/snap to the rail layout. */
-.fading > * {
+   150ms; at settle the children unmount/snap to the rail layout. The column
+   body renders inside its slot's box-less wrapper, so its children fade too. */
+.fading > *,
+.fading > :global([data-slot='sidebar.body']) > * {
   opacity: 0;
   transition: opacity 150ms var(--ds-ease-in-out);
 }
@@ -606,6 +608,7 @@
 @media (prefers-reduced-motion: reduce) {
   .wide,
   .fading > *,
+  .fading > :global([data-slot='sidebar.body']) > *,
   .railIn .iconButton,
   .railIn .newSession,
   .railIn .panelList,

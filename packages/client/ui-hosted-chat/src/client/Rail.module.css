@@ -1,0 +1,448 @@
+/* The app rail fills the sidebar column under the brand row, in the type and
+   spacing of ahel.ai's own sidebar: 36px switcher, 34px rows, a quiet foot. */
+.rail {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.collapsed {
+  align-items: center;
+}
+
+/* Workspace switcher. */
+.switcher {
+  position: relative;
+  flex: none;
+  margin: 0 2px;
+}
+
+.switcherTrigger,
+.switcherRail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 36px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.switcherTrigger {
+  width: 100%;
+  padding: 0 10px 0 6px;
+  text-align: left;
+}
+
+.switcherTrigger:disabled {
+  cursor: default;
+}
+
+.switcherRail {
+  flex: none;
+  justify-content: center;
+  width: 36px;
+  padding: 0;
+}
+
+.switcherTrigger:hover:not(:disabled),
+.switcherRail:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.initial {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--dsw-radius-xs);
+  background: var(--dsw-alias-interactive-bg-active);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.switcherName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevrons {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.switcherMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.optionName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.check {
+  flex: none;
+}
+
+/* Rows. */
+.nav {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.collapsed .nav {
+  align-items: center;
+  gap: 8px;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 34px;
+  margin: 0 2px;
+  padding: 0 10px 0 0;
+  border: none;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.row.active {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+  font-weight: 600;
+}
+
+.bar {
+  flex: none;
+  width: 3px;
+  height: 16px;
+  border-radius: var(--dsw-radius-xs);
+}
+
+.row.active .bar {
+  background: var(--dsw-static-deepseek-500);
+}
+
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-static-deepseek-500);
+  color: var(--dsw-static-neutral-bluish-50);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+.collapsed .row {
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  color: var(--dsw-alias-label-primary);
+}
+
+.collapsed .bar {
+  position: absolute;
+  left: 0;
+  top: 10px;
+}
+
+.collapsed .count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  font-size: 9px;
+  line-height: 14px;
+}
+
+.glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Foot: Help, the account entry, Theme, Log out. */
+.foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0 4px;
+  border-top: 0.5px solid var(--dsw-alias-border-l3);
+}
+
+.collapsed .foot {
+  align-items: center;
+  align-self: stretch;
+}
+
+.util {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 30px;
+  margin: 0 2px;
+  padding: 0 10px 0 13px;
+  border: none;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.util:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.collapsed .util {
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+}
+
+.account {
+  display: flex;
+  min-width: 0;
+}
+
+.collapsed .account {
+  justify-content: center;
+}
+
+.settingsSeat {
+  display: none;
+}
+
+.accountEntry {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.accountTrigger {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 32px;
+  margin: 0 2px;
+  padding: 0 10px 0 8px;
+  border: none;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.accountTrigger:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.collapsed .accountTrigger {
+  flex: none;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+}
+
+.avatar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--dsw-alias-interactive-bg-active);
+  color: var(--dsw-alias-label-primary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.accountMenu {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  padding: 4px;
+}
+
+.collapsed .accountMenu {
+  left: 0;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px 8px;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l3);
+  margin-bottom: 4px;
+}
+
+.balance {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 8px 6px;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l3);
+  margin-bottom: 4px;
+}
+
+.balance .option {
+  margin: 2px -8px 0;
+}
+
+.low {
+  color: var(--dsw-static-deepseek-500);
+  font-size: 12px;
+}
+
+.identityName {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.identityCaption {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+}
+
+/* Drawn into the chat column's seat (Aside.tsx) through a portal: the one red
+   primary button of the page, then the sidebar's own session browser. */
+.newChat {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  margin: 12px 12px 8px;
+  border: none;
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-static-deepseek-500);
+  color: var(--dsw-static-neutral-bluish-50);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.newChat:hover {
+  background: var(--dsw-static-deepseek-600);
+}
+
+/* The sidebar's region inset: rows start at the column padding and the
+   nested scrollbar sits at the column edge. */
+.chats {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-left: 8px;
+  overflow: hidden;
+}

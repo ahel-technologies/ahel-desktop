@@ -37,6 +37,10 @@ dsh Web 客户端的侧边栏让用户识别当前构建、启动新会话、将
 
 插件在 root 作用域的 `sidebar.panellist` list 中注册图标组件，提供 `id`、可选 `order`，以及字符串或 locale-aware 的 `label`。同一个 id 寻址布局中 root 作用域 `main` keyed slot 的组件；选择不存在的主面板条目会抛错，并保留当前选中态。标签提供普通可见文字、无障碍名称和折叠提示。每一行通过 `usePanelInfo` 读取自己的选中态；DOM 焦点移到搜索框或目录选择器时，显示的面板及其列表项选中态不变。没有注册项时，列表及其间距均不渲染。产品随附的组合不注册示例面板。
 
+### 替换侧栏主体
+
+需要自行绘制导航的部署在 root 作用域的 single `sidebar.body` slot 中注册一个组件。此后外壳只渲染品牌行和该组件：头部条目、New Session、面板行、浏览区域和底部区域都不再出现在侧栏中。该组件接收侧栏宽度状态、`expandSidebar`、`startSession`，以及外壳自身各部分的渲染函数（`renderHeader`、`renderWorkspaces`、`renderFooterActions`、`renderSettings`）；`renderWorkspaces` 以完整宽度绘制浏览区域，因此组件可以通过 portal 把它放进独立的一列。面板注册保持有效，仍可通过命令面板访问。托管聊天的[应用导航栏](../ui-hosted-chat/src/client/Rail.tsx)是随附的组件。
+
 ### 折叠行为
 
 侧栏及会话头部的开关从命令目录读取当前有效快捷键，用于悬停、键盘聚焦提示和 `aria-keyshortcuts`。未绑定的命令只显示操作名称。

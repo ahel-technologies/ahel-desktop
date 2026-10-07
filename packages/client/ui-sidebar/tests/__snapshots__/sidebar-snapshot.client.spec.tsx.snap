@@ -36,59 +36,64 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
       </button>
     </div>
     <div
-      data-slot="sidebar.header"
+      data-slot="sidebar.body"
       style="display: contents;"
-    />
-    <button
-      aria-label="New chat"
-      class="newSession"
-      type="button"
-    >
-      <span
-        class="newSessionLabelMask"
-      >
-        <span
-          class="newSessionContent"
-        >
-          <svg
-            aria-hidden="true"
-            data-content="47b5e433"
-            fill="none"
-            height="16"
-            stroke-width="1"
-            viewBox="0 0 16 16"
-            width="16"
-            xmlns="http://www.w3.org/2000/svg"
-          />
-        </span>
-      </span>
-    </button>
-    <div
-      class="regionArea"
     >
       <div
-        data-slot="sidebar.workspaces"
+        data-slot="sidebar.header"
         style="display: contents;"
       />
-    </div>
-    <div
-      class="footArea"
-    >
+      <button
+        aria-label="New chat"
+        class="newSession"
+        type="button"
+      >
+        <span
+          class="newSessionLabelMask"
+        >
+          <span
+            class="newSessionContent"
+          >
+            <svg
+              aria-hidden="true"
+              data-content="47b5e433"
+              fill="none"
+              height="16"
+              stroke-width="1"
+              viewBox="0 0 16 16"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            />
+          </span>
+        </span>
+      </button>
       <div
-        class="footerActions"
+        class="regionArea"
       >
         <div
-          data-slot="sidebar.footer.action"
+          data-slot="sidebar.workspaces"
           style="display: contents;"
         />
       </div>
       <div
-        class="settingsArea"
+        class="footArea"
       >
         <div
-          data-slot="sidebar.settings"
-          style="display: contents;"
-        />
+          class="footerActions"
+        >
+          <div
+            data-slot="sidebar.footer.action"
+            style="display: contents;"
+          />
+        </div>
+        <div
+          class="settingsArea"
+        >
+          <div
+            data-slot="sidebar.settings"
+            style="display: contents;"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -182,64 +187,69 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
       </button>
     </div>
     <div
-      data-slot="sidebar.header"
+      data-slot="sidebar.body"
       style="display: contents;"
-    />
-    <button
-      aria-label="New chat"
-      class="newSession"
-      type="button"
-    >
-      <span
-        class="newSessionLabelMask"
-      >
-        <span
-          class="newSessionContent"
-        >
-          <svg
-            aria-hidden="true"
-            data-content="47b5e433"
-            fill="none"
-            height="14"
-            stroke-width="1.3"
-            viewBox="0 0 16 16"
-            width="14"
-            xmlns="http://www.w3.org/2000/svg"
-          />
-          <span
-            class="newSessionLabel wide"
-          >
-            New chat
-          </span>
-        </span>
-      </span>
-    </button>
-    <div
-      class="regionArea"
     >
       <div
-        data-slot="sidebar.workspaces"
+        data-slot="sidebar.header"
         style="display: contents;"
       />
-    </div>
-    <div
-      class="footArea"
-    >
+      <button
+        aria-label="New chat"
+        class="newSession"
+        type="button"
+      >
+        <span
+          class="newSessionLabelMask"
+        >
+          <span
+            class="newSessionContent"
+          >
+            <svg
+              aria-hidden="true"
+              data-content="47b5e433"
+              fill="none"
+              height="14"
+              stroke-width="1.3"
+              viewBox="0 0 16 16"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            />
+            <span
+              class="newSessionLabel wide"
+            >
+              New chat
+            </span>
+          </span>
+        </span>
+      </button>
       <div
-        class="footerActions"
+        class="regionArea"
       >
         <div
-          data-slot="sidebar.footer.action"
+          data-slot="sidebar.workspaces"
           style="display: contents;"
         />
       </div>
       <div
-        class="settingsArea"
+        class="footArea"
       >
         <div
-          data-slot="sidebar.settings"
-          style="display: contents;"
-        />
+          class="footerActions"
+        >
+          <div
+            data-slot="sidebar.footer.action"
+            style="display: contents;"
+          />
+        </div>
+        <div
+          class="settingsArea"
+        >
+          <div
+            data-slot="sidebar.settings"
+            style="display: contents;"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -299,59 +309,64 @@ exports[`sidebar shell snapshots > renders the collapsed rail after the crossfad
       </button>
     </div>
     <div
-      data-slot="sidebar.header"
+      data-slot="sidebar.body"
       style="display: contents;"
-    />
-    <button
-      aria-label="New chat"
-      class="newSession"
-      type="button"
-    >
-      <span
-        class="newSessionLabelMask"
-      >
-        <span
-          class="newSessionContent"
-        >
-          <svg
-            aria-hidden="true"
-            data-content="47b5e433"
-            fill="none"
-            height="18"
-            stroke-width="1"
-            viewBox="0 0 16 16"
-            width="18"
-            xmlns="http://www.w3.org/2000/svg"
-          />
-        </span>
-      </span>
-    </button>
-    <div
-      class="regionArea"
     >
       <div
-        data-slot="sidebar.workspaces"
+        data-slot="sidebar.header"
         style="display: contents;"
       />
-    </div>
-    <div
-      class="footArea"
-    >
+      <button
+        aria-label="New chat"
+        class="newSession"
+        type="button"
+      >
+        <span
+          class="newSessionLabelMask"
+        >
+          <span
+            class="newSessionContent"
+          >
+            <svg
+              aria-hidden="true"
+              data-content="47b5e433"
+              fill="none"
+              height="18"
+              stroke-width="1"
+              viewBox="0 0 16 16"
+              width="18"
+              xmlns="http://www.w3.org/2000/svg"
+            />
+          </span>
+        </span>
+      </button>
       <div
-        class="footerActions"
+        class="regionArea"
       >
         <div
-          data-slot="sidebar.footer.action"
+          data-slot="sidebar.workspaces"
           style="display: contents;"
         />
       </div>
       <div
-        class="settingsArea"
+        class="footArea"
       >
         <div
-          data-slot="sidebar.settings"
-          style="display: contents;"
-        />
+          class="footerActions"
+        >
+          <div
+            data-slot="sidebar.footer.action"
+            style="display: contents;"
+          />
+        </div>
+        <div
+          class="settingsArea"
+        >
+          <div
+            data-slot="sidebar.settings"
+            style="display: contents;"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -445,64 +460,69 @@ exports[`sidebar shell snapshots > renders the expanded column (wordmark, capsul
       </button>
     </div>
     <div
-      data-slot="sidebar.header"
+      data-slot="sidebar.body"
       style="display: contents;"
-    />
-    <button
-      aria-label="New chat"
-      class="newSession"
-      type="button"
-    >
-      <span
-        class="newSessionLabelMask"
-      >
-        <span
-          class="newSessionContent"
-        >
-          <svg
-            aria-hidden="true"
-            data-content="47b5e433"
-            fill="none"
-            height="14"
-            stroke-width="1.3"
-            viewBox="0 0 16 16"
-            width="14"
-            xmlns="http://www.w3.org/2000/svg"
-          />
-          <span
-            class="newSessionLabel wide"
-          >
-            New chat
-          </span>
-        </span>
-      </span>
-    </button>
-    <div
-      class="regionArea"
     >
       <div
-        data-slot="sidebar.workspaces"
+        data-slot="sidebar.header"
         style="display: contents;"
       />
-    </div>
-    <div
-      class="footArea"
-    >
+      <button
+        aria-label="New chat"
+        class="newSession"
+        type="button"
+      >
+        <span
+          class="newSessionLabelMask"
+        >
+          <span
+            class="newSessionContent"
+          >
+            <svg
+              aria-hidden="true"
+              data-content="47b5e433"
+              fill="none"
+              height="14"
+              stroke-width="1.3"
+              viewBox="0 0 16 16"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            />
+            <span
+              class="newSessionLabel wide"
+            >
+              New chat
+            </span>
+          </span>
+        </span>
+      </button>
       <div
-        class="footerActions"
+        class="regionArea"
       >
         <div
-          data-slot="sidebar.footer.action"
+          data-slot="sidebar.workspaces"
           style="display: contents;"
         />
       </div>
       <div
-        class="settingsArea"
+        class="footArea"
       >
         <div
-          data-slot="sidebar.settings"
-          style="display: contents;"
-        />
+          class="footerActions"
+        >
+          <div
+            data-slot="sidebar.footer.action"
+            style="display: contents;"
+          />
+        </div>
+        <div
+          class="settingsArea"
+        >
+          <div
+            data-slot="sidebar.settings"
+            style="display: contents;"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -596,64 +616,69 @@ exports[`sidebar shell snapshots > renders the expanded column in the default lo
       </button>
     </div>
     <div
-      data-slot="sidebar.header"
+      data-slot="sidebar.body"
       style="display: contents;"
-    />
-    <button
-      aria-label="新对话"
-      class="newSession"
-      type="button"
-    >
-      <span
-        class="newSessionLabelMask"
-      >
-        <span
-          class="newSessionContent"
-        >
-          <svg
-            aria-hidden="true"
-            data-content="47b5e433"
-            fill="none"
-            height="14"
-            stroke-width="1.3"
-            viewBox="0 0 16 16"
-            width="14"
-            xmlns="http://www.w3.org/2000/svg"
-          />
-          <span
-            class="newSessionLabel wide"
-          >
-            新对话
-          </span>
-        </span>
-      </span>
-    </button>
-    <div
-      class="regionArea"
     >
       <div
-        data-slot="sidebar.workspaces"
+        data-slot="sidebar.header"
         style="display: contents;"
       />
-    </div>
-    <div
-      class="footArea"
-    >
+      <button
+        aria-label="新对话"
+        class="newSession"
+        type="button"
+      >
+        <span
+          class="newSessionLabelMask"
+        >
+          <span
+            class="newSessionContent"
+          >
+            <svg
+              aria-hidden="true"
+              data-content="47b5e433"
+              fill="none"
+              height="14"
+              stroke-width="1.3"
+              viewBox="0 0 16 16"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            />
+            <span
+              class="newSessionLabel wide"
+            >
+              新对话
+            </span>
+          </span>
+        </span>
+      </button>
       <div
-        class="footerActions"
+        class="regionArea"
       >
         <div
-          data-slot="sidebar.footer.action"
+          data-slot="sidebar.workspaces"
           style="display: contents;"
         />
       </div>
       <div
-        class="settingsArea"
+        class="footArea"
       >
         <div
-          data-slot="sidebar.settings"
-          style="display: contents;"
-        />
+          class="footerActions"
+        >
+          <div
+            data-slot="sidebar.footer.action"
+            style="display: contents;"
+          />
+        </div>
+        <div
+          class="settingsArea"
+        >
+          <div
+            data-slot="sidebar.settings"
+            style="display: contents;"
+          />
+        </div>
       </div>
     </div>
   </div>

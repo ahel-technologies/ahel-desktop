@@ -1,0 +1,99 @@
+/* The chat column beside the Conversation: the sidebar's fill and inset
+   variables, so the session browser drawn into the seat renders as it does
+   in the sidebar. */
+.aside {
+  --dsh-sidebar-inline-padding: 12px;
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: 272px;
+  min-height: 0;
+  border-left: 0.5px solid var(--dsw-alias-border-l3);
+  background: var(--dsw-specific-sidebar-fill);
+  color: var(--dsw-alias-label-primary);
+  font-size: 14px;
+}
+
+.aside[hidden] {
+  display: none;
+}
+
+/* A narrow window keeps the Conversation; the Chats list returns with the width. */
+@media (max-width: 760px) {
+  .aside {
+    display: none;
+  }
+}
+
+.seat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.waiting {
+  flex: none;
+  max-height: 40%;
+  overflow-y: auto;
+  padding: 10px 12px 12px;
+  border-top: 0.5px solid var(--dsw-alias-border-l3);
+}
+
+.heading {
+  margin: 0 4px 6px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.key {
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--ds-font-family-code);
+  font-size: 12px;
+}
+
+.caption {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+}
