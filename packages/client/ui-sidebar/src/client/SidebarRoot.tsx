@@ -214,7 +214,8 @@ export function SidebarRoot({
           traffic lights and keeps the toggle at the sidebar's top-right. */}
       {darwinDesktop && <div className={css.topStrip} data-window-drag>{toggle}</div>}
       <div className={css.logoRow} data-window-drag>
-        {/* Expanded, the brand doubles as a New Session shortcut — except on
+        {/* Expanded, the brand doubles as a New Session shortcut (or the
+            `sidebar.brand.link` occupant's press) — except on
             macOS, where it stays part of the logo row's window-drag surface
             (a button would subtract itself through the global no-drag rule);
             the collapsed rail's logo is the expand toggle below instead. */}
@@ -238,9 +239,9 @@ export function SidebarRoot({
               </span>
             </span>
           )
-          return darwinDesktop
-            ? <span className={clsx(css.brand, css.wide)}>{identity}</span>
-            : (
+          if (darwinDesktop) return <span className={clsx(css.brand, css.wide)}>{identity}</span>
+          return renderSlot('sidebar.brand.link', { className: clsx(css.brand, css.wide), identity }, {
+            fallback: (
               <button
                 type="button"
                 className={clsx(css.brand, css.wide)}
@@ -250,7 +251,8 @@ export function SidebarRoot({
               >
                 {identity}
               </button>
-            )
+            ),
+          })
         })()}
         {!darwinDesktop && toggle}
       </div>

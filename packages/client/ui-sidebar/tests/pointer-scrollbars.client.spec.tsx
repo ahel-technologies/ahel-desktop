@@ -5,6 +5,7 @@
  * asserted in scrollbar-quiet-styles.spec.ts (node environment — a jsdom spec
  * has no file: module URL to read the sheet through).
  */
+import type { ReactNode } from 'react'
 import type { GlobalStandardProps } from '@ahel/dsh-client-ui-slots'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
@@ -44,8 +45,9 @@ function mountColumn(): { column: HTMLElement; quiet: () => boolean } {
       usePanelInfo={usePanelInfo} selectPanel={() => {}} usePanels={selector => selector([])} useShortcuts={selector => selector([])}
       useResource={useResource} useWorkspaces={neverHook}
       startSession={vi.fn()} toggleSidebar={vi.fn()} t={t}
-      renderSlot={((_key: string, owner: SidebarSectionOwnerProps) =>
-        <div data-testid="region" data-wide={owner.wide} />) as SidebarRootComponentProps['renderSlot']}
+      renderSlot={((key: string, owner: SidebarSectionOwnerProps, options?: { fallback?: ReactNode }) => key === 'sidebar.brand.link'
+        ? options?.fallback
+        : <div data-testid="region" data-wide={owner.wide} />) as SidebarRootComponentProps['renderSlot']}
     />,
   )
   const column = view.container.firstElementChild

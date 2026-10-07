@@ -7,7 +7,7 @@ import { Tooltip } from '@ahel/dsh-client-ui-primitives'
 import { makeTranslate } from '@ahel/dsh-client-test-runtime'
 import type { ReactNode } from 'react'
 import type {
-  SidebarFooterActionOwnerProps, SidebarRootComponentProps, SidebarSectionOwnerProps,
+  SidebarBrandLinkOwnerProps, SidebarFooterActionOwnerProps, SidebarRootComponentProps, SidebarSectionOwnerProps,
   SidebarSettingsOwnerProps,
 } from '../src/client/contract/slots.ts'
 import { HeaderLeadingControls, type HeaderLeadingControlsProps } from '../src/client/HeaderLeadingControls.tsx'
@@ -35,10 +35,11 @@ type AttentionSnapshot = Parameters<Parameters<SidebarRootComponentProps['useSes
 const noAttention: AttentionSnapshot = new Map()
 const useSessionStatus: SidebarRootComponentProps['useSessionStatus'] = selector => selector(noAttention)
 
-function mountShell({ collapsed = false, width = 300, shortcuts = [] }: {
+function mountShell({ collapsed = false, width = 300, shortcuts = [], brandLink }: {
   collapsed?: boolean
   width?: number
   shortcuts?: readonly ShortcutCatalogEntry[]
+  brandLink?: (owner: SidebarBrandLinkOwnerProps) => ReactNode
 } = {}) {
   const startSession = vi.fn()
   const toggleSidebar = vi.fn()
@@ -58,7 +59,9 @@ function mountShell({ collapsed = false, width = 300, shortcuts = [] }: {
       renderSlot={((
         key: string,
         owner: SidebarFooterActionOwnerProps | SidebarSectionOwnerProps | SidebarSettingsOwnerProps,
+        options?: { fallback?: ReactNode },
       ) => {
+        if (key === 'sidebar.brand.link') return brandLink === undefined ? options?.fallback : brandLink(owner as never)
         if (key === 'sidebar.brand.mark') return brandMark
         if (key === 'sidebar.brand.name') return brandName
         if (key === 'sidebar.toggle.badge') return null
@@ -133,6 +136,16 @@ describe('SidebarRoot shell', () => {
     expect(b.startSession).toHaveBeenCalledTimes(2)
     fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
     expect(b.toggleSidebar).toHaveBeenCalledOnce()
+  })
+
+  it('hands the brand press to a sidebar.brand.link occupant', () => {
+    const b = mountShell({ brandLink: ({ className, identity }) => <a href="https://example.test/home" className={className}>{identity}</a> })
+    const link = screen.getByRole('link')
+    expect(link.getAttribute('href')).toBe('https://example.test/home')
+    expect(link.querySelector('[data-testid="custom-brand-name"]')).not.toBeNull()
+    // Only the capsule still starts a session.
+    expect(screen.getAllByRole('button', { name: 'New chat' })).toHaveLength(1)
+    expect(b.startSession).not.toHaveBeenCalled()
   })
 
   it('seats the header entries under the brand row, above New Session', () => {
