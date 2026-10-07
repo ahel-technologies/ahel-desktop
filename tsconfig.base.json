@@ -248,6 +248,7 @@
       "@ahel/dsh-client-ui-brand-ahel": ["./packages/client/ui-brand-ahel/src"],
       "@ahel/dsh-client-ui-ahel-account": ["./packages/client/ui-ahel-account/src"],
       "@ahel/dsh-client-ui-issues": ["./packages/client/ui-issues/src"],
+      "@ahel/dsh-client-ui-hosted-chat": ["./packages/client/ui-hosted-chat/src"],
       "@ahel/dsh-client-ui-local-cli": ["./packages/client/ui-local-cli/src"],
       "@ahel/dsh-client-ui-notifications": ["./packages/client/ui-notifications/src"],
       "@ahel/dsh-client-ui-command-palette": ["./packages/client/ui-command-palette/src"],

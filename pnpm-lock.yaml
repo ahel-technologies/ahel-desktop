@@ -2396,6 +2396,9 @@ importers:
       '@ahel/dsh-client-ui-directory-picker-native':
         specifier: workspace:*
         version: link:../../client/ui-directory-picker-native
+      '@ahel/dsh-client-ui-hosted-chat':
+        specifier: workspace:*
+        version: link:../../client/ui-hosted-chat
       '@ahel/dsh-client-ui-input-trigger':
         specifier: workspace:*
         version: link:../../client/ui-input-trigger
@@ -3877,6 +3880,42 @@ importers:
       '@ahel/dsh-typert-protocol':
         specifier: workspace:*
         version: link:../../typert/protocol
+      '@testing-library/react':
+        specifier: ^16.1.0
+        version: 16.3.2(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+
+  packages/client/ui-hosted-chat:
+    devDependencies:
+      '@ahel/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@ahel/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@ahel/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@ahel/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@ahel/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@ahel/dsh-client-ui-sidebar':
+        specifier: workspace:*
+        version: link:../ui-sidebar
+      '@ahel/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.3.2(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

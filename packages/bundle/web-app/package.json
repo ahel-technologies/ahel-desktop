@@ -129,6 +129,7 @@
     "@ahel/dsh-llm-local-cli": "workspace:*",
     "@ahel/dsh-client-ui-ahel-account": "workspace:*",
     "@ahel/dsh-client-ui-issues": "workspace:*",
+    "@ahel/dsh-client-ui-hosted-chat": "workspace:*",
     "@ahel/dsh-client-ui-local-cli": "workspace:*",
     "@ahel/dsh-client-ui-notifications": "workspace:*",
     "@ahel/dsh-client-ui-command-palette": "workspace:*",

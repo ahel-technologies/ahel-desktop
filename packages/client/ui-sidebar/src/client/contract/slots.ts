@@ -8,6 +8,7 @@
  * actions in `sidebar.footer.action`. `sidebar.header` entries sit under the
  * brand row.
  */
+import type { ReactNode } from 'react'
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@ahel/dsh-client-ui-slots'
 import type { ObservableSnapshot } from '@ahel/dsh-client-store'
 import type { WorkspaceId } from '@ahel/dsh-api-workspace-controller/client'
@@ -29,6 +30,14 @@ declare module '@ahel/dsh-client-ui-slots' {
      * package's `sidebar` entry; the shell supplies a generic text fallback.
      */
     'sidebar.brand.name': { kind: 'single'; scope: 'root'; owner: SidebarBrandNameOwnerProps }
+    /**
+     * The press around the expanded brand mark and name. Declared by this
+     * package's `sidebar` entry; without an occupant the brand starts a New
+     * Session. An occupant renders its own element (for example a link to the
+     * deployment's home page) around the shell's identity. The macOS desktop
+     * brand stays a window-drag surface and never renders this slot.
+     */
+    'sidebar.brand.link': { kind: 'single'; scope: 'root'; owner: SidebarBrandLinkOwnerProps }
     /**
      * Global panel icons. Each list id addresses the matching main panel;
      * the sidebar owns the button and resolves its label from list metadata.
@@ -72,6 +81,14 @@ export interface SidebarBrandMarkOwnerProps {
 export interface SidebarBrandNameOwnerProps {
   /** Marker field: the occupant owns its own content and width. */
   children?: never
+}
+
+/** Owner share of the brand press occupant. */
+export interface SidebarBrandLinkOwnerProps {
+  /** The shell's brand-row class; the occupant puts it on its own element. */
+  className: string
+  /** The shell's mark and name, which the occupant renders inside its element. */
+  identity: ReactNode
 }
 
 /** Icon presentation supplied by the global panel row. */
@@ -155,6 +172,7 @@ export type SidebarRootComponentProps =
   & PropsRenderSlots<
     | 'sidebar.brand.mark'
     | 'sidebar.brand.name'
+    | 'sidebar.brand.link'
     | 'sidebar.toggle.badge'
     | 'sidebar.panellist'
     | 'sidebar.workspaces'

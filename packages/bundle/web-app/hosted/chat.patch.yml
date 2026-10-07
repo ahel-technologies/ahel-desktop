@@ -52,3 +52,10 @@
 
 - id: ui-plugin-manager
   disabled: true
+
+# The way back to the workspace: a Workspace row under the team header and
+# the sidebar brand as a link, both to app.ahel.ai/app in the same tab. Only
+# this overlay mounts it; the desktop brand keeps its New Session press.
+- insert:
+    - id: ui-hosted-chat
+      name: '@ahel/dsh-client-ui-hosted-chat'
