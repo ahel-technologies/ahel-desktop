@@ -219,6 +219,7 @@ export class AhelAccount extends TypertRemoteService {
     this.requestTimeoutMs = resolved.requestTimeoutMs
     this.refreshSkewMs = resolved.refreshSkewMs
     const launchToken = resolved.launchTokenEnv === '' ? undefined : process.env[resolved.launchTokenEnv]
+    let adopted = Promise.resolve(false)
     if (launchToken !== undefined && launchToken !== '') {
       // Read once: later loads and child processes never see the token.
       Reflect.deleteProperty(process.env, resolved.launchTokenEnv)
@@ -226,10 +227,16 @@ export class AhelAccount extends TypertRemoteService {
         signInUrl: new URL(resolved.hostedSignInPath, this.appOrigin).href,
         signOutUrl: new URL(resolved.hostedSignOutPath, this.appOrigin).href,
       }
-      this.launched = this.adoptLaunchGrant(launchToken).catch((error: unknown) => {
+      adopted = this.adoptLaunchGrant(launchToken).then(() => true, (error: unknown) => {
         this.ctx.logger.warn(`ahel-account: the launch token was not accepted: ${error instanceof Error ? error.message : String(error)}`)
+        return false
       })
+      this.launched = adopted.then(() => undefined)
     }
+    // A grant kept from an earlier boot carries the profile read at its sign-in; read it again once.
+    void adopted.then(fresh => fresh ? undefined : this.refreshProfile()).catch((error: unknown) => {
+      this.ctx.logger.info(`ahel-account: the profile could not be re-read: ${error instanceof Error ? error.message : String(error)}`)
+    })
     ctx.plugin(AhelCatalog, { appOrigin: this.appOrigin, resource: this.resource })
     ctx.plugin(AhelTeam, { appOrigin: this.appOrigin })
     ctx.plugin(AhelIssues, { appOrigin: this.appOrigin })
@@ -529,6 +536,17 @@ export class AhelAccount extends TypertRemoteService {
     const workspace = this.selectedWorkspace(profile)
     if (workspace !== undefined) grant.workspace = workspace
     await writeOAuthGrant(this.ctx.credentials, this.ref, grant)
+    this.changed()
+  }
+
+  /** Replace the stored grant's profile with ahel.ai's current one, keeping every other field of the grant. */
+  private async refreshProfile(): Promise<void> {
+    const grant = await this.currentGrant()
+    if (grant === undefined) return
+    const profile = await fetchProfile(this.appOrigin, grant.access_token, this.http())
+    const latest = await readOAuthGrant(this.ctx.credentials, this.ref)
+    if (this.closed || latest === undefined || JSON.stringify(latest.profile) === JSON.stringify(profile)) return
+    await writeOAuthGrant(this.ctx.credentials, this.ref, { ...latest, profile })
     this.changed()
   }
 
