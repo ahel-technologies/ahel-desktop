@@ -1,7 +1,10 @@
 /**
  * The hosted chat's left column, in the order of ahel.ai's own sidebar: the
  * workspace switcher, the rows Home, Chat, Apps, Discover, Inbox, Team and
- * Settings, and at the foot Help, the account entry, Theme and Log out.
+ * Settings, and at the foot Help, the account entry, Theme and Log out. The
+ * account entry names the person and their email and opens a menu with the
+ * in-app Chat settings; the settings seat itself stays mounted out of sight,
+ * so its window and its shortcut keep working.
  * ahel.ai pages open in the same tab; Chat and Inbox are in-app panels. The
  * rail draws New chat and the Chats list into the chat column through a
  * portal, so the session rows keep the sidebar's own browser.
@@ -65,6 +68,57 @@ function RowContent({ wide, label, glyph: RowGlyph, count }: { wide: boolean; la
     {wide && <span className={css.label}>{label}</span>}
     {count !== undefined && count > 0 && <span className={css.count} aria-hidden="true">{count > 99 ? '99+' : count}</span>}
   </>
+}
+
+/**
+ * Format USD cents for the balance line: `$12.40`, `$3`, `-$0.50`.
+ * @param cents - amount in cents.
+ * @returns the dollar amount.
+ */
+function formatCents(cents: number): string {
+  const digits = cents % 100 === 0 ? 0 : 2
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: digits, maximumFractionDigits: digits })
+    .format(cents / 100)
+}
+
+/**
+ * The signed-in account entry: "name · email" on the wide rail, the initial on
+ * the collapsed one, opening a menu with the balance and Chat settings.
+ */
+function AccountEntry({
+  wide, useAccount, useSummary, openChatSettings, t,
+}: Pick<HostedRailProps, 'wide' | 'useAccount' | 'useSummary' | 'openChatSettings' | 't'>): ReactNode {
+  const email = useAccount(view => view?.profile?.email ?? null)
+  const profileName = useAccount(view => view?.profile?.name ?? null)
+  const liveName = useSummary(state => state.summary?.me?.name ?? null)
+  const credits = useSummary(state => state.summary?.credits ?? null)
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  useDismissOnOutsidePointer(root, open, setOpen)
+  const name = liveName ?? profileName
+  const label = [name, email].filter((part): part is string => part !== null && part !== '').join(' · ') || t('account')
+  return (
+    <div ref={root} className={css.accountEntry}>
+      <button type="button" className={css.accountTrigger} aria-haspopup="menu" aria-expanded={open} aria-label={`${t('accountMenu')}: ${label}`}
+        title={label} onClick={() => { setOpen(value => !value) }}>
+        <span className={css.avatar} aria-hidden="true">{(name ?? email ?? 'A').charAt(0).toUpperCase()}</span>
+        {wide && <span className={css.label}>{label}</span>}
+      </button>
+      {open && (
+        <MenuSurface compact role="menu" aria-label={t('accountMenu')} className={css.accountMenu}>
+          <div className={css.identity}>
+            {name !== null && <div className={css.identityName}>{name}</div>}
+            {email !== null && <div className={css.identityCaption}>{email}</div>}
+            {credits?.visible === true && <div className={css.identityCaption}>{t('balance', { amount: formatCents(credits.balanceCents) })}</div>}
+          </div>
+          <button type="button" role="menuitem" className={css.option} onClick={() => { setOpen(false); openChatSettings() }}>
+            <IconSettingsOutlineRegular size={14} />
+            <span className={css.optionName}>{t('chatSettings')}</span>
+          </button>
+        </MenuSurface>
+      )}
+    </div>
+  )
 }
 
 /**
@@ -142,7 +196,7 @@ function WorkspaceSwitcher({
  */
 export function HostedRail(props: HostedRailProps): ReactNode {
   const {
-    wide, startSession, renderWorkspaces, renderFooterActions, usePanelInfo, useAccount, useSummary, useTheme, useChatSeat,
+    wide, startSession, renderWorkspaces, renderFooterActions, renderSettings, usePanelInfo, useAccount, useSummary, useTheme, useChatSeat,
     selectPanel, signOut, cycleTheme, t,
   } = props
   const activePanel = usePanelInfo(info => info.activePanelId)
@@ -187,7 +241,10 @@ export function HostedRail(props: HostedRailProps): ReactNode {
             {wide && <span className={css.label}>{t('help')}</span>}
           </a>
         ))}
-        <div className={css.account}>{renderFooterActions()}</div>
+        {/* Signed out, the shared entry offers Sign in. */}
+        <div className={css.account}>{signedIn ? <AccountEntry {...props} /> : renderFooterActions()}</div>
+        {/* Out of sight: the settings window portals beside the app root, so it shows when opened. */}
+        <div className={css.settingsSeat}>{renderSettings()}</div>
         {tooltip(t(theme.key), (
           <button type="button" className={css.util} aria-label={t(theme.key)} onClick={cycleTheme}>
             <theme.glyph size={16} />

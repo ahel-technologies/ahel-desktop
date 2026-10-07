@@ -4,7 +4,9 @@
  * Team, Settings; Help, account, Theme, Log out), a chat column beside the
  * Conversation carries New chat, the Chats list and "Waiting on you", and the
  * blank chat greets with a page header and the number of apps ready. On load
- * the chat follows the workspace ahel.ai's `ahel_active_tenant` cookie names.
+ * the chat follows the workspace the chat gateway's `ahel_chat_workspace`
+ * cookie names, and a switch made in the chat is pinned on ahel.ai so the next
+ * load keeps it.
  * Only the hosted overlay (packages/bundle/web-app/hosted/chat.patch.yml)
  * mounts this package; the desktop and plain web profiles keep their sidebar.
  */
@@ -19,6 +21,7 @@ import type {} from '@ahel/dsh-ahel-account/remote'
 import type {} from '@ahel/dsh-api-remotes/client'
 import type {} from '@ahel/dsh-client-locale/client'
 import type {} from '@ahel/dsh-client-ui-renderer/client'
+import type {} from '@ahel/dsh-client-ui-settings/client'
 import type { HostedShellInjected } from './contract.ts'
 import { HostedAside } from './Aside.tsx'
 import { BrandHomeLink, HostedGreeting, HostedHeroMark, HostedSubtitle } from './Hero.tsx'
@@ -46,8 +49,14 @@ declare module '@ahel/cordis' {
   }
 }
 
-/** ahel.ai's cookie naming the person's active workspace; the chat gateway mints the grant for it. */
-export const ACTIVE_TENANT_COOKIE = 'ahel_active_tenant'
+/**
+ * Cookie the chat gateway sets on every load of the chat (Path=/chat/, readable by the page) with
+ * ahel.ai's active workspace id, the one it mints the grant for; an empty value states no preference.
+ */
+export const CHAT_WORKSPACE_COOKIE = 'ahel_chat_workspace'
+
+/** ahel.ai route on the page's own origin that pins the active workspace for app.ahel.ai and the next chat load. */
+export const PIN_WORKSPACE_PATH = '/api/chat/workspace'
 
 /** Run states that wait for the person who asked for the run. */
 const WAITING_STATES: readonly IssueRunState[] = ['waiting_input', 'waiting_approval']
@@ -64,13 +73,14 @@ export const inject = ['slots', 'locale', 'layout', 'theme']
 /**
  * Read one cookie of the page.
  * @param name - cookie name.
- * @returns its decoded value, or null when the page has no such cookie.
+ * @returns its decoded value, or null when the page has no such cookie or it is empty.
  */
 export function readCookie(name: string): string | null {
   for (const part of document.cookie.split(';')) {
     const at = part.indexOf('=')
     if (at < 0 || part.slice(0, at).trim() !== name) continue
     const raw = part.slice(at + 1).trim()
+    if (raw === '') return null
     try {
       return decodeURIComponent(raw)
     } catch (_malformed) {
@@ -90,6 +100,21 @@ export function readCookie(name: string): string | null {
 export function workspaceToFollow(view: AhelAccountView, cookie: string | null): string | null {
   if (cookie === null || cookie === view.workspace) return null
   return view.profile?.workspaces.some(item => item.id === cookie) === true ? cookie : null
+}
+
+/**
+ * Pin a workspace chosen in the chat as ahel.ai's active one. Failures are ignored: the chat keeps the
+ * choice for this load either way.
+ * @param id - the workspace id.
+ */
+export function pinAppWorkspace(id: string): void {
+  if (typeof fetch !== 'function') return
+  void fetch(PIN_WORKSPACE_PATH, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ tenantId: id }),
+  }).catch(() => undefined)
 }
 
 /**
@@ -119,7 +144,7 @@ export function apply(ctx: Context): void {
     getSnapshot: () => ctx.theme.getTheme().preference,
     subscribe: listener => ctx.on('theme/change', () => { listener() }),
   }
-  let selectWorkspace: (id: string) => Promise<void> = async () => {}
+  let selectWorkspace: (id: string) => Promise<void> = () => Promise.reject(new Error('ui-hosted-chat: the Ahel account is not mounted'))
   let signOut: () => Promise<void> = async () => {}
 
   const face: HostedShellInjected = {
@@ -130,8 +155,16 @@ export function apply(ctx: Context): void {
         // Inbox and Approvals register only while signed in, Approvals only for managers.
       }
     },
-    selectWorkspace: id => selectWorkspace(id),
+    selectWorkspace: async (id) => {
+      await selectWorkspace(id)
+      pinAppWorkspace(id)
+    },
     signOut: () => signOut(),
+    openChatSettings: () => {
+      const first = [...ctx.slots.entriesOfSlot('settings.section')]
+        .sort((a, b) => (a.options.order ?? 0) - (b.options.order ?? 0))[0]?.options.id
+      if (first !== undefined) ctx.emit('settings/open-section', first)
+    },
     cycleTheme: () => { ctx.theme.setTheme(NEXT_THEME[ctx.theme.getTheme().preference]) },
     openIssue: (key) => { ctx.emit('ahel-issues/open', key) },
     setChatSeat: (element) => { chatSeat.set(element) },
@@ -167,7 +200,7 @@ export function apply(ctx: Context): void {
       selectWorkspace = id => ui.selectWorkspace(id)
       signOut = () => ui.signOut()
       return () => {
-        selectWorkspace = async () => {}
+        selectWorkspace = () => Promise.reject(new Error('ui-hosted-chat: the Ahel account is not mounted'))
         signOut = async () => {}
       }
     }, 'ui-hosted-chat: account actions')
@@ -178,7 +211,7 @@ export function apply(ctx: Context): void {
         const view = ui.account.getSnapshot()
         if (followed || view?.status !== 'signed-in' || view.profile === null) return
         followed = true
-        const id = workspaceToFollow(view, readCookie(ACTIVE_TENANT_COOKIE))
+        const id = workspaceToFollow(view, readCookie(CHAT_WORKSPACE_COOKIE))
         if (id !== null) void ui.selectWorkspace(id).catch(() => undefined)
       }
       follow()

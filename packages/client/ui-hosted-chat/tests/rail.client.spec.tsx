@@ -40,11 +40,11 @@ function rail(overrides: Partial<HostedRailProps> = {}) {
   const props = {
     wide: true, expandSidebar: vi.fn(), startSession: vi.fn(),
     renderHeader: () => null, renderWorkspaces: () => <div data-testid="chats" />,
-    renderFooterActions: () => <div data-testid="account-entry" />, renderSettings: () => null,
+    renderFooterActions: () => <div data-testid="sign-in-entry" />, renderSettings: () => <div data-testid="settings-seat" />,
     usePanelInfo: hook({ activePanelId: null }), useAccount: hook(view), useSummary: hook(summary),
     useWaitingIssues: hook([]), useTheme: hook('system'), useChatSeat: hook(null),
     selectPanel: vi.fn(), selectWorkspace: vi.fn(async () => {}), signOut: vi.fn(async () => {}), cycleTheme: vi.fn(),
-    openIssue: vi.fn(), setChatSeat: vi.fn(), t,
+    openIssue: vi.fn(), setChatSeat: vi.fn(), openChatSettings: vi.fn(), t,
     ...overrides,
   } as HostedRailProps
   render(<HostedRail {...props} />)
@@ -70,7 +70,9 @@ describe('hosted chat app rail', () => {
     expect(within(nav).getByRole('button', { name: 'Inbox, 3 unread' })).toBeTruthy()
     const foot = screen.getByRole('group', { name: 'Account and help' })
     expect(within(foot).getByRole('link', { name: 'Help' }).getAttribute('href')).toBe('https://ahel.ai/contact')
-    expect(within(foot).getByTestId('account-entry')).toBeTruthy()
+    expect(within(foot).getByRole('button', { name: 'Account menu: Karl Hendrik · karl@example.com' }).textContent).toBe('KKarl Hendrik · karl@example.com')
+    expect(within(foot).queryByTestId('sign-in-entry')).toBeNull()
+    expect(within(foot).getByTestId('settings-seat')).toBeTruthy()
     expect(within(foot).getByRole('button', { name: 'Theme: System' })).toBeTruthy()
     expect(within(foot).getByRole('button', { name: 'Log out' })).toBeTruthy()
     expect(screen.queryByText('Workspace')).toBeNull()
@@ -85,6 +87,9 @@ describe('hosted chat app rail', () => {
     expect(props.selectPanel).toHaveBeenCalledWith('ahel-inbox')
     fireEvent.click(screen.getByRole('button', { name: 'Theme: System' }))
     expect(props.cycleTheme).toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /^Account menu/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Chat settings' }))
+    expect(props.openChatSettings).toHaveBeenCalled()
   })
 
   it('draws New chat and the Chats list into the chat column seat', () => {

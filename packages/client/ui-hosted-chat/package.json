@@ -34,6 +34,7 @@
         "@ahel/dsh-client-ui-conversation",
         "@ahel/dsh-client-ui-layout",
         "@ahel/dsh-client-ui-renderer",
+        "@ahel/dsh-client-ui-settings",
         "@ahel/dsh-client-ui-sidebar",
         "@ahel/dsh-client-ui-theme"
       ],
@@ -59,6 +60,7 @@
     "@ahel/dsh-client-ui-layout": "workspace:*",
     "@ahel/dsh-client-ui-primitives": "workspace:*",
     "@ahel/dsh-client-ui-renderer": "workspace:*",
+    "@ahel/dsh-client-ui-settings": "workspace:*",
     "@ahel/dsh-client-ui-sidebar": "workspace:*",
     "@ahel/dsh-client-ui-slots": "workspace:*",
     "@ahel/dsh-client-ui-theme": "workspace:*",

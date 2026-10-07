@@ -16,12 +16,15 @@ export interface HostedShellInjected {
    */
   selectPanel(id: string | null): void
   /**
-   * Choose the workspace the chat acts in; does nothing before the account is mounted.
+   * Choose the workspace the chat acts in, then pin it as ahel.ai's active workspace so the next load keeps it;
+   * does nothing before the account is mounted.
    * @param id - one of the profile's workspace ids.
    */
   selectWorkspace(id: string): Promise<void>
   /** Sign out the way the account menu does. */
   signOut(): Promise<void>
+  /** Open the in-app settings window the way its shortcut does, on its first section. */
+  openChatSettings(): void
   /** Step the theme preference System, Light, Dark, System. */
   cycleTheme(): void
   /**

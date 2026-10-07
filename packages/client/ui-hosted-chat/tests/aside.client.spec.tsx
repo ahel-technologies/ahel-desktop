@@ -6,7 +6,7 @@ import type { Issue } from '@ahel/dsh-ahel-account/types'
 import type { TeamSummaryState } from '@ahel/dsh-client-ui-ahel-account/client'
 import { HostedAside } from '../src/client/Aside.tsx'
 import type { HostedAsideProps } from '../src/client/contract.ts'
-import { mergeWaiting, workspaceToFollow } from '../src/client/index.ts'
+import { CHAT_WORKSPACE_COOKIE, mergeWaiting, readCookie, workspaceToFollow } from '../src/client/index.ts'
 import { en } from '../src/client/locales.ts'
 
 afterEach(cleanup)
@@ -63,5 +63,9 @@ describe('hosted chat column', () => {
     expect(workspaceToFollow(view, 'w1')).toBeNull()
     expect(workspaceToFollow(view, 'elsewhere')).toBeNull()
     expect(workspaceToFollow(view, null)).toBeNull()
+    document.cookie = `${CHAT_WORKSPACE_COOKIE}=`
+    expect(readCookie(CHAT_WORKSPACE_COOKIE)).toBeNull()
+    document.cookie = `${CHAT_WORKSPACE_COOKIE}=w2`
+    expect(readCookie(CHAT_WORKSPACE_COOKIE)).toBe('w2')
   })
 })

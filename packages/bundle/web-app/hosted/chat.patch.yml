@@ -56,10 +56,12 @@
 # ahel.ai's shell around the chat: the sidebar body becomes the app rail
 # (workspace switcher; Home, Chat, Apps, Discover, Inbox, Team, Settings;
 # Help, account, Theme, Log out), a chat column beside the Conversation holds
-# New chat, the Chats list and Waiting on you, the blank chat greets with a
-# page header, and on load the chat follows the workspace ahel.ai's
-# ahel_active_tenant cookie names. The brand links to app.ahel.ai/app. Only
-# this overlay mounts it; the desktop and plain web sidebars stay as they are.
+# New chat, the Chats list and Waiting on you, and the blank chat greets with
+# a page header. On load the chat follows the workspace the gateway's
+# ahel_chat_workspace cookie names; a switch made in the chat is pinned on
+# ahel.ai. The account entry opens Chat settings. The brand links to
+# app.ahel.ai/app. Only this overlay mounts it; the desktop and plain web
+# sidebars stay as they are.
 - insert:
     - id: ui-hosted-chat
       name: '@ahel/dsh-client-ui-hosted-chat'
