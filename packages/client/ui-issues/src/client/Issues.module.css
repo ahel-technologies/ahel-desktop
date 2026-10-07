@@ -668,6 +668,9 @@
 
 .glyph { position: relative; display: inline-flex; align-items: center; justify-content: center; }
 
+/* Unpositioned in the wide column, so the trailing pill positions against the sidebar's panel row. */
+.glyphWide { display: inline-flex; align-items: center; justify-content: center; }
+
 .badge {
   position: absolute;
   top: -6px;
@@ -684,6 +687,27 @@
   line-height: 14px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* The wide column's count: a pill at the panel row's trailing edge, clear of the glyph and the title. */
+.trailingBadge {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-state-error-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  transform: translateY(-50%);
 }
 
 @media (max-width: 720px) {

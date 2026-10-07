@@ -266,11 +266,8 @@ describe('web e2e: workspace management (create / rename / grouping / hover affo
     // is the nearest groupSection ancestor, not the immediate parent.
     const groupSection = groupRow.locator('xpath=ancestor::*[contains(@class, "groupSection")][1]')
     if (await groupRow.getAttribute('aria-expanded') !== 'true') await groupRow.click()
-    const blankRow = groupSection.getByRole('treeitem', { name: 'New chat', exact: true })
-    await expect.poll(() => blankRow.getAttribute('aria-selected'), { timeout: 10_000 }).toBe('true')
-    // The seed is this account's only non-blank Session; its title changes on resume.
+    // The seed is this account's only listed Session (the New chat draft has no row); its title changes on resume.
     const seededRow = groupSection.locator('[role="treeitem"][aria-selected]')
-      .filter({ hasNot: page.getByText('New chat', { exact: true }) })
     await expect.poll(() => releaseAttachment, { timeout: 10_000 }).toBeDefined()
     expect(await seededRow.count()).toBe(0)
     const deliverAttachment = releaseAttachment!
