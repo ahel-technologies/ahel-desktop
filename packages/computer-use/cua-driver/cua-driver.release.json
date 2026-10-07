@@ -1,0 +1,27 @@
+{
+  "$comment": "The one Cua Driver release Ahel Desktop ships. apps/desktop/scripts/prepare-cua-driver.ts downloads the asset for the packaged target, checks both hashes, and copies only the cua-driver executable. Bumping it means: update every hash, rerun the crate licence scan (docs/phase4/COMPUTER-USE.md), and rerun the computer-use smoke.",
+  "version": "0.34.0",
+  "tag": "cua-driver-rs-v0.34.0",
+  "sourceCommit": "b0968e1b12834e485dda68789541a3cc57664a9f",
+  "baseUrl": "https://github.com/trycua/cua/releases/download/cua-driver-rs-v0.34.0/",
+  "assets": {
+    "darwin-arm64": {
+      "archive": "cua-driver-rs-0.34.0-darwin-arm64.tar.gz",
+      "archiveSha256": "329bcc140c4840a5877e2cfc9f756351eb4a70c2c2d6acf4954751918122c60a",
+      "binary": "cua-driver-rs-0.34.0-darwin-arm64/cua-driver",
+      "binarySha256": "47fa8722003066246ee8a828d3fe2c769f2194d6cf3ad63ae6f0becdc00d383a"
+    },
+    "darwin-x64": {
+      "archive": "cua-driver-rs-0.34.0-darwin-x86_64.tar.gz",
+      "archiveSha256": "9f362ad3af021c2d092c89172a02663e5c7d8788f8f7643a0b5f4eb568279b27",
+      "binary": "cua-driver-rs-0.34.0-darwin-x86_64/cua-driver",
+      "binarySha256": "47fa8722003066246ee8a828d3fe2c769f2194d6cf3ad63ae6f0becdc00d383a"
+    },
+    "win32-x64": {
+      "archive": "cua-driver-rs-0.34.0-windows-x86_64-binary.zip",
+      "archiveSha256": "bcc520e50861c7092cf775846fec76ae386d7dcd6b5b408608b0ea4423a8b888",
+      "binary": "cua-driver.exe",
+      "binarySha256": "77f5cac754b42b6a8bae126414fc8f7487432ace93466967965188e24e9e53fb"
+    }
+  }
+}

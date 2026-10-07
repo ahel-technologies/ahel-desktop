@@ -305,6 +305,8 @@
     { "path": "./packages/credentials/credentials" },
     { "path": "./packages/credentials/credentials-local" },
     { "path": "./packages/credentials/ahel-account" },
+    { "path": "./packages/computer-use/computer-use" },
+    { "path": "./packages/computer-use/cua-driver/tsconfig.host.json" },
     { "path": "./packages/computer-use/action-gate" },
     { "path": "./packages/client/ui-computer-use/tsconfig.host.json" },
     { "path": "./packages/credentials/authorization" },

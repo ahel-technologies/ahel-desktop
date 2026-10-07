@@ -137,6 +137,8 @@
     "@ahel/dsh-web": "workspace:*",
     "@ahel/dsh-tool-web": "workspace:*",
     "@ahel/dsh-web-search-ahel": "workspace:*",
+    "@ahel/dsh-computer-use": "workspace:*",
+    "@ahel/dsh-computer-use-cua-driver": "workspace:*",
     "@ahel/dsh-client-ui-settings-web-search": "workspace:*",
     "@ahel/dsh-experimental-speech-to-text": "workspace:*",
     "@ahel/dsh-experimental-speech-to-text-ahel": "workspace:*",

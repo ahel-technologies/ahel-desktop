@@ -465,6 +465,8 @@ export async function packageTarget(
   await execute(['run', 'prepare:packages'], targetEnv)
   await execute(['run', 'prepare:dsh', ...(signPrimaryRuntime ? ['--defer-runtime-smoke'] : [])], downloadEnv)
   if (signPrimaryRuntime) await execute(['run', 'sign:primary-runtime', '--dsh'], electronBuilderEnv)
+  // The pinned Cua Driver for computer use; electron-builder signs it with the app (docs/phase4/COMPUTER-USE.md).
+  await execute(['run', 'prepare:cua-driver'], downloadEnv)
   if (invocation.prepareOnly) return
   if (target.platform === 'darwin' && invocation.unsigned) {
     await execute([...desktopElectronBuilderArguments(target, invocation.directory), '--config.mac.notarize=false'], electronBuilderEnv)

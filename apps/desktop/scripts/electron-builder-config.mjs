@@ -146,6 +146,11 @@ export function createElectronBuilderConfig(
       // MIT terms and third-party notices, opened from About and the Licenses menu item.
       { from: fileURLToPath(new URL('../../../LICENSE', import.meta.url)), to: 'licenses/LICENSE' },
       { from: fileURLToPath(new URL('../../../THIRD_PARTY_NOTICES.md', import.meta.url)), to: 'licenses/THIRD_PARTY_NOTICES.md' },
+      // Computer use: the pinned Cua Driver (prepare-cua-driver.ts) and its notices, macOS only for now.
+      ...(resolvedPlatform === 'darwin' ? [
+        { from: join(buildPaths.root, 'cua-driver'), to: 'cua-driver' },
+        { from: fileURLToPath(new URL('../../../packages/computer-use/cua-driver/licenses', import.meta.url)), to: 'licenses/cua-driver' },
+      ] : []),
       // Windows tray bitmaps; macOS keeps the Dock and ships no menu bar icon.
       ...(packagesWindows ? [{ from: fileURLToPath(new URL('../resources/tray-windows.ico', import.meta.url)), to: 'tray.ico' }] : []),
     ],
@@ -156,6 +161,9 @@ export function createElectronBuilderConfig(
         // macOS matches the application locale against this bundle, not Electron Framework resources.
         CFBundleLocalizations: ['en', 'zh_CN'],
         NSMicrophoneUsageDescription: 'Ahel Desktop uses your microphone to transcribe speech into message drafts.',
+        // Computer use: the bundled Cua Driver runs in Ahel Desktop's name, so macOS shows these reasons.
+        NSAppleEventsUsageDescription: 'Ahel Desktop uses Automation only when computer use needs to talk to another app, after you approve the action.',
+        NSScreenCaptureUsageDescription: 'Ahel Desktop captures the screen when computer use is on, so your AI can see the app you ask it to use.',
       },
       // Unsigned macOS builds use an ad-hoc signature so arm64 binaries still launch locally.
       identity: unsigned ? '-' : macOSSigning?.signingIdentity,

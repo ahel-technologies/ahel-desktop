@@ -2643,6 +2643,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       'client-ui-theme AppearanceRow id \'appearance\'',
       'client-ui-theme FontSizeRow id \'font-size\'',
       'client-ui-window-capture WindowCaptureSettingsRow id \'window-capture\'',
+      'computer-use-cua-driver ComputerUseRow id \'computer-use\'',
       'experimental-client-ui-voice-input DictationRow id \'dictation\'',
     ],
     replaceRisk: 'none',
