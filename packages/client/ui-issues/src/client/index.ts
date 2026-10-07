@@ -1,8 +1,8 @@
 /**
  * Browser face of team issues: over the Host's `ahelIssues` Remote namespace
  * (mounted with the Ahel account), the Issues main panel (board and list,
- * detail drawer, New Issue), its sidebar row with the count of open issues
- * assigned to the person, the New issue row, and Run with Ahel, which seeds
+ * detail drawer, New Issue from its button or C), its sidebar row with the
+ * count of open issues assigned to the person, and Run with Ahel, which seeds
  * a new chat with the issue and reports the chat's state as the issue's run.
  * The feed re-reads every 60 s while the window has focus and on focus.
  * Other packages open an issue with the `ahel-issues/open` event.
@@ -21,8 +21,8 @@ import type {} from '@ahel/dsh-client-ui-session/client'
 import type {} from '@ahel/dsh-client-ui-workspace/client'
 import type { IssuesInjected } from './contract.ts'
 import { createIssuesFeed, type IssuesAccount } from './feed.ts'
-import { IssuesPage, NewIssuePage } from './IssuesPage.tsx'
-import { IssuesPanelIcon, NewIssuePanelIcon } from './PanelIcons.tsx'
+import { IssuesPage } from './IssuesPage.tsx'
+import { IssuesPanelIcon } from './PanelIcons.tsx'
 import { issueUrl, runSeed } from './model.ts'
 import { startRun, type RunHost, type RunSession } from './run.ts'
 import { en, NS, zh } from './locales.ts'
@@ -50,9 +50,6 @@ export const inject = ['remote', 'slots', 'locale', 'layout']
 /** Main panel and sidebar row id of the Issues page. */
 const ISSUES_ID = 'ahel-issues' as MainPanelId
 
-/** Sidebar row id of New issue; its panel opens New Issue over the board. */
-const NEW_ISSUE_ID = 'ahel-issue-new' as MainPanelId
-
 /** Poll period while the window has focus. */
 const POLL_MS = 60_000
 
@@ -60,7 +57,6 @@ const POLL_MS = 60_000
 const FOCUS_REFRESH_MS = 5_000
 
 /** Sidebar order: between Approvals (-5) and Inbox (-4). */
-const NEW_ISSUE_ORDER = -4.6
 const ISSUES_ORDER = -4.5
 
 /**
@@ -154,7 +150,6 @@ function register(ctx: Context): void {
       }
     },
     openSession: (sessionId) => { ctx.uiWorkspace.openSession(sessionId as SessionId) },
-    showBoard: () => { ctx.layout.selectPanel(ISSUES_ID) },
     openLink,
     viewOnWeb: (key) => {
       void ctx.remote.ahelAccount.state().then((result) => {
@@ -165,21 +160,16 @@ function register(ctx: Context): void {
   }
 
   ctx.slots.inject('main', () => ctx.slots.register({ name: 'main', key: ISSUES_ID, locale: NS, inject: () => face }, IssuesPage))
-  ctx.slots.inject('main', () => ctx.slots.register({ name: 'main', key: NEW_ISSUE_ID, locale: NS, inject: () => face }, NewIssuePage))
 
-  // Both rows show only while signed in.
+  // The row shows only while signed in.
   ctx.slots.inject('sidebar.panellist', () => {
     let dispose: (() => void) | undefined
     const reconcile = (): void => {
       const show = feed.state.getSnapshot().phase !== 'signed-out'
       if (show && dispose === undefined) {
-        const offNew = ctx.slots.register({
-          name: 'sidebar.panellist', id: NEW_ISSUE_ID, order: NEW_ISSUE_ORDER, locale: NS, label: () => t('newIssue'), inject: () => face,
-        }, NewIssuePanelIcon)
-        const offIssues = ctx.slots.register({
+        dispose = ctx.slots.register({
           name: 'sidebar.panellist', id: ISSUES_ID, order: ISSUES_ORDER, locale: NS, label: () => t('issues'), inject: () => face,
         }, IssuesPanelIcon)
-        dispose = () => { offNew(); offIssues() }
       } else if (!show && dispose !== undefined) {
         dispose()
         dispose = undefined

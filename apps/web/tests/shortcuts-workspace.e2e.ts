@@ -154,8 +154,9 @@ describe.skipIf(mode === 'record')('web e2e: workspace shortcuts', () => {
 
     await bind('New chat')
     await page.keyboard.press('Meta+Shift+Comma')
-    await expect.poll(() => page.getByRole('treeitem', { selected: true }).textContent()).toContain('New chat')
-    expect(workspace.sessionIds.length).toBe(1)
+    // The New chat draft opens without a list row.
+    await expect.poll(() => workspace.sessionIds.length).toBe(1)
+    expect(await page.getByRole('treeitem', { selected: true }).count()).toBe(0)
 
     await bind('Open locally')
     await page.keyboard.press('Meta+Shift+Comma')

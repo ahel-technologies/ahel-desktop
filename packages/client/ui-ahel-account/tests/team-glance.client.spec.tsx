@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { makeTranslate } from '@ahel/dsh-client-test-runtime'
@@ -14,6 +17,21 @@ import team from '../src/client/team/Team.module.css'
 import { en } from '../src/client/locales.ts'
 
 const t = makeTranslate(en)
+
+const teamCss = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../src/client/team/Team.module.css'), 'utf8')
+
+/**
+ * The declaration block of one exact selector.
+ * @param css - stylesheet text.
+ * @param selector - exact selector text.
+ * @returns the block's body, or an empty string when absent.
+ */
+function ruleOf(css: string, selector: string): string {
+  for (const [, head = '', body = ''] of css.replace(/\/\*[\s\S]*?\*\//g, ' ').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (head.trim() === selector) return body
+  }
+  return ''
+}
 
 afterEach(() => { cleanup() })
 
@@ -79,11 +97,15 @@ describe('team at a glance', () => {
     expect(view.container.textContent).toBe('Hello, Karl')
   })
 
-  it('draws the unread count as a trailing pill in the wide sidebar row', () => {
+  it('draws the unread count as a trailing pill in the wide sidebar row, positioned by the row', () => {
     const props = { size: 16, active: false, wide: true, useSummary } as unknown as InboxPanelIconProps
     const view = render(<InboxPanelIcon {...props} />)
     const badge = view.getByText('2')
     expect(badge.className).toBe(team.trailingBadge)
+    // The wrapper must not be a containing block, or the pill lands on the glyph instead of the row's trailing edge.
+    expect(badge.parentElement?.className).toBe(team.glyphWide)
+    expect(ruleOf(teamCss, '.glyphWide')).not.toMatch(/\bposition\s*:/)
+    expect(ruleOf(teamCss, '.glyph')).toMatch(/position:\s*relative/)
   })
 
   it('shows quiet tiles on the welcome screen, each opening its panel', () => {

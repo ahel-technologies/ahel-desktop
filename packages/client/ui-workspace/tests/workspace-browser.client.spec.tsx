@@ -242,7 +242,7 @@ describe('WorkspaceBrowser', () => {
     expect(names()).toEqual(['b', 'a', 'c'])
   })
 
-  it.each(['workspace', 'flat'] as const)('keeps the provisional blank first and time ties stable in %s recency', (groupBy) => {
+  it.each(['workspace', 'flat'] as const)('lists no New chat draft row and keeps time ties stable in %s recency', (groupBy) => {
     localStorage.clear()
     const preferences = createWorkspaceViewStore().create()
     preferences.actions.setGroupBy(groupBy)
@@ -255,7 +255,7 @@ describe('WorkspaceBrowser', () => {
     })
     const rows = () => screen.getAllByRole('treeitem').filter(row => row.getAttribute('aria-expanded') === null)
     expect(rows().map(row => row.textContent)).toEqual([
-      expect.stringContaining('新对话'), expect.stringContaining('tie-a'), expect.stringContaining('tie-b'),
+      expect.stringContaining('tie-a'), expect.stringContaining('tie-b'),
     ])
     expect(b.store.getSnapshot().sessionOrderByAccount).toEqual({})
     rerender(b, { useSessions: hook(sessionState([
@@ -351,7 +351,7 @@ describe('WorkspaceBrowser', () => {
       useSessions: hook(sessionState([old, blank], { main: blank.id })),
       useWorkspaces: hook({ ...groups(['old', 'blank']), state: 'loading' }),
     })
-    expect(names()).toEqual([expect.stringContaining('新对话'), expect.stringContaining('old')])
+    expect(names()).toEqual([expect.stringContaining('old')])
     expect(b.store.getSnapshot().sessionOrderByAccount[account]).toEqual(['blank', 'old', 'absent'])
 
     rerender(b, {
@@ -798,8 +798,8 @@ describe('WorkspaceBrowser', () => {
     })
     const expectRows = (count: number) => {
       expect(screen.getAllByRole('treeitem').map(row =>
-        within(row).getByText(/^(alpha|新对话|running-(first|last)|idle-\d+)$/u).textContent)).toEqual([
-        'alpha', '新对话', 'running-first', ...idle.slice(0, count).map(item => item.displayTitle), 'running-last',
+        within(row).getByText(/^(alpha|running-(first|last)|idle-\d+)$/u).textContent)).toEqual([
+        'alpha', 'running-first', ...idle.slice(0, count).map(item => item.displayTitle), 'running-last',
       ])
     }
     expectRows(5)
@@ -873,8 +873,8 @@ describe('WorkspaceBrowser', () => {
       for (const [index, item] of ordinary.entries()) {
         expect(screen.queryByText(item.displayTitle) !== null).toBe(index < count)
       }
-      expect(screen.getAllByRole('treeitem')).toHaveLength(count + 1 + Number(withBlank))
-      expect(screen.queryByText('新对话') !== null).toBe(withBlank)
+      expect(screen.getAllByRole('treeitem')).toHaveLength(count + 1)
+      expect(screen.queryByText('新对话')).toBeNull()
     }
     expectVisible(5)
     const labels: string[] = []
@@ -935,14 +935,14 @@ describe('WorkspaceBrowser', () => {
     expect(screen.getByRole('button', { name: '展开其余 12 个对话' })).toBeTruthy()
   })
 
-  it('keeps the blank New Session outside the five-row folding quota', () => {
+  it('gives the New chat draft no row and no place in the five-row folding quota', () => {
     const ordinary = Array.from({ length: 6 }, (_, index) => summary(`session-${index + 1}`, 6 - index))
     const blank = summary('blank', 7, { blank: true })
     const b = mount({
       useSessions: hook(sessionState([blank, ...ordinary], { main: blank.id })),
       useWorkspaces: hook(workspaceState([workspace('alpha', [blank.id, ...ordinary.map(item => item.id)])])),
     })
-    expect(screen.getByText('新对话')).toBeTruthy()
+    expect(screen.queryByText('新对话')).toBeNull()
     for (const item of ordinary.slice(0, 5)) expect(screen.getByText(item.displayTitle)).toBeTruthy()
     expect(screen.queryByText('session-6')).toBeNull()
     expect(screen.getByRole('button', { name: '展开其余 1 个对话' })).toBeTruthy()
@@ -960,7 +960,7 @@ describe('WorkspaceBrowser', () => {
     expect(screen.getByRole('button', { name: '展开其余 2 个对话' })).toBeTruthy()
   })
 
-  it('pins the blank while collapsed drags keep an ordinary source visible', async () => {
+  it('keeps the hidden draft first in the stored order while collapsed drags keep an ordinary source visible', async () => {
     const ordinary = Array.from({ length: 6 }, (_, index) => summary(`session-${index + 1}`, 6 - index))
     const blank = summary('blank', 7, { blank: true })
     const b = mount({
@@ -972,26 +972,22 @@ describe('WorkspaceBrowser', () => {
         .toEqual(['blank', 'session-1', 'session-2', 'session-3', 'session-4', 'session-5', 'session-6'])
     })
 
-    const blankRow = screen.getByText('新对话').closest('[role="treeitem"]') as HTMLElement
-    expect(blankRow.draggable).toBe(false)
-    fireEvent.dragStart(blankRow, { dataTransfer: dragData() })
-    expect(b.store.getSnapshot().sessionOrderByAccount.alpha)
-      .toEqual(['blank', 'session-1', 'session-2', 'session-3', 'session-4', 'session-5', 'session-6'])
-
-    blankRow.getBoundingClientRect = () => ({
+    expect(screen.queryByText('新对话')).toBeNull()
+    const session1 = screen.getByText('session-1').closest('[role="treeitem"]') as HTMLElement
+    session1.getBoundingClientRect = () => ({
       top: 200, bottom: 234, left: 0, right: 200, width: 200, height: 34,
       x: 0, y: 200, toJSON: () => ({}),
     })
     const session5 = screen.getByText('session-5').closest('[role="treeitem"]') as HTMLElement
     fireEvent.dragStart(session5, { dataTransfer: dragData() })
-    fireDrag(blankRow, 'drop', 205)
+    fireDrag(session1, 'drop', 205)
     expect(b.store.getSnapshot().sessionOrderByAccount.alpha)
       .toEqual(['blank', 'session-5', 'session-1', 'session-2', 'session-3', 'session-4', 'session-6'])
     expect(screen.getByText('session-5')).toBeTruthy()
     expect(screen.queryByText('session-6')).toBeNull()
   })
 
-  it('reorders a newly exposed batch row while preserving the blank and hidden tail', () => {
+  it('reorders a newly exposed batch row while preserving the hidden draft and hidden tail', () => {
     const ordinary = Array.from({ length: 12 }, (_, index) => summary(`session-${index + 1}`, 12 - index))
     const blank = summary('blank', 13, { blank: true })
     const b = mount({
@@ -1013,7 +1009,7 @@ describe('WorkspaceBrowser', () => {
       'session-10', 'session-6', 'session-7', 'session-8', 'session-9', 'session-11', 'session-12',
     ])
     expect(screen.getAllByRole('treeitem').slice(1).map(row => row.querySelector('[class*="title"]')?.textContent)).toEqual([
-      '新对话', 'session-1', 'session-2', 'session-3', 'session-4', 'session-5',
+      'session-1', 'session-2', 'session-3', 'session-4', 'session-5',
       'session-10', 'session-6', 'session-7', 'session-8', 'session-9',
     ])
     expect(screen.queryByText('session-11')).toBeNull()
@@ -1289,7 +1285,7 @@ describe('WorkspaceBrowser', () => {
     expect(screen.queryByText('b')).toBeNull()
   })
 
-  it('shows only the current blank session as the localized New Session, excluded from search', () => {
+  it('shows no blank session, the current New chat draft included, and keeps blanks out of search', () => {
     const currentBlank = summary('alpha-blank', 9, { blank: true })
     const staleBlank = summary('beta-blank', 8, { blank: true })
     const sessions = sessionState(
@@ -1302,15 +1298,16 @@ describe('WorkspaceBrowser', () => {
         workspace('alpha', ['alpha-blank']), workspace('beta', ['beta-blank']),
       ])),
     })
-    expect(screen.getByText('新对话')).toBeTruthy()
+    expect(screen.queryByText('新对话')).toBeNull()
     expect(screen.queryByText('alpha-blank')).toBeNull()
     expect(screen.queryByText('beta-blank')).toBeNull()
 
     rerender(b, { useSessions: hook({ ...sessions, main: staleBlank.id }) })
-    expect(screen.getAllByText('新对话')).toHaveLength(1)
+    expect(screen.queryByText('新对话')).toBeNull()
     b.store.actions.setGroupBy('flat')
     rerender(b, {})
-    expect(screen.getAllByText('新对话')).toHaveLength(1)
+    expect(screen.queryByText('新对话')).toBeNull()
+    expect(screen.queryByText('alpha-blank')).toBeNull()
     // Search excludes blank rows entirely — neither the canonical stored
     // title nor the localized display label participates in matching.
     fireEvent.change(screen.getByPlaceholderText('搜索对话名称'), { target: { value: 'new session' } })
@@ -1319,7 +1316,7 @@ describe('WorkspaceBrowser', () => {
     expect(screen.queryByText('新对话')).toBeNull()
   })
 
-  it.each(['workspace', 'flat', 'ungrouped'] as const)('keeps a new blank first across %s mode switches and enables drag after the first prompt', (mode) => {
+  it.each(['workspace', 'flat', 'ungrouped'] as const)('keeps a new draft out of the list across %s mode switches and first after its first prompt', (mode) => {
     localStorage.clear()
     const preferences = createWorkspaceViewStore().create()
     preferences.actions.setGroupBy(mode === 'flat' ? 'flat' : 'workspace')
@@ -1344,23 +1341,14 @@ describe('WorkspaceBrowser', () => {
       ], { main: sid('blank') })),
       useWorkspaces: groups(['old', 'mid', 'blank']),
     })
-    expect(names()).toEqual(['新对话', 'mid', 'old'])
+    expect(names()).toEqual(['mid', 'old'])
     expect(b.store.getSnapshot().orderBy).toBe('updated')
     pick('手动排序')
-    expect(names()).toEqual(['新对话', 'mid', 'old'])
+    expect(names()).toEqual(['mid', 'old'])
     pick('最近更新')
-    const blank = screen.getByText('新对话').closest('[role="treeitem"]') as HTMLElement
-    expect(blank.draggable).toBe(false)
-    const old = screen.getByText('old').closest('[role="treeitem"]') as HTMLElement
-    old.getBoundingClientRect = () => ({
-      top: 150, bottom: 184, left: 0, right: 200, width: 200, height: 34, x: 0, y: 150, toJSON: () => ({}),
-    })
-    fireEvent.dragStart(blank, { dataTransfer: dragData() })
-    fireDrag(old, 'drop', 180)
-    expect(names()).toEqual(['新对话', 'mid', 'old'])
     b.view.unmount()
     const restored = mount({ useSessions: b.props.useSessions, useWorkspaces: b.props.useWorkspaces })
-    expect(names()).toEqual(['新对话', 'mid', 'old'])
+    expect(names()).toEqual(['mid', 'old'])
     rerender(restored, { useSessions: hook(sessionState([
       summary('old', 100), summary('mid', 200), summary('blank', 300),
     ], { main: sid('blank') })) })
@@ -1368,7 +1356,9 @@ describe('WorkspaceBrowser', () => {
     const ordinaryBlank = screen.getByText('blank').closest('[role="treeitem"]') as HTMLElement
     expect(ordinaryBlank.draggable).toBe(true)
     const restoredOld = screen.getByText('old').closest('[role="treeitem"]') as HTMLElement
-    restoredOld.getBoundingClientRect = () => old.getBoundingClientRect()
+    restoredOld.getBoundingClientRect = () => ({
+      top: 150, bottom: 184, left: 0, right: 200, width: 200, height: 34, x: 0, y: 150, toJSON: () => ({}),
+    })
     fireEvent.dragStart(ordinaryBlank, { dataTransfer: dragData() })
     fireDrag(restoredOld, 'drop', 180)
     expect(names()).toEqual(['mid', 'old', 'blank'])
@@ -1378,11 +1368,11 @@ describe('WorkspaceBrowser', () => {
       ], { main: sid('new-blank') })),
       useWorkspaces: groups(['old', 'mid', 'blank', 'new-blank']),
     })
-    expect(names()).toEqual(['新对话', 'mid', 'old', 'blank'])
+    expect(names()).toEqual(['mid', 'old', 'blank'])
     pick('最近更新')
-    expect(names()).toEqual(['新对话', 'blank', 'mid', 'old'])
+    expect(names()).toEqual(['blank', 'mid', 'old'])
     pick('手动排序')
-    expect(names()).toEqual(['新对话', 'blank', 'mid', 'old'])
+    expect(names()).toEqual(['blank', 'mid', 'old'])
   })
 
   it('shows local metadata matches immediately, then clears back to the grouped tree', async () => {

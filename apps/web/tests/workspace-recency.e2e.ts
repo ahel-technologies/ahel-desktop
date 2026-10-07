@@ -135,7 +135,7 @@ describe('web e2e: workspace recency', () => {
       .filter({ has: page.getByText(workspaceTitle, { exact: true }) }).hover()
     await page.getByRole('button', { name: `New session in ${workspaceTitle}` }).click()
     await pick('In one list')
-    await expect.poll(titles).toEqual(['New chat', ...TITLES])
+    await expect.poll(titles).toEqual(TITLES)
     await expect.poll(() => page.evaluate(() => {
       const { sessionId } = JSON.parse(localStorage.getItem('dsh.sessions.current')!) as { sessionId: string }
       const { sessionOrderByAccount } = JSON.parse(localStorage.getItem('dsh.workspace.view.v5')!) as {
@@ -147,21 +147,19 @@ describe('web e2e: workspace recency', () => {
     releaseWorkspace!()
     await pick('WorkSpace')
     acknowledgeReloadConnectionLoss(tripwire, reconnectWarningStart)
-    await expect.poll(titles).toEqual(['New chat', ...TITLES])
+    await expect.poll(titles).toEqual(TITLES)
     await compareOrRefreshGolden(
       join(SNAPSHOT_DIR, 'manual-blank.expected.md'),
       await captureSidebar(), MODE,
     )
-    const blank = page.getByRole('treeitem').filter({ has: page.getByText('New chat', { exact: true }) })
-    await expect.poll(() => blank.getAttribute('draggable')).toBe('false')
     const blankWarningStart = tripwire.warnings.length
     await page.reload({ waitUntil: 'load' })
-    await expect.poll(titles).toEqual(['New chat', ...TITLES])
+    await expect.poll(titles).toEqual(TITLES)
     acknowledgeReloadConnectionLoss(tripwire, blankWarningStart)
     await pick('Last updated')
-    await expect.poll(titles).toEqual(['New chat', ...TITLES])
+    await expect.poll(titles).toEqual(TITLES)
     await pick('Manual')
-    await expect.poll(titles).toEqual(['New chat', ...TITLES])
+    await expect.poll(titles).toEqual(TITLES)
     await assertFixtureInventory(SNAPSHOT_DIR, ['sidebar.expected.md', 'manual-blank.expected.md'])
     expect(tripwire.pageErrors).toEqual([])
     expect(tripwire.warnings).toEqual([])

@@ -47,14 +47,16 @@ export function AppsPanelIcon({ size }: PropsRuntime<'sidebar.panellist'>): Reac
 /**
  * Render the Approvals shield-and-check glyph with the count of held calls
  * waiting for a yes; the badge hides at zero and caps at 9+. In the wide column
- * it is a pill at the row's trailing edge, in the rail it rides the glyph's corner.
+ * it is a pill at the row's trailing edge (the glyph wrapper is unpositioned
+ * there, so the sidebar row is the pill's containing block); in the rail it
+ * rides the glyph's corner.
  * @param props - the sidebar's icon share and the Approvals face.
  * @returns the decorative glyph and badge.
  */
 export function ApprovalsPanelIcon({ size, wide, useSummary }: ApprovalsPanelIconProps): ReactNode {
   const count = useSummary(value => value.summary?.approvals?.rows.length ?? 0)
   return (
-    <span className={team.glyph}>
+    <span className={wide === true ? team.glyphWide : team.glyph}>
       <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1}
         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M8 2.2 13 4v4c0 2.9-2.1 5-5 5.8C5.1 13 3 10.9 3 8V4z" />
@@ -74,7 +76,7 @@ export function ApprovalsPanelIcon({ size, wide, useSummary }: ApprovalsPanelIco
 export function InboxPanelIcon({ size, wide, useSummary }: InboxPanelIconProps): ReactNode {
   const count = useSummary(value => value.summary?.inbox?.unread ?? 0)
   return (
-    <span className={team.glyph}>
+    <span className={wide === true ? team.glyphWide : team.glyph}>
       <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1}
         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M2.5 9.5 4.2 4a1.4 1.4 0 0 1 1.3-1h5a1.4 1.4 0 0 1 1.3 1l1.7 5.5V12a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 12z" />

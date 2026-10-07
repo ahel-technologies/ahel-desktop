@@ -5,9 +5,11 @@ import { useSyncExternalStore } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { makeTranslate } from '@ahel/dsh-client-test-runtime'
 import type { IssuePatch } from '@ahel/dsh-ahel-account/types'
-import type { IssuesInjected } from '../src/client/contract.ts'
+import type { IssuesInjected, IssuesPanelIconProps } from '../src/client/contract.ts'
 import { createIssuesFeed } from '../src/client/feed.ts'
 import { IssuesPage } from '../src/client/IssuesPage.tsx'
+import css from '../src/client/Issues.module.css'
+import { IssuesPanelIcon } from '../src/client/PanelIcons.tsx'
 import { en } from '../src/client/locales.ts'
 import { backendOf, PAGE } from './fixture.client.ts'
 
@@ -33,7 +35,7 @@ async function mount() {
   const feed = createIssuesFeed(backend, () => Promise.resolve({ signedIn: true, role: 'OWNER' }))
   await feed.reload()
   const face: Omit<IssuesInjected, 'hooks'> = {
-    ...feed, run: vi.fn(), openSession: vi.fn(), showBoard: vi.fn(), openLink: vi.fn(), viewOnWeb: vi.fn(), refresh: () => undefined,
+    ...feed, run: vi.fn(), openSession: vi.fn(), openLink: vi.fn(), viewOnWeb: vi.fn(), refresh: () => undefined,
   }
   const useIssues = ((selector: (state: ReturnType<typeof feed.state.getSnapshot>) => unknown) => {
     return useSyncExternalStore(listener => feed.state.subscribe(listener), () => selector(feed.state.getSnapshot()))
@@ -68,4 +70,15 @@ it('dropping a card on another column patches its status and moves it at once', 
   })
   expect(update).toHaveBeenCalledWith('AHEL-134', { status: 'in_review' })
   expect(within(review).getByText('AHEL-134')).toBeTruthy()
+})
+
+it('draws the open-issue count as a trailing pill in the wide sidebar row and on the glyph corner in the rail', () => {
+  const useIssues = ((selector: (state: { mine: number }) => unknown) => selector({ mine: 3 })) as IssuesPanelIconProps['useIssues']
+  const wide = render(<IssuesPanelIcon {...{ size: 16, active: false, wide: true, useIssues } as unknown as IssuesPanelIconProps} />)
+  const pill = within(wide.container).getByText('3')
+  expect(pill.className).toBe(css.trailingBadge)
+  expect(pill.parentElement?.className).toBe(css.glyphWide)
+  wide.unmount()
+  const rail = render(<IssuesPanelIcon {...{ size: 18, active: false, useIssues } as unknown as IssuesPanelIconProps} />)
+  expect(within(rail.container).getByText('3').className).toBe(css.badge)
 })

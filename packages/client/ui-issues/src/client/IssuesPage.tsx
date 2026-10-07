@@ -38,8 +38,8 @@ const all = (state: IssuesState): IssuesState => state
  * @param props - composed slot props: the face, `useIssues` and `t`.
  * @returns the page.
  */
-export function IssuesPage(props: IssuesPageView & { composeOnOpen?: boolean }) {
-  const { useIssues, t, refresh, setFilter, openIssue, compose, dismissOffer, update, run, showBoard, composeOnOpen } = props
+export function IssuesPage(props: IssuesPageView) {
+  const { useIssues, t, refresh, setFilter, openIssue, compose, dismissOffer, update, run } = props
   const state = useIssues(all)
   const [display, setDisplay] = useState<'board' | 'list'>('board')
   const [filterOpen, setFilterOpen] = useState(false)
@@ -51,10 +51,6 @@ export function IssuesPage(props: IssuesPageView & { composeOnOpen?: boolean }) 
     const timer = setInterval(() => { setNow(Date.now()) }, TICK_MS)
     return () => { clearInterval(timer) }
   }, [])
-  useEffect(() => {
-    // The New issue sidebar row opens this panel with the sheet up, then hands the row back to Issues.
-    if (composeOnOpen === true) { compose('backlog'); showBoard() }
-  }, [composeOnOpen, compose, showBoard])
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.key.toLowerCase() !== 'c' || event.metaKey || event.ctrlKey || event.altKey || event.repeat || typing(event.target)) return
@@ -203,13 +199,4 @@ export function IssuesPage(props: IssuesPageView & { composeOnOpen?: boolean }) 
       )}
     </div>
   )
-}
-
-/**
- * The New issue row's panel: the Issues panel with New Issue open.
- * @param props - the Issues panel props.
- * @returns the page.
- */
-export function NewIssuePage(props: IssuesPageProps) {
-  return <IssuesPage {...props} composeOnOpen />
 }

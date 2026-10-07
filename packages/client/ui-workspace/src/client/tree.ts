@@ -1,7 +1,9 @@
 /**
  * Derives the workspace browser tree from caller-projected Workspace and
- * Session order. Unassigned Sessions trail under Ungrouped; only the selected
- * blank Session remains visible.
+ * Session order. Unassigned Sessions trail under Ungrouped. Only the selected
+ * blank Session (the New chat draft) is a list member, so order bookkeeping
+ * keeps its slot, but no rendered row shows it: the New chat button stands
+ * for the draft.
  */
 import {
   type SessionListState, type SessionSearchResultItem, type SessionSummary,
@@ -256,6 +258,19 @@ function sessionVisible(
   }
 }
 
+/**
+ * Whether a Session gets a rendered row: a visible member that is not the
+ * New chat draft.
+ */
+function sessionListed(
+  session: SessionSummary,
+  current: SessionId | undefined,
+  archived: ReadonlySet<SessionId>,
+  archivedFilter: ArchivedFilter,
+): boolean {
+  return !session.blank && sessionVisible(session, current, archived, archivedFilter)
+}
+
 /** Registry-global row state consumed by every tree derivation. */
 export interface SessionRowState {
   /** Registry-global pin ids; pinned rows lead their section in the local order. */
@@ -267,33 +282,29 @@ export interface SessionRowState {
 }
 
 /**
- * Keep the visible New Session placeholder first, then partition pinned and
- * ordinary rows without changing either partition's caller order.
+ * Partition pinned and ordinary rows without changing either partition's
+ * caller order.
  */
 function sectionMembers(
   members: readonly SessionSummary[],
   pinned: ReadonlySet<SessionId>,
   archived: ReadonlySet<SessionId>,
 ): SessionSummary[] {
-  const placeholders: SessionSummary[] = []
   const leading: SessionSummary[] = []
   const rest: SessionSummary[] = []
   for (const member of members) {
-    if (member.blank) placeholders.push(member)
-    else if (!archived.has(member.id) && pinned.has(member.id)) leading.push(member)
+    if (!archived.has(member.id) && pinned.has(member.id)) leading.push(member)
     else rest.push(member)
   }
-  return [...placeholders, ...leading, ...rest]
+  return [...leading, ...rest]
 }
 
 /**
- * A blank session is the selected Workspace's provisional New Session row;
- * its canonical title never enters search (blank rows are query-excluded)
- * and the renderer localizes its display label. Unnamed history also yields an
+ * Stored title of a rendered (never blank) row. Unnamed history yields an
  * empty title for localization and does not match a directory-name title search.
  */
 function sessionTitle(session: SessionSummary): string {
-  return session.blank ? '' : (session.title?.trim() ?? '')
+  return session.title?.trim() ?? ''
 }
 
 /** Build one group without projecting session lineage into presentation. */
@@ -347,7 +358,7 @@ function groupByWorkspace(
       const summary = list.byId[id]
       if (summary === undefined) continue // account may lead the list pull; the row appears when the summary lands
       accounted.add(id)
-      if (!sessionVisible(summary, current, archived, archivedFilter)) continue
+      if (!sessionListed(summary, current, archived, archivedFilter)) continue
       members.push(summary)
     }
     // The archived-only view lists archives, not the Workspace inventory, so
@@ -361,7 +372,7 @@ function groupByWorkspace(
   const stray = list.ids
     .map(id => list.byId[id])
     .filter((s): s is SessionSummary =>
-      s !== undefined && !accounted.has(s.id) && sessionVisible(s, current, archived, archivedFilter))
+      s !== undefined && !accounted.has(s.id) && sessionListed(s, current, archived, archivedFilter))
   if (stray.length > 0) {
     groups.push(buildGroup(
       UNGROUPED_KEY,
@@ -422,8 +433,8 @@ function sessionNode(
  *
  * Every group shows, except that the archived-only filter drops groups
  * without visible members; sessions populate under expanded groups with
- * pinned rows leading in the selected local order. Blank sessions are
- * excluded except for the selected provisional New Session row; archived
+ * pinned rows leading in the selected local order. Blank sessions,
+ * the selected New chat draft included, get no row; archived
  * sessions keep their slots and appear per the archived filter. Content
  * search lives outside this derivation (see {@link deriveSearchResults}).
  * @param list - sessions list snapshot (`mainView` retention feeds containsCurrent).
@@ -517,7 +528,7 @@ export function deriveFlat(
   const current = mainSessionId(list)
   const members = sessionIds.flatMap((id) => {
     const session = list.byId[id]
-    return session !== undefined && sessionVisible(session, current, archived, rowState.archivedFilter)
+    return session !== undefined && sessionListed(session, current, archived, rowState.archivedFilter)
       ? [session]
       : []
   })

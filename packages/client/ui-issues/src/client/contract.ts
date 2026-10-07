@@ -84,8 +84,6 @@ export interface IssuesInjected {
   run(issue: Issue): Promise<IssuesAnswer>
   /** Show the chat a run happens in. */
   openSession(sessionId: string): void
-  /** Show the Issues panel. */
-  showBoard(): void
   /** Open the issue's page on ahel.ai, in the selected workspace. */
   viewOnWeb(key: string): void
   /** Open an https link outside the app. */

@@ -4,9 +4,17 @@
  * pending-count badge in the shell's own tokens.
  */
 
-/* The sidebar glyph is the row's icon child; the badge rides its corner. */
+/* The sidebar glyph is the row's icon child; in the rail the badge rides its corner. */
 .glyph {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The wide column's glyph is not positioned, so the trailing pill below
+   positions against the sidebar's panel row instead of the 16px glyph. */
+.glyphWide {
   display: inline-flex;
   align-items: center;
   justify-content: center;
