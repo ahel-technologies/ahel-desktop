@@ -42,6 +42,14 @@ export interface StoredOAuthGrant {
 
 /** Options shared by grant reads that may refresh. */
 export interface OAuthGrantOptions {
+  /**
+   * Keep the stored grant when the token endpoint rejects its refresh token.
+   * A Host that shares its credentials volume with its replacement (the hosted
+   * chat during a pod swap) must not remove the record: the newer Host wrote
+   * its own grant there, and the rejection only means this Host's tokens were
+   * retired by that newer mint.
+   */
+  keepRejected?: boolean
   /** Refresh when the access token expires within this many milliseconds. */
   refreshSkewMs: number
   /** Deadline for one token-endpoint request in milliseconds. */
@@ -242,9 +250,8 @@ export async function currentOAuthGrant(
       const latest = await readOAuthGrant(credentials, ref)
       const rotatedElsewhere = latest !== undefined && latest.access_token !== current.access_token
       if (rotatedElsewhere && latest.expires_at - now() >= options.refreshSkewMs) return latest
-      if (error instanceof OAuthGrantError && error.rejected && latest?.refresh_token === current.refresh_token) {
-        await credentials.unset(ref)
-      }
+      const rejected = error instanceof OAuthGrantError && error.rejected && latest?.refresh_token === current.refresh_token
+      if (rejected && options.keepRejected !== true) await credentials.unset(ref)
       throw error
     }
   })()
