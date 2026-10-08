@@ -60,6 +60,7 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ru
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const generation = useRef(0)
+  const alive = useRef(false)
   const repeats = useRef(0)
   const repeat = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const drawer = useRef<HTMLElement>(null)
@@ -67,6 +68,7 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ru
 
   const { detail } = actions
   const load = useCallback((): void => {
+    if (!alive.current) return
     clearTimeout(repeat.current)
     const mine = ++generation.current
     void detail(issueKey).then((answer) => {
@@ -90,8 +92,10 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ru
     setLoaded(null)
     setRetrying(false)
     repeats.current = 0
+    alive.current = true
     load()
     return () => {
+      alive.current = false
       generation.current++
       clearTimeout(repeat.current)
     }

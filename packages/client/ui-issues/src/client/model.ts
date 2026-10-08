@@ -110,7 +110,7 @@ const RETRY_MAX_MS = 30_000
  * How long the detail drawer waits before repeating a read that may work again.
  * @param afterMs - ahel.ai's Retry-After, or null.
  * @param attempt - repeats made so far, from 0.
- * @returns a wait that doubles from 2 s per repeat and is never shorter than the Retry-After; at most 30 s.
+ * @returns the longer of the Retry-After and a wait that doubles from 2 s per repeat, capped at 30 s.
  */
 export function retryWait(afterMs: number | null, attempt: number): number {
   return Math.min(Math.max(afterMs ?? 0, RETRY_FIRST_MS * 2 ** attempt), RETRY_MAX_MS)
