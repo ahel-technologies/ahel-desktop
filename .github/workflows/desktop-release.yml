@@ -313,7 +313,7 @@ jobs:
             notes="Ahel Desktop $version from ${GITHUB_SHA::12}. macOS: signed and notarized; auto-update installs in place. Coming from an unsigned build: install this DMG once by hand."
             windows="Windows: unsigned build; SmartScreen > More info > Run anyway."
           else
-            notes="Unsigned build of Ahel Desktop $version from ${GITHUB_SHA::12}. macOS: right-click the app and choose Open, or allow it in System Settings > Privacy & Security."
+            notes="Unsigned beta build of Ahel Desktop $version from ${GITHUB_SHA::12}. macOS: open the app once; when macOS refuses it, go to System Settings > Privacy & Security, press Open Anyway and enter your Mac password. Right-click > Open no longer works on macOS 15."
             windows="Windows: SmartScreen > More info > Run anyway."
           fi
           if [ ${#missing[@]} -eq 0 ]; then
