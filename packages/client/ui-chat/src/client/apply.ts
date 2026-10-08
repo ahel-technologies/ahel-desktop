@@ -257,6 +257,13 @@ export function apply(ctx: Context): void {
                 // Fork or child-title failure leaves the source view unchanged.
               })
           },
+          // Attachments are not re-sent: their bytes are not kept in the browser.
+          // A refused prompt surfaces through the Session's promptError.
+          retryTurn: (turn) => {
+            const prompt = chat.getSnapshot().nodes.turnDataSource(turn, 'user').getSnapshot().at(-1)
+            const text = prompt?.content.flatMap(block => block.type === 'text' ? [block.text] : []).join('\n') ?? ''
+            if (text !== '') void session.prompt([{ type: 'text', text }], 'queue')
+          },
         }
       },
     }, ChatView)

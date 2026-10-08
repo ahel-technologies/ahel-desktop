@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-本包渲染 MCP Apps 卡片（`io.modelcontextprotocol/ui`，协议 2026-01-26）。当一个已结束的 MCP 工具调用在持久化结果元数据中带有 `mcpApp` 记录时，卡片会从同一服务器读取该工具的 `ui://` 资源，把它挂载到一个在该调用的可折叠行旁始终展开的沙箱框架中，并运行 MCP Apps JSON-RPC 桥接的宿主端：`ui/initialize` 握手、工具输入与结果通知、由宿主代理的 `tools/call` 和 `resources/read`、`ui/open-link`、尺寸变化以及主题更新。无法加载的卡片改为显示该调用的文本结果和结构化结果。
+本包渲染 MCP Apps 卡片（`io.modelcontextprotocol/ui`，协议 2026-01-26）。当一个已结束的 MCP 工具调用在持久化结果元数据中带有 `mcpApp` 记录时，卡片会从同一服务器读取该工具的 `ui://` 资源，把它挂载到一个在该调用的可折叠行旁始终展开的沙箱框架中，并运行 MCP Apps JSON-RPC 桥接的宿主端：`ui/initialize` 握手、工具输入与结果通知、由宿主代理的 `tools/call` 和 `resources/read`、`ui/open-link`、尺寸变化以及主题更新。无法加载的卡片改为显示该调用的文本结果，并折叠显示结构化结果；本身是 JSON 对象或数组的文本结果同样折叠，不直接显示。
 
 ## 目录
 

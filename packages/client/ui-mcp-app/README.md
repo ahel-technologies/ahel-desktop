@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package renders MCP Apps cards (`io.modelcontextprotocol/ui`, protocol 2026-01-26). When a settled MCP tool call carries an `mcpApp` record in its persisted result metadata, the card reads the tool's `ui://` resource from the same server, mounts it in a sandboxed frame that stays open beside the call's collapsible row, and runs the host side of the MCP Apps JSON-RPC bridge: the `ui/initialize` handshake, tool input and result notifications, host-proxied `tools/call` and `resources/read`, `ui/open-link`, size changes, and theme updates. A card that cannot load shows the call's text and structured result instead.
+This package renders MCP Apps cards (`io.modelcontextprotocol/ui`, protocol 2026-01-26). When a settled MCP tool call carries an `mcpApp` record in its persisted result metadata, the card reads the tool's `ui://` resource from the same server, mounts it in a sandboxed frame that stays open beside the call's collapsible row, and runs the host side of the MCP Apps JSON-RPC bridge: the `ui/initialize` handshake, tool input and result notifications, host-proxied `tools/call` and `resources/read`, `ui/open-link`, size changes, and theme updates. A card that cannot load shows the call's text and, folded, its structured result; a text result that is a JSON object or array is folded with it instead of printed.
 
 ## Table of Contents
 

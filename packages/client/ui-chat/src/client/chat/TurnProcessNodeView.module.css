@@ -47,6 +47,22 @@
   white-space: nowrap;
 }
 
+.interrupted {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 8px;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.interrupted .root {
+  flex: 1 1 auto;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border-bottom: none;
+}
+
 .durationNumber {
   font-family: var(--ds-font-family-code);
   font-variant-numeric: tabular-nums;

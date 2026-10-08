@@ -53,6 +53,18 @@ function resultText(content: readonly { type: string; text?: string }[]): string
   return content.flatMap(block => block.type === 'text' && typeof block.text === 'string' ? [block.text] : []).join('\n')
 }
 
+/** Pretty-printed JSON object or array text, or `undefined` for any other text. */
+function jsonDocument(text: string): string | undefined {
+  const trimmed = text.trim()
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return undefined
+  try {
+    return JSON.stringify(JSON.parse(trimmed), null, 2)
+  } catch {
+    // Text that only starts like JSON is shown as text.
+    return undefined
+  }
+}
+
 /** MCP text content blocks rebuilt from the model-facing result. */
 function mcpContent(content: readonly { type: string; text?: string }[]): JsonValue[] {
   return content.flatMap(block => block.type === 'text' && typeof block.text === 'string'
@@ -238,14 +250,19 @@ function McpAppFrame({
 
   if (state.kind === 'failed') {
     const text = resultText(block.content)
+    // A JSON text result is the card's data, not prose: it stays folded like the structured result.
+    const textJson = jsonDocument(text)
+    const structured = record.structuredContent === undefined
+      ? textJson
+      : JSON.stringify(record.structuredContent, null, 2)
     return (
       <div ref={cardRef} tabIndex={-1} className={css.fallback} data-mcp-app-fallback={state.reason}>
         <p className={css.notice}>{t(state.reason)}</p>
-        {text === '' ? null : <div className={css.fallbackText}>{text}</div>}
-        {record.structuredContent === undefined ? null : (
+        {text === '' || textJson !== undefined ? null : <div className={css.fallbackText}>{text}</div>}
+        {structured === undefined ? null : (
           <details className={css.structured}>
             <summary>{t('structured')}</summary>
-            <pre>{JSON.stringify(record.structuredContent, null, 2)}</pre>
+            <pre>{structured}</pre>
           </details>
         )}
       </div>
