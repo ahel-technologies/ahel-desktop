@@ -2,7 +2,9 @@
  * Cloud dictation for Ahel Desktop: a `cloud` speech provider that sends one
  * complete recording (the 16 kHz mono PCM16 WAV the voice input records) to
  * ahel.ai's metered transcription route, `POST <baseURL>/audio/transcriptions`,
- * with the signed-in Ahel account's bearer and selected workspace. ahel.ai
+ * with the signed-in Ahel account's bearer. `X-Ahel-Workspace` names the
+ * workspace of the chat the recording was dictated in
+ * (`AhelAccount.chatWorkspace`), else the selected one. ahel.ai
  * transcribes it with an audio-capable model and charges the workspace
  * balance; nothing is stored. The provider is ready only while signed in.
  *
@@ -13,7 +15,7 @@ import type { Context } from '@ahel/cordis'
 import Schema from '@ahel/schemastery'
 import type {} from '@ahel/dsh-ahel-account'
 import type {} from '@ahel/dsh-experimental-speech-to-text'
-import type { SpeechPreparation, SpeechPreparationState, SpeechProvider, SpeechProviderId, Transcript } from '@ahel/dsh-experimental-speech-to-text/types'
+import type { SpeechInput, SpeechPreparation, SpeechPreparationState, SpeechProvider, SpeechProviderId, Transcript } from '@ahel/dsh-experimental-speech-to-text/types'
 
 /** Cordis plugin name. */
 export const name = 'experimental-speech-to-text-ahel'
@@ -50,6 +52,11 @@ export interface AhelSpeechAccount {
   revalidate(): Promise<void>
   /** @returns the selected workspace id, or undefined for the account default. */
   workspace(): Promise<string | undefined>
+  /**
+   * @param sessionId - the chat's Session id.
+   * @returns the workspace the chat acts in, or undefined for a chat that follows the selected workspace.
+   */
+  chatWorkspace(sessionId: string): string | undefined
 }
 
 /** A transcription refusal whose message is shown to the person as it is. */
@@ -113,12 +120,12 @@ export interface AhelSpeechProvider extends SpeechProvider {
 export function createAhelSpeechProvider(account: AhelSpeechAccount, config: Config, fetchImpl: typeof fetch = fetch): AhelSpeechProvider {
   const readiness = new SignInReadiness()
   const endpoint = `${config.baseURL.replace(/\/+$/, '')}/audio/transcriptions`
-  const transcribe = async (input: { audio: Uint8Array; language: string }, signal: AbortSignal): Promise<Transcript> => {
+  const transcribe = async (input: SpeechInput, signal: AbortSignal): Promise<Transcript> => {
     signal.throwIfAborted()
     const started = Date.now()
     const url = new URL(endpoint)
-    const workspace = await account.workspace()
-    if (workspace !== undefined) url.searchParams.set('workspace', workspace)
+    // A chat not stamped yet is stamped with the selected workspace at its first step.
+    const workspace = (input.sessionId === undefined ? undefined : account.chatWorkspace(input.sessionId)) ?? await account.workspace()
     const body = JSON.stringify({
       audio: base64(input.audio), format: 'wav',
       ...input.language === 'auto' ? {} : { language: input.language },
@@ -133,7 +140,10 @@ export function createAhelSpeechProvider(account: AhelSpeechAccount, config: Con
           method: 'POST',
           // The bearer never follows a redirect to another origin.
           redirect: 'error',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          headers: {
+            'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json',
+            ...workspace === undefined ? {} : { 'X-Ahel-Workspace': workspace },
+          },
           body,
           signal: combined,
         })

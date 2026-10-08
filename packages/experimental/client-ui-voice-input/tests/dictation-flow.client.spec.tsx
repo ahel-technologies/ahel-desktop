@@ -30,7 +30,8 @@ afterEach(async () => { cleanup(); while (cleanups.length > 0) await cleanups.po
 
 /** A local stand-in for ahel.ai's route: checks the bearer, workspace and WAV, then answers like ahel.ai. */
 async function mockRoute() {
-  const seen: Array<{ path: string; authorization: string | undefined; body: { audio: string; format?: string; language?: string } }> = []
+  type Body = { audio: string; format?: string; language?: string }
+  const seen: Array<{ path: string; authorization: string | undefined; workspace: string | undefined; body: Body }> = []
   const read = (request: IncomingMessage): Promise<string> => new Promise((resolve) => {
     let raw = ''
     request.on('data', (chunk: Buffer) => { raw += chunk.toString() })
@@ -39,7 +40,8 @@ async function mockRoute() {
   const server = createServer((request, response) => {
     void read(request).then((raw) => {
       const body = JSON.parse(raw) as { audio: string; format?: string; language?: string }
-      seen.push({ path: request.url ?? '', authorization: request.headers.authorization, body })
+      const workspace = request.headers['x-ahel-workspace']
+      seen.push({ path: request.url ?? '', authorization: request.headers.authorization, workspace: typeof workspace === 'string' ? workspace : undefined, body })
       const audio = Buffer.from(body.audio, 'base64')
       if (request.headers.authorization !== 'Bearer test-token' || audio.toString('ascii', 0, 4) !== 'RIFF') {
         response.writeHead(400, { 'content-type': 'application/json' }).end(JSON.stringify({ error: { message: 'bad request' } }))
@@ -54,13 +56,16 @@ async function mockRoute() {
   return { origin: `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`, seen }
 }
 
-it('posts a recorded WAV through the ahel.ai provider and inserts the transcript into the draft, never sending it', async () => {
+it('posts a recorded WAV through the ahel.ai provider in the chat\'s workspace and inserts the transcript into the draft, never sending it', async () => {
   const route = await mockRoute()
   // Host half: the registry, the ahel.ai provider (signed in) and the speech controller the Remote exposes.
   const host = new Context()
   cleanups.push(() => host.fiber.dispose())
   const speech = new SpeechToText(host, SpeechToText.Config({ defaultProvider: 'ahel-cloud', language: 'auto' }))
-  const provider = createAhelSpeechProvider({ accessToken: async () => 'test-token', revalidate: async () => {}, workspace: async () => 'ws-1' },
+  // Chat "one" is stamped with ws-a while ws-b is selected.
+  const account = { accessToken: async () => 'test-token', revalidate: async () => {}, workspace: async () => 'ws-b',
+    chatWorkspace: (sessionId: string) => sessionId === 'one' ? 'ws-a' : undefined }
+  const provider = createAhelSpeechProvider(account,
     { providerId: 'ahel-cloud', baseURL: `${route.origin}/api/llm/v1`, requestTimeoutMs: 10_000 }, globalThis.fetch)
   provider.setSignedIn(true)
   speech.register(provider)
@@ -86,6 +91,7 @@ it('posts a recorded WAV through the ahel.ai provider and inserts the transcript
   expect(inputActions.submit).not.toHaveBeenCalled()
 
   expect(route.seen).toHaveLength(1)
-  expect(route.seen[0]!.path).toBe('/api/llm/v1/audio/transcriptions?workspace=ws-1')
+  expect(route.seen[0]!.path).toBe('/api/llm/v1/audio/transcriptions')
+  expect(route.seen[0]!.workspace).toBe('ws-a')
   expect(route.seen[0]!.body).toEqual({ audio: FIXTURE.toString('base64'), format: 'wav' })
 })

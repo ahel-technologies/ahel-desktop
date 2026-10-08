@@ -3,7 +3,7 @@ import { Context } from '@ahel/cordis'
 import { afterEach, expect, it, vi } from 'vitest'
 import SpeechToText from '@ahel/dsh-experimental-speech-to-text'
 import type { SpeechProviderId } from '@ahel/dsh-experimental-speech-to-text/types'
-import SpeechController from '../src/index.ts'
+import SpeechController, { type TranscriptionRequest } from '../src/index.ts'
 
 const roots: Context[] = []
 afterEach(async () => { await Promise.all(roots.splice(0).map(root => root.fiber.dispose())) })
@@ -24,7 +24,7 @@ function recording(): string {
   return b.toString('base64')
 }
 
-it('lists limits without inference and forwards explicit provider and language', async () => {
+it('lists limits without inference and forwards explicit provider, language and chat', async () => {
   const { api, recognize } = fixture()
   expect(api.catalog()).toMatchObject({ selection: { providerId: id }, maxAudioBytes: 32044, providers: [{ id }] })
   expect(recognize).not.toHaveBeenCalled()
@@ -33,8 +33,9 @@ it('lists limits without inference and forwards explicit provider and language',
   const lifetime = new AbortController(), observation = api.follow(lifetime.signal)[Symbol.asyncIterator]()
   expect((await observation.next()).value).toMatchObject({ providers: [{ id, preparation: { phase: 'ready' } }] })
   lifetime.abort(); await observation.next()
-  expect(await api.transcribe({ audioBase64: recording(), providerId: id, language: 'zh' }, new AbortController().signal)).toMatchObject({ text: '你好' })
-  expect(recognize).toHaveBeenCalledWith(expect.objectContaining({ language: 'zh' }), expect.any(AbortSignal))
+  const sessionId = 'chat-a' as NonNullable<TranscriptionRequest['sessionId']>
+  expect(await api.transcribe({ audioBase64: recording(), providerId: id, language: 'zh', sessionId }, new AbortController().signal)).toMatchObject({ text: '你好' })
+  expect(recognize).toHaveBeenCalledWith(expect.objectContaining({ language: 'zh', sessionId }), expect.any(AbortSignal))
   await api.transcribe({ audioBase64: recording() }, new AbortController().signal)
   expect(recognize).toHaveBeenLastCalledWith(expect.objectContaining({ language: 'auto' }), expect.any(AbortSignal))
 })

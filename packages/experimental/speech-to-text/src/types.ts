@@ -98,10 +98,12 @@ export interface SpeechPreparation {
   cancel(): Promise<void>
 }
 
-/** Complete audio recording and an explicit language hint. */
+/** Complete audio recording, an explicit language hint and the chat it was dictated in. */
 export interface SpeechInput {
   readonly audio: Uint8Array
   readonly language: string
+  /** The Session whose composer recorded the audio; omitted outside a chat. A provider that bills per chat bills this one. */
+  readonly sessionId?: Branded<'SessionId'>
 }
 
 /** Final transcription; an empty string means no speech was recognized. */
@@ -129,6 +131,7 @@ export interface SpeechRequest {
   readonly audio: Uint8Array
   readonly providerId?: SpeechProviderId
   readonly language?: string
+  readonly sessionId?: Branded<'SessionId'>
 }
 
 /** Resolved selection pins the exact registered provider, including its lifetime. */

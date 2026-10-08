@@ -100,6 +100,7 @@ export default class SpeechController extends TypertRemoteService {
       const spec = this.ctx.speechToText.resolve({ audio,
         ...request.providerId === undefined ? {} : { providerId: request.providerId },
         ...request.language === undefined ? {} : { language: request.language },
+        ...request.sessionId === undefined ? {} : { sessionId: request.sessionId },
       })
       return await this.ctx.speechToText.transcribe(spec, signal)
     } catch (error) {

@@ -1,5 +1,6 @@
 /** The ahel.ai dictation provider against a mocked fetch: request shape, sign-in, refresh and refusals. */
 import { expect, it, vi } from 'vitest'
+import type { SpeechInput } from '@ahel/dsh-experimental-speech-to-text/types'
 import { AhelSpeechError, createAhelSpeechProvider, type AhelSpeechAccount, type Config } from '../src/index.ts'
 
 /** A canonical 16 kHz mono PCM16 WAV of `seconds` of silence. */
@@ -15,11 +16,14 @@ function wav(seconds: number): Uint8Array {
   return bytes
 }
 
-function account(tokens: Array<string | undefined>, workspace?: string): AhelSpeechAccount & { revalidate: ReturnType<typeof vi.fn> } {
+function account(
+  tokens: Array<string | undefined>, workspace?: string, chats: ReadonlyMap<string, string> = new Map(),
+): AhelSpeechAccount & { revalidate: ReturnType<typeof vi.fn> } {
   return {
     accessToken: vi.fn(async () => tokens.length > 1 ? tokens.shift() : tokens[0]),
     revalidate: vi.fn(async () => {}),
     workspace: async () => workspace,
+    chatWorkspace: sessionId => chats.get(sessionId),
   }
 }
 
@@ -37,11 +41,28 @@ it('posts the WAV as base64 JSON with the account bearer and workspace, and retu
   expect(transcript.audioSeconds).toBe(2)
   expect(fetchImpl).toHaveBeenCalledTimes(1)
   const [url, init] = fetchImpl.mock.calls[0]!
-  expect((url as URL).href).toBe('https://ahel.test/api/llm/v1/audio/transcriptions?workspace=ws-7')
+  expect((url as URL).href).toBe('https://ahel.test/api/llm/v1/audio/transcriptions')
   expect(init?.method).toBe('POST')
   expect(init?.redirect).toBe('error')
   expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer token-1')
+  expect((init?.headers as Record<string, string>)['X-Ahel-Workspace']).toBe('ws-7')
   expect(JSON.parse(init?.body as string)).toEqual({ audio: Buffer.from(audio).toString('base64'), format: 'wav', language: 'en' })
+})
+
+it('bills dictation from a chat stamped with one workspace there while another is selected', async () => {
+  const fetchImpl = vi.fn<typeof fetch>(async () => Response.json({ text: 'Hi.', durationMs: 1000 }))
+  const provider = createAhelSpeechProvider(account(['token'], 'ws-b', new Map([['chat-a', 'ws-a']])), config, fetchImpl)
+  const sessionId = (id: string) => id as NonNullable<SpeechInput['sessionId']>
+  await provider.transcribe({ audio: wav(1), language: 'en', sessionId: sessionId('chat-a') }, new AbortController().signal)
+  await provider.transcribe({ audio: wav(1), language: 'en', sessionId: sessionId('chat-new') }, new AbortController().signal)
+  const sent = fetchImpl.mock.calls.map(([, init]) => (init?.headers as Record<string, string>)['X-Ahel-Workspace'])
+  expect(sent).toEqual(['ws-a', 'ws-b'])
+})
+
+it('sends no workspace while neither a chat stamp nor a selection is known', async () => {
+  const fetchImpl = vi.fn<typeof fetch>(async () => Response.json({ text: 'Hi.', durationMs: 1000 }))
+  await createAhelSpeechProvider(account(['token']), config, fetchImpl).transcribe({ audio: wav(1), language: 'en' }, new AbortController().signal)
+  expect(fetchImpl.mock.calls[0]![1]?.headers).not.toHaveProperty('X-Ahel-Workspace')
 })
 
 it('omits the language for automatic detection and refreshes a refused bearer once', async () => {
