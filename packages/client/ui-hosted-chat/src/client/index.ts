@@ -6,11 +6,13 @@
  * blank chat greets with a page header and the number of apps ready. On load
  * the chat follows the workspace the chat gateway's `ahel_chat_workspace`
  * cookie names, and a switch made in the chat is pinned on ahel.ai so the next
- * load keeps it.
+ * load keeps it. The Chats list shows the chats started in the selected
+ * workspace (the Host stamps each chat at its first step).
  * Only the hosted overlay (packages/bundle/web-app/hosted/chat.patch.yml)
  * mounts this package; the desktop and plain web profiles keep their sidebar.
  */
 import type { Context } from '@ahel/cordis'
+import type { SessionSummary } from '@ahel/dsh-api-session-controller/client'
 import type { Issue, IssueRunState } from '@ahel/dsh-ahel-account/types'
 import type { AhelAccountView } from '@ahel/dsh-ahel-account/types'
 import type { MainPanelId } from '@ahel/dsh-client-ui-layout/client'
@@ -22,6 +24,7 @@ import type {} from '@ahel/dsh-api-remotes/client'
 import type {} from '@ahel/dsh-client-locale/client'
 import type {} from '@ahel/dsh-client-ui-renderer/client'
 import type {} from '@ahel/dsh-client-ui-settings/client'
+import type {} from '@ahel/dsh-client-ui-workspace/client'
 import type { HostedShellInjected } from './contract.ts'
 import { HostedAside } from './Aside.tsx'
 import { BrandHomeLink, HostedGreeting, HostedHeroMark, HostedSubtitle } from './Hero.tsx'
@@ -115,6 +118,41 @@ export function pinAppWorkspace(id: string): void {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ tenantId: id }),
   }).catch(() => undefined)
+}
+
+/** The workspace whose chats the Chats list shows, and the workspace unstamped chats count as. */
+export interface ChatScope {
+  readonly current: string
+  readonly home: string
+}
+
+/**
+ * The Chats list's workspace scope. Unstamped chats count as the account default's: the workspace
+ * ahel.ai picks while none is selected, else the oldest membership, ahel.ai's default for a person
+ * without a single invited seat.
+ * @param view - the account view.
+ * @param picked - the workspace the team summary names, or null.
+ * @returns the scope, or null while signed out, when every chat shows.
+ */
+export function chatScope(view: AhelAccountView | null, picked: string | null): ChatScope | null {
+  if (view?.status !== 'signed-in' || view.profile === null) return null
+  const oldest = view.profile.workspaces[0]?.id ?? null
+  const current = view.workspace ?? picked ?? oldest
+  if (current === null) return null
+  return { current, home: view.workspace === null ? current : oldest ?? current }
+}
+
+/**
+ * Whether the Chats list shows a chat: the New chat draft always, a stamped chat in its workspace,
+ * an unstamped one in the scope's `home`. Subagent rows pass: the list never shows them as chats.
+ * @param session - the Session row.
+ * @param scope - the list's scope.
+ * @returns true to list the row.
+ */
+export function inChatScope(session: Pick<SessionSummary, 'blank' | 'origin' | 'projectionValues'>, scope: ChatScope): boolean {
+  if (session.blank || session.origin === 'subagent') return true
+  const stamp = session.projectionValues?.ahelWorkspace
+  return (typeof stamp === 'string' ? stamp : scope.home) === scope.current
 }
 
 /**
@@ -221,6 +259,27 @@ export function apply(ctx: Context): void {
       follow()
       return ui.account.subscribe(follow)
     }, 'ui-hosted-chat: follow the active workspace')
+  })
+
+  ctx.inject(['ahelAccountUi', 'uiWorkspace'], (inner) => {
+    const ui = inner.ahelAccountUi
+    // Re-scoped on every account or summary change that moves the selected or the default workspace.
+    inner.effect(() => {
+      let key: string | null = null
+      let release: (() => void) | undefined
+      const sync = (): void => {
+        const scope = chatScope(ui.account.getSnapshot(), ui.summary.getSnapshot().summary?.workspace.id ?? null)
+        const next = scope === null ? null : `${scope.current} ${scope.home}`
+        if (next === key) return
+        key = next
+        release?.()
+        release = scope === null ? undefined : inner.uiWorkspace.scopeSessions(session => inChatScope(session, scope))
+      }
+      sync()
+      const offAccount = ui.account.subscribe(sync)
+      const offSummary = ui.summary.subscribe(sync)
+      return () => { offAccount(); offSummary(); release?.() }
+    }, 'ui-hosted-chat: chats of the selected workspace')
   })
 
   ctx.inject(['ahelAccountUi', 'remote.ahelIssues'], (inner) => {

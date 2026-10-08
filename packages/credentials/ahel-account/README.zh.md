@@ -54,6 +54,10 @@ ahel.ai 的网页对话为每个人启动一个 Host，并通过 `AHEL_LAUNCH_TO
 
 以这种方式启动的 Host 在视图中报告 `hosted: { signInUrl, signOutUrl }`。`signIn()` 与 `signOut()` 会拒绝，因为授权归此人的 ahel.ai 会话所有；客户端把登录发送到 `signInUrl`（重新启动），把退出发送到 `signOutUrl`。未带该变量启动的 Host 报告 `hosted: null`。
 
+### 对话所属工作区
+
+每个对话都会记录它开始时所在的 ahel.ai 工作区。顶层对话的第一个轮次走到第一步时，若已选择工作区，Host 会追加仅写入日志的会话事件 `ahel-account/chat-workspace`（`{ workspace }`）。`ahelWorkspace` 会话投影在每一行会话列表上携带该 id 或 null，分叉会继承它。更早开始的对话，或未选择工作区时开始的对话，不带标记。网页对话只列出所选工作区的对话。
+
 <a id="catalog-the-ahelcatalog-namespace"></a>
 ## 目录：`ahelCatalog` 命名空间
 
@@ -75,7 +79,7 @@ ahel.ai 的网页对话为每个人启动一个 Host，并通过 `AHEL_LAUNCH_TO
 <a id="model-experience"></a>
 ## 模型体验
 
-无。本包不添加工具、提示词文本或会话事件。
+无。本包不添加工具或提示词文本。它唯一的会话事件 `ahel-account/chat-workspace` 只写入日志，从不进入模型请求。
 
 <a id="known-limitations-and-deferred-work"></a>
 ## 已知限制与延期工作

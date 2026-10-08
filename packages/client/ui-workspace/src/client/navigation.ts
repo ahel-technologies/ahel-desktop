@@ -20,6 +20,7 @@ import type {} from '@ahel/dsh-client-ui-layout/client'
 import type { DraftInitializationOptions } from '@ahel/dsh-client-ui-conversation/client'
 import type { RowToast } from './contract/slots.ts'
 import { pinOrderAccounts, pinOrderSource } from './pin-order.ts'
+import type { SessionFilter } from './tree.ts'
 import type { WorkspaceViewStoreActions } from './stores.ts'
 
 interface MainSelection {
@@ -110,6 +111,14 @@ export interface UiWorkspace {
    * @returns created absolute path.
    */
   createDirectory(path: string, name: string): Promise<string>
+  /**
+   * List only the Sessions a filter accepts in the Session browser (list and
+   * search) until the returned disposer runs; with several filters a row must
+   * pass each. Navigation and other Session surfaces keep every Session.
+   * @param filter - true for a Session the browser lists.
+   * @returns the disposer.
+   */
+  scopeSessions(filter: SessionFilter): () => void
 }
 
 declare module '@ahel/cordis' {
@@ -137,6 +146,9 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     {}, { persist: { name: 'dsh.sessions.current' } },
   )
   private mainReference: SessionReference | undefined
+  private readonly sessionFilters = new Set<SessionFilter>()
+  /** Every registered Session browser filter combined, or null while none is registered. */
+  readonly sessionScope = createSnapshotStore<SessionFilter | null>(null)
 
   /**
    * @param ctx - Client root Context.
@@ -308,6 +320,17 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     const result = await this.directoryPicker.createDirectory(path, name)
     if (!result.ok) throw new DirectoryBrowseError(result.error)
     return result.value
+  }
+
+  scopeSessions(filter: SessionFilter): () => void {
+    this.sessionFilters.add(filter)
+    this.publishScope()
+    return () => { if (this.sessionFilters.delete(filter)) this.publishScope() }
+  }
+
+  private publishScope(): void {
+    const filters = [...this.sessionFilters]
+    this.sessionScope.set(filters.length === 0 ? null : session => filters.every(accepts => accepts(session)))
   }
 
   private watchNavigation(): () => void {

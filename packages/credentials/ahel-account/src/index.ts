@@ -12,6 +12,7 @@
  * and reads and writes the person's installs with the same grant.
  * The child namespace `ahelTeam` reads and answers held calls, connects
  * vault apps, and sends and reads teammate handoffs over `/api/desktop/*`.
+ * Each new chat records the workspace it was started in (`./chat-workspace.ts`).
  *
  * @module @ahel/dsh-ahel-account
  */
@@ -30,6 +31,7 @@ import { Remote, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import { AhelCatalog } from './catalog.ts'
 import { AhelTeam } from './team.ts'
 import { AhelIssues } from './issues.ts'
+import * as chatWorkspace from './chat-workspace.ts'
 import {
   authorizeUrl, createPkce, discover, exchange, fetchProfile, randomState, register, revoke, SignInError, startLoopbackListener,
 } from './signin.ts'
@@ -243,6 +245,7 @@ export class AhelAccount extends TypertRemoteService {
     ctx.plugin(AhelCatalog, { appOrigin: this.appOrigin, resource: this.resource })
     ctx.plugin(AhelTeam, { appOrigin: this.appOrigin })
     ctx.plugin(AhelIssues, { appOrigin: this.appOrigin })
+    ctx.plugin(chatWorkspace)
     ctx.on('credentials/reference-updated', (ref) => { if (ref === this.ref) this.changed() })
     ctx.on('loader/volatile-update', () => {
       this.changed()

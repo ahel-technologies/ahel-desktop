@@ -55,6 +55,7 @@ import { WorkspacePicker } from './WorkspacePicker.tsx'
 import { en, zh, type WorkspaceKey } from './locales.ts'
 
 export type { StartSessionOptions, UiWorkspace } from './navigation.ts'
+export type { SessionFilter } from './tree.ts'
 export type {
   DirectoryFlowOwnerProps, DirectoryFlowSlotName, DirectoryPickingHooks, DirectoryPickingInjected,
   MenuOpenState, RowToast, SessionRenameTarget, SessionRowOwnerProps, UseMenuOpenState, WorkspaceBrowserInjected,
@@ -254,6 +255,7 @@ export function apply(ctx: Context): void {
     dismissForkError: shortcutControls.dismissForkError,
     hooks: {
       directoryFlow: browserFlowSource, hostInfo, workspaceShortcuts: shortcutControls.state, shortcuts: ctx.shortcuts.catalog, folders,
+      sessionScope: uiWorkspace.sessionScope,
     },
   })
   const pickerInjected = (): WorkspacePickerInjected => ({

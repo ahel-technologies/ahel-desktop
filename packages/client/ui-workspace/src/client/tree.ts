@@ -479,6 +479,22 @@ export function deriveGroups(
   return groups
 }
 
+/** Accepts a Session row the browser lists; registered through `UiWorkspace.scopeSessions`. */
+export type SessionFilter = (session: SessionSummary) => boolean
+
+/**
+ * Keep only the Session rows a filter accepts.
+ * @param list - sessions list snapshot.
+ * @param filter - the browser's Session filter, or null for every row.
+ * @returns the same snapshot without a filter, else a copy whose `ids` and `byId` hold the accepted rows.
+ */
+export function scopeSessionList(list: SessionListState, filter: SessionFilter | null): SessionListState {
+  if (filter === null) return list
+  const byId: Record<SessionId, SessionSummary> = {}
+  for (const session of Object.values(list.byId)) if (filter(session)) byId[session.id] = session
+  return { ...list, ids: list.ids.filter(id => byId[id] !== undefined), byId }
+}
+
 /**
  * Select complete flat-list membership, independently of archive visibility.
  * @param list - sessions list snapshot.

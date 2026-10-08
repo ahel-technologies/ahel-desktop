@@ -34,7 +34,7 @@ import type { WorkspaceBrowserProps } from '../contract/slots.ts'
 import type { ArchivedFilter, GroupNode, SessionNode, SessionOrderBy, SessionRowState } from '../tree.ts'
 import {
   deriveFlat, deriveGroups, deriveSearchResults, orderByRecency, owningGroupKey, owningParentFolder,
-  pinCurrentBlank, reconcileManualOrder, sessionMemberIds, UNGROUPED_KEY,
+  pinCurrentBlank, reconcileManualOrder, scopeSessionList, sessionMemberIds, UNGROUPED_KEY,
 } from '../tree.ts'
 import { ProjectRowItem, SearchResultItem, SessionNodeItem } from './Rows.tsx'
 import { AnimatedRows } from './AnimatedRows.tsx'
@@ -741,7 +741,7 @@ interface RemoteSearchState {
 
 /** Flat search body: local metadata matches plus the current Host result page. */
 function SearchResults({
-  useSessions,
+  list,
   useSessionStatus,
   open,
   onUnarchive,
@@ -753,7 +753,9 @@ function SearchResults({
   resultLimit,
   usePanelInfo,
   t,
-}: Pick<WorkspaceBrowserProps, 'useSessions' | 'useSessionStatus' | 'open' | 't' | 'usePanelInfo'> & {
+}: Pick<WorkspaceBrowserProps, 'useSessionStatus' | 'open' | 't' | 'usePanelInfo'> & {
+  /** The browser's scoped sessions list. */
+  list: SessionListState
   workspaces: readonly WorkspaceView[]
   archivedSessionIds: readonly SessionNode['id'][]
   /** Search matches follow the archived filter selected for the list. */
@@ -765,7 +767,6 @@ function SearchResults({
   resultLimit: number
 }) {
   const panelActive = usePanelInfo(info => info.activePanelId !== null)
-  const list = useSessions(s => s)
   const statuses = useSessionStatus(s => s)
   const currentRemote = remote.query === query
     ? remote
@@ -862,6 +863,7 @@ export function WorkspaceBrowser({
   useShortcuts,
   useWorkspaceShortcuts,
   useFolders,
+  useSessionScope,
   requestSearch,
   requestAddWorkspace,
   closeAddWorkspace,
@@ -876,7 +878,9 @@ export function WorkspaceBrowser({
   const addShortcut = shortcuts.find(row => row.id === 'workspace.add')
   const shortcutState = useWorkspaceShortcuts(state => state)
   // Ordering remains live while the rail or search replaces the list body.
-  const list = useSessions(state => state)
+  const sessionList = useSessions(state => state)
+  const sessionScope = useSessionScope(filter => filter)
+  const list = useMemo(() => scopeSessionList(sessionList, sessionScope), [sessionList, sessionScope])
   const storedWorkspaces = useWorkspaces(state => state.items)
   // The resolved name, not `t`, is the memo dependency: the bound seat keeps
   // its identity across a language switch.
@@ -1353,7 +1357,7 @@ export function WorkspaceBrowser({
           ? (
             <SearchResults
               usePanelInfo={usePanelInfo}
-              useSessions={useSessions}
+              list={list}
               useSessionStatus={useSessionStatus}
               open={openSearchResult}
               onUnarchive={onSessionUnarchive}

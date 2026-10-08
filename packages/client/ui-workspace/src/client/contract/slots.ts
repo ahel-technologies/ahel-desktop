@@ -53,6 +53,7 @@ import type { SessionId } from '@ahel/dsh-session/types'
 import type { ShortcutCatalogEntry } from '@ahel/dsh-client-shortcuts/client'
 import type { WorkspaceShortcutState } from '../shortcuts.ts'
 import type { createWorkspaceViewStore } from '../stores.ts'
+import type { SessionFilter } from '../tree.ts'
 
 /**
  * Owner share of the directory-flow holes: the complete conversation between
@@ -225,6 +226,8 @@ export type WorkspaceBrowserInjected = {
     shortcuts: HostObservable<readonly ShortcutCatalogEntry[]>
     /** Whether folder Workspaces show: grouping choices and Add workspace; hidden, the list is flat. */
     folders: HostObservable<boolean>
+    /** The Session filter plugins registered through `uiWorkspace.scopeSessions`, or null for every Session. */
+    sessionScope: HostObservable<SessionFilter | null>
   }
   /** Open the browser search and focus its input. */
   requestSearch: () => void
