@@ -12,6 +12,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import { scrubbedParentEnv } from '@ahel/dsh-subprocess'
 import type { Config } from './index.ts'
+import { workspaceFetch } from './workspace-scope.ts'
 
 /**
  * The subprocess seam's scrubbed parent env (credential-shaped and stale
@@ -53,7 +54,8 @@ export function assertTransportAllowed(config: Pick<Config, 'transport' | 'serve
  *
  * @param config - Resolved plugin config discriminated on `transport`.
  * @param authProvider - bearer source for Streamable HTTP servers configured with `auth`.
- * @returns A connected-ready MCP Transport (stdio or Streamable HTTP).
+ * @returns A connected-ready MCP Transport (stdio or Streamable HTTP); with `auth.workspaceParam`, each
+ *   request of a call run by `inWorkspace` carries that call's workspace.
  * @throws McpTransportRefusedError for stdio when `DSH_MCP_STDIO=off`.
  */
 export function createTransport(config: Config, authProvider?: AuthProvider): Transport {
@@ -72,6 +74,7 @@ export function createTransport(config: Config, authProvider?: AuthProvider): Tr
         {
           requestInit: { headers: config.headers },
           ...authProvider === undefined ? {} : { authProvider },
+          ...config.auth?.workspaceParam === undefined ? {} : { fetch: workspaceFetch(config.auth.workspaceParam) },
         },
       )
   }

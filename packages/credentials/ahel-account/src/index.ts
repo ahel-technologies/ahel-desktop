@@ -12,7 +12,8 @@
  * and reads and writes the person's installs with the same grant.
  * The child namespace `ahelTeam` reads and answers held calls, connects
  * vault apps, and sends and reads teammate handoffs over `/api/desktop/*`.
- * Each new chat records the workspace it was started in (`./chat-workspace.ts`).
+ * Each new chat records the workspace it was started in and acts there for
+ * every model request and Ahel MCP tool call (`./chat-workspace.ts`).
  * The Host's saved default model follows the workspace default (`./default-model.ts`).
  *
  * @module @ahel/dsh-ahel-account
@@ -28,7 +29,8 @@ import { credentialRef } from '@ahel/dsh-credentials'
 import type { CredentialRef } from '@ahel/dsh-credentials'
 import { currentOAuthGrant, OAuthGrantError, readOAuthGrant, refreshOAuthGrant, writeOAuthGrant } from '@ahel/dsh-mcp-client'
 import type { StoredOAuthGrant } from '@ahel/dsh-mcp-client'
-import { Remote, TypertRemoteService } from '@ahel/dsh-typert-protocol'
+import type { Session } from '@ahel/dsh-session'
+import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import { AhelCatalog } from './catalog.ts'
 import { AhelTeam } from './team.ts'
 import { AhelIssues } from './issues.ts'
@@ -206,6 +208,8 @@ export class AhelAccount extends TypertRemoteService {
   private hosted: AhelHostedPages | null = null
   /** The latest metered request's money; reaches `watch` subscribers only. */
   private billing: AhelBilling | null = null
+  /** The workspace each chat acts in, by Session id, recorded by `./chat-workspace.ts`. */
+  private readonly chats = new Map<string, string>()
 
   /**
    * @param ctx - Host context with the credentials service.
@@ -354,6 +358,48 @@ export class AhelAccount extends TypertRemoteService {
     await this.launched
     const grant = await readOAuthGrant(this.ctx.credentials, this.ref)
     return grant !== undefined && isProfile(grant.profile) ? this.selectedWorkspace(grant.profile) : undefined
+  }
+
+  /**
+   * Host-only: the workspace one chat acts in for its model requests and tool calls, whatever workspace is selected.
+   * @param sessionId - the chat's Session id.
+   * @returns the chat's stamp (a subagent's parent chat's) once the chat took a step or a tool call this Host run,
+   *   or undefined for a chat that follows the selected workspace.
+   */
+  chatWorkspace(sessionId: string): string | undefined {
+    return this.chats.get(sessionId)
+  }
+
+  /**
+   * Host-only: record the workspace one chat acts in; `./chat-workspace.ts` calls it from the chat's stamp.
+   * @param sessionId - the chat's Session id.
+   * @param workspace - the ahel.ai workspace id.
+   */
+  bindChat(sessionId: string, workspace: string): void {
+    this.chats.set(sessionId, workspace)
+  }
+
+  /**
+   * Start a chat that has taken no step yet in one workspace, for example a queued issue run in the
+   * issue's workspace: the chat lists there and acts there whatever workspace is selected later.
+   * The seat is checked against the profile ahel.ai answers now, else the stored one.
+   * @param session - lookup parameter resolved from the Session identity.
+   * @param workspace - the ahel.ai workspace id.
+   * @throws RemoteError `ahel-account/workspace-unavailable` when the account has no seat there,
+   *   or the chat already acts in another workspace.
+   */
+  @Remote
+  async pinChat(session: Session, workspace: string): Promise<void> {
+    const stored = (await this.state()).profile
+    const live = await this.profile().catch((_unreachable: unknown) => stored)
+    const seated = (live ?? stored)?.workspaces.some(row => row.id === workspace) === true
+    const projections = this.ctx.get('sessionProjections')
+    if (!seated || projections === undefined || !chatWorkspace.pinStamp(projections, session, workspace)) {
+      throw new RemoteError('ahel-account/workspace-unavailable', seated
+        ? 'This chat already belongs to another workspace.'
+        : 'You no longer have a seat in this workspace, or it was removed.', { workspace })
+    }
+    this.bindChat(session.header.id, workspace)
   }
 
   /**

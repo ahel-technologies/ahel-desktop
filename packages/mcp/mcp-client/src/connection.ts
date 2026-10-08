@@ -135,6 +135,9 @@ export function startConnection(
     registrationFailure: 'contain',
     serverName: config.serverName,
     toolCallTimeoutMs: config.toolCallTimeoutMs,
+    ...config.transport === 'streamable-http' && config.auth?.workspaceParam !== undefined
+      ? { workspaceOf: execution => execution.agent === undefined ? undefined : ctx.bail('mcp-client/workspace', config.serverName, execution.agent) }
+      : {},
   }
   // The initial sync uses 'throw' when failOnStartupError is configured, so
   // a registration conflict propagates to the startup-await path. Re-syncs

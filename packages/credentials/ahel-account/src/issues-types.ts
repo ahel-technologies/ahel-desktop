@@ -115,6 +115,8 @@ export interface IssuePage {
   readonly agentsWorking: number
   /** Agent runs in `queued` state across the workspace, ignoring the filters; null from an ahel.ai that does not count them apart. */
   readonly agentsQueued: number | null
+  /** The workspace the page was read in: the selected one, or null for the account default. */
+  readonly workspace: string | null
 }
 
 /** Fields of a new issue. */

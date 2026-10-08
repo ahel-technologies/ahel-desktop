@@ -10,6 +10,8 @@ export interface HttpMcpFixture {
   url: string
   calls: string[]
   authorization: Array<string | undefined>
+  /** Request URLs of the `ping` calls, in order. */
+  pingUrls: string[]
   close: () => Promise<void>
 }
 
@@ -17,6 +19,8 @@ export interface HttpMcpFixture {
 export async function startHttpMcpFixture(): Promise<HttpMcpFixture> {
   const calls: string[] = []
   const authorization: Array<string | undefined> = []
+  const pingUrls: string[] = []
+  let requestUrl = ''
   const handler = createMcpHandler(() => {
     const mcp = new McpServer(
       { name: 'http-fixture', version: '1.0.0' },
@@ -24,6 +28,7 @@ export async function startHttpMcpFixture(): Promise<HttpMcpFixture> {
     )
     mcp.registerTool('ping', { description: 'Replies pong.', inputSchema: z.object({}) }, async (): Promise<CallToolResult> => {
       calls.push('ping')
+      pingUrls.push(requestUrl)
       return { content: [{ type: 'text', text: 'pong' }] }
     })
     return mcp
@@ -31,6 +36,8 @@ export async function startHttpMcpFixture(): Promise<HttpMcpFixture> {
   const handle = toNodeHandler(handler)
   const handleRequest = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     authorization.push(request.headers.authorization)
+    // Stateless: each POST is handled to completion before the next one.
+    requestUrl = request.url ?? ''
     // The adapter excludes explicit undefined on Node's optional HTTP fields.
     await handle(request as NodeIncomingMessageLike, response)
   }
@@ -48,6 +55,7 @@ export async function startHttpMcpFixture(): Promise<HttpMcpFixture> {
     url: `http://127.0.0.1:${address.port}/mcp`,
     authorization,
     calls,
+    pingUrls,
     close: async () => {
       await handler.close()
       await new Promise<void>((resolve, reject) => {

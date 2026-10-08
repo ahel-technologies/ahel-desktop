@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The Issues panel of Ahel Desktop over the signed-in ahel.ai workspace: the board and list with filters, the issue detail drawer, New Issue, and Run with Ahel, which seeds a new chat with the issue and reports the chat's state as the issue's run. While signed in it also claims the runs this person queued on ahel.ai and opens each one's chat.
+The Issues panel of Ahel Desktop over the signed-in ahel.ai workspace: the board and list with filters, the issue detail drawer, New Issue, and Run with Ahel, which seeds a new chat with the issue and reports the chat's state as the issue's run. While signed in it also claims the runs this person queued on ahel.ai and opens each one's chat. A run acts in the workspace its issue was read in: its chat is pinned there before the first message, its reports and summary go there, and a workspace the person no longer has a seat in fails the run with the reason. A turn that ends on a card waiting for the person (a connector confirm, a held call or a connector question) reports `waiting_approval` or `waiting_input` until the card is pressed or the chat goes on.
 
 ## Table of Contents
 

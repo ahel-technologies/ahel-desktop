@@ -437,6 +437,23 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the id, or undefined for the account default.',
       },
       {
+        signature: 'chatWorkspace(sessionId: string): string | undefined',
+        description: 'Host-only: the workspace one chat acts in for its model requests and tool calls, whatever workspace is selected.',
+        parameters: [{ name: 'sessionId', description: 'the chat\'s Session id.' }],
+        returns: 'the chat\'s stamp (a subagent\'s parent chat\'s) once the chat took a step or a tool call this Host run, or undefined for a chat that follows the selected workspace.',
+      },
+      {
+        signature: 'bindChat(sessionId: string, workspace: string): void',
+        description: 'Host-only: record the workspace one chat acts in; `./chat-workspace.ts` calls it from the chat\'s stamp.',
+        parameters: [{ name: 'sessionId', description: 'the chat\'s Session id.' }, { name: 'workspace', description: 'the ahel.ai workspace id.' }],
+      },
+      {
+        signature: '@Remote async pinChat(session: Session, workspace: string): Promise<void>',
+        description: 'Start a chat that has taken no step yet in one workspace, for example a queued issue run in the issue\'s workspace: the chat lists there and acts there whatever workspace is selected later. The seat is checked against the profile ahel.ai answers now, else the stored one.',
+        parameters: [{ name: 'session', description: 'lookup parameter resolved from the Session identity.' }, { name: 'workspace', description: 'the ahel.ai workspace id.' }],
+        throws: ['RemoteError `ahel-account/workspace-unavailable` when the account has no seat there, or the chat already acts in another workspace.'],
+      },
+      {
         signature: '@Remote async signIn(): Promise<AhelAccountView>',
         description: 'Join the running attempt or start a browser sign-in. Resolves once the authorize URL exists (or the attempt failed), without waiting for the person to approve; the opener, when set, has been asked to open it.',
         parameters: [],
@@ -560,9 +577,9 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['RemoteError `ahel-issues/refused` for invalid fields.'],
       },
       {
-        signature: '@Remote async get(key: string): Promise<IssueWriteAnswer>',
+        signature: '@Remote async get(key: string, workspace?: string): Promise<IssueWriteAnswer>',
         description: 'Read one issue.',
-        parameters: [{ name: 'key', description: 'for example `AHEL-137`.' }],
+        parameters: [{ name: 'key', description: 'for example `AHEL-137`.' }, { name: 'workspace', description: 'the workspace to read it in; the selected one when omitted.' }],
         returns: 'the issue.',
         throws: ['RemoteError `ahel-issues/refused` for an unknown key.'],
       },
@@ -588,9 +605,9 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['RemoteError `ahel-issues/*`.'],
       },
       {
-        signature: '@Remote async comment(key: string, body: string, authorType: IssueActorType): Promise<readonly IssueComment[]>',
+        signature: '@Remote async comment(key: string, body: string, authorType: IssueActorType, workspace?: string): Promise<readonly IssueComment[]>',
         description: 'Post a comment as the signed-in person, or for the Ahel agent (a run\'s summary).',
-        parameters: [{ name: 'key', description: 'the issue.' }, { name: 'body', description: 'markdown.' }, { name: 'authorType', description: '`agent` shows the comment as Ahel\'s; the person still owns it.' }],
+        parameters: [{ name: 'key', description: 'the issue.' }, { name: 'body', description: 'markdown.' }, { name: 'authorType', description: '`agent` shows the comment as Ahel\'s; the person still owns it.' }, { name: 'workspace', description: 'the issue\'s workspace, for a run\'s summary; the selected one when omitted.' }],
         returns: 'the comments after the post.',
         throws: ['RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.'],
       },
@@ -602,9 +619,9 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['RemoteError `ahel-issues/*`.'],
       },
       {
-        signature: '@Remote async run(key: string, report: IssueRunReport): Promise<IssueWriteAnswer>',
+        signature: '@Remote async run(key: string, report: IssueRunReport, runWorkspace?: string): Promise<IssueWriteAnswer>',
         description: 'Report the state of the desktop chat that works on one issue; ahel.ai moves the issue\'s status with it. The first report on a queued run claims it; when another session holds the run, ahel.ai answers 409 `run_claimed`. An ahel.ai that refuses `waiting_input` (400) gets the same report as `waiting_approval`.',
-        parameters: [{ name: 'key', description: 'the issue.' }, { name: 'report', description: 'the session, its state and the steps so far.' }],
+        parameters: [{ name: 'key', description: 'the issue.' }, { name: 'report', description: 'the session, its state and the steps so far.' }, { name: 'runWorkspace', description: 'the run\'s workspace (the issue\'s); when omitted, the workspace the run\'s chat acts in, else the selected one.' }],
         returns: 'the issue after the report.',
         throws: ['RemoteError `ahel-issues/refused` with `details.error === \'run_claimed\'` when another session holds the run, or another `ahel-issues/*`.'],
       },
@@ -4580,6 +4597,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'views', description: 'the complete list, in `LOCAL_CLI_IDS` order.' }],
   },
   {
+    name: 'mcp-client/workspace',
+    mode: 'bail',
+    signature: '\'mcp-client/workspace\'(serverName: string, agent: NonNullable<ToolExecution[\'agent\']>): string | undefined',
+    summary: 'Name the workspace one tool call of a grant-authenticated server acts in, for example the workspace the calling chat was started in.',
+    description: 'Name the workspace one tool call of a grant-authenticated server acts in, for example the workspace the calling chat was started in. Asked only when the server sets `auth.workspaceParam`.',
+    parameters: [{ name: 'serverName', description: 'the configured `serverName`.' }, { name: 'agent', description: 'the Agent the call runs for.' }],
+  },
+  {
     name: 'permission-presets/catalog-changed',
     mode: 'emit',
     signature: '\'permission-presets/catalog-changed\'(): void',
@@ -6149,7 +6174,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'IssuePage',
-    declaration: 'export interface IssuePage {\n    readonly issues: readonly Issue[];\n    readonly nextCursor: string | null;\n    readonly counts: Readonly<Record<string, number>>;\n    readonly agentsWorking: number;\n    readonly agentsQueued: number | null;\n}',
+    declaration: 'export interface IssuePage {\n    readonly issues: readonly Issue[];\n    readonly nextCursor: string | null;\n    readonly counts: Readonly<Record<string, number>>;\n    readonly agentsWorking: number;\n    readonly agentsQueued: number | null;\n    readonly workspace: string | null;\n}',
   },
   {
     name: 'IssuePatch',

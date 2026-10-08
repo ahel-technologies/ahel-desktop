@@ -38,6 +38,7 @@ export function registerMcpAppCard(ctx: Context, config: { maxHeight: number }):
       callTool: async (server, tool, args, signal) => {
         const result = await ctx.remote.mcpApps.callTool(sessionId, server, tool, args, signal)
         if (!result.ok) throw result.error
+        if (result.value.isError !== true) ctx.emit('mcp-app/card-called', sessionId, result.value.structuredContent)
         return result.value
       },
       resultMeta: async (callId) => {

@@ -55,6 +55,7 @@ it('lists, patches, reports a run, marks an Inbox row read, and carries ahel.ai\
   const ctx = new Context()
   ctx.provide('ahelAccount', {
     workspace: () => Promise.resolve('t1'),
+    chatWorkspace: (sessionId: string) => sessionId === 's-bound' ? 't-chat' : undefined,
     accessToken: () => Promise.resolve('access-1'),
     revalidate: () => Promise.resolve(),
   })
@@ -64,7 +65,7 @@ it('lists, patches, reports a run, marks an Inbox row read, and carries ahel.ai\
   const issues = ctx.ahelIssues
 
   const page = await issues.list({ assigneeType: 'member', assigneeId: 'me' })
-  expect(page).toMatchObject({ nextCursor: null, counts: { todo: 1 }, agentsWorking: 1, issues: [{ key: 'AHEL-137' }] })
+  expect(page).toMatchObject({ nextCursor: null, counts: { todo: 1 }, agentsWorking: 1, issues: [{ key: 'AHEL-137' }], workspace: 't1' })
   expect(api.seen[0]).toMatchObject({ method: 'GET', path: '/api/desktop/issues', auth: 'Bearer access-1' })
   expect(new URLSearchParams(api.seen[0]!.search).get('assigneeId')).toBe('me')
   expect(new URLSearchParams(api.seen[0]!.search).get('workspace')).toBe('t1')
@@ -78,6 +79,11 @@ it('lists, patches, reports a run, marks an Inbox row read, and carries ahel.ai\
   const ran = await issues.run('AHEL-137', { sessionId: 's1', state: 'running', steps: 0, totalSteps: null })
   expect(ran.issue).toMatchObject({ status: 'in_progress', run: { sessionId: 's1', state: 'running' } })
   expect(JSON.parse(api.seen.at(-1)!.body)).toEqual({ sessionId: 's1', state: 'running', steps: 0, totalSteps: null })
+  // A run's reports go to the run's workspace, else to the workspace its chat acts in, not the selected one.
+  await issues.run('AHEL-137', { sessionId: 's1', state: 'running', steps: 1, totalSteps: null }, 't-issue')
+  expect(new URLSearchParams(api.seen.at(-1)!.search).get('workspace')).toBe('t-issue')
+  await issues.run('AHEL-137', { sessionId: 's-bound', state: 'running', steps: 1, totalSteps: null })
+  expect(new URLSearchParams(api.seen.at(-1)!.search).get('workspace')).toBe('t-chat')
 
   expect(await issues.readItem('n1')).toBe(1)
   expect(JSON.parse(api.seen.at(-1)!.body)).toEqual({ operation: 'item_read', id: 'n1' })
@@ -88,6 +94,7 @@ it('sends waiting_input as waiting_approval to an ahel.ai that refuses it, and r
   const ctx = new Context()
   ctx.provide('ahelAccount', {
     workspace: () => Promise.resolve('t1'),
+    chatWorkspace: (sessionId: string) => sessionId === 's-bound' ? 't-chat' : undefined,
     accessToken: () => Promise.resolve('access-1'),
     revalidate: () => Promise.resolve(),
   })

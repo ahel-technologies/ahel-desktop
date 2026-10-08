@@ -58,7 +58,7 @@ Add one entry per server; nothing else is required. After the harness starts, th
 | `serverName` | required | Namespace for the server's tool names; `[A-Za-z0-9_-]{1,32}`, unique inside one registration scope |
 | `command` / `args` / `env` / `cwd` | — | stdio: executable, arguments, extra env merged over scrubbed ambient env, working directory |
 | `url` / `headers` | — | streamable-http: endpoint URL and extra request headers |
-| `auth.credentialRef` | — | streamable-http: credential reference holding an OAuth grant (e.g. `AHEL_ACCOUNT`); the server connects only while it is set, sends its bearer, refreshes it within `auth.refreshSkewMs` (60 s) or after a 401, and drops its tools when the reference is removed; `auth.workspaceParam` sends the grant's selected workspace as that query parameter |
+| `auth.credentialRef` | — | streamable-http: credential reference holding an OAuth grant (e.g. `AHEL_ACCOUNT`); the server connects only while it is set, sends its bearer, refreshes it within `auth.refreshSkewMs` (60 s) or after a 401, and drops its tools when the reference is removed; `auth.workspaceParam` sends the grant's selected workspace as that query parameter; a call for an Agent sends the workspace the `mcp-client/workspace` event names for it instead, for example the calling chat's |
 | `toolCallTimeoutMs` | `60,000` | Timeout per `tools/call` or resource request |
 | `maxInstructionBytes` | `32,768` | Maximum UTF-8 bytes of server instructions including attribution; an oversized value rejects the connection |
 | `failOnStartupError` | `false` | Reject plugin activation when the initial connection or tool synchronization fails |

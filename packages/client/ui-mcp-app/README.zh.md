@@ -50,7 +50,7 @@ kind: "package-reference"
 <details>
 <summary>实现细节——点击展开</summary>
 
-Host 插件提供 `ctx.mcpApps` 以及包含两个方法的 Remote 命名空间 `mcpApps`。`readResource(agent, server, uri)` 通过 `ctx.mcpResources.readAppResource` 读取，后者按服务器连接代次和 URI 缓存 `ui://` 读取结果。`callTool(agent, server, tool, args)` 解析工具在注册表中的公开名称，检查其 MCP 描述符和可见性，并携带 Agent 调用 `ctx.tools.execute`；结果的 `_meta` 来自该调用的展示记录，从不来自规范值。Client 自行挂载生成的 Remote 贡献。
+Host 插件提供 `ctx.mcpApps` 以及包含两个方法的 Remote 命名空间 `mcpApps`。`readResource(agent, server, uri)` 通过 `ctx.mcpResources.readAppResource` 读取，后者按服务器连接代次和 URI 缓存 `ui://` 读取结果。`callTool(agent, server, tool, args)` 解析工具在注册表中的公开名称，检查其 MCP 描述符和可见性，并携带 Agent 调用 `ctx.tools.execute`；结果的 `_meta` 来自该调用的展示记录，从不来自规范值。Client 自行挂载生成的 Remote 贡献。卡片成功的 `tools/call` 会发出 Client 事件 `mcp-app/card-called(sessionId, structuredContent)`，“用 Ahel 运行”据此得知确认卡片已被按下。
 
 Client 注册由 `@ahel/dsh-client-ui-tool` 声明的 `tool.call.app` 占位组件。卡片校验记录、读取资源，并把依据资源声明的域构建的 MCP Apps 内容安全策略作为文档 head 的第一个元素插入。框架使用 `sandbox="allow-scripts allow-forms"` 且不带 `allow-same-origin`，因此应用运行在不透明源中，无法访问宿主页面、其存储或 Cookie，也无法打开弹窗或导航顶层窗口。页面的消息监听器只接受来源为该卡片自身框架窗口且源为 `null` 的消息。框架第二次触发 `load` 事件表示它发生了导航；此时桥接停止，卡片显示回退内容。
 

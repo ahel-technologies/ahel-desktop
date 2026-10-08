@@ -8,7 +8,9 @@
  * While signed in, the pickup (pickup.ts) claims the runs this person queued
  * on ahel.ai every 30 s, on focus, after a board read and on
  * `ahel-issues/poll`, opens each one's chat without changing the person's
- * view, and announces it with `ahel-issues/run-started` and a toast. The
+ * view, and announces it with `ahel-issues/run-started` and a toast. A run
+ * acts in the workspace its issue was read in (the board's for Run with Ahel,
+ * the pickup read's for a queued run). The
  * detail names the model a run's chat uses, read from ui-model-selection
  * when that plugin is loaded.
  * Other packages open an issue with the `ahel-issues/open` event.
@@ -26,9 +28,10 @@ import type {} from '@ahel/dsh-client-ui-renderer/client'
 import type {} from '@ahel/dsh-client-ui-session/client'
 import type {} from '@ahel/dsh-client-ui-workspace/client'
 import type {} from '@ahel/dsh-client-ui-model-selection/client'
+import type {} from '@ahel/dsh-client-ui-mcp-app/client'
 import type { Issue, IssueRunReport } from '@ahel/dsh-ahel-account/types'
 import type { IssuesInjected } from './contract.ts'
-import { createIssuesFeed, type IssuesAccount } from './feed.ts'
+import { createIssuesFeed, type IssuesAccount, type RunWorkspace } from './feed.ts'
 import { IssuesPage } from './IssuesPage.tsx'
 import { IssuesPanelIcon } from './PanelIcons.tsx'
 import { issueUrl, runSeed } from './model.ts'
@@ -153,6 +156,10 @@ function register(ctx: Context): void {
   }
 
   const runHost: RunHost = {
+    pinChat: async (sessionId, workspace) => {
+      const result = await ctx.remote.ahelAccount.pinChat(sessionId as SessionId, workspace)
+      return result.ok ? null : result.error.message
+    },
     openChat: async (reveal) => {
       const target = recentWorkspace(ctx.workspaces.list.getSnapshot().items, ctx.sessions.list.getSnapshot().byId)
       if (target === undefined) return null
@@ -179,12 +186,14 @@ function register(ctx: Context): void {
       }
     },
     waiting: (id) => {
-      const kind = ctx.uiSession.sessionStatus.getSnapshot().get(id as SessionId)?.pendingInteraction?.kind
+      // The kinds depend on the assembled Client, not on the packages this one's types reach.
+      const kind: string | undefined = ctx.uiSession.sessionStatus.getSnapshot().get(id as SessionId)?.pendingInteraction?.kind
       // Questions wait for an answer; approvals, plan reviews and other kinds wait for a decision.
       if (kind === undefined) return null
       return kind === 'question' ? 'waiting_input' : 'waiting_approval'
     },
     subscribeWaiting: listener => ctx.uiSession.sessionStatus.subscribe(listener),
+    subscribeCardCalls: listener => ctx.on('mcp-app/card-called', (sessionId, structuredContent) => { listener(sessionId, structuredContent) }),
     discard: (sessionId) => {
       void ctx.uiWorkspace.archiveSession(sessionId as SessionId).catch((error: unknown) => {
         console.warn('[ui-issues] could not archive an unused run chat:', error)
@@ -192,11 +201,14 @@ function register(ctx: Context): void {
     },
   }
 
-  const launch = async (issue: Issue, claim?: (report: IssueRunReport) => Promise<boolean>): Promise<RunStart> => await startRun(
+  const launch = async (
+    issue: Issue, workspace: RunWorkspace, claim?: (report: IssueRunReport) => Promise<boolean>,
+  ): Promise<RunStart> => await startRun(
     runHost, runSeed(issue, t),
-    (report) => { feed.report(issue.key, report) },
-    (summary) => { feed.agentComment(issue.key, summary) },
+    (report) => { feed.report(issue.key, report, workspace) },
+    (summary) => { feed.agentComment(issue.key, summary, workspace) },
     claim,
+    workspace,
   )
 
   const toast = createPickupToast()
@@ -213,7 +225,7 @@ function register(ctx: Context): void {
   let me: Promise<string | null> | undefined
   const pickup = createPickup({
     list: query => ctx.remote.ahelIssues.list(query),
-    get: key => ctx.remote.ahelIssues.get(key),
+    get: (key, workspace) => ctx.remote.ahelIssues.get(key, workspace ?? undefined),
     me: () => {
       me ??= ctx.remote.ahelTeam.summary().then(result => (result.ok ? result.value.me?.id ?? null : null), () => null)
       return me.then((id) => {
@@ -221,8 +233,8 @@ function register(ctx: Context): void {
         return id
       })
     },
-    claim: async (issue) => {
-      const started = await launch(issue, report => feed.claim(issue.key, report))
+    claim: async (issue, workspace) => {
+      const started = await launch(issue, workspace, report => feed.claim(issue.key, report, workspace))
       if (started.ok) {
         ctx.emit('ahel-issues/run-started', issue.key, issue.title, started.sessionId)
         toast.show(issue.key, started.sessionId)
@@ -262,7 +274,7 @@ function register(ctx: Context): void {
     createProject: feed.createProject,
     run: async (issue) => {
       try {
-        const started = await launch(issue)
+        const started = await launch(issue, feed.workspace())
         if (started.ok) { feed.openIssue(null); return { ok: true } }
         return { ok: false, message: started.reason === 'no-workspace' ? t('noWorkspace') : started.message }
       } catch (error) {

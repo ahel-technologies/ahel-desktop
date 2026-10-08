@@ -10,9 +10,11 @@ const queued = (key: string, requestedBy: string): Issue => ({
 
 function hostOf(page: IssuePage, byKey: Readonly<Record<string, Issue>>) {
   const list = vi.fn((_query: IssueQuery) => Promise.resolve({ ok: true as const, value: page }))
-  const get = vi.fn((key: string) => Promise.resolve({ ok: true as const, value: { issue: byKey[key] ?? null } }))
+  const get = vi.fn((key: string, _workspace: string | null) => Promise.resolve({
+    ok: true as const, value: { issue: byKey[key] ?? null },
+  }))
   const me = vi.fn(() => Promise.resolve('u1'))
-  const claim = vi.fn((_issue: Issue) => Promise.resolve<ClaimOutcome>('started'))
+  const claim = vi.fn((_issue: Issue, _workspace: string | null) => Promise.resolve<ClaimOutcome>('started'))
   return { list, get, me, claim }
 }
 
@@ -35,7 +37,21 @@ it('asks ahel.ai for this person\'s queued runs, re-reads the run and starts it 
   expect(host.me).not.toHaveBeenCalled()
   expect(host.get).toHaveBeenCalledTimes(1)
   expect(host.claim).toHaveBeenCalledTimes(1)
-  expect(host.claim).toHaveBeenCalledWith(mine)
+  expect(host.claim).toHaveBeenCalledWith(mine, null)
+})
+
+it('claims a run in the workspace its issue was listed in, and skips a read that straddles a workspace switch', async () => {
+  const mine = queued('AHEL-140', 'u1')
+  const host = hostOf({ ...PAGE, issues: [mine], agentsQueued: 1, workspace: 'ws-tom' }, { [mine.key]: mine })
+  await createPickup(host).poll()
+  expect(host.get).toHaveBeenCalledWith('AHEL-140', 'ws-tom')
+  expect(host.claim).toHaveBeenCalledWith(mine, 'ws-tom')
+
+  const pages = [{ ...PAGE, issues: [mine], agentsQueued: 1, workspace: 'ws-tom', nextCursor: 'c2' }, { ...PAGE, issues: [], agentsQueued: 1, workspace: 'ws-markus' }]
+  const switched = hostOf(PAGE, { [mine.key]: mine })
+  switched.list.mockImplementation(() => Promise.resolve({ ok: true as const, value: pages.shift()! }))
+  await createPickup(switched).poll()
+  expect(switched.claim).not.toHaveBeenCalled()
 })
 
 it('an ahel.ai that ignores the run filters answers other states; the pickup then matches the person\'s user id itself', async () => {
@@ -45,5 +61,5 @@ it('an ahel.ai that ignores the run filters answers other states; the pickup the
   await createPickup(host).poll()
   expect(host.me).toHaveBeenCalledTimes(1)
   expect(host.claim).toHaveBeenCalledTimes(1)
-  expect(host.claim).toHaveBeenCalledWith(mine)
+  expect(host.claim).toHaveBeenCalledWith(mine, null)
 })

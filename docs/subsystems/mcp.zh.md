@@ -205,4 +205,30 @@ async readAppResource(agent: ToolExecution['agent'], server: string, uri: string
 Types: [ToolExecution](tools.zh.md)
 
 Source: [`packages/mcp/mcp-resources/src/index.ts`](../../packages/mcp/mcp-resources/src/index.ts)
+
+<a id="mcp-client-events"></a>
+
+### `mcp-client/*` events
+
+<a id="mcp-clientworkspace--bail"></a>
+
+#### `mcp-client/workspace` — bail
+
+Name the workspace one tool call of a grant-authenticated server acts in, for example the workspace the calling chat was started in. Asked only when the server sets `auth.workspaceParam`.
+
+```ts cordis-catalog
+/**
+ * Name the workspace one tool call of a grant-authenticated server acts in, for example the
+ * workspace the calling chat was started in. Asked only when the server sets `auth.workspaceParam`.
+ * @mode bail
+ * @param serverName - the configured `serverName`.
+ * @param agent - the Agent the call runs for.
+ * @returns the workspace id, or undefined to keep the grant's selected workspace.
+ */
+'mcp-client/workspace'(serverName: string, agent: NonNullable<ToolExecution['agent']>): string | undefined
+```
+
+Types: [ToolExecution](tools.zh.md)
+
+Source: [`packages/mcp/mcp-client/src/index.ts`](../../packages/mcp/mcp-client/src/index.ts)
 <!-- END GENERATED cordis-surface -->
