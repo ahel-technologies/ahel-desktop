@@ -241,6 +241,8 @@ function applyGrantGate(ctx: Context, config: StreamableHttpConfig, auth: GrantA
       queue = queue.then(async () => {
         const grant = await readOAuthGrant(authCtx.credentials, ref)
         const url = grant === undefined ? undefined : endpointFor(config.url, auth.workspaceParam, grant.workspace)
+        // A new selected workspace reconnects: calls in flight on the old session fail, and tools are
+        // listed from the new workspace while calls bound by `mcp-client/workspace` keep their own (#49).
         if (session !== undefined && url !== sessionUrl) {
           const stopping = session
           session = undefined

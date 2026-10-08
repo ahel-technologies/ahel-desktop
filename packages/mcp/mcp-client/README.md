@@ -216,6 +216,7 @@ These limits describe what you cannot do with this plugin and when it needs oper
 - **Reconnect handles failed negotiation and transport close** — a failed initial probe or crashed stdio child uses the configured reconnect budget. Once HTTP is connected, request failures use the SDK transport's recovery rather than respawning the connection.
 - **Image is the only durable rich-result bridge** — PNG, JPEG, WebP, and GIF enter Native context after exact capability proof. Audio and embedded-resource payloads remain execution-local with explicit diagnostics, while resource links preserve only their name and URI as text.
 - **Invalid protocol results or output schemas fail through the SDK** — the bridge does not accept legacy `toolResult` substitutes or bypass advertised schema validation.
+- **A new selected workspace reconnects a `workspaceParam` server** — calls in flight on the old connection fail, and tools are listed from the newly selected workspace while calls that `mcp-client/workspace` binds keep their own workspace ([#49](https://github.com/ahel-technologies/ahel-desktop/issues/49)).
 - **Task-required MCP tools are rejected at call time** — a tool that requires the task-based execution extension throws instead of bridging; the extension is not implemented.
 
 <a id="dev-note"></a>

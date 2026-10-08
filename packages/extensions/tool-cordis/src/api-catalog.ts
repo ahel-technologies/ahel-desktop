@@ -564,7 +564,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     methods: [
       {
         signature: '@Remote async list(query: IssueQuery): Promise<IssuePage>',
-        description: 'One page of issues with per-status counts and the number of agents at work.',
+        description: 'One page of issues with per-status counts and the number of agents at work, read in the selected workspace, else in the account default the team summary names, so the page names a real workspace id.',
         parameters: [{ name: 'query', description: 'filters; `assigneeId: \'me\'` is the signed-in person.' }],
         returns: 'the page.',
         throws: ['RemoteError `ahel-issues/*`.'],
@@ -605,9 +605,9 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['RemoteError `ahel-issues/*`.'],
       },
       {
-        signature: '@Remote async comment(key: string, body: string, authorType: IssueActorType, workspace?: string): Promise<readonly IssueComment[]>',
+        signature: '@Remote async comment( key: string, body: string, authorType: IssueActorType, issueWorkspace?: string, sessionId?: string, ): Promise<readonly IssueComment[]>',
         description: 'Post a comment as the signed-in person, or for the Ahel agent (a run\'s summary).',
-        parameters: [{ name: 'key', description: 'the issue.' }, { name: 'body', description: 'markdown.' }, { name: 'authorType', description: '`agent` shows the comment as Ahel\'s; the person still owns it.' }, { name: 'workspace', description: 'the issue\'s workspace, for a run\'s summary; the selected one when omitted.' }],
+        parameters: [{ name: 'key', description: 'the issue.' }, { name: 'body', description: 'markdown.' }, { name: 'authorType', description: '`agent` shows the comment as Ahel\'s; the person still owns it.' }, { name: 'issueWorkspace', description: 'the issue\'s workspace, for a run\'s summary.' }, { name: 'sessionId', description: 'the run\'s chat; without `issueWorkspace` the comment goes to the workspace that chat acts in, else the selected one.' }],
         returns: 'the comments after the post.',
         throws: ['RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.'],
       },

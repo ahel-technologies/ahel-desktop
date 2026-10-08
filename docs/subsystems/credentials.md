@@ -261,7 +261,8 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
 
 ```ts cordis-catalog
 /**
- * One page of issues with per-status counts and the number of agents at work.
+ * One page of issues with per-status counts and the number of agents at work, read in the selected
+ * workspace, else in the account default the team summary names, so the page names a real workspace id.
  * @param query - filters; `assigneeId: 'me'` is the signed-in person.
  * @returns the page.
  * @throws RemoteError `ahel-issues/*`.
@@ -315,11 +316,12 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
  * @param key - the issue.
  * @param body - markdown.
  * @param authorType - `agent` shows the comment as Ahel's; the person still owns it.
- * @param workspace - the issue's workspace, for a run's summary; the selected one when omitted.
+ * @param issueWorkspace - the issue's workspace, for a run's summary.
+ * @param sessionId - the run's chat; without `issueWorkspace` the comment goes to the workspace that chat acts in, else the selected one.
  * @returns the comments after the post.
  * @throws RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.
  */
-@Remote async comment(key: string, body: string, authorType: IssueActorType, workspace?: string): Promise<readonly IssueComment[]>
+@Remote async comment( key: string, body: string, authorType: IssueActorType, issueWorkspace?: string, sessionId?: string, ): Promise<readonly IssueComment[]>
 
 /**
  * The activity log of one issue, oldest first.

@@ -39,6 +39,9 @@ async function mockIssuesApi() {
         }
         json(200, { ...issue, status: 'in_progress', run: { ...JSON.parse(body) as object, updatedAt: '2026-10-06T09:00:00.000Z' } }); return
       }
+      if (url.pathname === '/api/desktop/issues/AHEL-137/comments') {
+        json(200, { comments: [] }); return
+      }
       if (url.pathname === '/api/desktop/handoffs' && request.method === 'POST') {
         json(200, { updated: 1 }); return
       }
@@ -110,4 +113,28 @@ it('sends waiting_input as waiting_approval to an ahel.ai that refuses it, and r
 
   await plugin.dispose()
   expect(JSON.parse(api.seen.at(-1)!.body)).toEqual({ sessionId: 's1', state: 'failed', steps: 4, totalSteps: null, reason: 'desktop closed' })
+})
+
+it('with no workspace selected, reads in the account default and names it; a summary comment follows its chat', async () => {
+  const api = await mockIssuesApi()
+  const ctx = new Context()
+  let summaries = 0
+  ctx.provide('ahelAccount', {
+    workspace: () => Promise.resolve(undefined),
+    chatWorkspace: (sessionId: string) => sessionId === 'run-chat' ? 't-issue' : undefined,
+    accessToken: () => Promise.resolve('access-1'),
+    revalidate: () => Promise.resolve(),
+  })
+  ctx.provide('ahelTeam', { summary: () => { summaries++; return Promise.resolve({ workspace: { id: 't-default' } }) } } as never)
+  const plugin = ctx.plugin(AhelIssues, { appOrigin: api.origin })
+  await plugin
+  cleanups.push(() => plugin.dispose())
+
+  expect(await ctx.ahelIssues.list({})).toMatchObject({ workspace: 't-default' })
+  expect(new URLSearchParams(api.seen.at(-1)!.search).get('workspace')).toBe('t-default')
+  await ctx.ahelIssues.list({})
+  expect(summaries).toBe(1)
+
+  await ctx.ahelIssues.comment('AHEL-137', 'Done.', 'agent', undefined, 'run-chat')
+  expect(api.seen.filter(row => row.method === 'POST').map(row => new URLSearchParams(row.search).get('workspace'))).toEqual(['t-issue'])
 })

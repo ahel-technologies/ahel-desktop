@@ -93,7 +93,7 @@ it('seeds a new chat with the issue and reports running, waiting_approval, runni
 
   expect(reports.map(report => report.state)).toEqual(['running', 'waiting_approval', 'running', 'finished'])
   expect(reports.at(-1)).toMatchObject({ sessionId: 'chat-1', steps: 2, totalSteps: null })
-  expect(summarise).toHaveBeenCalledWith('Drafted the checklist. Please review.')
+  expect(summarise).toHaveBeenCalledWith('Drafted the checklist. Please review.', 'chat-1')
   expect(chat.release).toHaveBeenCalledTimes(1)
 })
 

@@ -206,7 +206,7 @@ function register(ctx: Context): void {
   ): Promise<RunStart> => await startRun(
     runHost, runSeed(issue, t),
     (report) => { feed.report(issue.key, report, workspace) },
-    (summary) => { feed.agentComment(issue.key, summary, workspace) },
+    (summary, sessionId) => { feed.agentComment(issue.key, summary, workspace, sessionId) },
     claim,
     workspace,
   )

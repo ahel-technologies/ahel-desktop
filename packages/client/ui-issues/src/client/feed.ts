@@ -22,7 +22,9 @@ export interface IssuesBackend {
   update(key: string, patch: IssuePatch): Promise<RemoteResult<IssueWriteAnswer>>
   deleteIssue(key: string): Promise<RemoteResult<IssueWriteAnswer>>
   comments(key: string): Promise<RemoteResult<readonly IssueComment[]>>
-  comment(key: string, body: string, authorType: IssueActorType, workspace?: string): Promise<RemoteResult<readonly IssueComment[]>>
+  comment(
+    key: string, body: string, authorType: IssueActorType, workspace?: string, sessionId?: string,
+  ): Promise<RemoteResult<readonly IssueComment[]>>
   assignees(): Promise<RemoteResult<IssueAssignees>>
   activity(key: string): Promise<RemoteResult<readonly IssueActivity[]>>
   run(key: string, report: IssueRunReport, workspace?: string): Promise<RemoteResult<IssueWriteAnswer>>
@@ -74,8 +76,8 @@ export type IssuesFeed = Omit<IssuesInjected, 'run' | 'openSession' | 'openLink'
    * @param label - the model's display name, or null when unknown.
    */
   noteModel(sessionId: string, label: string | null): void
-  /** Post a run's closing summary as Ahel's comment in the run's workspace. */
-  agentComment(key: string, body: string, workspace: RunWorkspace): void
+  /** Post a run's closing summary as Ahel's comment in the run's workspace, else in the workspace its chat acts in. */
+  agentComment(key: string, body: string, workspace: RunWorkspace, sessionId: string): void
   /**
    * Send the report that claims a queued run to the run's workspace and record it locally once ahel.ai took it.
    * @returns false when ahel.ai answered 409 `run_claimed`: another session holds the run; nothing is recorded.
@@ -269,7 +271,9 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
       const { [sessionId]: _old, ...rest } = value.models
       set({ models: label === null ? rest : { ...rest, [sessionId]: label } })
     },
-    agentComment: (key, body, workspace) => { void backend.comment(key, body, 'agent', where(workspace)).catch(() => undefined) },
+    agentComment: (key, body, workspace, sessionId) => {
+      void backend.comment(key, body, 'agent', where(workspace), sessionId).catch(() => undefined)
+    },
     createProject: async (name) => {
       const result = await backend.createProject(name)
       if (result.ok) set({ projects: result.value })

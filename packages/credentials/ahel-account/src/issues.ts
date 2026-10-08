@@ -16,6 +16,7 @@ import type {
   Issue, IssueActivity, IssueActorType, IssueAssignees, IssueComment, IssueDraft, IssuePage, IssuePatch, IssueProject, IssueQuery,
   IssueRunReport, IssueRunState, IssueWriteAnswer,
 } from './issues-types.ts'
+import type {} from './team.ts'
 
 declare module '@ahel/cordis' {
   interface Context {
@@ -98,6 +99,8 @@ export class AhelIssues extends TypertRemoteService {
   private readonly live = new Map<string, { report: IssueRunReport; workspace: string | undefined }>()
   /** Set once ahel.ai refused `waiting_input`; later reports send `waiting_approval` at once. */
   private waitingInputRefused = false
+  /** The workspace ahel.ai acts in for the account while none is selected, read once per account change. */
+  private accountDefault: Promise<string | undefined> | undefined
 
   /**
    * @param ctx - Host context carrying `ahelAccount`.
@@ -106,11 +109,13 @@ export class AhelIssues extends TypertRemoteService {
   constructor(ctx: Context, config: IssuesConfig) {
     super(ctx, 'ahelIssues')
     this.origin = config.appOrigin
+    ctx.on('ahel-account/changed', () => { this.accountDefault = undefined })
     ctx.effect(() => async () => { await this.closeLiveRuns() }, 'ahel-issues: fail live runs on stop')
   }
 
   /**
-   * One page of issues with per-status counts and the number of agents at work.
+   * One page of issues with per-status counts and the number of agents at work, read in the selected
+   * workspace, else in the account default the team summary names, so the page names a real workspace id.
    * @param query - filters; `assigneeId: 'me'` is the signed-in person.
    * @returns the page.
    * @throws RemoteError `ahel-issues/*`.
@@ -123,7 +128,7 @@ export class AhelIssues extends TypertRemoteService {
       if (value !== undefined && value !== '') params.set(name, String(value))
     }
     const search = params.size === 0 ? '' : `?${params.toString()}`
-    const workspace = await this.ctx.ahelAccount.workspace()
+    const workspace = await this.readWorkspace()
     const page = fields(await this.call('GET', `/api/desktop/issues${search}`, undefined, { workspace }))
     return {
       workspace: workspace ?? null,
@@ -204,12 +209,16 @@ export class AhelIssues extends TypertRemoteService {
    * @param key - the issue.
    * @param body - markdown.
    * @param authorType - `agent` shows the comment as Ahel's; the person still owns it.
-   * @param workspace - the issue's workspace, for a run's summary; the selected one when omitted.
+   * @param issueWorkspace - the issue's workspace, for a run's summary.
+   * @param sessionId - the run's chat; without `issueWorkspace` the comment goes to the workspace that chat acts in, else the selected one.
    * @returns the comments after the post.
    * @throws RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.
    */
   @Remote
-  async comment(key: string, body: string, authorType: IssueActorType, workspace?: string): Promise<readonly IssueComment[]> {
+  async comment(
+    key: string, body: string, authorType: IssueActorType, issueWorkspace?: string, sessionId?: string,
+  ): Promise<readonly IssueComment[]> {
+    const workspace = issueWorkspace ?? (sessionId === undefined ? undefined : this.ctx.ahelAccount.chatWorkspace(sessionId))
     await this.call('POST', issuePath(key, '/comments'), { body, authorType }, { workspace })
     return await this.commentsIn(key, workspace)
   }
@@ -259,6 +268,18 @@ export class AhelIssues extends TypertRemoteService {
     if (LIVE_STATES.has(sent.state)) this.live.set(key, { report: sent, workspace })
     else if (this.live.get(key)?.report.sessionId === sent.sessionId) this.live.delete(key)
     return { issue: writtenIssue(answer) }
+  }
+
+  /** The selected workspace, else the account default the team summary names; undefined when neither is known. */
+  private async readWorkspace(): Promise<string | undefined> {
+    const selected = await this.ctx.ahelAccount.workspace()
+    const team = this.ctx.get('ahelTeam')
+    if (selected !== undefined || team === undefined) return selected
+    this.accountDefault ??= team.summary().then(summary => summary.workspace.id, (_unavailable: unknown) => undefined)
+    const id = await this.accountDefault
+    // An unread default is asked again on the next read.
+    if (id === undefined) this.accountDefault = undefined
+    return id
   }
 
   /** Report every live run `failed` with {@link CLOSED_REASON}; gives up after {@link CLOSE_DEADLINE_MS}. */

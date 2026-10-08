@@ -152,7 +152,7 @@ export function lastReply(entries: readonly RunEntry[]): string {
  * @param host - the chat opener and the waiting signal.
  * @param seed - the chat's first message.
  * @param report - sends one run report; failures are the caller's to log.
- * @param summarise - receives the closing reply of a finished run, to post as Ahel's comment.
+ * @param summarise - receives the closing reply of a finished run and its chat, to post as Ahel's comment.
  * @param claim - sends the first report to claim a queued run; resolves false when another session holds it.
  *   A claimed run's chat opens without being shown.
  * @param workspace - the issue's workspace to pin the chat to, or null to leave the chat to the selected one.
@@ -163,7 +163,7 @@ export async function startRun(
   host: RunHost,
   seed: string,
   report: (report: IssueRunReport) => void,
-  summarise?: (text: string) => void,
+  summarise?: (text: string, sessionId: string) => void,
   claim?: (report: IssueRunReport) => Promise<boolean>,
   workspace: string | null = null,
 ): Promise<RunStart> {
@@ -211,7 +211,7 @@ export async function startRun(
     send(final, true)
     if (final === 'finished' && withSummary) {
       const reply = lastReply(binding.eventSource.getSnapshot().entries)
-      if (reply !== '') summarise?.(reply)
+      if (reply !== '') summarise?.(reply, sessionId)
     }
     release()
   }
