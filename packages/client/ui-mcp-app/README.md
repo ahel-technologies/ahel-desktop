@@ -61,7 +61,8 @@ The bridge holds tool input and result notifications until the app sends `ui/not
 | File | Role |
 |---|---|
 | [`src/index.ts`](src/index.ts) | Host controller: `readResource` and `callTool` Remote methods |
-| [`src/call-result.ts`](src/call-result.ts) | Registry outcome to MCP `CallToolResult` fields |
+| [`src/call-result.ts`](src/call-result.ts) | Registry outcome to MCP `CallToolResult` fields; model-facing report text |
+| [`src/card-reports.ts`](src/card-reports.ts) | Card report delivery: no repeats, never inside a running turn |
 | [`src/types.ts`](src/types.ts) | Browser-safe wire types |
 | [`src/client/bridge.ts`](src/client/bridge.ts) | Host end of the MCP Apps JSON-RPC bridge |
 | [`src/client/document.ts`](src/client/document.ts) | Content security policy and frame sandbox |
@@ -90,23 +91,23 @@ The bridge holds tool input and result notifications until the app sends `ui/not
 
 #### What the model sees
 
-Nothing from this package. The model sees the MCP tool's ordinary text result. A card's own tool calls, resource reads, and `ui/update-model-context` payloads are not added to the Session log or to any model request.
+The model sees the MCP tool's ordinary text result. Each card-initiated `tools/call` and each `ui/update-model-context` payload also reaches the model as a logged user message with source `mcp-app`: `[<server> card] The card called <tool>; the call succeeded.` (or `failed.`) followed by the result text, or `[<server> card] Current card state:` followed by the payload's text and structured content. The text names no press, because a card also calls tools on its own, for example to read its state when it is drawn. A message joins the Agent's next turn, ahead of that turn's prompt; one that arrives while a turn runs waits until the turn ends, so it never adds a step to the running turn. A text the Agent was already given is dropped, so a card drawn again after a page reload adds nothing. Resource reads reach no model request.
 
 #### Token effect
 
-None; cards add no model input.
+Each distinct card report adds one user message of at most 4,000 characters to the next turn's input.
 
 #### KV Cache effect
 
-None; this package neither assembles nor sends a provider request.
+Reports are appended after the existing history, so the cached prefix is kept.
 
 ## Known Limitations and Deferred Work
 
 <a id="known-limitations-and-deferred-work"></a>
 
 - **Approval outside a turn fails closed** — an `ask` decision needs an open turn, so a policy that asks for a card-initiated call while the Agent is idle denies it.
-- **Card calls are not logged** — a card's `tools/call` result reaches only the card; the model does not learn about it, and replay does not show it.
-- **Model context from cards is held, not sent** — the latest `ui/update-model-context` payload is kept per card and not yet added to the next request; `ui/message` is declined.
+- **Card reports wait for the next prompt** — a report is not sent on its own; it waits in the inbox until the person's next prompt starts a turn. `ui/message` is declined.
+- **Repeat suppression is in memory** — the texts an Agent was given are remembered per Host process (the latest 256 per Agent), so after a Host restart a redrawn card reports its state once more.
 - **Single sandboxed frame** — the card runs in one opaque-origin frame rather than the double-frame sandbox proxy the specification describes for Web hosts, so `_meta.ui.domain` and `allow-same-origin` apps (storage, cookies) are unsupported.
 - **Inline only** — `ui/request-display-mode` returns `inline`; fullscreen and picture-in-picture are not offered.
 - **App-only tools** — tools whose visibility omits `model` are not bridged, so a card cannot call them.

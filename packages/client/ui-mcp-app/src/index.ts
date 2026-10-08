@@ -11,12 +11,13 @@
 import { randomUUID } from 'node:crypto'
 import type { Context } from '@ahel/cordis'
 import type { Agent } from '@ahel/dsh-agent'
-import { createUserMessage, ToolCallId } from '@ahel/dsh-llm'
+import { ToolCallId } from '@ahel/dsh-llm'
 import { liveResultMeta, publicToolName } from '@ahel/dsh-mcp-client'
 import type {} from '@ahel/dsh-mcp-resources'
 import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-protocol'
 import type { JsonValue } from '@ahel/dsh-util-values'
 import { callResultOf, cardActionText, cardContextText } from './call-result.ts'
+import { CardReports } from './card-reports.ts'
 import type { McpAppCallResult, McpAppJsonObject } from './types.ts'
 
 export type * from './types.ts'
@@ -47,6 +48,9 @@ declare module '@ahel/dsh-typert-protocol' {
 /** Remote namespace `mcpApps`: resource reads and host-proxied tool calls for MCP Apps cards. */
 export default class McpAppsController extends TypertRemoteService {
   static inject = ['tools', 'mcpResources']
+
+  /** Card reports queued as model context, without repeats and outside running turns. */
+  private readonly reports = new CardReports()
 
   /** @param ctx - Host context carrying the tool registry and MCP resource runtime. */
   constructor(ctx: Context) {
@@ -81,7 +85,7 @@ export default class McpAppsController extends TypertRemoteService {
 
   /**
    * Record a card's `ui/update-model-context` payload as context for the
-   * Agent's next model request (a logged inbox event).
+   * Agent's next turn (a logged inbox event); a repeated payload is dropped.
    * @param agent - lookup parameter resolved from the Session identity.
    * @param server - the card's MCP server.
    * @param update - the payload: `content` blocks and optional `structuredContent`.
@@ -95,8 +99,9 @@ export default class McpAppsController extends TypertRemoteService {
    * Run one MCP tool for a card, through the same registry pipeline and
    * approval seam as a model call. The tool must belong to `server` and its
    * MCP Apps visibility must include `app`. Each call is reported to the
-   * Agent as logged context for its next model request (tool name and
-   * result text; arguments are omitted because they can carry tokens).
+   * Agent as logged context for its next turn (tool name and result text;
+   * arguments are omitted because they can carry tokens); a report the Agent
+   * already received is dropped.
    * @param agent - lookup parameter resolved from the Session identity.
    * @param server - the card's MCP server; calls to other servers are refused.
    * @param tool - raw MCP tool name.
@@ -126,8 +131,8 @@ export default class McpAppsController extends TypertRemoteService {
     return agent ?? this.ctx.root
   }
 
-  /** Queue card-reported text as logged context for the Agent's next model request. */
+  /** Queue card-reported text as logged context for the Agent's next turn ({@link CardReports}). */
   private report(agent: Agent | undefined, text: string): void {
-    agent?.inject(createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'mcp-app' } }))
+    this.reports.report(agent, text)
   }
 }
