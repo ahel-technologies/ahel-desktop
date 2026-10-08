@@ -62,13 +62,17 @@ export interface IssueDetailRetry {
   readonly afterMs: number | null
 }
 
-/** One issue's detail reads; `retry` is set when a part of the read failed for a reason that repeating may fix. */
+/**
+ * One issue's detail reads; `retry` is set when a part of the read failed for a
+ * reason that repeating may fix. `comments` or `activity` is null when that part
+ * failed, so the drawer keeps what it already shows.
+ */
 export type IssueDetailLoad =
   | {
     readonly ok: true
     readonly issue: Issue
-    readonly comments: readonly IssueComment[]
-    readonly activity: readonly IssueActivity[]
+    readonly comments: readonly IssueComment[] | null
+    readonly activity: readonly IssueActivity[] | null
     readonly retry: IssueDetailRetry | null
   }
   | { readonly ok: false; readonly message: string | null; readonly retry: IssueDetailRetry | null }

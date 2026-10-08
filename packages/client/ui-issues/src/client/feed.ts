@@ -246,11 +246,11 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
     },
     detail: async (key): Promise<IssueDetailLoad> => {
       const [issue, comments, activity] = await Promise.all([backend.get(key), backend.comments(key), backend.activity(key)])
-      const retry = [issue, comments, activity].map(part => part.ok ? null : detailRetry(part.error)).find(part => part !== null) ?? null
-      if (!issue.ok) return { ok: false, message: reason(issue.error), retry }
+      if (!issue.ok) return { ok: false, message: reason(issue.error), retry: detailRetry(issue.error) }
+      const retry = [comments, activity].map(part => part.ok ? null : detailRetry(part.error)).find(part => part !== null) ?? null
       const read = issue.value.issue ?? value.issues.find(row => row.key === key)
-      if (read === undefined) return { ok: false, message: null, retry }
-      return { ok: true, issue: read, comments: comments.ok ? comments.value : [], activity: activity.ok ? activity.value : [], retry }
+      if (read === undefined) return { ok: false, message: null, retry: null }
+      return { ok: true, issue: read, comments: comments.ok ? comments.value : null, activity: activity.ok ? activity.value : null, retry }
     },
     comment: async (key, body) => answer(await backend.comment(key, body, 'member')),
     noteModel: (sessionId, label) => {

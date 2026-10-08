@@ -80,8 +80,8 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ru
         return
       }
       setLoaded(answer.issue)
-      setComments(answer.comments)
-      setActivity(answer.activity)
+      if (answer.comments !== null) setComments(answer.comments)
+      if (answer.activity !== null) setActivity(answer.activity)
     }).catch(() => { if (mine === generation.current) setError(t('failed')) })
   }, [detail, issueKey, t])
 
@@ -91,7 +91,10 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ru
     setRetrying(false)
     repeats.current = 0
     load()
-    return () => { clearTimeout(repeat.current) }
+    return () => {
+      generation.current++
+      clearTimeout(repeat.current)
+    }
   }, [load])
   useEffect(() => { if (issue !== null) setTitle(issue.title) }, [issue?.title])
   // The scrim lets clicks through, so cards, chats and the sidebar stay usable; a press outside the drawer closes it.

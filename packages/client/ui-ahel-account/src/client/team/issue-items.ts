@@ -75,12 +75,16 @@ export function handoffUnread(row: HandoffReceivedRow): boolean {
 }
 
 /**
- * The Inbox badge for one Inbox read: the unread rows the list shows.
+ * The Inbox badge for one Inbox read: unread handoffs that are not done, plus
+ * ahel.ai's count of unread issue rows. That count covers the whole Inbox, while
+ * `items` holds one page, so it is used when present; otherwise the unread rows
+ * in `items` are counted.
  * @param list - the Inbox read.
  * @returns the number of unread handoffs and issue rows.
  */
 export function inboxUnread(list: HandoffList): number {
-  return inboxEntries(list.received, list.items ?? []).filter(entry => entry.unread).length
+  const handoffs = list.received.filter(handoffUnread).length
+  return handoffs + (list.unreadItems ?? (list.items ?? []).filter(item => item.unread).length)
 }
 
 /**

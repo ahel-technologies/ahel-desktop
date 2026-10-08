@@ -59,4 +59,5 @@ it('the Inbox badge counts the unread rows the list shows: unread handoffs not d
   const shown = inboxEntries(list.received, list.items).filter(entry => entry.unread).map(entry => entry.id)
   expect(shown).toEqual(['issue:i-unread', 'issue:i-unread-2', 'handoff:h-unread'])
   expect(inboxUnread({ ...list, items: null })).toBe(1)
+  expect(inboxUnread({ ...list, unreadItems: 60 })).toBe(61)
 })

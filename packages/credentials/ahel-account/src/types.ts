@@ -503,6 +503,8 @@ export interface HandoffList {
   readonly detail: string
   /** Issue rows (assigned, mentioned, run finished or failed), newest first; null when ahel.ai could not read them. */
   readonly items?: readonly IssueInboxItem[] | null
+  /** Unread issue rows across the whole Inbox, which can exceed the rows in `items`; null when ahel.ai could not count them. */
+  readonly unreadItems?: number | null
 }
 
 /** One opened handoff; opening marks it read. */

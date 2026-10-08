@@ -162,3 +162,31 @@ it('a detail read ahel.ai is too busy for says it is waiting, repeats by itself 
     vi.useRealTimers()
   }
 })
+
+it('a detail part ahel.ai stays busy for is repeated with a growing wait, and closing the drawer stops it', async () => {
+  const issue = ISSUES[2]!
+  const comments = vi.fn(() => Promise.resolve({ ok: false as const, error: new RemoteError('ahel-issues/busy', 'ahel.ai is busy; try again shortly', { retryAfterSec: 1 }) }))
+  await mount(PAGE, {
+    get: vi.fn(() => ok({ issue })),
+    comments,
+    activity: vi.fn(() => ok([] as IssueActivity[])),
+  })
+  vi.useFakeTimers()
+  try {
+    await act(async () => { fireEvent.click(screen.getByText(issue.key)) })
+    expect(comments).toHaveBeenCalledTimes(1)
+    await act(async () => { await vi.advanceTimersByTimeAsync(1_999) })
+    expect(comments).toHaveBeenCalledTimes(1)
+    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
+    expect(comments).toHaveBeenCalledTimes(2)
+    await act(async () => { await vi.advanceTimersByTimeAsync(3_999) })
+    expect(comments).toHaveBeenCalledTimes(2)
+    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
+    expect(comments).toHaveBeenCalledTimes(3)
+    await act(async () => { fireEvent.keyDown(window, { key: 'Escape' }) })
+    await act(async () => { await vi.advanceTimersByTimeAsync(120_000) })
+    expect(comments).toHaveBeenCalledTimes(3)
+  } finally {
+    vi.useRealTimers()
+  }
+})
