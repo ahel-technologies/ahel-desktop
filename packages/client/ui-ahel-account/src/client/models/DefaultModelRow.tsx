@@ -10,11 +10,25 @@ import type { MenuEntry } from '@ahel/dsh-client-ui-primitives'
 import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@ahel/dsh-client-ui-slots'
 import type {} from '@ahel/dsh-client-ui-settings-models/client'
 import type { AhelMeteredModel } from '@ahel/dsh-ahel-account/types'
-import { readableModelName } from '@ahel/dsh-client-ui-model-selection/client'
 import type { DefaultModelView } from './source.ts'
 import css from '../AhelAccount.module.css'
 
 /** Face of the Default model row. */
+
+/**
+ * A readable name for a model id the Ahel route no longer lists: the id's last
+ * segment in words, never the raw id ("anthropic/claude-haiku-4.5" → "Claude Haiku 4.5").
+ * Local on purpose: client plugins import no values from other plugins.
+ * @param id - OpenRouter-style model id.
+ * @returns the readable name.
+ */
+function unlistedModelName(id: string): string {
+  const slug = (id.split('/').at(-1) ?? id).split(':')[0] ?? id
+  return slug.split('-').filter(word => word !== '')
+    .map(word => /^gpt$/i.test(word) ? 'GPT' : word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 export interface DefaultModelInjected {
   /**
    * Store the workspace default.
@@ -58,7 +72,7 @@ export function DefaultModelRow({ setDefault, useModels, t }: DefaultModelRowPro
   // A default ahel.ai no longer lists keeps its name, marked, instead of reading as not set.
   const label = chosen !== undefined
     ? shortName(chosen)
-    : view.defaultModel === null ? t('defaultModelNone') : t('defaultModelUnlisted', { name: readableModelName(view.defaultModel) })
+    : view.defaultModel === null ? t('defaultModelNone') : t('defaultModelUnlisted', { name: unlistedModelName(view.defaultModel) })
   const price = chosen?.ahel?.typicalMessageCents ?? null
   const items: MenuEntry[] = []
   for (const maker of [...new Set(view.models.map(makerOf))]) {
