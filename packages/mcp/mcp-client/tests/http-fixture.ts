@@ -12,6 +12,10 @@ export interface HttpMcpFixture {
   authorization: Array<string | undefined>
   /** Request URLs of the `ping` calls, in order. */
   pingUrls: string[]
+  /** Request URLs of the `hold` calls, in order; each `hold` replies only after {@link HttpMcpFixture.release}. */
+  holdUrls: string[]
+  /** Answer every `hold` call waiting so far. */
+  release: () => void
   close: () => Promise<void>
 }
 
@@ -20,6 +24,8 @@ export async function startHttpMcpFixture(): Promise<HttpMcpFixture> {
   const calls: string[] = []
   const authorization: Array<string | undefined> = []
   const pingUrls: string[] = []
+  const holdUrls: string[] = []
+  let held: PromiseWithResolvers<void> = Promise.withResolvers()
   let requestUrl = ''
   const handler = createMcpHandler(() => {
     const mcp = new McpServer(
@@ -31,12 +37,17 @@ export async function startHttpMcpFixture(): Promise<HttpMcpFixture> {
       pingUrls.push(requestUrl)
       return { content: [{ type: 'text', text: 'pong' }] }
     })
+    mcp.registerTool('hold', { description: 'Replies once released.', inputSchema: z.object({}) }, async (): Promise<CallToolResult> => {
+      holdUrls.push(requestUrl)
+      await held.promise
+      return { content: [{ type: 'text', text: 'released' }] }
+    })
     return mcp
   })
   const handle = toNodeHandler(handler)
   const handleRequest = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     authorization.push(request.headers.authorization)
-    // Stateless: each POST is handled to completion before the next one.
+    // Stateless: each POST is handled to completion before the next one, except a waiting `hold`.
     requestUrl = request.url ?? ''
     // The adapter excludes explicit undefined on Node's optional HTTP fields.
     await handle(request as NodeIncomingMessageLike, response)
@@ -56,6 +67,11 @@ export async function startHttpMcpFixture(): Promise<HttpMcpFixture> {
     authorization,
     calls,
     pingUrls,
+    holdUrls,
+    release: () => {
+      held.resolve()
+      held = Promise.withResolvers()
+    },
     close: async () => {
       await handler.close()
       await new Promise<void>((resolve, reject) => {

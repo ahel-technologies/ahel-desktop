@@ -15,12 +15,13 @@
  * @module
  */
 
-import { Client, type AuthProvider, type Transport } from '@modelcontextprotocol/client'
+import { Client, type Transport } from '@modelcontextprotocol/client'
 import type { Context } from '@ahel/cordis'
 import { assertNever, type JsonValue } from '@ahel/dsh-util-values'
 import type { ServerContext } from './server-context.ts'
 import { MAX_TIMER_DELAY_MS } from '@ahel/dsh-timeout'
 import { createTransport } from './transport.ts'
+import type { GrantTransport } from './transport.ts'
 import { syncTools } from './tools.ts'
 import { MCP_APP_MIME_TYPE, MCP_APPS_EXTENSION } from './apps.ts'
 import type { ToolBridgeOptions, ToolDisposers } from './tools.ts'
@@ -123,11 +124,11 @@ export interface ConnectionHandle extends ServerContext {
  * @param ctx - Cordis context providing the `tools` registry and logger.
  * @param config - Resolved plugin config selecting the transport and server identity.
  * @param policy - Resolved reconnect policy from {@link resolveReconnectPolicy}.
- * @param authProvider - bearer source for a Streamable HTTP server configured with `auth`.
+ * @param grant - bearer source and selected workspace for a Streamable HTTP server configured with `auth`.
  * @returns Handle with a `ready` promise for startup-await and a `dispose` for teardown.
  */
 export function startConnection(
-  ctx: Context, config: Config, policy: ResolvedReconnectPolicy, authProvider?: AuthProvider,
+  ctx: Context, config: Config, policy: ResolvedReconnectPolicy, grant?: GrantTransport,
 ): ConnectionHandle {
   const label = `mcp-client(${config.serverName})`
   const incompleteDisposalMessage = `${label}: transport closure could not be confirmed during disposal — server shutdown may be incomplete`
@@ -314,7 +315,7 @@ export function startConnection(
     }
     let instructions: string
     try {
-      transport = createTransport(config, authProvider)
+      transport = createTransport(config, grant)
       await generation.connect(transport)
       if (hasClosed()) {
         attemptSettled = true
