@@ -129,3 +129,21 @@ it('serializes overlapping saves and continues after a rejected write', async ()
   expect(calls).toEqual(['rejected', 'saved'])
   expect(ctx.agentDefaultModel.currentSelection()).toEqual({ provider: 'test', model: 'final' })
 })
+
+it('never resolves a saved model its provider no longer lists', async () => {
+  const ctx = new Context()
+  onTestFinished(() => ctx.fiber.dispose())
+  await ctx.plugin(LlmRuntime)
+  ctx.llm.registerAdapter(['ahel'], new CatalogAdapter({ ahel: ['anthropic/claude-sonnet-5.5', 'openai/gpt-5.2'] }))
+  await liveConfig(ctx, DefaultModel, { provider: 'ahel', model: 'anthropic/claude-haiku-4.5' })
+  await expect(ctx.agentDefaultModel.resolveSelection()).resolves.toEqual({ provider: 'ahel', model: 'anthropic/claude-sonnet-5.5' })
+})
+
+it('keeps a saved model while its provider lists nothing yet', async () => {
+  const ctx = new Context()
+  onTestFinished(() => ctx.fiber.dispose())
+  await ctx.plugin(LlmRuntime)
+  ctx.llm.registerAdapter(['ahel', 'anthropic'], new CatalogAdapter({ ahel: [], anthropic: ['claude-sonnet'] }))
+  await liveConfig(ctx, DefaultModel, { provider: 'ahel', model: 'anthropic/claude-haiku-4.5' })
+  await expect(ctx.agentDefaultModel.resolveSelection()).resolves.toEqual({ provider: 'ahel', model: 'anthropic/claude-haiku-4.5' })
+})

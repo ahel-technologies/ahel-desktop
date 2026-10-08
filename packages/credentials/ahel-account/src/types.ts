@@ -599,6 +599,12 @@ declare module '@ahel/cordis' {
      * @mode emit
      */
     'ahel-account/changed'(view: AhelAccountView): void
+    /**
+     * ahel.ai reported the workspace's default model: a team summary, a read or a save.
+     * @param defaultModel - the metered model id, or null when none is set.
+     * @mode emit
+     */
+    'ahel-account/default-model'(defaultModel: string | null): void
   }
 }
 

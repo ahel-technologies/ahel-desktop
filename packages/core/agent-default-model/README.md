@@ -29,7 +29,7 @@ Mount this package wherever agents are created without an explicit model route. 
 
 ### Configure the default
 
-Every field is optional. Without a provider and model, the default is the first model of the first registered provider route that advertises one; with neither, there is no default and the entry point asks the user to add a model.
+Every field is optional. Without a provider and model, the default is the first model of the first registered provider route that advertises one; with neither, there is no default and the entry point asks the user to add a model. A saved model that its registered provider no longer lists is never returned: it is removed, and the fallback applies. A provider that is not registered yet, fails its catalog or lists nothing keeps its saved model.
 
 ```yaml
 - name: '@ahel/dsh-agent-default-model'

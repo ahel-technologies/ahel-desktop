@@ -7486,6 +7486,9 @@ importers:
       '@ahel/dsh-agent':
         specifier: workspace:*
         version: link:../../core/agent
+      '@ahel/dsh-agent-default-model':
+        specifier: workspace:*
+        version: link:../../core/agent-default-model
       '@ahel/dsh-api-session-controller':
         specifier: workspace:*
         version: link:../../api/session-controller
@@ -7501,6 +7504,9 @@ importers:
       '@ahel/dsh-credentials-local':
         specifier: workspace:*
         version: link:../credentials-local
+      '@ahel/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
       '@ahel/dsh-mcp-client':
         specifier: workspace:*
         version: link:../../mcp/mcp-client

@@ -61,6 +61,23 @@ async function firstAdvertisedModel(llm: LlmRuntime): Promise<ModelSelection | u
 }
 
 /**
+ * Whether a registered provider answers with models but not this one: the
+ * saved model was removed from its list. A provider that is not registered
+ * (yet), fails its catalog or lists nothing is still starting or offline, so
+ * its saved model is not judged.
+ * @param llm - live provider registry.
+ * @param selection - the saved selection.
+ * @returns true when the provider no longer lists the model.
+ */
+async function unlisted(llm: LlmRuntime, selection: ModelSelection): Promise<boolean> {
+  if (!llm.listProviders().some(provider => provider.id === selection.provider)) return false
+  let models: readonly { id: string }[]
+  try { models = await llm.listModels(selection.provider) }
+  catch { return false }
+  return models.length > 0 && !models.some(model => model.id === selection.model)
+}
+
+/**
  * Owns the default model selection independently of any Host or transport.
  * A configured provider and model win. Without them the default follows the
  * first model of the first registered provider route, so a fresh install
@@ -84,8 +101,12 @@ export class AgentDefaultModelConfig extends Service {
 
     ownerContext.inject(['settings'], (child) => { child.effect(() => child.settings.configure({ auto: false }, ownerContext.fiber)) })
     ownerContext.inject(['llm'], (child) => {
-      child.on('llm/adapters-updated', () => { void this.refreshFallback(child.llm) })
+      child.on('llm/adapters-updated', () => {
+        void this.refreshFallback(child.llm)
+        void this.dropUnlisted(child.llm)
+      })
       void this.refreshFallback(child.llm)
+      void this.dropUnlisted(child.llm)
       child.effect(() => () => {
         ++this.discovery
         this.fallback = undefined
@@ -126,14 +147,38 @@ export class AgentDefaultModelConfig extends Service {
   /**
    * Resolve the default model selection against the live provider registry.
    * Entry points call this before creating an Agent or admitting a prompt, so
-   * a provider added since the last topology event is still found.
+   * a provider added since the last topology event is still found. A saved
+   * model its provider no longer lists is never returned; it is dropped.
    * @returns the configured selection, else the first advertised model, else undefined.
    */
   async resolveSelection(): Promise<ModelSelection | undefined> {
     const configured = this.configuredSelection()
-    if (configured !== undefined) return configured
     const llm = this.ctx.get('llm')
+    if (configured !== undefined && (llm === undefined || !await this.dropUnlisted(llm))) return configured
     return llm === undefined ? this.currentSelection() : this.refreshFallback(llm)
+  }
+
+  /**
+   * Remove the saved selection when its provider no longer lists its model,
+   * unless a newer save replaced it meanwhile.
+   * @param llm - live provider registry.
+   * @returns whether the saved selection was unlisted.
+   */
+  private async dropUnlisted(llm: LlmRuntime): Promise<boolean> {
+    const stale = this.configuredSelection()
+    if (stale === undefined || !await unlisted(llm, stale)) return false
+    const entry = this.ownerContext.fiber.entry
+    const editor = this.ctx.get('configEditor')
+    if (entry === undefined || editor === undefined) return true
+    const dropped = this.saves.then(async () => {
+      const now = this.configuredSelection()
+      if (now?.provider === stale.provider && now.model === stale.model) await editor.edit(entry, () => ({}))
+    })
+    this.saves = dropped.catch(() => {})
+    await dropped.catch((error: unknown) => {
+      this.ctx.logger.warn(`agent-default-model: an unlisted default model was not removed: ${String(error)}`)
+    })
+    return true
   }
 
   /**

@@ -100,7 +100,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: 'async resolveSelection(): Promise<ModelSelection | undefined>',
-        description: 'Resolve the default model selection against the live provider registry. Entry points call this before creating an Agent or admitting a prompt, so a provider added since the last topology event is still found.',
+        description: 'Resolve the default model selection against the live provider registry. Entry points call this before creating an Agent or admitting a prompt, so a provider added since the last topology event is still found. A saved model its provider no longer lists is never returned; it is dropped.',
         parameters: [],
         returns: 'the configured selection, else the first advertised model, else undefined.',
       },
@@ -4314,6 +4314,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     summary: 'The account view changed: a sign-in step, a completed sign-in or sign-out, or an external edit of the stored grant.',
     description: 'The account view changed: a sign-in step, a completed sign-in or sign-out, or an external edit of the stored grant.',
     parameters: [{ name: 'view', description: 'the new complete view.' }],
+  },
+  {
+    name: 'ahel-account/default-model',
+    mode: 'emit',
+    signature: '\'ahel-account/default-model\'(defaultModel: string | null): void',
+    summary: 'ahel.ai reported the workspace\'s default model: a team summary, a read or a save.',
+    description: 'ahel.ai reported the workspace\'s default model: a team summary, a read or a save.',
+    parameters: [{ name: 'defaultModel', description: 'the metered model id, or null when none is set.' }],
   },
   {
     name: 'api-session/activity',
