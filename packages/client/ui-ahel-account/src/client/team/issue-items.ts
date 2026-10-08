@@ -1,6 +1,6 @@
 /** Issue rows of the Inbox: the one list they share with received handoffs, and opening one in the desktop's Issues panel. */
 import type {} from '@ahel/cordis'
-import type { HandoffReceivedRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
+import type { HandoffList, HandoffReceivedRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
 import type { RemoteResult } from '@ahel/dsh-typert-protocol'
 import type { AhelAccountKey } from '../locales.ts'
 import type { InboxAnswer } from './contract.ts'
@@ -66,6 +66,24 @@ export type InboxEntry =
   | { readonly kind: 'issue'; readonly id: string; readonly at: string; readonly unread: boolean; readonly item: IssueInboxItem }
 
 /**
+ * Whether a received handoff counts as unread: unread and not done, as ahel.ai's summary counts it.
+ * @param row - the received handoff.
+ * @returns true when the row shows the unread dot and counts toward the badge.
+ */
+export function handoffUnread(row: HandoffReceivedRow): boolean {
+  return row.unread && row.status !== 'done'
+}
+
+/**
+ * The Inbox badge for one Inbox read: the unread rows the list shows.
+ * @param list - the Inbox read.
+ * @returns the number of unread handoffs and issue rows.
+ */
+export function inboxUnread(list: HandoffList): number {
+  return inboxEntries(list.received, list.items ?? []).filter(entry => entry.unread).length
+}
+
+/**
  * The local calendar day of a timestamp, for grouping.
  * @param iso - the timestamp.
  * @returns `YYYY-M-D` in local time, or the input when it does not parse.
@@ -84,7 +102,7 @@ function localDay(iso: string): string {
  */
 export function inboxEntries(received: readonly HandoffReceivedRow[], items: readonly IssueInboxItem[]): InboxEntry[] {
   const entries: InboxEntry[] = [
-    ...received.map(row => ({ kind: 'handoff' as const, id: `handoff:${row.id}`, at: row.updatedAt, unread: row.unread, row })),
+    ...received.map(row => ({ kind: 'handoff' as const, id: `handoff:${row.id}`, at: row.updatedAt, unread: handoffUnread(row), row })),
     ...items.map(item => ({ kind: 'issue' as const, id: `issue:${item.id}`, at: item.createdAt, unread: item.unread, item })),
   ]
   const time = (entry: InboxEntry): number => {

@@ -100,6 +100,22 @@ export function currentRun(issue: Issue, local: IssueRun | undefined): IssueRun 
   return local.updatedAt >= issue.run.updatedAt ? local : issue.run
 }
 
+/** The first wait before repeating a detail read ahel.ai gave no Retry-After for. */
+const RETRY_FIRST_MS = 2_000
+
+/** The longest wait between repeated detail reads. */
+const RETRY_MAX_MS = 30_000
+
+/**
+ * How long the detail drawer waits before repeating a read that may work again.
+ * @param afterMs - ahel.ai's Retry-After, or null.
+ * @param attempt - repeats made so far, from 0.
+ * @returns the Retry-After, else a wait that doubles from 2 s per repeat; at most 30 s either way.
+ */
+export function retryWait(afterMs: number | null, attempt: number): number {
+  return Math.min(afterMs ?? RETRY_FIRST_MS * 2 ** attempt, RETRY_MAX_MS)
+}
+
 /** Translate function shape this package's helpers take. */
 export type Translate = (key: IssuesKey, params?: Record<string, string>) => string
 

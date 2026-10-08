@@ -56,10 +56,22 @@ export interface IssuesState {
 /** A write's result; `message` is ahel.ai's reason (for example a role refusal) or null. */
 export type IssuesAnswer = { readonly ok: true } | { readonly ok: false; readonly message: string | null }
 
-/** One issue's detail reads. */
+/** A detail read that ahel.ai was too busy for or did not answer, so repeating it may work. */
+export interface IssueDetailRetry {
+  /** ahel.ai's Retry-After in milliseconds, or null when it sent none. */
+  readonly afterMs: number | null
+}
+
+/** One issue's detail reads; `retry` is set when a part of the read failed for a reason that repeating may fix. */
 export type IssueDetailLoad =
-  | { readonly ok: true; readonly issue: Issue; readonly comments: readonly IssueComment[]; readonly activity: readonly IssueActivity[] }
-  | { readonly ok: false; readonly message: string | null }
+  | {
+    readonly ok: true
+    readonly issue: Issue
+    readonly comments: readonly IssueComment[]
+    readonly activity: readonly IssueActivity[]
+    readonly retry: IssueDetailRetry | null
+  }
+  | { readonly ok: false; readonly message: string | null; readonly retry: IssueDetailRetry | null }
 
 /** Face of the Issues panel, the New Issue row and the Issues sidebar row. */
 export interface IssuesInjected {

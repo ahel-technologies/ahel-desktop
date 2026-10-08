@@ -3,10 +3,11 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { useSyncExternalStore } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
+import { RemoteError } from '@ahel/dsh-typert-protocol'
 import { makeTranslate } from '@ahel/dsh-client-test-runtime'
-import type { Issue, IssuePage, IssuePatch } from '@ahel/dsh-ahel-account/types'
+import type { Issue, IssueActivity, IssueComment, IssuePage, IssuePatch } from '@ahel/dsh-ahel-account/types'
 import type { IssuesInjected, IssuesPanelIconProps } from '../src/client/contract.ts'
-import { createIssuesFeed } from '../src/client/feed.ts'
+import { createIssuesFeed, type IssuesBackend } from '../src/client/feed.ts'
 import { IssuesPage } from '../src/client/IssuesPage.tsx'
 import css from '../src/client/Issues.module.css'
 import { IssuesPanelIcon } from '../src/client/PanelIcons.tsx'
@@ -22,7 +23,7 @@ function ok<T>(value: T) {
   return Promise.resolve({ ok: true as const, value })
 }
 
-async function mount(page: IssuePage = PAGE) {
+async function mount(page: IssuePage = PAGE, methods: Partial<IssuesBackend> = {}) {
   const update = vi.fn((key: string, patch: IssuePatch) => {
     const issue = PAGE.issues.find(row => row.key === key)!
     return ok({ issue: { ...issue, status: patch.status ?? issue.status } })
@@ -32,6 +33,7 @@ async function mount(page: IssuePage = PAGE) {
     projects: vi.fn(() => ok([{ id: 'p1', name: 'Website' }])),
     assignees: vi.fn(() => ok({ members: [{ id: 'u2', name: 'Kaarna Pets', avatar: 'KP' }], agents: [{ id: 'ahel', name: 'Ahel', avatar: null, model: 'Claude Sonnet' }] })),
     update,
+    ...methods,
   })
   const feed = createIssuesFeed(backend, () => Promise.resolve({ signedIn: true, role: 'OWNER' }))
   await feed.reload()
@@ -134,4 +136,29 @@ it('a picked-up run shows a banner whose Open it shows the chat', () => {
   fireEvent.click(screen.getByText('Open it'))
   expect(openSession).toHaveBeenCalledWith('chat-9')
   expect(screen.queryByText('Ahel started DEMO-10 in a new chat')).toBeNull()
+})
+
+it('a detail read ahel.ai is too busy for says it is waiting, repeats by itself and then shows the activity', async () => {
+  const issue = ISSUES[2]!
+  const get = vi.fn()
+    .mockResolvedValueOnce({ ok: false as const, error: new RemoteError('ahel-issues/busy', 'ahel.ai is busy; try again shortly', { retryAfterSec: 3 }) })
+    .mockResolvedValue({ ok: true as const, value: { issue } })
+  const activity: IssueActivity[] = [{ id: 'a1', kind: 'created', actorType: 'member', actorName: 'Maarja', from: null, to: null, createdAt: issue.createdAt }]
+  await mount(PAGE, {
+    get,
+    comments: vi.fn(() => ok([] as IssueComment[])),
+    activity: vi.fn(() => ok(activity)),
+  })
+  vi.useFakeTimers()
+  try {
+    await act(async () => { fireEvent.click(screen.getByText(issue.key)) })
+    expect(screen.getByRole('status').textContent).toBe(en.retrying)
+    expect(screen.queryByText(en.failed)).toBeNull()
+    await act(async () => { await vi.advanceTimersByTimeAsync(3_000) })
+    expect(get).toHaveBeenCalledTimes(2)
+    expect(screen.queryByText(en.retrying)).toBeNull()
+    expect(screen.getByText('Maarja')).toBeTruthy()
+  } finally {
+    vi.useRealTimers()
+  }
 })

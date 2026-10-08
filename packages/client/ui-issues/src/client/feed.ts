@@ -11,7 +11,7 @@ import type {
 } from '@ahel/dsh-ahel-account/types'
 import type { HostObservable } from '@ahel/dsh-client-ui-slots'
 import type { RemoteFailure, RemoteResult } from '@ahel/dsh-typert-protocol'
-import type { IssueDetailLoad, IssuesAnswer, IssuesFilter, IssuesInjected, IssuesState } from './contract.ts'
+import type { IssueDetailLoad, IssueDetailRetry, IssuesAnswer, IssuesFilter, IssuesInjected, IssuesState } from './contract.ts'
 import { CLOSED } from './model.ts'
 
 /** The `ahelIssues` Remote methods the feed calls. */
@@ -78,6 +78,19 @@ export type IssuesFeed = Omit<IssuesInjected, 'run' | 'openSession' | 'openLink'
 /** A Remote failure's message worth showing: ahel.ai's own reason for refusals, nothing for transport failures. */
 function reason(error: { code: string; message: string }): string | null {
   return error.code === 'ahel-issues/forbidden' || error.code === 'ahel-issues/refused' ? error.message : null
+}
+
+/**
+ * Whether a failed read is worth repeating: ahel.ai rate-limited it (`busy`) or did not answer in time (`unreachable`).
+ * @param error - the Remote failure.
+ * @returns when to repeat it, or null when repeating would fail the same way.
+ */
+export function detailRetry(error: RemoteFailure): IssueDetailRetry | null {
+  if (error.code === 'ahel-issues/busy') {
+    const after = error.details.retryAfterSec
+    return { afterMs: after === null ? null : after * 1000 }
+  }
+  return error.code === 'ahel-issues/unreachable' ? { afterMs: null } : null
 }
 
 /**
@@ -233,10 +246,11 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
     },
     detail: async (key): Promise<IssueDetailLoad> => {
       const [issue, comments, activity] = await Promise.all([backend.get(key), backend.comments(key), backend.activity(key)])
-      if (!issue.ok) return { ok: false, message: reason(issue.error) }
+      const retry = [issue, comments, activity].map(part => part.ok ? null : detailRetry(part.error)).find(part => part !== null) ?? null
+      if (!issue.ok) return { ok: false, message: reason(issue.error), retry }
       const read = issue.value.issue ?? value.issues.find(row => row.key === key)
-      if (read === undefined) return { ok: false, message: null }
-      return { ok: true, issue: read, comments: comments.ok ? comments.value : [], activity: activity.ok ? activity.value : [] }
+      if (read === undefined) return { ok: false, message: null, retry }
+      return { ok: true, issue: read, comments: comments.ok ? comments.value : [], activity: activity.ok ? activity.value : [], retry }
     },
     comment: async (key, body) => answer(await backend.comment(key, body, 'member')),
     noteModel: (sessionId, label) => {

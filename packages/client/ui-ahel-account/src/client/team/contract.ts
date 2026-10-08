@@ -21,6 +21,11 @@ export interface TeamSummary {
   readonly state: HostObservable<TeamSummaryState>
   /** Read now, for example after a team write. */
   refresh(): void
+  /**
+   * Show the Inbox read's unread count as the summary's `inbox.unread`, so every badge equals the list until the next poll.
+   * @param unread - the unread rows of the Inbox list.
+   */
+  adoptInbox(unread: number): void
 }
 
 /** What answering one held call left: ahel.ai's stored status, or why it refused. */
@@ -75,7 +80,7 @@ export type InboxAnswer =
 
 /** Face of the Inbox panel and its sidebar row. */
 export interface InboxInjected {
-  /** Read received and sent handoffs for the selected workspace. */
+  /** Read received and sent handoffs and issue rows for the selected workspace; the summary's inbox count takes the read's unread rows. */
   load(): Promise<InboxLoad>
   /**
    * Read one handoff (which marks it read) and start a new session whose composer

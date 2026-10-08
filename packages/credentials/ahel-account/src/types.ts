@@ -336,7 +336,7 @@ export type DesktopCredits =
 export interface DesktopSummary {
   readonly workspace: { readonly id: string; readonly name: string; readonly role: string }
   readonly approvals: { readonly rows: readonly ApprovalRow[] } | null
-  /** Received handoffs that are unread and not done. */
+  /** Inbox rows that are unread: received handoffs that are not done, plus issue rows. */
   readonly inbox: { readonly unread: number } | null
   readonly credits: DesktopCredits | null
   /** The caller as ahel.ai names them now; absent from an older ahel.ai. */

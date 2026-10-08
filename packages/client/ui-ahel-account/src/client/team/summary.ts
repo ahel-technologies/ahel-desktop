@@ -2,7 +2,8 @@
  * One shared `ahelTeam.summary()` poll: every 30 s while the window has
  * focus, at once on window focus, on an account or workspace change, and on
  * demand after a team write. Signed out it publishes nothing to read and
- * calls nothing.
+ * calls nothing. An Inbox read replaces the inbox count with the list's own
+ * until the next poll.
  */
 import type { Context } from '@ahel/cordis'
 import type { AhelAccountView } from '@ahel/dsh-ahel-account/types'
@@ -106,5 +107,11 @@ export function registerTeamSummary(ctx: Context, account: HostObservable<AhelAc
     return () => { window.removeEventListener('focus', onFocus) }
   }, 'ui-ahel-account: summary on window focus')
 
-  return { state, refresh }
+  const adoptInbox = (unread: number): void => {
+    const summary = value.summary
+    if (summary === null || summary.inbox?.unread === unread) return
+    publish({ ...value, summary: { ...summary, inbox: { ...summary.inbox, unread } } })
+  }
+
+  return { state, refresh, adoptInbox }
 }
