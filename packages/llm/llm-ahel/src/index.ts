@@ -324,6 +324,39 @@ export function billingFetch(
   }
 }
 
+/**
+ * Prompt caching for one listed model. pi-ai adds Anthropic `cache_control`
+ * breakpoints (system prompt, last tool, last conversation message) only when
+ * it detects OpenRouter by provider id, and this route's id is `ahel`, so
+ * `anthropic/*` models, which cache nothing without breakpoints, name the
+ * convention here. Other families (OpenAI, Gemini, DeepSeek) cache a stable
+ * prefix by themselves and get no markers.
+ * @param id - OpenRouter-style model id.
+ * @returns the compat block to spread into the model profile, or nothing.
+ */
+export function promptCacheCompat(id: string): Pick<PiAiModelProfile, 'compat'> {
+  return id.startsWith('anthropic/') ? { compat: { cacheControlFormat: 'anthropic' } } : {}
+}
+
+/**
+ * The fetch that names the Harness Session on chat requests as `x-session-id`,
+ * which the proxy forwards to OpenRouter as the sticky-routing key, so every
+ * step of one conversation reaches the provider holding its warm prompt cache.
+ * @param sessionId - the Session the request belongs to, when known.
+ * @param base - the fetch to wrap.
+ * @returns the wrapping fetch, or `base` when there is no session.
+ */
+export function sessionFetch(
+  sessionId: string | undefined, base: typeof globalThis.fetch = globalThis.fetch,
+): typeof globalThis.fetch {
+  if (sessionId === undefined || sessionId.length === 0) return base
+  return async (input, init) => {
+    const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined))
+    headers.set('x-session-id', sessionId)
+    return base(input, { ...init, headers })
+  }
+}
+
 /** Delegates to the pi-ai adapter and rewrites Ahel refusals in its streams; refuses every call until the model list is read. */
 class AhelAdapter extends LlmAdapter {
   constructor(
@@ -392,6 +425,7 @@ export function apply(ctx: Context, config: Config): void {
       ...workspace === undefined ? {} : { headers: { 'X-Ahel-Workspace': workspace } },
       models: list.map((model): PiAiModelProfile => ({
         id: model.id, name: model.name, contextWindow: model.contextWindow, maxTokens: model.maxTokens,
+        ...promptCacheCompat(model.id),
       })),
     },
   })
@@ -405,7 +439,7 @@ export function apply(ctx: Context, config: Config): void {
     auth: NO_AMBIENT_AUTH,
     fetch: (call: PiAiFetchCall) => billingFetch((phase, amounts) => {
       ctx.ahelAccount.reportBilling({ phase, sessionId: call.sessionId ?? null, model: call.model, ...amounts, at: Date.now() })
-    }),
+    }, sessionFetch(call.sessionId)),
   }), config.displayName, () => models === undefined ? config.connectingLabel : undefined, async () => {
     try {
       await ctx.ahelAccount.revalidate()
