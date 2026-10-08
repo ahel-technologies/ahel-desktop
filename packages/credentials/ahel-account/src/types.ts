@@ -1,6 +1,7 @@
 /** Client-safe Ahel account state; no token, verifier or code crosses this projection. */
 import type {} from '@ahel/cordis'
 import type { Branded } from '@ahel/dsh-brand'
+import type {} from '@ahel/dsh-session-projection/types'
 import type { IssueInboxItem } from './issues-types.ts'
 
 /** Identity of one local sign-in attempt. */
@@ -598,6 +599,17 @@ declare module '@ahel/cordis' {
      * @mode emit
      */
     'ahel-account/changed'(view: AhelAccountView): void
+  }
+}
+
+declare module '@ahel/dsh-session-projection/types' {
+  interface SessionProjectionStateMap {
+    /** Host fold of the chat's workspace stamp. */
+    ahelWorkspace: string | null
+  }
+  interface SessionProjectionMap {
+    /** The ahel.ai workspace id the chat was started in, or null for a chat started without a selected workspace. */
+    ahelWorkspace: string | null
   }
 }
 

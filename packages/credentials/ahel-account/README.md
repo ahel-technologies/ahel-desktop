@@ -54,6 +54,10 @@ ahel.ai's hosted chat starts one Host per person and hands it the person's sign-
 
 A Host launched this way reports `hosted: { signInUrl, signOutUrl }` in the view. `signIn()` and `signOut()` refuse, because the person's ahel.ai session owns the grant; the client sends Sign in to `signInUrl` (a fresh launch) and Sign out to `signOutUrl`. Hosts started without the variable report `hosted: null`.
 
+### Chat workspace stamp
+
+Each chat records the ahel.ai workspace it was started in. At the first step a top-level chat takes before any prompt is logged, the Host appends the log-only session event `ahel-account/chat-workspace` (`{ workspace }`) with the selected workspace, or, while none is selected, the workspace ahel.ai's team summary names for the account; a first turn cancelled before its step leaves the stamp to the next one. The event carries the envelope's `ignorable: true`, so a build that does not know it still opens the chat. The `ahelWorkspace` Session projection carries the id, or null, on every Session list row, and a fork inherits it. Chats with prompts from before the stamp existed, or started while neither workspace could be read (signed out, ahel.ai unreachable), stay unstamped. The hosted chat lists only the selected workspace's chats.
+
 <a id="catalog-the-ahelcatalog-namespace"></a>
 ## Catalog: the `ahelCatalog` namespace
 
@@ -75,7 +79,7 @@ A child service, `ctx.ahelTeam`, calls ahel.ai's `/api/desktop/*` routes with th
 <a id="model-experience"></a>
 ## Model Experience
 
-None. The package adds no tools, prompt text or session events.
+None. The package adds no tools or prompt text. Its one session event, `ahel-account/chat-workspace`, is log-only and never reaches a model request.
 
 <a id="known-limitations-and-deferred-work"></a>
 ## Known Limitations and Deferred Work

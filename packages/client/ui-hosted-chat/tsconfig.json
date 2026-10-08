@@ -10,6 +10,7 @@
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../../api/remotes/tsconfig.client.json" },
+    { "path": "../../api/session-controller/tsconfig.client.json" },
     { "path": "../../credentials/ahel-account" },
     { "path": "../locale/tsconfig.client.json" },
     { "path": "../ui-ahel-account" },
@@ -20,6 +21,7 @@
     { "path": "../ui-settings/tsconfig.client.json" },
     { "path": "../ui-sidebar" },
     { "path": "../ui-slots" },
-    { "path": "../ui-theme/tsconfig.client.json" }
+    { "path": "../ui-theme/tsconfig.client.json" },
+    { "path": "../ui-workspace" }
   ]
 }

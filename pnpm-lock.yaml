@@ -3907,6 +3907,9 @@ importers:
       '@ahel/dsh-api-remotes':
         specifier: workspace:*
         version: link:../../api/remotes
+      '@ahel/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
       '@ahel/dsh-client-locale':
         specifier: workspace:*
         version: link:../locale
@@ -3940,6 +3943,9 @@ importers:
       '@ahel/dsh-client-ui-theme':
         specifier: workspace:*
         version: link:../ui-theme
+      '@ahel/dsh-client-ui-workspace':
+        specifier: workspace:*
+        version: link:../ui-workspace
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.3.2(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -7477,6 +7483,12 @@ importers:
       '@ahel/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@ahel/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@ahel/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
       '@ahel/dsh-brand':
         specifier: workspace:*
         version: link:../../util/brand
@@ -7492,6 +7504,12 @@ importers:
       '@ahel/dsh-mcp-client':
         specifier: workspace:*
         version: link:../../mcp/mcp-client
+      '@ahel/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@ahel/dsh-session-projection':
+        specifier: workspace:*
+        version: link:../../session/session-projection
       '@ahel/dsh-typert-protocol':
         specifier: workspace:*
         version: link:../../typert/protocol

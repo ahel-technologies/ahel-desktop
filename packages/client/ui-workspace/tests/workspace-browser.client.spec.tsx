@@ -109,6 +109,7 @@ function mount(overrides: Partial<WorkspaceBrowserProps> = {}) {
   const props: WorkspaceBrowserProps = {
     useShortcuts: select => select([]),
     useFolders: select => select(true),
+    useSessionScope: select => select(null),
     useWorkspaceShortcuts: bindSnapshotSelector(controls.state),
     requestSearch: controls.search,
     requestAddWorkspace: controls.add,

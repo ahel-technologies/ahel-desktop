@@ -10,7 +10,7 @@ import type {
   SessionTarget,
   SessionListState,
 } from '@ahel/dsh-api-session-controller/client'
-import { createSnapshotStore } from '@ahel/dsh-client-store'
+import { createSnapshotStore, notifySubscribers, type ObservableSnapshot } from '@ahel/dsh-client-store'
 import type { SubagentAddress } from '@ahel/dsh-subagent/client'
 import type {
   IWorkspaces, WorkspaceId, WorkspaceSnapshot, WorkspaceView,
@@ -20,6 +20,7 @@ import type {} from '@ahel/dsh-client-ui-layout/client'
 import type { DraftInitializationOptions } from '@ahel/dsh-client-ui-conversation/client'
 import type { RowToast } from './contract/slots.ts'
 import { pinOrderAccounts, pinOrderSource } from './pin-order.ts'
+import type { SessionFilter } from './tree.ts'
 import type { WorkspaceViewStoreActions } from './stores.ts'
 
 interface MainSelection {
@@ -110,6 +111,20 @@ export interface UiWorkspace {
    * @returns created absolute path.
    */
   createDirectory(path: string, name: string): Promise<string>
+  /**
+   * List only the Sessions a filter accepts in the Session browser (list and
+   * search) until the returned disposer runs; with several filters a row must
+   * pass each. Navigation and other Session surfaces keep every Session.
+   * @param filter - true for a Session the browser lists.
+   * @returns the disposer.
+   */
+  scopeSessions(filter: SessionFilter): () => void
+  /**
+   * Every filter registered through `scopeSessions` combined into one, or
+   * null while none is registered. Surfaces that list chats beside the
+   * browser (the command palette, `@` mentions) apply it and re-read on change.
+   */
+  readonly sessionScope: ObservableSnapshot<SessionFilter | null>
 }
 
 declare module '@ahel/cordis' {
@@ -137,6 +152,17 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     {}, { persist: { name: 'dsh.sessions.current' } },
   )
   private mainReference: SessionReference | undefined
+  private readonly sessionFilters = new Set<SessionFilter>()
+  private combinedFilter: SessionFilter | null = null
+  private readonly scopeListeners = new Set<() => void>()
+  // A plain observable: a snapshot store would run a function value as a state updater.
+  readonly sessionScope: ObservableSnapshot<SessionFilter | null> = {
+    getSnapshot: () => this.combinedFilter,
+    subscribe: (listener) => {
+      this.scopeListeners.add(listener)
+      return () => { this.scopeListeners.delete(listener) }
+    },
+  }
 
   /**
    * @param ctx - Client root Context.
@@ -308,6 +334,18 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     const result = await this.directoryPicker.createDirectory(path, name)
     if (!result.ok) throw new DirectoryBrowseError(result.error)
     return result.value
+  }
+
+  scopeSessions(filter: SessionFilter): () => void {
+    this.sessionFilters.add(filter)
+    this.publishScope()
+    return () => { if (this.sessionFilters.delete(filter)) this.publishScope() }
+  }
+
+  private publishScope(): void {
+    const filters = [...this.sessionFilters]
+    this.combinedFilter = filters.length === 0 ? null : session => filters.every(accepts => accepts(session))
+    notifySubscribers(this.scopeListeners, 'ui-workspace: sessionScope')
   }
 
   private watchNavigation(): () => void {

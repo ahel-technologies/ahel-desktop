@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { SESSION_FORMAT_VERSION, SessionId } from '@ahel/dsh-session'
+import { SESSION_FORMAT_VERSION, Session, SessionId } from '@ahel/dsh-session'
 import type { SessionEvent } from '@ahel/dsh-session'
 import {
   SessionAlreadyExistsError,
@@ -145,6 +145,18 @@ describe('validateStoredEvents', () => {
     ] as unknown as SessionEvent[]
     expect(validateStoredEvents(m, events)).toBe(events)
     expect(events[0]).toMatchObject({ type: 'foreign/telemetry', ignorable: true })
+  })
+
+  it('lets a build that does not know a log-only type read the event when its writer appended it as ignorable', () => {
+    const session = Session.create(SessionId('appended'))
+    const marked = session.append('turn/start', { turn: 1 }, { ignorable: true })
+    const plain = session.append('turn/start', { turn: 2 })
+    expect(marked.ignorable).toBe(true)
+    expect('ignorable' in plain).toBe(false)
+    // The older build reads the stored row with a type outside its vocabulary.
+    const asOlderBuild = (event: SessionEvent): SessionEvent => JSON.parse(JSON.stringify({ ...event, type: 'newer/log-only' })) as SessionEvent
+    expect(validateStoredEvents(meta('ignorable-append'), [asOlderBuild(marked)])).toHaveLength(1)
+    expect(() => validateStoredEvents(meta('required-append'), [asOlderBuild(plain)])).toThrow(SessionFormatUnsupportedError)
   })
 
   it('refuses the retired request/header "fallback" reason while accepting current headers', () => {

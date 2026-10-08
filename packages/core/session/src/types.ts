@@ -478,6 +478,18 @@ export type SurfaceIntent<T extends SurfaceEventType = SurfaceEventType> = {
 })
 
 /**
+ * Options of {@link Session.append} for a log-only event.
+ */
+export interface LogOnlyAppendOptions {
+  /**
+   * Write the envelope's {@link SessionEvent.ignorable} marker, so a build that
+   * does not know the type skips the event instead of refusing the log. Only
+   * for purely informational records whose loss cannot affect reconstruction.
+   */
+  readonly ignorable?: true
+}
+
+/**
  * One immutable entry in the session log.
  *
  * A proper discriminated union over `type` (not independent `type`/`data`

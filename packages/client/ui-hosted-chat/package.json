@@ -36,7 +36,8 @@
         "@ahel/dsh-client-ui-renderer",
         "@ahel/dsh-client-ui-settings",
         "@ahel/dsh-client-ui-sidebar",
-        "@ahel/dsh-client-ui-theme"
+        "@ahel/dsh-client-ui-theme",
+        "@ahel/dsh-client-ui-workspace"
       ],
       "platform": "web"
     }
@@ -53,6 +54,7 @@
     "@ahel/cordis": "workspace:~",
     "@ahel/dsh-ahel-account": "workspace:*",
     "@ahel/dsh-api-remotes": "workspace:*",
+    "@ahel/dsh-api-session-controller": "workspace:*",
     "@ahel/dsh-client-locale": "workspace:*",
     "@ahel/dsh-client-test-runtime": "workspace:*",
     "@ahel/dsh-client-ui-ahel-account": "workspace:*",
@@ -64,6 +66,7 @@
     "@ahel/dsh-client-ui-sidebar": "workspace:*",
     "@ahel/dsh-client-ui-slots": "workspace:*",
     "@ahel/dsh-client-ui-theme": "workspace:*",
+    "@ahel/dsh-client-ui-workspace": "workspace:*",
     "@testing-library/react": "^16.1.0",
     "@types/react": "~18.3.1",
     "@types/react-dom": "~18.3.0",

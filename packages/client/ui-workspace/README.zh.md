@@ -73,6 +73,8 @@ Session 行渲染运行时的实时 `pendingInteraction` 分类：审批显示**
 
 导航和启动恢复通过所选 Session 的 `follow` 获取投影，不会另行刷新该 Session 或其父会话的投影。
 
+`ctx.uiWorkspace.scopeSessions(filter)` 把会话列表与搜索限定为 `filter` 接受的 Session 行，直到调用返回的 disposer；有多个过滤器时，一行须通过每一个。导航、快捷键与 Session store 仍保留全部 Session。`ctx.uiWorkspace.sessionScope` 发布合并后的过滤器（未注册时为 null），命令面板的对话列表与 `@` 会话提及也套用同一过滤器。网页对话用它只列出所选 ahel.ai 工作区的对话。
+
 新建会话尝试获取列表中第一个符合条件的空白会话；启动恢复尝试已保存的空白会话。若该写锁被占用，导航直接新建 Session，不再尝试其他空白会话。其他获取错误会中止请求：显式新建会话或在 hero 中选择工作区时，失败以短暂提示展示，引用 Host 的错误码和消息（例如 preset 挂载失败），非 Host 拒绝的失败则显示其自身消息；已被后续导航或 owner 销毁取代的请求不弹提示，启动恢复仍只报告到控制台。已释放的空白会话被复用时保留 slash 命令状态。后续导航会取消尚未完成的启动选择。
 
 Workspace 和 Session 的启动基线均就绪后，空安装环境调用 `workspaces.initializeDefault`，创建或复用其空白 Session。选中该 Session 后输入框才可编辑，不会自动提交消息。后续导航或所属上下文销毁会阻止启动流程选中其结果。不符合首次使用条件时仍可选择文件夹，不显示错误。默认工作区创建失败时显示短暂提示，引导用户通过“选择工作区”选择文件夹，直到下次启动才重试。Session 创建失败沿用普通的恢复错误处理。登记成功的工作区在 Session 创建或后续提交失败时仍然保留。
