@@ -449,6 +449,9 @@ export function apply(ctx: Context, config: Config): void {
       })),
     },
   })
+  /** The workspace a chat's requests are metered in, when the chat is bound to one. */
+  const chatWorkspaceOf = (sessionId: string | undefined): string | undefined =>
+    sessionId === undefined ? undefined : ctx.ahelAccount.chatWorkspace(sessionId)
   const adapter = new AhelAdapter(new PiAiAdapter({
     profiles: () => profiles,
     resolveApiKey: async () => {
@@ -459,7 +462,7 @@ export function apply(ctx: Context, config: Config): void {
     auth: NO_AMBIENT_AUTH,
     fetch: (call: PiAiFetchCall) => billingFetch((phase, amounts) => {
       ctx.ahelAccount.reportBilling({ phase, sessionId: call.sessionId ?? null, model: call.model, ...amounts, at: Date.now() })
-    }, sessionFetch(call.sessionId, workspaceFetch(call.sessionId === undefined ? undefined : ctx.ahelAccount.chatWorkspace(call.sessionId)))),
+    }, sessionFetch(call.sessionId, workspaceFetch(chatWorkspaceOf(call.sessionId)))),
   }), config.displayName, () => models === undefined ? config.connectingLabel : undefined, async () => {
     try {
       await ctx.ahelAccount.revalidate()

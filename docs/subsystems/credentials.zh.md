@@ -117,7 +117,8 @@ bindChat(sessionId: string, workspace: string): void
  * The seat is checked against the profile ahel.ai answers now, else the stored one.
  * @param session - lookup parameter resolved from the Session identity.
  * @param workspace - the ahel.ai workspace id.
- * @throws RemoteError `ahel-account/workspace-unavailable` when the account has no seat there, or the chat already acts in another workspace.
+ * @throws RemoteError `ahel-account/workspace-unavailable` when the account has no seat there,
+ *   or the chat already acts in another workspace.
  */
 @Remote async pinChat(session: Session, workspace: string): Promise<void>
 
