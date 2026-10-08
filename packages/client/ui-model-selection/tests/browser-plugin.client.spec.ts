@@ -528,3 +528,37 @@ it.each([false, true])('reports accepted switches with blank=%s and no refused s
     expect(b.track).not.toHaveBeenCalled()
   } finally { await scope.fiber.dispose(); await b.ctx.fiber.dispose() }
 })
+
+describe('a blank chat with no workspace default', () => {
+  const billing = (defaultModel: string | null) => ({
+    provider: 'anthropic',
+    state: createSnapshotStore({ signedIn: true, name: 'ahel', models: {}, defaultModel, balanceCents: null, frame: null }),
+    refreshBalance: () => undefined,
+  })
+
+  it('starts on the first metered model, not the Host\'s last-used one', async () => {
+    const b = await bench('en')
+    try {
+      b.setHostCurrent({ provider: 'anthropic', model: 'claude-opus' })
+      b.remote.emit('llm/adapters-updated', [])
+      b.ctx.modelDirectories.registerBilling(billing(null))
+      b.mint('fresh', true)
+      await b.ctx.modelDirectories.directoryFor(sid('fresh')).load()
+      await vi.waitFor(() => { expect(b.hostCurrent()).toEqual({ provider: 'anthropic', model: 'claude-haiku', reasoningEffort: 'high' }) })
+      expect(b.calls.select).toBe(1)
+    } finally { await b.ctx.fiber.dispose() }
+  })
+
+  it('keeps a listed own-key model', async () => {
+    const b = await bench('en')
+    try {
+      b.setHostCurrent({ provider: 'external', model: 'claude-haiku' })
+      b.remote.emit('llm/adapters-updated', [])
+      b.ctx.modelDirectories.registerBilling(billing(null))
+      b.mint('own', true)
+      await b.ctx.modelDirectories.directoryFor(sid('own')).load()
+      await Promise.resolve()
+      expect(b.calls.select).toBe(0)
+    } finally { await b.ctx.fiber.dispose() }
+  })
+})

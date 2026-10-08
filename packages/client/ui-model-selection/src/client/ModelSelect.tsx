@@ -335,7 +335,8 @@ export function ModelSelect(props: ModelSelectInjected & { locked: boolean } & P
         : t('trigger.ariaEffort', { model: modelLabel, effort: effortLabel })
   const keys = shortcutKeys()
   const triggerTitle = keys.length === 0 ? modelLabel : t('trigger.title', { keys: keys.join('') })
-  const anyPrice = groups.some(group => group.rows.some(row => row.metered !== undefined))
+  // ahel.ai can withhold typical prices; with none listed the price column and its footnote go.
+  const anyPrice = groups.some(group => group.rows.some(row => row.typicalCents !== undefined))
   const onOwnKey = current !== undefined && !current.route.metered
   const balanceCents = active?.state.signedIn === true ? active.state.balanceCents : null
 

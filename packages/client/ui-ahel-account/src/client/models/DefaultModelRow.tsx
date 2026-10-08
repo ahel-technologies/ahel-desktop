@@ -10,6 +10,7 @@ import type { MenuEntry } from '@ahel/dsh-client-ui-primitives'
 import type { HostObservable, InjectFace, PropsLocale, PropsRuntime } from '@ahel/dsh-client-ui-slots'
 import type {} from '@ahel/dsh-client-ui-settings-models/client'
 import type { AhelMeteredModel } from '@ahel/dsh-ahel-account/types'
+import { readableModelName } from '@ahel/dsh-client-ui-model-selection/client'
 import type { DefaultModelView } from './source.ts'
 import css from '../AhelAccount.module.css'
 
@@ -54,7 +55,10 @@ export function DefaultModelRow({ setDefault, useModels, t }: DefaultModelRowPro
   const [open, setOpen] = useState(false)
   if (!view.signedIn || view.defaultModel === undefined || view.models.length === 0) return null
   const chosen = view.models.find(model => model.id === view.defaultModel)
-  const label = chosen === undefined ? t('defaultModelNone') : shortName(chosen)
+  // A default ahel.ai no longer lists keeps its name, marked, instead of reading as not set.
+  const label = chosen !== undefined
+    ? shortName(chosen)
+    : view.defaultModel === null ? t('defaultModelNone') : t('defaultModelUnlisted', { name: readableModelName(view.defaultModel) })
   const price = chosen?.ahel?.typicalMessageCents ?? null
   const items: MenuEntry[] = []
   for (const maker of [...new Set(view.models.map(makerOf))]) {
