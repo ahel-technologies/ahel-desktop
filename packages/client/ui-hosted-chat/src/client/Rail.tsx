@@ -60,11 +60,11 @@ const THEMES: Readonly<Record<ThemePreference, { key: HostedChatKey; glyph: Glyp
 
 const NO_WORKSPACES: readonly AhelWorkspace[] = []
 
-/** Shared content of a rail row: the active bar, the rail glyph, the wide label and an optional count. */
+/** Shared content of a rail row: the active bar, the glyph (in both widths, like ahel.ai's rail), the wide label and an optional count. */
 function RowContent({ wide, label, glyph: RowGlyph, count }: { wide: boolean; label: string; glyph: Glyph; count?: number }): ReactNode {
   return <>
     <span className={css.bar} aria-hidden="true" />
-    {!wide && <span className={css.glyph}><RowGlyph size={18} /></span>}
+    <span className={css.glyph} aria-hidden={wide || undefined}><RowGlyph size={wide ? 16 : 18} /></span>
     {wide && <span className={css.label}>{label}</span>}
     {count !== undefined && count > 0 && <span className={css.count} aria-hidden="true">{count > 99 ? '99+' : count}</span>}
   </>
