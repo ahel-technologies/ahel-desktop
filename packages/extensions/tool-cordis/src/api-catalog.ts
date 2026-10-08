@@ -480,7 +480,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: 'async revalidate(): Promise<void>',
-        description: 'Host-only: after ahel.ai refused the current bearer, refresh it once. A refresh ahel.ai rejects signs the account out, like `accessToken()`.',
+        description: 'Host-only: after ahel.ai refused the current bearer, refresh it once. A refresh ahel.ai rejects signs the account out, like `accessToken()`. A launched Host keeps the stored record on a rejection (keepRejected): its replacement may already have written a fresh grant to the shared volume.',
         parameters: [],
       },
       {

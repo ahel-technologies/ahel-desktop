@@ -474,11 +474,13 @@ export class AhelAccount extends TypertRemoteService {
 
   /**
    * Host-only: after ahel.ai refused the current bearer, refresh it once. A
-   * refresh ahel.ai rejects signs the account out, like `accessToken()`.
+   * refresh ahel.ai rejects signs the account out, like `accessToken()`. A
+   * launched Host keeps the stored record on a rejection (keepRejected): its
+   * replacement may already have written a fresh grant to the shared volume.
    */
   async revalidate(): Promise<void> {
     try {
-      const options = { refreshSkewMs: this.refreshSkewMs, requestTimeoutMs: this.requestTimeoutMs }
+      const options = { refreshSkewMs: this.refreshSkewMs, requestTimeoutMs: this.requestTimeoutMs, keepRejected: this.hosted !== null }
       await currentOAuthGrant(this.ctx.credentials, this.ref, options, true)
     } catch (error) {
       if (!(error instanceof OAuthGrantError && error.rejected)) throw error
@@ -522,7 +524,7 @@ export class AhelAccount extends TypertRemoteService {
   private async currentGrant(): Promise<StoredOAuthGrant | undefined> {
     await this.launched
     try {
-      const options = { refreshSkewMs: this.refreshSkewMs, requestTimeoutMs: this.requestTimeoutMs }
+      const options = { refreshSkewMs: this.refreshSkewMs, requestTimeoutMs: this.requestTimeoutMs, keepRejected: this.hosted !== null }
       return await currentOAuthGrant(this.ctx.credentials, this.ref, options)
     } catch (error) {
       if (error instanceof OAuthGrantError && error.rejected) return undefined

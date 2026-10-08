@@ -10,7 +10,7 @@ Models come from your ahel.ai account, your own API key, or a coding CLI already
 
 Get the latest macOS (Apple silicon) or Windows build from [the latest release](https://github.com/ahel-technologies/ahel-desktop/releases/latest).
 
-Builds are unsigned for now. macOS: right-click the app and choose Open. Windows: SmartScreen > More info > Run anyway.
+Builds are unsigned beta builds for now. macOS: open the app once; when macOS refuses it, go to System Settings > Privacy & Security, press Open Anyway and enter your Mac password (right-click > Open no longer works on macOS 15). Windows: SmartScreen > More info > Run anyway.
 
 ## Build from source
 
