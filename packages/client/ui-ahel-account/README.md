@@ -34,7 +34,7 @@ Once `ui-model-selection` is loaded, the package registers the Ahel account as t
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-`team/summary.ts` runs the one shared `ahelTeam.summary()` poll. `models/source.ts` combines it with the account view and `ahelTeam.models()` / `workspaceModel()` into the picker's `ModelBillingState` and the Default model row's view; values from a summary, a GET and a PUT apply in arrival order. `models/DefaultModelRow.tsx` renders the row in the `settings.models.header` seat. The source registers through `ctx.inject(['modelDirectories'], …)`, so the package loads without the picker.
+`team/summary.ts` runs the one shared `ahelTeam.summary()` poll. Each Inbox read sets the poll's `inbox.unread` to the Inbox read's count: unread handoffs that are not done plus ahel.ai's whole-Inbox count of unread issue rows, which can exceed the rows shown (`adoptInbox`), so the sidebar badge and the hosted chat's rail match the list; an open Inbox re-reads when a later poll counts differently. `models/source.ts` combines it with the account view and `ahelTeam.models()` / `workspaceModel()` into the picker's `ModelBillingState` and the Default model row's view; values from a summary, a GET and a PUT apply in arrival order. `models/DefaultModelRow.tsx` renders the row in the `settings.models.header` seat. The source registers through `ctx.inject(['modelDirectories'], …)`, so the package loads without the picker.
 
 </details>
 
