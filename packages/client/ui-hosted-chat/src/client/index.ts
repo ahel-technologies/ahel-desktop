@@ -42,7 +42,7 @@ export type {
 } from './contract.ts'
 export type { HostedChatKey } from './locales.ts'
 export { chatScope, inChatScope, onlyDraft, watchChatScope } from './scope.ts'
-export type { ChatScope, ChatScopeDeps, FollowState } from './scope.ts'
+export type { ChatRow, ChatScope, ChatScopeDeps, FollowState } from './scope.ts'
 
 // The event @ahel/dsh-client-ui-issues declares and listens to; the chat column only emits it.
 declare module '@ahel/cordis' {

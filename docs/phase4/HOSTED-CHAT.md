@@ -137,3 +137,4 @@ Open items that do not block go-live:
 - The Host logs nothing to the console in this profile, so a refused launch grant shows only as signed out in the UI; Sign in there replaces the pod.
 - The gateway passes the switcher-cookie workspace to the mint, which checks the seat, but the Host acts in the person's default workspace until they pick one.
 - Deleting an account does not yet delete its `chat-<hash>-data` volume.
+- A cold Session row whose projection cache misses carries no `ahelWorkspace`, so the chat counts as the account default's workspace in the Chats list; the next Session format change must re-fold `ahelWorkspace`.

@@ -97,7 +97,8 @@ export function apply(ctx: ClientContext): void {
       const scope = (ctx.get('uiWorkspace') as BrowserScope | undefined)?.sessionScope.getSnapshot() ?? null
       const offered = scope === null ? sessionItems : sessionItems.filter((candidate) => {
         const summary = listed[candidate.sessionId]
-        return summary === undefined || scope(summary)
+        // A session the list does not carry cannot be judged, so a filtered list never offers it.
+        return summary !== undefined && scope(summary)
       })
       const sessionRows = offered.map((candidate) => {
         const summary = listed[candidate.sessionId]

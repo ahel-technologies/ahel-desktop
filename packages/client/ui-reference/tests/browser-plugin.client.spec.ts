@@ -421,12 +421,25 @@ describe('candidates', () => {
       mention: `@[${label}](dsh-session:${id})`,
     })
     const sessions = vi.fn(() => Promise.resolve({
-      ok: true as const, value: [candidate('mine', 'Mine'), candidate('theirs', 'Theirs')],
+      ok: true as const,
+      value: [
+        candidate('mine', 'Mine'), candidate('theirs', 'Theirs'), candidate('mine-helper', 'Mine helper'),
+        candidate('theirs-helper', 'Theirs helper'), candidate('unlisted', 'Unlisted'),
+      ],
     }))
-    const { ctx, source } = await bench(files, sessions, { mine: { updatedAt: UPDATED_AT }, theirs: { updatedAt: UPDATED_AT } })
-    ctx.provide('uiWorkspace', { sessionScope: { getSnapshot: () => (row: { id: string }) => row.id !== 'theirs' } })
+    const { ctx, source } = await bench(files, sessions, {
+      'mine': { updatedAt: UPDATED_AT },
+      'theirs': { updatedAt: UPDATED_AT },
+      'mine-helper': { updatedAt: UPDATED_AT, origin: 'subagent', parentId: sid('mine') },
+      'theirs-helper': { updatedAt: UPDATED_AT, origin: 'subagent', parentId: sid('theirs') },
+    })
+    // The hosted chat's filter judges a subagent by its top-level chat (ui-hosted-chat chat-scope spec).
+    const hidden = new Set(['theirs'])
+    const accepts = (row: { id: string; parentId?: string }): boolean => !hidden.has(row.parentId ?? row.id)
+    ctx.provide('uiWorkspace', { sessionScope: { getSnapshot: () => accepts } })
     const rows = await source.candidates(session, request(''))
-    expect(rows.map(row => row.name)).toEqual(['Mine'])
+    // A session the list does not carry is never offered while a filter is registered.
+    expect(rows.map(row => row.name)).toEqual(['Mine', 'Mine helper'])
   })
 
   it('uses current Session titles and groups direct subagents above ordinary Sessions', async () => {

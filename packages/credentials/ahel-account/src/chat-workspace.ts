@@ -1,12 +1,13 @@
 /**
  * The ahel.ai workspace each chat was started in. At the first step a chat
- * takes before any prompt is logged, while a workspace is selected, the Host
- * appends the log-only `ahel-account/chat-workspace` event with the envelope's
+ * takes before any prompt is logged, the Host appends the log-only
+ * `ahel-account/chat-workspace` event (the selected workspace, else the one
+ * ahel.ai's team summary names for the account) with the envelope's
  * `ignorable: true`, so a build that does not know the type still reads the
  * log. The `ahelWorkspace` projection folds it, so Session list rows carry the
  * stamp on live and cold rows and a fork inherits it. A chat with prompts from
- * before this stamp existed, or started with no workspace selected, stays
- * unstamped (null).
+ * before this stamp existed, or started while neither workspace was known
+ * (signed out, ahel.ai unreachable), stays unstamped (null).
  * @module @ahel/dsh-ahel-account/chat-workspace
  */
 import type { Context } from '@ahel/cordis'
@@ -15,12 +16,14 @@ import type { Session } from '@ahel/dsh-session'
 import type { ProjectionDefinition } from '@ahel/dsh-session-projection'
 import type {} from '@ahel/dsh-api-session-controller/types'
 import { z } from 'zod'
+import type {} from './team.ts'
 import type {} from './types.ts'
 
 declare module '@ahel/dsh-session/types' {
   interface SessionEventMap {
     /**
-     * The ahel.ai workspace selected when the chat took its first step.
+     * The ahel.ai workspace the chat took its first step in: the selected
+     * one, else the account default ahel.ai names.
      * Log-only and written with `ignorable: true`: it never reaches a model
      * request; the hosted chat lists the chat under this workspace.
      */
@@ -63,6 +66,28 @@ export function stampChat(session: Session, workspace: string): void {
   session.append('ahel-account/chat-workspace', { workspace }, { ignorable: true })
 }
 
+/**
+ * The workspace a new chat is stamped with: the selected one, else the one ahel.ai acts in for the
+ * account (the team summary's, which the hosted Chats list shows while none is selected).
+ * @param selected - `ahelAccount.workspace()`.
+ * @param picked - reads the team summary's workspace, or undefined when `ahelTeam` is not mounted.
+ * @returns the id, or undefined when neither is known (signed out, ahel.ai unreachable).
+ * @throws what `selected` throws.
+ */
+export async function chatWorkspace(
+  selected: () => Promise<string | undefined>,
+  picked: (() => Promise<string>) | undefined,
+): Promise<string | undefined> {
+  const id = await selected()
+  if (id !== undefined || picked === undefined) return id
+  try {
+    return await picked()
+  } catch (_unavailable) {
+    // Signed out or ahel.ai unreachable: the chat stays unstamped and lists under the default.
+    return undefined
+  }
+}
+
 /** Plugin name. */
 export const name = 'ahel-chat-workspace'
 
@@ -83,7 +108,11 @@ export function apply(ctx: Context): void {
     const lastPromptAt = ctx.sessionProjections.stateOf(session, 'sessionListMetadata')?.lastPromptAt
     if (!needsStamp(session.header.origin, stamp, lastPromptAt)) return decision
     try {
-      const workspace = await ctx.ahelAccount.workspace()
+      const team = ctx.get('ahelTeam')
+      const workspace = await chatWorkspace(
+        () => ctx.ahelAccount.workspace(),
+        team === undefined ? undefined : async () => (await team.summary()).workspace.id,
+      )
       if (workspace !== undefined) stampChat(session, workspace)
     } catch (error) {
       // An unstamped chat lists under the account's default workspace; the step goes on.

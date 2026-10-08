@@ -3,7 +3,7 @@
  * hosted chat registers a Session filter: until the account is signed in and
  * the load's follow of the gateway cookie has picked the workspace, only the
  * blank New chat draft passes; then a chat passes in the workspace it was
- * started in. A switch away from the open chat's workspace starts a new chat.
+ * started in, and a subagent with its top-level chat. A switch away from the open chat's workspace starts a new chat.
  */
 import type { SessionListState, SessionSummary } from '@ahel/dsh-api-session-controller/client'
 import type { AhelAccountView } from '@ahel/dsh-ahel-account/types'
@@ -45,17 +45,36 @@ export function chatScope(view: AhelAccountView | null, picked: string | null, f
   return { current, home: selected === null ? current : oldest ?? current }
 }
 
+/** The parts of a Session row the scope reads; `retainedBy` is optional so rows from other sources fit. */
+export type ChatRow = Pick<SessionSummary, 'blank' | 'origin' | 'parentId' | 'projectionValues'> & {
+  readonly retainedBy?: SessionSummary['retainedBy']
+}
+
+/** Longest subagent chain walked to its top-level chat; a longer one is treated as broken. */
+const MAX_DEPTH = 64
+
 /**
  * Whether the Chats list shows a chat: the New chat draft always, a stamped chat in its workspace,
- * an unstamped one in the scope's `home`. Subagent rows pass: the list never shows them as chats.
+ * an unstamped one in the scope's `home`, and the open chat while its first step has not stamped
+ * it yet (no prompt logged). A subagent row follows its top-level chat; one whose chain leaves
+ * the list is hidden.
  * @param session - the Session row.
  * @param scope - the list's scope.
+ * @param byId - the Session list's rows, for a subagent's chain.
  * @returns true to list the row.
  */
-export function inChatScope(session: Pick<SessionSummary, 'blank' | 'origin' | 'projectionValues'>, scope: ChatScope): boolean {
-  if (session.blank || session.origin === 'subagent') return true
-  const stamp = session.projectionValues?.ahelWorkspace
-  return (typeof stamp === 'string' ? stamp : scope.home) === scope.current
+export function inChatScope(session: ChatRow, scope: ChatScope, byId: Readonly<Record<string, ChatRow | undefined>> = {}): boolean {
+  let row = session
+  for (let depth = 0; row.origin === 'subagent'; depth++) {
+    const parent = row.parentId === undefined ? undefined : byId[row.parentId]
+    if (parent === undefined || depth >= MAX_DEPTH) return false
+    row = parent
+  }
+  if (row.blank) return true
+  const stamp = row.projectionValues?.ahelWorkspace
+  if (typeof stamp === 'string') return stamp === scope.current
+  if ((row.retainedBy?.mainView ?? 0) > 0 && row.projectionValues?.sessionListMetadata?.lastPromptAt === null) return true
+  return scope.home === scope.current
 }
 
 /**
@@ -96,7 +115,7 @@ export function watchChatScope(deps: ChatScopeDeps): () => void {
       key = next
       // The new filter goes in before the old one leaves, so the list is never unfiltered.
       const previous = release
-      release = deps.scopeSessions(scope === null ? onlyDraft : session => inChatScope(session, scope))
+      release = deps.scopeSessions(scope === null ? onlyDraft : session => inChatScope(session, scope, deps.sessions.getSnapshot().byId))
       previous?.()
     }
     if (scope === null) return
@@ -108,7 +127,7 @@ export function watchChatScope(deps: ChatScopeDeps): () => void {
     const at = `${next} ${main.id}`
     if (at === checked) return
     checked = at
-    if (!inChatScope(main, scope)) deps.startChat()
+    if (!inChatScope(main, scope, list.byId)) deps.startChat()
   }
   sync()
   const offs = [deps.account, deps.summary, deps.follow, deps.sessions].map(source => source.subscribe(sync))

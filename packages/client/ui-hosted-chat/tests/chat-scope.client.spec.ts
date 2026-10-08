@@ -4,6 +4,8 @@ import type { AhelAccountView } from '@ahel/dsh-ahel-account/types'
 import type { TeamSummaryState } from '@ahel/dsh-client-ui-ahel-account/client'
 import type { SessionFilter } from '@ahel/dsh-client-ui-workspace/client'
 import type { FollowState } from '../src/client/index.ts'
+
+type SessionId = NonNullable<SessionSummary['parentId']>
 import { chatScope, inChatScope, watchChatScope } from '../src/client/index.ts'
 import { cell } from '../src/client/observable.ts'
 
@@ -34,7 +36,8 @@ describe('hosted Chats list scope', () => {
     expect(inChatScope(chat('w2'), scope)).toBe(true)
     expect(inChatScope(chat('w1'), scope)).toBe(false)
     expect(inChatScope(chat('w1', true), scope)).toBe(true)
-    expect(inChatScope({ ...chat(), origin: 'subagent' }, scope)).toBe(true)
+    // A subagent whose top-level chat is not in the list is hidden.
+    expect(inChatScope({ ...chat(), origin: 'subagent' }, scope)).toBe(false)
   })
 
   it('lists unstamped chats under the default workspace only', () => {
@@ -48,6 +51,30 @@ describe('hosted Chats list scope', () => {
     expect(picked).toEqual({ current: 'w2', home: 'w2' })
     expect(inChatScope(chat(), picked)).toBe(true)
     expect(inChatScope(chat('w1'), picked)).toBe(false)
+  })
+
+  it('judges a subagent by its top-level chat and hides one whose chain leaves the list', () => {
+    const scope = chatScope(signedIn('w2'), null, SETTLED)!
+    const byId = {
+      theirs: chat('w1'), mine: chat('w2'),
+      helper: { blank: false, origin: 'subagent' as const, parentId: 'theirs' as SessionId },
+      nested: { blank: false, origin: 'subagent' as const, parentId: 'helper' as SessionId },
+      ours: { blank: false, origin: 'subagent' as const, parentId: 'mine' as SessionId },
+    }
+    expect(inChatScope(byId.helper, scope, byId)).toBe(false)
+    expect(inChatScope(byId.nested, scope, byId)).toBe(false)
+    expect(inChatScope(byId.ours, scope, byId)).toBe(true)
+    expect(inChatScope({ blank: false, origin: 'subagent', parentId: 'gone' as SessionId }, scope, byId)).toBe(false)
+  })
+
+  it('keeps the open chat listed while its first step has not stamped it', () => {
+    const scope = chatScope(signedIn('w2'), null, SETTLED)!
+    const values = (lastPromptAt: number | null) => ({ ahelWorkspace: null, sessionListMetadata: { blank: false, lastPromptAt } })
+    const pending = { blank: false, retainedBy: { mainView: 1 }, projectionValues: values(null) }
+    expect(inChatScope(pending, scope)).toBe(true)
+    // The same chat in the background, or one with a logged prompt, follows the unstamped rule.
+    expect(inChatScope({ ...pending, retainedBy: {} }, scope)).toBe(false)
+    expect(inChatScope({ ...pending, projectionValues: values(1) }, scope)).toBe(false)
   })
 
   it('takes the follow target over the saved selection while the follow moves', () => {

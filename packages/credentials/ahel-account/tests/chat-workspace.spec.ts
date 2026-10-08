@@ -1,7 +1,7 @@
 /** The chat workspace stamp: when a step stamps its chat, and the stamp's envelope. */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { Session, SessionId } from '@ahel/dsh-session'
-import { chatWorkspaceProjection, needsStamp, stampChat } from '../src/chat-workspace.ts'
+import { chatWorkspace, chatWorkspaceProjection, needsStamp, stampChat } from '../src/chat-workspace.ts'
 
 describe('needsStamp', () => {
   it('stamps a top-level chat with no stamp and no logged prompt, whichever turn takes the step', () => {
@@ -30,5 +30,19 @@ describe('stampChat', () => {
     expect(event).toMatchObject({ type: 'ahel-account/chat-workspace', data: { workspace: 'w2' }, ignorable: true })
     const fold = chatWorkspaceProjection.apply
     expect(fold(null, event!)).toBe('w2')
+  })
+})
+
+describe('chatWorkspace', () => {
+  it('stamps the selected workspace, else the one the team summary names', async () => {
+    const picked = vi.fn(() => Promise.resolve('w-default'))
+    await expect(chatWorkspace(() => Promise.resolve('w1'), picked)).resolves.toBe('w1')
+    expect(picked).not.toHaveBeenCalled()
+    await expect(chatWorkspace(() => Promise.resolve(undefined), picked)).resolves.toBe('w-default')
+  })
+
+  it('leaves the chat unstamped when no workspace can be read', async () => {
+    await expect(chatWorkspace(() => Promise.resolve(undefined), undefined)).resolves.toBeUndefined()
+    await expect(chatWorkspace(() => Promise.resolve(undefined), () => Promise.reject(new Error('signed out')))).resolves.toBeUndefined()
   })
 })
