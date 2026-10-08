@@ -6,7 +6,7 @@
  * state; a group re-reads it whenever the palette ranks rows.
  */
 import type { Context } from '@ahel/cordis'
-import type { SessionSummary } from '@ahel/dsh-api-session-controller/client'
+import type { SessionListState, SessionSummary } from '@ahel/dsh-api-session-controller/client'
 import type { CatalogCapability } from '@ahel/dsh-ahel-account/types'
 import type { ModelDirectory } from '@ahel/dsh-client-ui-model-selection/client'
 import type { MainPanelId } from '@ahel/dsh-client-ui-layout/client'
@@ -22,7 +22,7 @@ import type {} from '@ahel/dsh-client-ui-renderer/client'
 import type {} from '@ahel/dsh-client-ui-settings/client'
 import type {} from '@ahel/dsh-client-ui-sidebar/client'
 import type {} from '@ahel/dsh-client-ui-theme/client'
-import type {} from '@ahel/dsh-client-ui-workspace/client'
+import type { SessionFilter } from '@ahel/dsh-client-ui-workspace/client'
 import type { NS } from './locales.ts'
 import type { PaletteCommand, PaletteRegistry } from './registry.ts'
 
@@ -57,16 +57,27 @@ const CHAT_LIMIT = 8
 const INSTALLS_REFRESH_MS = 10_000
 
 /**
- * The Sessions a person sees in the sidebar: top-level, not blank.
- * @param ctx - context with `sessions`.
+ * The chats of a Session list snapshot a person sees in the sidebar: top-level, not blank, and
+ * accepted by the Session browser's filter (the hosted chat lists one ahel.ai workspace's chats).
+ * @param list - the Session list snapshot.
+ * @param scope - `uiWorkspace.sessionScope`'s filter, or null for every Session.
+ * @returns the summaries, newest first.
+ */
+export function listedChats(list: SessionListState, scope: SessionFilter | null): SessionSummary[] {
+  return list.ids.flatMap((id) => {
+    const row = list.byId[id]
+    if (row === undefined || row.blank || row.parentId !== undefined || row.origin === 'subagent') return []
+    return scope === null || scope(row) ? [row] : []
+  }).sort((a, b) => b.updatedAt - a.updatedAt)
+}
+
+/**
+ * The Sessions a person sees in the sidebar.
+ * @param ctx - context with `sessions` and `uiWorkspace`.
  * @returns the summaries, newest first.
  */
 function chatSummaries(ctx: Context): SessionSummary[] {
-  const list = ctx.sessions.list.getSnapshot()
-  return list.ids.flatMap((id) => {
-    const row = list.byId[id]
-    return row === undefined || row.blank || row.parentId !== undefined || row.origin === 'subagent' ? [] : [row]
-  }).sort((a, b) => b.updatedAt - a.updatedAt)
+  return listedChats(ctx.sessions.list.getSnapshot(), ctx.uiWorkspace.sessionScope.getSnapshot())
 }
 
 /**
@@ -139,6 +150,7 @@ export function registerCoreSources(ctx: Context, registry: PaletteRegistry, t: 
   }), 'ui-command-palette: panels')
 
   ctx.effect(() => ctx.sessions.list.subscribe(invalidate), 'ui-command-palette: chats follow the list')
+  ctx.effect(() => ctx.uiWorkspace.sessionScope.subscribe(invalidate), 'ui-command-palette: chats follow the browser filter')
   ctx.effect(() => registry.register({
     id: 'chats', label: () => t('groupChats'), order: 20, limit: CHAT_LIMIT,
     items: () => {

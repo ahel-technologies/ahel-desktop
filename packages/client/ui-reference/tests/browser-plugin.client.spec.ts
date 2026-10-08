@@ -414,6 +414,21 @@ describe('candidates', () => {
     ])
   })
 
+  it('offers only the sessions the Session browser filter accepts', async () => {
+    const files = vi.fn(() => Promise.resolve({ ok: true as const, value: [] }))
+    const candidate = (id: string, label: string) => ({
+      sessionId: sid(id), label, cwd: `${HOME}/project`, sameWorkspace: true, createdAt: CREATED_AT,
+      mention: `@[${label}](dsh-session:${id})`,
+    })
+    const sessions = vi.fn(() => Promise.resolve({
+      ok: true as const, value: [candidate('mine', 'Mine'), candidate('theirs', 'Theirs')],
+    }))
+    const { ctx, source } = await bench(files, sessions, { mine: { updatedAt: UPDATED_AT }, theirs: { updatedAt: UPDATED_AT } })
+    ctx.provide('uiWorkspace', { sessionScope: { getSnapshot: () => (row: { id: string }) => row.id !== 'theirs' } })
+    const rows = await source.candidates(session, request(''))
+    expect(rows.map(row => row.name)).toEqual(['Mine'])
+  })
+
   it('uses current Session titles and groups direct subagents above ordinary Sessions', async () => {
     const files = vi.fn(() => Promise.resolve({ ok: true as const, value: [] }))
     const sessions = vi.fn(() => Promise.resolve({

@@ -10,6 +10,8 @@
  * breadcrumb already does, and a session names its workspace only when that
  * workspace is not the current one. A session is dated from the Host session
  * list, so the `@` menu and the session list never disagree about its age.
+ * A session the Session browser's filter hides (`uiWorkspace.sessionScope`,
+ * for example another ahel.ai workspace's chat in the hosted chat) is not offered.
  *
  * @module @ahel/dsh-client-ui-reference/client
  */
@@ -19,7 +21,7 @@ import type {} from '@ahel/dsh-api-remotes/client'
 import type {} from '@ahel/dsh-client-locale/client'
 import type {} from '@ahel/dsh-client-ui-sidebar-right/client'
 import type { Context as ClientContext } from '@ahel/cordis'
-import type { ISessions } from '@ahel/dsh-api-session-controller/client'
+import type { ISessions, SessionSummary } from '@ahel/dsh-api-session-controller/client'
 import { relativeTime } from '@ahel/dsh-client-ui-primitives'
 import type {
   ClientSessionContext, InputTriggerCrumb, InputTriggerServiceContract, InputTriggerSource,
@@ -35,6 +37,14 @@ declare module '@ahel/dsh-api-session-controller/client' {
     /** File and Session candidates waiting for initial history and their RPC results. */
     referenceCandidates: unknown
   }
+}
+
+/**
+ * The one part of ui-workspace's optional `uiWorkspace` service this source reads: the Session
+ * browser's filter, null while none is registered. Structural, so this package needs no ui-workspace build.
+ */
+interface BrowserScope {
+  readonly sessionScope: { getSnapshot(): ((session: SessionSummary) => boolean) | null }
 }
 
 /** Required services: the trigger registry, the Remote namespaces, and the copy. */
@@ -84,7 +94,12 @@ export function apply(ctx: ClientContext): void {
       const now = Date.now()
       const home = ctx.remote.$host.home
       const listed = sessions.list.getSnapshot().byId
-      const sessionRows = sessionItems.map((candidate) => {
+      const scope = (ctx.get('uiWorkspace') as BrowserScope | undefined)?.sessionScope.getSnapshot() ?? null
+      const offered = scope === null ? sessionItems : sessionItems.filter((candidate) => {
+        const summary = listed[candidate.sessionId]
+        return summary === undefined || scope(summary)
+      })
+      const sessionRows = offered.map((candidate) => {
         const summary = listed[candidate.sessionId]
         const child = summary?.origin === 'subagent' && summary.parentId === session.sessionId
         return {

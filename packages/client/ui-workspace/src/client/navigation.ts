@@ -10,7 +10,7 @@ import type {
   SessionTarget,
   SessionListState,
 } from '@ahel/dsh-api-session-controller/client'
-import { createSnapshotStore } from '@ahel/dsh-client-store'
+import { createSnapshotStore, notifySubscribers, type ObservableSnapshot } from '@ahel/dsh-client-store'
 import type { SubagentAddress } from '@ahel/dsh-subagent/client'
 import type {
   IWorkspaces, WorkspaceId, WorkspaceSnapshot, WorkspaceView,
@@ -119,6 +119,12 @@ export interface UiWorkspace {
    * @returns the disposer.
    */
   scopeSessions(filter: SessionFilter): () => void
+  /**
+   * Every filter registered through `scopeSessions` combined into one, or
+   * null while none is registered. Surfaces that list chats beside the
+   * browser (the command palette, `@` mentions) apply it and re-read on change.
+   */
+  readonly sessionScope: ObservableSnapshot<SessionFilter | null>
 }
 
 declare module '@ahel/cordis' {
@@ -147,8 +153,16 @@ class UiWorkspaceService extends Service implements UiWorkspace {
   )
   private mainReference: SessionReference | undefined
   private readonly sessionFilters = new Set<SessionFilter>()
-  /** Every registered Session browser filter combined, or null while none is registered. */
-  readonly sessionScope = createSnapshotStore<SessionFilter | null>(null)
+  private combinedFilter: SessionFilter | null = null
+  private readonly scopeListeners = new Set<() => void>()
+  // A plain observable: a snapshot store would run a function value as a state updater.
+  readonly sessionScope: ObservableSnapshot<SessionFilter | null> = {
+    getSnapshot: () => this.combinedFilter,
+    subscribe: (listener) => {
+      this.scopeListeners.add(listener)
+      return () => { this.scopeListeners.delete(listener) }
+    },
+  }
 
   /**
    * @param ctx - Client root Context.
@@ -330,7 +344,8 @@ class UiWorkspaceService extends Service implements UiWorkspace {
 
   private publishScope(): void {
     const filters = [...this.sessionFilters]
-    this.sessionScope.set(filters.length === 0 ? null : session => filters.every(accepts => accepts(session)))
+    this.combinedFilter = filters.length === 0 ? null : session => filters.every(accepts => accepts(session))
+    notifySubscribers(this.scopeListeners, 'ui-workspace: sessionScope')
   }
 
   private watchNavigation(): () => void {

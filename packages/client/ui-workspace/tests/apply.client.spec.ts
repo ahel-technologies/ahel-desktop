@@ -523,6 +523,25 @@ describe('ui-workspace apply', () => {
     expect(unarchiveSession).toHaveBeenCalledWith('session')
   })
 
+  it('combines scopeSessions filters into the published sessionScope until each disposer runs', async () => {
+    const b = await bench()
+    await b.ctx.plugin({ inject: [...inject], apply }).await()
+    const scope = b.ctx.uiWorkspace.sessionScope
+    expect(scope.getSnapshot()).toBeNull()
+    const changed = vi.fn()
+    const off = scope.subscribe(changed)
+    const releaseA = b.ctx.uiWorkspace.scopeSessions(session => session.id !== 'a')
+    const releaseB = b.ctx.uiWorkspace.scopeSessions(session => session.id !== 'b')
+    const rows = [summary('a', 1), summary('b', 1), summary('c', 1)]
+    expect(rows.filter(scope.getSnapshot() ?? (() => true)).map(row => row.id)).toEqual(['c'])
+    releaseA()
+    expect(rows.filter(scope.getSnapshot() ?? (() => true)).map(row => row.id)).toEqual(['a', 'c'])
+    releaseB()
+    expect(scope.getSnapshot()).toBeNull()
+    await vi.waitFor(() => { expect(changed).toHaveBeenCalled() })
+    off()
+  })
+
   it('routes browser actions and picker creation to the services', async () => {
     const b = await bench()
     declare(b.slots, 'sidebar.workspaces', 'conversation.hero.workspace')
