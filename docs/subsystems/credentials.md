@@ -688,6 +688,23 @@ The account view changed: a sign-in step, a completed sign-in or sign-out, or an
 
 Source: [`packages/credentials/ahel-account/src/types.ts`](../../packages/credentials/ahel-account/src/types.ts)
 
+<a id="ahel-accountdefault-model--emit"></a>
+
+#### `ahel-account/default-model` — emit
+
+ahel.ai reported the workspace's default model: a team summary, a read or a save.
+
+```ts cordis-catalog
+/**
+ * ahel.ai reported the workspace's default model: a team summary, a read or a save.
+ * @param defaultModel - the metered model id, or null when none is set.
+ * @mode emit
+ */
+'ahel-account/default-model'(defaultModel: string | null): void
+```
+
+Source: [`packages/credentials/ahel-account/src/types.ts`](../../packages/credentials/ahel-account/src/types.ts)
+
 <a id="authorization-events"></a>
 
 ### `authorization/*` events

@@ -243,7 +243,10 @@ export class ModelDirectoryResolver extends Service {
 
   /**
    * Start a blank chat on the workspace default unless it remembers its own
-   * choice: once per default, after the catalog lists that model.
+   * choice: once per default, after the catalog lists that model. With no
+   * workspace default the chat starts on the first metered model in the
+   * account's order, not on the Host's last-used model; a listed own-key
+   * model is kept.
    * @param sessionId - the chat.
    * @param directory - its directory.
    * @param binding - its Client binding.
@@ -254,17 +257,24 @@ export class ModelDirectoryResolver extends Service {
     const sync = (): void => {
       const billing = this.billingStore.getSnapshot()
       const model = billing?.state.signedIn === true ? billing.state.defaultModel : undefined
-      if (billing === null || typeof model !== 'string') return
+      if (billing === null || model === undefined) return
       if (this.rememberStore.getSnapshot()[String(sessionId)] === true || !binding.session.getSnapshot().blank) return
       const state = directory.store.getSnapshot()
       if (state.status !== 'ready' || state.pending !== null) return
-      if (state.current?.provider === billing.provider && state.current.model === model) return
-      const entry = state.groups.find(group => group.id === billing.provider)?.models.find(candidate => candidate.id === model)
-      const key = `${billing.provider}/${model}`
-      if (entry === undefined || tried === key) return
+      const current = state.current
+      const metered = state.groups.find(group => group.id === billing.provider)?.models ?? []
+      const ownKey = current !== null && current.provider !== billing.provider
+        && state.groups.some(group => group.id === current.provider && group.models.some(candidate => candidate.id === current.model))
+      const entry = model === null
+        ? ownKey ? undefined : metered[0]
+        : metered.find(candidate => candidate.id === model)
+      if (entry === undefined) return
+      if (current?.provider === billing.provider && current.model === entry.id) return
+      const key = `${billing.provider}/${entry.id}`
+      if (tried === key) return
       tried = key
       const effort = entry.reasoning?.defaultEffort
-      void directory.select({ provider: billing.provider, model, ...effort === undefined ? {} : { reasoningEffort: effort } })
+      void directory.select({ provider: billing.provider, model: entry.id, ...effort === undefined ? {} : { reasoningEffort: effort } })
         .catch(() => { /* surfaced on the store */ })
     }
     const stops = [

@@ -62,7 +62,7 @@ function billingState(overrides: Partial<ModelBillingState> = {}): ActiveBilling
   }
 }
 
-function mount(current: ModelSelection) {
+function mount(current: ModelSelection, billing: ActiveBilling = billingState()) {
   const directory = createSnapshotStore<ModelDirectoryState>(directoryState(current), { flush: 'sync' })
   const select = vi.fn(async (selection: ModelSelection) => {
     directory.set(directoryState(selection))
@@ -75,7 +75,7 @@ function mount(current: ModelSelection) {
     directory={directory}
     load={vi.fn()}
     select={select}
-    billing={createSnapshotStore<ActiveBilling | null>(billingState(), { flush: 'sync' })}
+    billing={createSnapshotStore<ActiveBilling | null>(billing, { flush: 'sync' })}
     session={createSnapshotStore({ running: false }, { flush: 'sync' })}
     remembered={createSnapshotStore<Readonly<Record<string, boolean>>>({}, { flush: 'sync' })}
     sessionKey="s1"
@@ -142,5 +142,14 @@ describe('model picker rows', () => {
     expect(screen.getAllByRole('menuitemradio')).toHaveLength(1)
     fireEvent.keyDown(search, { key: 'Enter' })
     await waitFor(() => { expect(select).toHaveBeenCalledWith({ provider: 'ahel', model: 'openai/gpt-5.2' }) })
+  })
+
+  it('drops the price column and its footnote when ahel.ai withholds every price', () => {
+    mount({ provider: 'ahel', model: 'anthropic/claude-sonnet-5.5' }, billingState({
+      models: { 'anthropic/claude-sonnet-5.5': { shortName: 'Claude Sonnet 5.5', maker: 'Anthropic' } },
+    }))
+    fireEvent.click(screen.getByRole('button', { name: /Select model/ }))
+    expect(screen.queryByText('Typical message')).toBeNull()
+    expect(screen.queryByText(/A typical message is/)).toBeNull()
   })
 })

@@ -439,7 +439,8 @@ currentSelection(): ModelSelection | undefined
 /**
  * Resolve the default model selection against the live provider registry.
  * Entry points call this before creating an Agent or admitting a prompt, so
- * a provider added since the last topology event is still found.
+ * a provider added since the last topology event is still found. A saved
+ * model its provider no longer lists is never returned; it is dropped.
  * @returns the configured selection, else the first advertised model, else undefined.
  */
 async resolveSelection(): Promise<ModelSelection | undefined>

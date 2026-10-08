@@ -33,13 +33,13 @@ Mount this plugin alongside `ui-conversation` and the commands package; the comp
 
 The list opens at once with search focused. Search matches short names and makers case-insensitively, including nonconsecutive characters in order. `↑`/`↓` move the highlight without leaving search; Enter and Tab pick it; Escape and `Shift+Tab` close back to the trigger. Groups are makers, labelled in text only, in catalog order with metered models first.
 
-Each row shows the short name, a "best for" line, the typical message price ("3.3¢", 8,000 tokens in and 1,000 out, fee included) and where it is billed: "ahel · billed to the workspace" or "billed by DeepSeek". The workspace's last real charge for a metered model is the row's tooltip ("About 4.1¢ last time"). A model offered both metered and on an own key is one row with a billing switch ("ahel · billed to the workspace" / "your key"); a click on the row keeps the route in use, otherwise it takes the metered route. The workspace default carries a "Default" badge.
+Each row shows the short name, a "best for" line, the typical message price ("3.3¢", 8,000 tokens in and 1,000 out, fee included) and where it is billed: "ahel · billed to the workspace" or "billed by DeepSeek". The workspace's last real charge for a metered model is the row's tooltip ("About 4.1¢ last time"). A model offered both metered and on an own key is one row with a billing switch ("ahel · billed to the workspace" / "your key"); a click on the row keeps the route in use, otherwise it takes the metered route. The workspace default carries a "Default" badge. When ahel.ai lists no price, the "Typical message" column header and the footnote are hidden.
 
 Short names, makers and "best for" lines come from the metering account for metered models. For other models a static table recognises common families (Claude, GPT, o-series, Gemini, DeepSeek, Grok, Mistral, Kimi, Qwen, GLM, Llama); any other id falls back to its last path segment made readable ("deepseek-v4.1-flash" becomes "DeepSeek V4.1 Flash").
 
 ### Footer
 
-The footer holds "Remember for this chat" and the effort levels of the current model. While the workspace has a default model, a new chat starts on it. Picking another model keeps that model for the chat and turns "Remember for this chat" on; turning it off returns the chat to the workspace default. The choice is stored per chat in this browser. Effort lists the exact model's adapter-advertised levels; a model without them says "This model has no effort levels."
+The footer holds "Remember for this chat" and the effort levels of the current model. While the workspace has a default model, a new chat starts on it. Without one, a new chat starts on the first metered model in ahel.ai's order, not on the model the Host used last; a listed own-key model is kept. Picking another model keeps that model for the chat and turns "Remember for this chat" on; turning it off returns the chat to the workspace default. The choice is stored per chat in this browser. Effort lists the exact model's adapter-advertised levels; a model without them says "This model has no effort levels."
 
 ### Balance chip
 
@@ -63,7 +63,7 @@ The list uses the shared `MenuSurface` material and `MenuGroup` sticky headings;
 
 `rows.ts` regroups the Host catalog's provider groups by maker and merges a metered model with the same model on an own key by model identity (last path segment, lower case, dots as dashes, without release dates). `names.ts` holds the static name table.
 
-A metering account registers a `ModelBillingSource` with `ctx.modelDirectories.registerBilling(source)`: the metered route's provider key, an observable `ModelBillingState` (signed in, facts per model, workspace default, balance, latest hold or settle frame) and `refreshBalance()`. One source is active at a time. Without a source every route reads as an own key and the chip stays hidden. `ui-ahel-account` registers the Ahel account. The resolver also starts a blank chat on the source's workspace default unless the chat remembers its own choice, once per default.
+A metering account registers a `ModelBillingSource` with `ctx.modelDirectories.registerBilling(source)`: the metered route's provider key, an observable `ModelBillingState` (signed in, facts per model, workspace default, balance, latest hold or settle frame) and `refreshBalance()`. One source is active at a time. Without a source every route reads as an own key and the chip stays hidden. `ui-ahel-account` registers the Ahel account. The resolver also starts a blank chat on the source's workspace default unless the chat remembers its own choice, once per default; with the default unset (null) it uses the first metered model unless the chat is on a listed own-key model.
 
 </details>
 

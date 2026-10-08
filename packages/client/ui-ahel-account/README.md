@@ -24,7 +24,7 @@ The browser face of the ahel.ai account, in Ahel Desktop and in the hosted chat 
 
 Mount it after `dsh-ahel-account` on the Host. It mounts the Host's `ahelAccount`, `ahelCatalog` and `ahelTeam` Remote namespaces and keeps one live account view from the `watch` stream.
 
-Settings > Models gets two rows. At the top, "Default model for this workspace" lists the metered models grouped by maker with their typical message price. The owner or a team lead picks the default, where new chats in ahel chat and Ahel Desktop start; everyone else sees it read-only. A refused save shows ahel.ai's sentence under the row. Signed out, or while ahel.ai does not report the setting, the row is hidden. Below the provider rows, the Ahel row shows the account and its Sign in button.
+Settings > Models gets two rows. At the top, "Default model for this workspace" lists the metered models grouped by maker with their typical message price. The owner or a team lead picks the default, where new chats in ahel chat and Ahel Desktop start; everyone else sees it read-only. A default ahel.ai no longer lists shows its id-derived name with "(not in the list)". A refused save shows ahel.ai's sentence under the row. Signed out, or while ahel.ai does not report the setting, the row is hidden. Below the provider rows, the Ahel row shows the account and its Sign in button.
 
 Once `ui-model-selection` is loaded, the package registers the Ahel account as the picker's metering source for the `ahel` route: ahel.ai's facts per model from `ahelTeam.models()`, the workspace default, the newest balance (from the summary poll or the latest settle, whichever came last) and the view's `billing` frame. A settle re-reads the model facts, so the last-charge tooltip stays current.
 

@@ -152,7 +152,9 @@ export class AhelTeam extends TypertRemoteService {
    */
   @Remote
   async summary(): Promise<DesktopSummary> {
-    return await this.api('GET', '/api/desktop/summary') as DesktopSummary
+    const summary = await this.api('GET', '/api/desktop/summary') as DesktopSummary
+    if (summary.defaultModel !== undefined) this.ctx.emit('ahel-account/default-model', summary.defaultModel)
+    return summary
   }
 
   /**
@@ -173,7 +175,9 @@ export class AhelTeam extends TypertRemoteService {
    */
   @Remote
   async workspaceModel(): Promise<AhelWorkspaceModel> {
-    return workspaceModel(await this.api('GET', '/api/desktop/workspace/model'))
+    const stored = workspaceModel(await this.api('GET', '/api/desktop/workspace/model'))
+    this.ctx.emit('ahel-account/default-model', stored.defaultModel)
+    return stored
   }
 
   /**
@@ -184,7 +188,9 @@ export class AhelTeam extends TypertRemoteService {
    */
   @Remote
   async setWorkspaceModel(model: string | null): Promise<AhelWorkspaceModel> {
-    return workspaceModel(await this.api('PUT', '/api/desktop/workspace/model', { defaultModel: model }))
+    const stored = workspaceModel(await this.api('PUT', '/api/desktop/workspace/model', { defaultModel: model }))
+    this.ctx.emit('ahel-account/default-model', stored.defaultModel)
+    return stored
   }
 
   /**

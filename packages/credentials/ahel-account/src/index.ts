@@ -13,6 +13,7 @@
  * The child namespace `ahelTeam` reads and answers held calls, connects
  * vault apps, and sends and reads teammate handoffs over `/api/desktop/*`.
  * Each new chat records the workspace it was started in (`./chat-workspace.ts`).
+ * The Host's saved default model follows the workspace default (`./default-model.ts`).
  *
  * @module @ahel/dsh-ahel-account
  */
@@ -32,6 +33,7 @@ import { AhelCatalog } from './catalog.ts'
 import { AhelTeam } from './team.ts'
 import { AhelIssues } from './issues.ts'
 import * as chatWorkspace from './chat-workspace.ts'
+import * as defaultModel from './default-model.ts'
 import {
   authorizeUrl, createPkce, discover, exchange, fetchProfile, randomState, register, revoke, SignInError, startLoopbackListener,
 } from './signin.ts'
@@ -246,6 +248,7 @@ export class AhelAccount extends TypertRemoteService {
     ctx.plugin(AhelTeam, { appOrigin: this.appOrigin })
     ctx.plugin(AhelIssues, { appOrigin: this.appOrigin })
     ctx.plugin(chatWorkspace)
+    ctx.plugin(defaultModel)
     ctx.on('credentials/reference-updated', (ref) => { if (ref === this.ref) this.changed() })
     ctx.on('loader/volatile-update', () => {
       this.changed()

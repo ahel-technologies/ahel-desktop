@@ -75,6 +75,7 @@ ahel.ai 的网页对话为每个人启动一个 Host，并通过 `AHEL_LAUNCH_TO
 - 方法：`summary()`（审批、未读交接、余额、`defaultModel`）、`models()`（`GET /api/llm/v1/models`，附带 ahel.ai 对每个模型的信息：简称、厂商、“适合”说明、典型消息价格、工作区最近一次的大致扣费）、`workspaceModel()` 与 `setWorkspaceModel(model)`（`GET`/`PUT /api/desktop/workspace/model`；仅所有者或团队负责人）、`decideApproval(id, decision, note)`、`signIns()`、`connectPanel(app)`、`connect(app, values)`、`disconnect(app)`、`inbox()`、`openHandoff(id)`、`prepareHandoff(draft)`、`shareHandoff(share)` 与 `markHandoffDone(id)`。
 - 错误：`ahel-team/signed-out`、`ahel-team/outdated`（ahel.ai 尚无 `/api/desktop`：显示“更新 ahel.ai”）、`ahel-team/forbidden`、`ahel-team/refused`、`ahel-team/busy` 与 `ahel-team/unreachable`；拒绝消息是 ahel.ai 的原句。
 - `connect` 只把密钥值发送到 `POST /api/desktop/connect`，从不记录它们，也从不放入错误中。
+- 每次读取工作区默认模型（`summary()`、`workspaceModel()`、`setWorkspaceModel()`）都会发出 `ahel-account/default-model`。`default-model.ts` 让 Host 保存的默认模型（`agentDefaultModel`）保持为工作区默认模型；未设置时为 Ahel 路由列出的第一个模型；未设置默认模型时保留已列出的本人密钥模型。它在登录、路由变化和设置变化时重新检查。因此 Host 自行开始的对话（它接手的议题运行、webhook）与界面中的新对话从同一处开始。对话自己的选择仍属于该对话。
 
 <a id="model-experience"></a>
 ## 模型体验
