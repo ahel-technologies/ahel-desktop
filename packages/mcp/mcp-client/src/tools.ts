@@ -24,6 +24,7 @@ import { assertSupportedJsonSchema } from '@ahel/dsh-tools'
 import type { JsonSchemaNode } from '@ahel/dsh-tools'
 import type { JsonValue } from '@ahel/dsh-util-values'
 import { appResultMeta, readToolUi, rememberResultMeta, resultMetaObject, type McpToolDescriptor } from './apps.ts'
+import { inWorkspace } from './workspace-scope.ts'
 
 /** Resolved options relevant to tool bridging. */
 export interface ToolBridgeOptions {
@@ -31,6 +32,8 @@ export interface ToolBridgeOptions {
   registrationFailure: 'contain' | 'throw'
   serverName: string
   toolCallTimeoutMs: number
+  /** The workspace one call acts in (see `./workspace-scope.ts`); absent for servers without `auth.workspaceParam`. */
+  workspaceOf?: (execution: ToolExecution) => string | undefined
 }
 
 /** State for one sync generation: the current set of disposers keyed by public name. */
@@ -147,10 +150,10 @@ export async function syncTools(
       outputSchema: tool.outputSchema,
       taskRequired: tool.execution?.taskSupport === 'required',
       mcp,
-      call: (args, execution) => client.callTool(
+      call: (args, execution) => inWorkspace(opts.workspaceOf?.(execution), () => client.callTool(
         { name: tool.name, arguments: args },
         { signal: execution.signal, timeout: opts.toolCallTimeoutMs, toolDefinition: tool },
-      ),
+      )),
     }))
   }
 

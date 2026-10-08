@@ -7,15 +7,26 @@
  * log. The `ahelWorkspace` projection folds it, so Session list rows carry the
  * stamp on live and cold rows and a fork inherits it. A chat with prompts from
  * before this stamp existed, or started while neither workspace was known
- * (signed out, ahel.ai unreachable), stays unstamped (null).
+ * (signed out, ahel.ai unreachable), stays unstamped (null). A chat opened for
+ * a queued issue run is stamped with the issue's workspace before its first
+ * step (`AhelAccount.pinChat`).
+ *
+ * The stamp binds the chat: every Ahel MCP tool call (`mcp-client/workspace`)
+ * and Ahel model request (`AhelAccount.chatWorkspace`) the chat makes acts in
+ * the stamped workspace, whatever workspace is selected later; a subagent acts
+ * in its parent chat's. Selecting another workspace only changes which chats
+ * are listed and where new chats start. An unstamped chat follows the
+ * selected workspace.
  * @module @ahel/dsh-ahel-account/chat-workspace
  */
 import type { Context } from '@ahel/cordis'
 import type { PreStepDecision } from '@ahel/dsh-agent'
 import type { Session } from '@ahel/dsh-session'
+import type { SessionProjectionRegistry } from '@ahel/dsh-session-projection'
 import type { ProjectionDefinition } from '@ahel/dsh-session-projection'
 import type {} from '@ahel/dsh-api-session-controller/types'
 import { z } from 'zod'
+import type {} from '@ahel/dsh-mcp-client'
 import type {} from './team.ts'
 import type {} from './types.ts'
 
@@ -28,6 +39,13 @@ declare module '@ahel/dsh-session/types' {
      * request; the hosted chat lists the chat under this workspace.
      */
     'ahel-account/chat-workspace': { workspace: string }
+  }
+}
+
+declare module '@ahel/dsh-typert-protocol' {
+  interface RemoteErrorDetailsMap {
+    /** The chat cannot act in that workspace: the account has no seat there, or the chat already acts in another one. */
+    'ahel-account/workspace-unavailable': { readonly workspace: string }
   }
 }
 
@@ -64,6 +82,21 @@ export function needsStamp(origin: string | undefined, stamp: string | null | un
  */
 export function stampChat(session: Session, workspace: string): void {
   session.append('ahel-account/chat-workspace', { workspace }, { ignorable: true })
+}
+
+/**
+ * Stamp a chat that has taken no step yet with one workspace; a chat stamped with it already is left as it is.
+ * @param projections - the projection registry.
+ * @param session - the chat's Session.
+ * @param workspace - the ahel.ai workspace id.
+ * @returns false when the chat is stamped with another workspace, has prompts, or is a subagent.
+ */
+export function pinStamp(projections: SessionProjectionRegistry, session: Session, workspace: string): boolean {
+  const stamp = projections.stateOf(session, 'ahelWorkspace')
+  if (stamp === workspace) return true
+  if (!needsStamp(session.header.origin, stamp, projections.stateOf(session, 'sessionListMetadata')?.lastPromptAt)) return false
+  stampChat(session, workspace)
+  return true
 }
 
 /**
@@ -111,18 +144,32 @@ export const name = 'ahel-chat-workspace'
 export const inject = ['sessionProjections', 'ahelAccount']
 
 /**
- * Register the projection and stamp each new top-level chat at its first accepted step.
+ * Register the projection, stamp each new top-level chat at its first accepted step, and bind every
+ * chat's model requests and Ahel MCP tool calls to its stamp.
  * @param ctx - Host context.
  */
 export function apply(ctx: Context): void {
   ctx.sessionProjections.register(chatWorkspaceProjection)
+  /** The workspace a chat acts in: its stamp, a subagent its parent's; recorded for `AhelAccount.chatWorkspace`. */
+  const bound = (session: Session): string | undefined => {
+    const { id, origin, parentSession } = session.header
+    const workspace = origin === 'subagent'
+      ? parentSession === undefined ? undefined : ctx.ahelAccount.chatWorkspace(parentSession)
+      : ctx.sessionProjections.stateOf(session, 'ahelWorkspace') ?? undefined
+    if (workspace !== undefined) ctx.ahelAccount.bindChat(id, workspace)
+    return workspace
+  }
+  ctx.on('mcp-client/workspace', (_serverName, agent) => bound(agent.session))
   ctx.on('agent/pre-step', async ({ agent, signal }, next): Promise<PreStepDecision> => {
     const decision = await next()
     if (decision.kind === 'reject' || signal.aborted) return decision
     const { session } = agent
     const stamp = ctx.sessionProjections.stateOf(session, 'ahelWorkspace')
     const lastPromptAt = ctx.sessionProjections.stateOf(session, 'sessionListMetadata')?.lastPromptAt
-    if (!needsStamp(session.header.origin, stamp, lastPromptAt)) return decision
+    if (!needsStamp(session.header.origin, stamp, lastPromptAt)) {
+      bound(session)
+      return decision
+    }
     try {
       const team = ctx.get('ahelTeam')
       const workspace = await chatWorkspace(
@@ -130,9 +177,12 @@ export function apply(ctx: Context): void {
         team === undefined ? undefined : async () => (await team.summary()).workspace.id,
         signal,
       )
-      if (workspace !== undefined) stampChat(session, workspace)
+      if (workspace !== undefined) {
+        stampChat(session, workspace)
+        bound(session)
+      }
     } catch (error) {
-      // An unstamped chat lists under the account's default workspace; the step goes on.
+      // An unstamped chat lists under the account's default workspace and follows the selection; the step goes on.
       ctx.logger.warn(`ahel-account: the chat's workspace could not be recorded: ${error instanceof Error ? error.message : String(error)}`)
     }
     return decision

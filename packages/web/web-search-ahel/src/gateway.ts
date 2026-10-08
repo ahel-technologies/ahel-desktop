@@ -1,7 +1,7 @@
 /**
  * One read-only call into Ahel Web Search: an MCP `tools/call` of the Ahel
  * gateway's `use` verb on the first-party key `ahel-services-web-search`,
- * with the signed-in account's bearer and selected `?workspace=`. ahel.ai
+ * with the signed-in account's bearer and the call's `?workspace=`. ahel.ai
  * meters and rate-limits each call as it does for any other host.
  * @module @ahel/dsh-web-search-ahel/gateway
  */
@@ -17,7 +17,7 @@ export interface AhelGatewayAccount {
   accessToken(): Promise<string | undefined>
   /** Refresh the bearer once after the gateway refused it. */
   revalidate(): Promise<void>
-  /** @returns the selected workspace id, or undefined for the account default. */
+  /** @returns the workspace this call acts in (the calling chat's, else the selected one), or undefined for the account default. */
   workspace(): Promise<string | undefined>
   /** @returns the gateway URL the bearer is bound to. */
   gateway(): string

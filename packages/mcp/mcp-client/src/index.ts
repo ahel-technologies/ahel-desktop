@@ -24,8 +24,22 @@ import { registerServerContext } from './server-context.ts'
 import { oauthGrantAuthProvider, readOAuthGrant } from './oauth.ts'
 import { assertTransportAllowed } from './transport.ts'
 import type { AuthProvider } from '@modelcontextprotocol/client'
-// Side-effect type import: declaration-merges `ctx.tools` onto Context.
-import type {} from '@ahel/dsh-tools'
+// Type import that also declaration-merges `ctx.tools` onto Context.
+import type { ToolExecution } from '@ahel/dsh-tools'
+
+declare module '@ahel/cordis' {
+  interface Events {
+    /**
+     * Name the workspace one tool call of a grant-authenticated server acts in, for example the
+     * workspace the calling chat was started in. Asked only when the server sets `auth.workspaceParam`.
+     * @mode bail
+     * @param serverName - the configured `serverName`.
+     * @param agent - the Agent the call runs for.
+     * @returns the workspace id, or undefined to keep the grant's selected workspace.
+     */
+    'mcp-client/workspace'(serverName: string, agent: NonNullable<ToolExecution['agent']>): string | undefined
+  }
+}
 
 export { createMcpToolDefinition, publicToolName } from './tools.ts'
 export { liveResultMeta, MCP_APP_MIME_TYPE, MCP_APPS_EXTENSION, readToolUi } from './apps.ts'
@@ -126,7 +140,10 @@ export interface GrantAuthConfig {
   refreshSkewMs: number
   /** Deadline for one token-refresh request in milliseconds. */
   refreshTimeoutMs: number
-  /** Query parameter that carries the grant's selected workspace; the server reconnects when the selection changes. */
+  /**
+   * Query parameter that carries the grant's selected workspace; the server reconnects when the selection changes.
+   * A call for an Agent sends the workspace `mcp-client/workspace` names for it instead, when one does.
+   */
   workspaceParam?: string
 }
 
@@ -224,6 +241,8 @@ function applyGrantGate(ctx: Context, config: StreamableHttpConfig, auth: GrantA
       queue = queue.then(async () => {
         const grant = await readOAuthGrant(authCtx.credentials, ref)
         const url = grant === undefined ? undefined : endpointFor(config.url, auth.workspaceParam, grant.workspace)
+        // A new selected workspace reconnects: calls in flight on the old session fail, and tools are
+        // listed from the new workspace while calls bound by `mcp-client/workspace` keep their own (#49).
         if (session !== undefined && url !== sessionUrl) {
           const stopping = session
           session = undefined

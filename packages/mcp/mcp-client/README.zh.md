@@ -58,7 +58,7 @@ kind: "package-reference"
 | `serverName` | 必填 | 服务器工具名称的 namespace；`[A-Za-z0-9_-]{1,32}`，在一个注册作用域内唯一 |
 | `command` / `args` / `env` / `cwd` | — | stdio：可执行文件、参数、合并到清洗过的环境之上的额外环境变量、工作目录 |
 | `url` / `headers` | — | streamable-http：端点 URL 与额外请求标头 |
-| `auth.credentialRef` | — | streamable-http：保存 OAuth grant 的凭据引用（如 `AHEL_ACCOUNT`）；仅在其存在时连接，发送其 bearer，在 `auth.refreshSkewMs`（60 秒）内或 401 后刷新，引用被删除时移除工具；`auth.workspaceParam` 以该查询参数发送 grant 中选定的工作区 |
+| `auth.credentialRef` | — | streamable-http：保存 OAuth grant 的凭据引用（如 `AHEL_ACCOUNT`）；仅在其存在时连接，发送其 bearer，在 `auth.refreshSkewMs`（60 秒）内或 401 后刷新，引用被删除时移除工具；`auth.workspaceParam` 以该查询参数发送 grant 中选定的工作区；为某个 Agent 发起的调用改为发送 `mcp-client/workspace` 事件为它指定的工作区，例如发起调用的对话所在的工作区 |
 | `toolCallTimeoutMs` | `60,000` | 每次 `tools/call` 或资源请求的超时 |
 | `maxInstructionBytes` | `32,768` | 包括服务器归属信息在内的服务器指令 UTF-8 字节上限；超出时连接失败 |
 | `failOnStartupError` | `false` | 初始连接或工具同步失败时拒绝插件激活 |
@@ -216,6 +216,7 @@ SDK 通过旧版通知或现代协议订阅接收工具列表变化。监督器�
 - **重连处理协商失败与传输关闭**——初始探测失败或 stdio 子进程崩溃都会使用配置的重连预算。HTTP 建立连接后，请求失败使用 SDK 传输的恢复机制，而非重新创建连接。
 - **图片是唯一的持久丰富结果桥接**——PNG、JPEG、WebP 与 GIF 在确切能力得到证明后进入 Native 上下文。音频与嵌入资源载荷仍只存在于执行局部并带明确诊断，资源链接只以文本保留名称与 URI。
 - **无效的协议结果或输出 schema 由 SDK 拒绝**——桥接器不接受旧式 `toolResult` 替代结果，也不绕过已声明的 schema 校验。
+- **选择新的工作区会让 `workspaceParam` 服务器重新连接**——旧连接上进行中的调用会失败，工具改为从新选择的工作区列出，而由 `mcp-client/workspace` 绑定的调用仍使用各自的工作区（[#49](https://github.com/ahel-technologies/ahel-desktop/issues/49)）。
 - **要求基于任务的 MCP 工具在调用时被拒绝**——要求使用基于任务的执行（task-based execution）扩展的工具会抛出异常而非被桥接；该扩展未实现。
 
 <a id="dev-note"></a>

@@ -1,7 +1,8 @@
 /**
  * Browser face of the MCP Apps card host: mounts the `mcpApps` Remote
  * namespace and fills the Tool layer's `tool.call.app` slot with a sandboxed
- * card for every settled call that persisted an `mcpApp` record.
+ * card for every settled call that persisted an `mcpApp` record. A card's
+ * successful tool call emits `mcp-app/card-called`.
  */
 import type { Context } from '@ahel/cordis'
 import z from '@ahel/schemastery'
@@ -12,6 +13,18 @@ import type {} from '@ahel/dsh-client-ui-renderer/client'
 import type {} from '@ahel/dsh-client-ui-theme/client'
 import mcpAppsRemote from '@ahel/dsh-client-ui-mcp-app/remote'
 import { registerMcpAppCard } from './register.ts'
+
+declare module '@ahel/cordis' {
+  interface Events {
+    /**
+     * A card's own tool call succeeded, for example the press of a confirm card.
+     * @mode emit
+     * @param sessionId - the chat that shows the card.
+     * @param structuredContent - the call's `structuredContent`, or undefined when it has none.
+     */
+    'mcp-app/card-called'(sessionId: string, structuredContent: unknown): void
+  }
+}
 
 /** Client configuration. */
 export interface Config {

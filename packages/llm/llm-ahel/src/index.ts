@@ -9,6 +9,9 @@
  * the menu shows one disabled "connecting" row and the read is retried.
  * Balance (402), availability (403) and sign-in (401) refusals become
  * failures with the codes below, which the Ahel account UI turns into notices.
+ * A request of a chat bound to a workspace (`AhelAccount.chatWorkspace`)
+ * carries that workspace in `X-Ahel-Workspace`, so it is metered there
+ * whatever workspace is selected; other requests carry the selected one.
  * Each chat request's hold (response headers) and settle (the answer's
  * `ahel.billing` event, removed before the stream parser reads the answer)
  * go to `ctx.ahelAccount.reportBilling`, which the composer's balance reads.
@@ -357,6 +360,23 @@ export function sessionFetch(
   }
 }
 
+/**
+ * The fetch that sends one chat's workspace in `X-Ahel-Workspace` in place of the selected one.
+ * @param workspace - the chat's workspace, or undefined to send the request unchanged.
+ * @param base - the fetch to wrap.
+ * @returns the wrapping fetch.
+ */
+export function workspaceFetch(
+  workspace: string | undefined, base: typeof globalThis.fetch = globalThis.fetch,
+): typeof globalThis.fetch {
+  if (workspace === undefined) return base
+  return async (input, init) => {
+    const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined))
+    headers.set('x-ahel-workspace', workspace)
+    return base(input, { ...init, headers })
+  }
+}
+
 /** Delegates to the pi-ai adapter and rewrites Ahel refusals in its streams; refuses every call until the model list is read. */
 class AhelAdapter extends LlmAdapter {
   constructor(
@@ -429,6 +449,9 @@ export function apply(ctx: Context, config: Config): void {
       })),
     },
   })
+  /** The workspace a chat's requests are metered in, when the chat is bound to one. */
+  const chatWorkspaceOf = (sessionId: string | undefined): string | undefined =>
+    sessionId === undefined ? undefined : ctx.ahelAccount.chatWorkspace(sessionId)
   const adapter = new AhelAdapter(new PiAiAdapter({
     profiles: () => profiles,
     resolveApiKey: async () => {
@@ -439,7 +462,7 @@ export function apply(ctx: Context, config: Config): void {
     auth: NO_AMBIENT_AUTH,
     fetch: (call: PiAiFetchCall) => billingFetch((phase, amounts) => {
       ctx.ahelAccount.reportBilling({ phase, sessionId: call.sessionId ?? null, model: call.model, ...amounts, at: Date.now() })
-    }, sessionFetch(call.sessionId)),
+    }, sessionFetch(call.sessionId, workspaceFetch(chatWorkspaceOf(call.sessionId)))),
   }), config.displayName, () => models === undefined ? config.connectingLabel : undefined, async () => {
     try {
       await ctx.ahelAccount.revalidate()

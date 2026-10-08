@@ -4045,6 +4045,9 @@ importers:
       '@ahel/dsh-client-ui-layout':
         specifier: workspace:*
         version: link:../ui-layout
+      '@ahel/dsh-client-ui-mcp-app':
+        specifier: workspace:*
+        version: link:../ui-mcp-app
       '@ahel/dsh-client-ui-model-selection':
         specifier: workspace:*
         version: link:../ui-model-selection
@@ -13864,6 +13867,9 @@ importers:
       '@ahel/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@ahel/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
       '@ahel/dsh-ahel-account':
         specifier: workspace:*
         version: link:../../credentials/ahel-account

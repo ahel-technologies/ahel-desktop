@@ -97,6 +97,32 @@ reportBilling(billing: AhelBilling): void
 async workspace(): Promise<string | undefined>
 
 /**
+ * Host-only: the workspace one chat acts in for its model requests and tool calls, whatever workspace is selected.
+ * @param sessionId - the chat's Session id.
+ * @returns the chat's stamp (a subagent's parent chat's) once the chat took a step or a tool call this Host run,
+ *   or undefined for a chat that follows the selected workspace.
+ */
+chatWorkspace(sessionId: string): string | undefined
+
+/**
+ * Host-only: record the workspace one chat acts in; `./chat-workspace.ts` calls it from the chat's stamp.
+ * @param sessionId - the chat's Session id.
+ * @param workspace - the ahel.ai workspace id.
+ */
+bindChat(sessionId: string, workspace: string): void
+
+/**
+ * Start a chat that has taken no step yet in one workspace, for example a queued issue run in the
+ * issue's workspace: the chat lists there and acts there whatever workspace is selected later.
+ * The seat is checked against the profile ahel.ai answers now, else the stored one.
+ * @param session - lookup parameter resolved from the Session identity.
+ * @param workspace - the ahel.ai workspace id.
+ * @throws RemoteError `ahel-account/workspace-unavailable` when the account has no seat there,
+ *   or the chat already acts in another workspace.
+ */
+@Remote async pinChat(session: Session, workspace: string): Promise<void>
+
+/**
  * Join the running attempt or start a browser sign-in. Resolves once the
  * authorize URL exists (or the attempt failed), without waiting for the
  * person to approve; the opener, when set, has been asked to open it.
@@ -162,6 +188,8 @@ async revalidate(): Promise<void>
  */
 setOpener(opener: ExternalOpener): () => void
 ```
+
+Types: [Session](session.zh.md)
 
 Source: [`packages/credentials/ahel-account/src/index.ts`](../../packages/credentials/ahel-account/src/index.ts)
 
@@ -233,7 +261,8 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
 
 ```ts cordis-catalog
 /**
- * One page of issues with per-status counts and the number of agents at work.
+ * One page of issues with per-status counts and the number of agents at work, read in the selected
+ * workspace, else in the account default the team summary names, so the page names a real workspace id.
  * @param query - filters; `assigneeId: 'me'` is the signed-in person.
  * @returns the page.
  * @throws RemoteError `ahel-issues/*`.
@@ -251,10 +280,11 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
 /**
  * Read one issue.
  * @param key - for example `AHEL-137`.
+ * @param workspace - the workspace to read it in; the selected one when omitted.
  * @returns the issue.
  * @throws RemoteError `ahel-issues/refused` for an unknown key.
  */
-@Remote async get(key: string): Promise<IssueWriteAnswer>
+@Remote async get(key: string, workspace?: string): Promise<IssueWriteAnswer>
 
 /**
  * Change some fields of one issue.
@@ -286,10 +316,12 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
  * @param key - the issue.
  * @param body - markdown.
  * @param authorType - `agent` shows the comment as Ahel's; the person still owns it.
+ * @param issueWorkspace - the issue's workspace, for a run's summary.
+ * @param sessionId - the run's chat; without `issueWorkspace` the comment goes to the workspace that chat acts in, else the selected one.
  * @returns the comments after the post.
  * @throws RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.
  */
-@Remote async comment(key: string, body: string, authorType: IssueActorType): Promise<readonly IssueComment[]>
+@Remote async comment( key: string, body: string, authorType: IssueActorType, issueWorkspace?: string, sessionId?: string, ): Promise<readonly IssueComment[]>
 
 /**
  * The activity log of one issue, oldest first.
@@ -305,11 +337,12 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
  * An ahel.ai that refuses `waiting_input` (400) gets the same report as `waiting_approval`.
  * @param key - the issue.
  * @param report - the session, its state and the steps so far.
+ * @param runWorkspace - the run's workspace (the issue's); when omitted, the workspace the run's chat acts in, else the selected one.
  * @returns the issue after the report.
  * @throws RemoteError `ahel-issues/refused` with `details.error === 'run_claimed'` when another session holds the run,
  *   or another `ahel-issues/*`.
  */
-@Remote async run(key: string, report: IssueRunReport): Promise<IssueWriteAnswer>
+@Remote async run(key: string, report: IssueRunReport, runWorkspace?: string): Promise<IssueWriteAnswer>
 
 /**
  * Who issues can be assigned to: the workspace's seats and the Ahel agent with its model.

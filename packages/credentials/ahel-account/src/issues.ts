@@ -1,7 +1,8 @@
 /**
  * Remote namespace `ahelIssues`: the signed-in workspace's issues over
  * ahel.ai's `/api/desktop/issues` and `/api/desktop/projects` routes, with
- * the account's bearer and the selected `?workspace=`. An ahel.ai without
+ * the account's bearer and the selected `?workspace=`; the reads and writes of
+ * an issue run name the run's workspace instead. An ahel.ai without
  * those routes answers every method with `ahel-issues/outdated`; a write the
  * person's role does not allow answers `ahel-issues/forbidden` carrying
  * ahel.ai's reason. Runs this Host reported live (running or waiting) and
@@ -15,6 +16,7 @@ import type {
   Issue, IssueActivity, IssueActorType, IssueAssignees, IssueComment, IssueDraft, IssuePage, IssuePatch, IssueProject, IssueQuery,
   IssueRunReport, IssueRunState, IssueWriteAnswer,
 } from './issues-types.ts'
+import type {} from './team.ts'
 
 declare module '@ahel/cordis' {
   interface Context {
@@ -93,10 +95,12 @@ function isIssue(value: unknown): value is Issue {
 export class AhelIssues extends TypertRemoteService {
   static inject = ['ahelAccount']
   private readonly origin: string
-  /** The last report of each run this Host reported live and has not ended, by issue key. */
-  private readonly live = new Map<string, IssueRunReport>()
+  /** The last report of each run this Host reported live and has not ended, and the run's workspace, by issue key. */
+  private readonly live = new Map<string, { report: IssueRunReport; workspace: string | undefined }>()
   /** Set once ahel.ai refused `waiting_input`; later reports send `waiting_approval` at once. */
   private waitingInputRefused = false
+  /** The workspace ahel.ai acts in for the account while none is selected, read once per account change. */
+  private accountDefault: Promise<string | undefined> | undefined
 
   /**
    * @param ctx - Host context carrying `ahelAccount`.
@@ -105,11 +109,13 @@ export class AhelIssues extends TypertRemoteService {
   constructor(ctx: Context, config: IssuesConfig) {
     super(ctx, 'ahelIssues')
     this.origin = config.appOrigin
+    ctx.on('ahel-account/changed', () => { this.accountDefault = undefined })
     ctx.effect(() => async () => { await this.closeLiveRuns() }, 'ahel-issues: fail live runs on stop')
   }
 
   /**
-   * One page of issues with per-status counts and the number of agents at work.
+   * One page of issues with per-status counts and the number of agents at work, read in the selected
+   * workspace, else in the account default the team summary names, so the page names a real workspace id.
    * @param query - filters; `assigneeId: 'me'` is the signed-in person.
    * @returns the page.
    * @throws RemoteError `ahel-issues/*`.
@@ -122,8 +128,10 @@ export class AhelIssues extends TypertRemoteService {
       if (value !== undefined && value !== '') params.set(name, String(value))
     }
     const search = params.size === 0 ? '' : `?${params.toString()}`
-    const page = fields(await this.call('GET', `/api/desktop/issues${search}`))
+    const workspace = await this.readWorkspace()
+    const page = fields(await this.call('GET', `/api/desktop/issues${search}`, undefined, { workspace }))
     return {
+      workspace: workspace ?? null,
       issues: Array.isArray(page.issues) ? page.issues as Issue[] : [],
       nextCursor: sentence(page.nextCursor),
       counts: fields(page.counts) as Record<string, number>,
@@ -146,12 +154,13 @@ export class AhelIssues extends TypertRemoteService {
   /**
    * Read one issue.
    * @param key - for example `AHEL-137`.
+   * @param workspace - the workspace to read it in; the selected one when omitted.
    * @returns the issue.
    * @throws RemoteError `ahel-issues/refused` for an unknown key.
    */
   @Remote
-  async get(key: string): Promise<IssueWriteAnswer> {
-    return { issue: writtenIssue(await this.call('GET', issuePath(key))) }
+  async get(key: string, workspace?: string): Promise<IssueWriteAnswer> {
+    return { issue: writtenIssue(await this.call('GET', issuePath(key), undefined, { workspace })) }
   }
 
   /**
@@ -186,7 +195,11 @@ export class AhelIssues extends TypertRemoteService {
    */
   @Remote
   async comments(key: string): Promise<readonly IssueComment[]> {
-    const answer = await this.call('GET', issuePath(key, '/comments'))
+    return await this.commentsIn(key, undefined)
+  }
+
+  private async commentsIn(key: string, workspace: string | undefined): Promise<readonly IssueComment[]> {
+    const answer = await this.call('GET', issuePath(key, '/comments'), undefined, { workspace })
     const list = Array.isArray(answer) ? answer : fields(answer).comments
     return Array.isArray(list) ? list as IssueComment[] : []
   }
@@ -196,13 +209,18 @@ export class AhelIssues extends TypertRemoteService {
    * @param key - the issue.
    * @param body - markdown.
    * @param authorType - `agent` shows the comment as Ahel's; the person still owns it.
+   * @param issueWorkspace - the issue's workspace, for a run's summary.
+   * @param sessionId - the run's chat; without `issueWorkspace` the comment goes to the workspace that chat acts in, else the selected one.
    * @returns the comments after the post.
    * @throws RemoteError `ahel-issues/forbidden` or `ahel-issues/refused`.
    */
   @Remote
-  async comment(key: string, body: string, authorType: IssueActorType): Promise<readonly IssueComment[]> {
-    await this.call('POST', issuePath(key, '/comments'), { body, authorType })
-    return await this.comments(key)
+  async comment(
+    key: string, body: string, authorType: IssueActorType, issueWorkspace?: string, sessionId?: string,
+  ): Promise<readonly IssueComment[]> {
+    const workspace = issueWorkspace ?? (sessionId === undefined ? undefined : this.ctx.ahelAccount.chatWorkspace(sessionId))
+    await this.call('POST', issuePath(key, '/comments'), { body, authorType }, { workspace })
+    return await this.commentsIn(key, workspace)
   }
 
   /**
@@ -224,30 +242,44 @@ export class AhelIssues extends TypertRemoteService {
    * An ahel.ai that refuses `waiting_input` (400) gets the same report as `waiting_approval`.
    * @param key - the issue.
    * @param report - the session, its state and the steps so far.
+   * @param runWorkspace - the run's workspace (the issue's); when omitted, the workspace the run's chat acts in, else the selected one.
    * @returns the issue after the report.
    * @throws RemoteError `ahel-issues/refused` with `details.error === 'run_claimed'` when another session holds the run,
    *   or another `ahel-issues/*`.
    */
   @Remote
-  async run(key: string, report: IssueRunReport): Promise<IssueWriteAnswer> {
+  async run(key: string, report: IssueRunReport, runWorkspace?: string): Promise<IssueWriteAnswer> {
+    const workspace = runWorkspace ?? this.ctx.ahelAccount.chatWorkspace(report.sessionId)
     let sent = report.state === 'waiting_input' && this.waitingInputRefused ? { ...report, state: 'waiting_approval' as const } : report
     let answer: unknown
     try {
-      answer = await this.call('POST', issuePath(key, '/run'), sent)
+      answer = await this.call('POST', issuePath(key, '/run'), sent, { workspace })
     } catch (error) {
       if (!isRefusal(error)) throw error
       if (sent.state === 'waiting_input' && error.details.status === 400) {
         this.waitingInputRefused = true
         sent = { ...sent, state: 'waiting_approval' }
-        answer = await this.call('POST', issuePath(key, '/run'), sent)
+        answer = await this.call('POST', issuePath(key, '/run'), sent, { workspace })
       } else {
         if (error.details.error === 'run_claimed') this.live.delete(key)
         throw error
       }
     }
-    if (LIVE_STATES.has(sent.state)) this.live.set(key, sent)
-    else if (this.live.get(key)?.sessionId === sent.sessionId) this.live.delete(key)
+    if (LIVE_STATES.has(sent.state)) this.live.set(key, { report: sent, workspace })
+    else if (this.live.get(key)?.report.sessionId === sent.sessionId) this.live.delete(key)
     return { issue: writtenIssue(answer) }
+  }
+
+  /** The selected workspace, else the account default the team summary names; undefined when neither is known. */
+  private async readWorkspace(): Promise<string | undefined> {
+    const selected = await this.ctx.ahelAccount.workspace()
+    const team = this.ctx.get('ahelTeam')
+    if (selected !== undefined || team === undefined) return selected
+    this.accountDefault ??= team.summary().then(summary => summary.workspace.id, (_unavailable: unknown) => undefined)
+    const id = await this.accountDefault
+    // An unread default is asked again on the next read.
+    if (id === undefined) this.accountDefault = undefined
+    return id
   }
 
   /** Report every live run `failed` with {@link CLOSED_REASON}; gives up after {@link CLOSE_DEADLINE_MS}. */
@@ -256,9 +288,9 @@ export class AhelIssues extends TypertRemoteService {
     this.live.clear()
     if (runs.length === 0) return
     const signal = AbortSignal.timeout(CLOSE_DEADLINE_MS)
-    const reports = Promise.allSettled(runs.map(([key, last]) => this.call('POST', issuePath(key, '/run'), {
+    const reports = Promise.allSettled(runs.map(([key, { report: last, workspace }]) => this.call('POST', issuePath(key, '/run'), {
       sessionId: last.sessionId, state: 'failed', steps: last.steps, totalSteps: last.totalSteps, reason: CLOSED_REASON,
-    } satisfies IssueRunReport, signal)))
+    } satisfies IssueRunReport, { deadline: signal, workspace })))
     await Promise.race([reports, new Promise((resolve) => { signal.addEventListener('abort', resolve, { once: true }) })])
   }
 
@@ -312,10 +344,16 @@ export class AhelIssues extends TypertRemoteService {
     return typeof answer.updated === 'number' ? answer.updated : 0
   }
 
-  /** Call one route with the account's bearer; one refresh after the route's own 401; `deadline` replaces the 15 s timeout. */
-  private async call(method: Method, path: string, payload?: unknown, deadline?: AbortSignal): Promise<unknown> {
+  /**
+   * Call one route with the account's bearer; one refresh after the route's own 401.
+   * `deadline` replaces the 15 s timeout; `workspace` replaces the selected workspace.
+   */
+  private async call(
+    method: Method, path: string, payload?: unknown, options: { deadline?: AbortSignal; workspace?: string | undefined } = {},
+  ): Promise<unknown> {
+    const { deadline } = options
     const url = new URL(path, this.origin)
-    const workspace = await this.ctx.ahelAccount.workspace()
+    const workspace = options.workspace ?? await this.ctx.ahelAccount.workspace()
     if (workspace !== undefined) url.searchParams.set('workspace', workspace)
     let response: Response | undefined
     for (let attempt = 0; attempt < 2; attempt++) {

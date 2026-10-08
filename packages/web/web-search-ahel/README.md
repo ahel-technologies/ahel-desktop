@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Search and page reads through ahel.ai's first-party Web Search app (`ahel.services/web-search`, gateway key `ahel-services-web-search`). Each call is an MCP `tools/call` of the Ahel gateway's `use` verb with the `AHEL_ACCOUNT` bearer and the selected `?workspace=`. `web_search` maps to Web Search's `web_search`; `web_fetch` maps to its `read_page`. Both are read-only. The plugin mounts [`dsh-tool-web`](../tool-web/README.md) as a child only while an Ahel account is signed in, so signed out the model has neither tool.
+Search and page reads through ahel.ai's first-party Web Search app (`ahel.services/web-search`, gateway key `ahel-services-web-search`). Each call is an MCP `tools/call` of the Ahel gateway's `use` verb with the `AHEL_ACCOUNT` bearer and `?workspace=`: the workspace the calling chat is bound to, else the selected one, so a chat's searches are metered in its own workspace. `web_search` maps to Web Search's `web_search`; `web_fetch` maps to its `read_page`. Both are read-only. The plugin mounts [`dsh-tool-web`](../tool-web/README.md) as a child only while an Ahel account is signed in, so signed out the model has neither tool.
 
 ## Table of Contents
 

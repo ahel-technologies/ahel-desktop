@@ -112,3 +112,12 @@ it('serves Ahel models with the account bearer and explains a 402', async () => 
   expect(refused.finish).toMatchObject({ kind: 'error', failure: { code: 'ACCOUNT_QUOTA', status: 402 } })
   expect(refused.finish.kind === 'error' ? refused.finish.failure.message : '').toMatch(/^Ahel models: The workspace balance cannot cover this request\./)
 })
+
+it('meters a bound chat\'s request in its own workspace, replacing the selected one', async () => {
+  const sent: Headers[] = []
+  const base: typeof fetch = (_input, init) => { sent.push(new Headers(init?.headers)); return Promise.resolve(new Response('{}')) }
+  await LlmAhel.workspaceFetch('ws-chat', base)('https://ahel.test/api/llm/v1/chat/completions', { headers: { 'X-Ahel-Workspace': 'ws-selected', authorization: 'Bearer a' } })
+  expect(sent[0]?.get('x-ahel-workspace')).toBe('ws-chat')
+  expect(sent[0]?.get('authorization')).toBe('Bearer a')
+  expect(LlmAhel.workspaceFetch(undefined, base)).toBe(base)
+})

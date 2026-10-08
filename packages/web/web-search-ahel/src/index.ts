@@ -4,12 +4,16 @@
  * account, so the model gets the usual `web_search` and `web_fetch` tools
  * with no key to configure. This plugin mounts `dsh-tool-web` as a child
  * only while an Ahel account is signed in: signed out, both tools are absent.
+ * A call made by a chat (the calling Agent, `ctx.agents.currentInitiator()`)
+ * acts and is metered in the workspace that chat is bound to
+ * (`ctx.ahelAccount.chatWorkspace`); other calls use the selected workspace.
  * @module @ahel/dsh-web-search-ahel
  */
 
 import type { Context, Fiber } from '@ahel/cordis'
 import z from '@ahel/schemastery'
 import type {} from '@ahel/dsh-ahel-account'
+import type {} from '@ahel/dsh-agent'
 import * as ToolWeb from '@ahel/dsh-tool-web'
 import { WebError } from '@ahel/dsh-web'
 import type {
@@ -142,7 +146,16 @@ export class AhelFetchProvider implements WebFetchProvider {
  * @param config - resolved config.
  */
 export function apply(ctx: Context, config: Config): void {
-  const account: AhelGatewayAccount = ctx.ahelAccount
+  const account: AhelGatewayAccount = {
+    accessToken: () => ctx.ahelAccount.accessToken(),
+    revalidate: () => ctx.ahelAccount.revalidate(),
+    gateway: () => ctx.ahelAccount.gateway(),
+    workspace: async () => {
+      const caller = ctx.get('agents')?.currentInitiator()
+      const bound = caller === undefined ? undefined : ctx.ahelAccount.chatWorkspace(caller.session.header.id)
+      return bound ?? await ctx.ahelAccount.workspace()
+    },
+  }
   const gateway = new AhelGateway(account, config.requestTimeoutMs ?? 45_000)
   let signedIn = false
   ctx.web.registerSearchProvider(new AhelSearchProvider(gateway, () => signedIn))

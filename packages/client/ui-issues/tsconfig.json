@@ -19,6 +19,7 @@
     { "path": "../locale/tsconfig.client.json" },
     { "path": "../store" },
     { "path": "../ui-layout" },
+    { "path": "../ui-mcp-app/tsconfig.client.json" },
     { "path": "../ui-model-selection" },
     { "path": "../ui-primitives" },
     { "path": "../ui-renderer" },

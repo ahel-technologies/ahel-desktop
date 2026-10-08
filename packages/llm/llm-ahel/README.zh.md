@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-Ahel Desktop 的 Ahel 计量模型。注册一条兼容 OpenAI 的路由 `ahel`（“Ahel”），由 `dsh-llm-pi-ai` 适配器针对 `https://ahel.ai/api/llm/v1` 提供服务。bearer 是 `ctx.ahelAccount`（`dsh-ahel-account`）中已登录 ahel.ai 账户的访问令牌，每次请求时读取并刷新；该路由不保存 API 密钥。
+Ahel Desktop 的 Ahel 计量模型。注册一条兼容 OpenAI 的路由 `ahel`（“Ahel”），由 `dsh-llm-pi-ai` 适配器针对 `https://ahel.ai/api/llm/v1` 提供服务。bearer 是 `ctx.ahelAccount`（`dsh-ahel-account`）中已登录 ahel.ai 账户的访问令牌，每次请求时读取并刷新；该路由不保存 API 密钥。绑定到某个工作区的对话（`ctx.ahelAccount.chatWorkspace`）发出的请求在 `X-Ahel-Workspace` 中携带该工作区，因此在那里计量；其他请求携带所选工作区。
 
 ## 目录
 

@@ -28,7 +28,7 @@ export const ISSUES: Issue[] = [
 
 /** One list page carrying every fixture issue. */
 export const PAGE: IssuePage = {
-  issues: ISSUES, nextCursor: null, agentsWorking: 2, agentsQueued: 0,
+  issues: ISSUES, nextCursor: null, agentsWorking: 2, agentsQueued: 0, workspace: null,
   counts: { backlog: 1, todo: 1, in_progress: 1, in_review: 1, blocked: 1, done: 1, cancelled: 0 },
 }
 

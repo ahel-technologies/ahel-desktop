@@ -20,6 +20,8 @@ function fakeChat() {
   const sessionListeners = new Set<() => void>()
   const eventListeners = new Set<() => void>()
   const waitListeners = new Set<() => void>()
+  const cardListeners = new Set<(sessionId: string, structuredContent: unknown) => void>()
+  let pinRefusal: string | null = null
   const send = vi.fn((_text: string) => Promise.resolve({ ok: true as const, value: { accepted: true as const } }))
   const binding: RunSession = {
     session: {
@@ -35,10 +37,13 @@ function fakeChat() {
   const release = vi.fn()
   const discard = vi.fn()
   const openChat = vi.fn((_reveal: boolean) => Promise.resolve({ sessionId: 'chat-1', binding, release }))
+  const pinChat = vi.fn((_sessionId: string, _workspace: string) => Promise.resolve(pinRefusal))
   const host: RunHost = {
     openChat,
+    pinChat,
     waiting: () => waiting,
     subscribeWaiting: (listener) => { waitListeners.add(listener); return () => { waitListeners.delete(listener) } },
+    subscribeCardCalls: (listener) => { cardListeners.add(listener); return () => { cardListeners.delete(listener) } },
     discard,
   }
   const append = (added: readonly RunEntry[]): void => {
@@ -47,7 +52,12 @@ function fakeChat() {
     for (const l of eventListeners) l()
   }
   return {
-    host, send, release, discard, openChat,
+    host, send, release, discard, openChat, pinChat,
+    refusePin(reason: string) { pinRefusal = reason },
+    card(structuredContent: unknown) {
+      append([{ event: { type: 'tool/result', data: { meta: { mcpApp: { v: 1, structuredContent } } } } }])
+    },
+    press(structuredContent: unknown) { for (const l of cardListeners) l('chat-1', structuredContent) },
     setRunning(next: boolean, error: string | null = null) {
       running = next
       lastAgentError = error
@@ -83,19 +93,19 @@ it('seeds a new chat with the issue and reports running, waiting_approval, runni
 
   expect(reports.map(report => report.state)).toEqual(['running', 'waiting_approval', 'running', 'finished'])
   expect(reports.at(-1)).toMatchObject({ sessionId: 'chat-1', steps: 2, totalSteps: null })
-  expect(summarise).toHaveBeenCalledWith('Drafted the checklist. Please review.')
+  expect(summarise).toHaveBeenCalledWith('Drafted the checklist. Please review.', 'chat-1')
   expect(chat.release).toHaveBeenCalledTimes(1)
 })
 
 it('a claim ahel.ai answers 409 run_claimed drops the new chat unused: no seed, no local run, the chat archived', async () => {
   const chat = fakeChat()
   const refused = new RemoteError('ahel-issues/refused', 'Session desk-b already has this run.', { status: 409, error: 'run_claimed' })
-  const run = vi.fn((_key: string, _report: IssueRunReport) => Promise.resolve({ ok: false as const, error: refused }))
+  const run = vi.fn((_key: string, _report: IssueRunReport, _workspace?: string) => Promise.resolve({ ok: false as const, error: refused }))
   const feed = createIssuesFeed(backendOf({ run }), () => Promise.resolve({ signedIn: true, role: 'OWNER' }))
   const report = vi.fn()
-  const started = await startRun(chat.host, runSeed(ISSUES[2]!, t), report, undefined, next => feed.claim('AHEL-137', next))
+  const started = await startRun(chat.host, runSeed(ISSUES[2]!, t), report, undefined, next => feed.claim('AHEL-137', next, null))
   expect(started).toEqual({ ok: false, reason: 'claimed', message: null })
-  expect(run).toHaveBeenCalledWith('AHEL-137', { sessionId: 'chat-1', state: 'running', steps: 0, totalSteps: null })
+  expect(run).toHaveBeenCalledWith('AHEL-137', { sessionId: 'chat-1', state: 'running', steps: 0, totalSteps: null }, undefined)
   expect(chat.send).not.toHaveBeenCalled()
   expect(report).not.toHaveBeenCalled()
   expect(chat.release).toHaveBeenCalledTimes(1)
@@ -124,4 +134,60 @@ it('a question reports waiting_input, a live run reports again every 5 minutes, 
   } finally {
     vi.useRealTimers()
   }
+})
+
+it('pins the chat to the issue\'s workspace before the first message, and fails the run there when it cannot', async () => {
+  const chat = fakeChat()
+  const claim = vi.fn((_report: IssueRunReport) => Promise.resolve(true))
+  await startRun(chat.host, runSeed(ISSUES[2]!, t), vi.fn(), undefined, claim, 'ws-tom')
+  expect(chat.pinChat).toHaveBeenCalledWith('chat-1', 'ws-tom')
+  expect(chat.pinChat.mock.invocationCallOrder[0]).toBeLessThan(claim.mock.invocationCallOrder[0]!)
+  expect(chat.send).toHaveBeenCalledTimes(1)
+
+  const gone = fakeChat()
+  gone.refusePin('You no longer have a seat in this workspace, or it was removed.')
+  const failedClaim = vi.fn((_report: IssueRunReport) => Promise.resolve(true))
+  const started = await startRun(gone.host, runSeed(ISSUES[2]!, t), vi.fn(), undefined, failedClaim, 'ws-gone')
+  expect(started).toEqual({ ok: false, reason: 'failed', message: 'You no longer have a seat in this workspace, or it was removed.' })
+  expect(failedClaim).toHaveBeenCalledWith({
+    sessionId: 'chat-1', state: 'failed', steps: 0, totalSteps: null, reason: 'You no longer have a seat in this workspace, or it was removed.',
+  })
+  expect(gone.send).not.toHaveBeenCalled()
+  expect(gone.discard).toHaveBeenCalledWith('chat-1')
+})
+
+it('a turn that ends on a pending confirm card reports waiting_approval until the person presses it', async () => {
+  const chat = fakeChat()
+  const reports: IssueRunReport[] = []
+  const summarise = vi.fn()
+  await startRun(chat.host, runSeed(ISSUES[2]!, t), (report) => { reports.push(report) }, summarise)
+  chat.setRunning(true)
+  chat.toolCall()
+  chat.card({ view: 'question', mode: 'confirm', interaction: { id: 'i1', status: 'pending' } })
+  chat.reply('Press Comment on issue to post it.')
+  chat.setRunning(false)
+  expect(reports.map(report => report.state)).toEqual(['running', 'waiting_approval'])
+  expect(chat.release).not.toHaveBeenCalled()
+
+  chat.press({ view: 'question', mode: 'confirm', interaction: { id: 'i1', status: 'pending' } })
+  expect(reports.map(report => report.state)).toEqual(['running', 'waiting_approval'])
+  chat.press({ view: 'execution', result: { ok: true } })
+  expect(reports.map(report => report.state)).toEqual(['running', 'waiting_approval', 'finished'])
+  expect(summarise).not.toHaveBeenCalled()
+  expect(chat.release).toHaveBeenCalledTimes(1)
+})
+
+it('a turn that ends on a connector question reports waiting_input; a card already answered lets the run finish', async () => {
+  const asked = fakeChat()
+  const reports: IssueRunReport[] = []
+  await startRun(asked.host, runSeed(ISSUES[2]!, t), (report) => { reports.push(report) })
+  asked.setRunning(true)
+  asked.card({ view: 'question', interaction: { id: 'q1', status: 'pending' } })
+  asked.setRunning(false)
+  expect(reports.at(-1)?.state).toBe('waiting_input')
+  asked.setRunning(true)
+  expect(reports.at(-1)?.state).toBe('running')
+  asked.card({ view: 'question', interaction: { id: 'q1', status: 'completed' } })
+  asked.setRunning(false)
+  expect(reports.at(-1)?.state).toBe('finished')
 })

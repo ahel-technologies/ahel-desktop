@@ -18,14 +18,16 @@ import { CLOSED } from './model.ts'
 export interface IssuesBackend {
   list(query: IssueQuery): Promise<RemoteResult<IssuePage>>
   create(draft: IssueDraft): Promise<RemoteResult<IssueWriteAnswer>>
-  get(key: string): Promise<RemoteResult<IssueWriteAnswer>>
+  get(key: string, workspace?: string): Promise<RemoteResult<IssueWriteAnswer>>
   update(key: string, patch: IssuePatch): Promise<RemoteResult<IssueWriteAnswer>>
   deleteIssue(key: string): Promise<RemoteResult<IssueWriteAnswer>>
   comments(key: string): Promise<RemoteResult<readonly IssueComment[]>>
-  comment(key: string, body: string, authorType: IssueActorType): Promise<RemoteResult<readonly IssueComment[]>>
+  comment(
+    key: string, body: string, authorType: IssueActorType, workspace?: string, sessionId?: string,
+  ): Promise<RemoteResult<readonly IssueComment[]>>
   assignees(): Promise<RemoteResult<IssueAssignees>>
   activity(key: string): Promise<RemoteResult<readonly IssueActivity[]>>
-  run(key: string, report: IssueRunReport): Promise<RemoteResult<IssueWriteAnswer>>
+  run(key: string, report: IssueRunReport, workspace?: string): Promise<RemoteResult<IssueWriteAnswer>>
   projects(): Promise<RemoteResult<readonly IssueProject[]>>
   createProject(name: string): Promise<RemoteResult<readonly IssueProject[]>>
 }
@@ -53,11 +55,19 @@ const RUN_STATUS: Partial<Record<IssueRunReport['state'], IssueStatus>> = {
   running: 'in_progress', waiting_approval: 'blocked', waiting_input: 'blocked', finished: 'in_review',
 }
 
+/**
+ * The workspace an issue run reads and writes in: the one its issue was read in, or null for the
+ * selected one. A run's reports show on the board only while the board shows that workspace.
+ */
+export type RunWorkspace = string | null
+
 /** The feed and the face actions it backs. */
 export type IssuesFeed = Omit<IssuesInjected, 'run' | 'openSession' | 'openLink' | 'viewOnWeb' | 'hooks'> & {
   readonly state: HostObservable<IssuesState>
-  /** Record a run report locally and send it. */
-  report(key: string, report: IssueRunReport): void
+  /** The workspace the board was last read in, or null for the selected one. */
+  workspace(): RunWorkspace
+  /** Record a run report locally and send it to the run's workspace. */
+  report(key: string, report: IssueRunReport, workspace: RunWorkspace): void
   /** Re-read the account, then the board. */
   reload(): Promise<void>
   /**
@@ -66,13 +76,13 @@ export type IssuesFeed = Omit<IssuesInjected, 'run' | 'openSession' | 'openLink'
    * @param label - the model's display name, or null when unknown.
    */
   noteModel(sessionId: string, label: string | null): void
-  /** Post a run's closing summary as Ahel's comment. */
-  agentComment(key: string, body: string): void
+  /** Post a run's closing summary as Ahel's comment in the run's workspace, else in the workspace its chat acts in. */
+  agentComment(key: string, body: string, workspace: RunWorkspace, sessionId: string): void
   /**
-   * Send the report that claims a queued run and record it locally once ahel.ai took it.
+   * Send the report that claims a queued run to the run's workspace and record it locally once ahel.ai took it.
    * @returns false when ahel.ai answered 409 `run_claimed`: another session holds the run; nothing is recorded.
    */
-  claim(key: string, report: IssueRunReport): Promise<boolean>
+  claim(key: string, report: IssueRunReport, workspace: RunWorkspace): Promise<boolean>
 }
 
 /** A Remote failure's message worth showing: ahel.ai's own reason for refusals, nothing for transport failures. */
@@ -126,6 +136,8 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
 
   // Only the newest read publishes.
   let generation = 0
+  let boardWorkspace: RunWorkspace = null
+  const where = (workspace: RunWorkspace): string | undefined => workspace ?? undefined
   const readBoard = async (): Promise<void> => {
     const mine = ++generation
     const { filter } = value
@@ -153,6 +165,7 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
       if (cursor === null) break
     }
     if (page === undefined) return
+    boardWorkspace = page.workspace
     set({ phase: 'ready', message: null, issues, counts: page.counts, agentsWorking: page.agentsWorking, agentsQueued: page.agentsQueued ?? 0 })
   }
   const readMine = async (): Promise<void> => {
@@ -258,23 +271,28 @@ export function createIssuesFeed(backend: IssuesBackend, account: () => Promise<
       const { [sessionId]: _old, ...rest } = value.models
       set({ models: label === null ? rest : { ...rest, [sessionId]: label } })
     },
-    agentComment: (key, body) => { void backend.comment(key, body, 'agent').catch(() => undefined) },
+    agentComment: (key, body, workspace, sessionId) => {
+      void backend.comment(key, body, 'agent', where(workspace), sessionId).catch(() => undefined)
+    },
     createProject: async (name) => {
       const result = await backend.createProject(name)
       if (result.ok) set({ projects: result.value })
       return answer(result)
     },
-    claim: async (key, report) => {
-      const result = await backend.run(key, report)
+    workspace: () => boardWorkspace,
+    claim: async (key, report, workspace) => {
+      const result = await backend.run(key, report, where(workspace))
       if (!result.ok && isRunClaimed(result.error)) return false
-      remember(key, report)
-      if (result.ok && result.value.issue !== null) replaceIssue(result.value.issue)
+      if (workspace === boardWorkspace) {
+        remember(key, report)
+        if (result.ok && result.value.issue !== null) replaceIssue(result.value.issue)
+      }
       return true
     },
-    report: (key, report) => {
-      remember(key, report)
-      void backend.run(key, report).then((result) => {
-        if (result.ok && result.value.issue !== null) replaceIssue(result.value.issue)
+    report: (key, report, workspace) => {
+      if (workspace === boardWorkspace) remember(key, report)
+      void backend.run(key, report, where(workspace)).then((result) => {
+        if (result.ok && result.value.issue !== null && workspace === boardWorkspace) replaceIssue(result.value.issue)
       }).catch(() => undefined)
     },
   }
