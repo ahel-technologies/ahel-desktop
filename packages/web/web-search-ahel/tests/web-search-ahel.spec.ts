@@ -76,6 +76,9 @@ it('mounts web_search while signed in, searches through Ahel Web Search, and dro
   })
   const account = ctx.plugin(AhelAccount, { appOrigin: gateway.origin, resource: `${gateway.origin}/mcp` })
   await account
+  // The calling chat, as the agent loop's initiator boundary names it.
+  const initiator: { agent?: { session: { header: { id: string } } } } = {}
+  ctx.provide('agents', { currentInitiator: () => initiator.agent } as never)
   const plugin = ctx.plugin(WebSearchAhel, {})
   await plugin
   cleanups.push(async () => { await plugin.dispose(); await account.dispose(); await credentials.dispose() })
@@ -94,6 +97,15 @@ it('mounts web_search while signed in, searches through Ahel Web Search, and dro
     authorization: 'Bearer access-1',
     body: { method: 'tools/call', params: { name: 'use', arguments: { key: 'ahel-services-web-search', tool: 'web_search', arguments: { query: 'model context protocol', limit: 8 } } } },
   })
+
+  // A chat bound to another workspace searches and is metered there, not in the selected one.
+  ctx.ahelAccount.bindChat('chat-a', 'ws-a')
+  initiator.agent = { session: { header: { id: 'chat-a' } } }
+  const bound = await ctx.tools.execute({
+    signal: new AbortController().signal, callId: ToolCallId('call-2'), name: 'web_search', arguments: { queries: ['mcp'] },
+  })
+  expect(bound.isError).toBe(false)
+  expect(gateway.calls[1]?.path).toBe('/mcp?workspace=ws-a')
 
   await ctx.credentials.unset(ref)
   await expect.poll(() => ctx.tools.get('web_search') === undefined && ctx.tools.get('web_fetch') === undefined).toBe(true)

@@ -13867,6 +13867,9 @@ importers:
       '@ahel/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@ahel/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
       '@ahel/dsh-ahel-account':
         specifier: workspace:*
         version: link:../../credentials/ahel-account

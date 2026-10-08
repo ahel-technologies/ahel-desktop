@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-通过 ahel.ai 的第一方网页搜索应用（`ahel.services/web-search`，网关键 `ahel-services-web-search`）进行搜索和页面读取。每次调用都是对 Ahel 网关 `use` 动词的 MCP `tools/call`，携带 `AHEL_ACCOUNT` bearer 与所选 `?workspace=`。`web_search` 对应网页搜索的 `web_search`；`web_fetch` 对应其 `read_page`。两者都是只读的。本插件仅在已登录 Ahel 账户时以子插件形式挂载 [`dsh-tool-web`](../tool-web/README.zh.md)，因此未登录时模型没有这两个工具。
+通过 ahel.ai 的第一方网页搜索应用（`ahel.services/web-search`，网关键 `ahel-services-web-search`）进行搜索和页面读取。每次调用都是对 Ahel 网关 `use` 动词的 MCP `tools/call`，携带 `AHEL_ACCOUNT` bearer 与 `?workspace=`：发起调用的对话所绑定的工作区，否则为所选工作区，因此对话的搜索在它自己的工作区中计量。`web_search` 对应网页搜索的 `web_search`；`web_fetch` 对应其 `read_page`。两者都是只读的。本插件仅在已登录 Ahel 账户时以子插件形式挂载 [`dsh-tool-web`](../tool-web/README.zh.md)，因此未登录时模型没有这两个工具。
 
 ## 目录
 
