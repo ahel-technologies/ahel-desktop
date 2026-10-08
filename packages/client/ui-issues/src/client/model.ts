@@ -1,6 +1,7 @@
 /** Pure helpers over issues: column order, labels, grouping, relative times and the run seed. */
 import type { Issue, IssueActivity, IssuePriority, IssueRun, IssueRunState, IssueStatus } from '@ahel/dsh-ahel-account/types'
 import type { IssuesKey } from './locales.ts'
+import type { ConfirmOutcome } from './run.ts'
 
 /** ahel.ai's Issues page; one issue's detail is `<this>/<key>`. */
 export const WEB_ISSUES = 'https://ahel.ai/app/issues'
@@ -147,6 +148,23 @@ export function ago(iso: string, now: number, t: Translate): string {
 export function runSeed(issue: Issue, t: Translate): string {
   const description = issue.description.trim() === '' ? t('runSeedNoDescription') : issue.description.trim()
   return t('runSeed', { key: issue.key, title: issue.title, description, link: issueUrl(issue.key) })
+}
+
+/**
+ * The note that tells a run's chat how the confirm card it ended on was answered outside the chat.
+ * @param outcome - the answer.
+ * @param t - dictionary.
+ * @returns what happened and that the card must not run again.
+ */
+export function confirmNote(outcome: ConfirmOutcome, t: Translate): string {
+  return t(CONFIRM_NOTE[outcome.kind], { ...outcome })
+}
+
+const CONFIRM_NOTE: Record<ConfirmOutcome['kind'], IssuesKey> = {
+  ran: 'runConfirmRan',
+  declined: 'runConfirmDeclined',
+  expired: 'runConfirmExpired',
+  failed: 'runConfirmFailed',
 }
 
 /** Split a comma-separated labels field. */

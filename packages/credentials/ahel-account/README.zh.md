@@ -58,7 +58,7 @@ ahel.ai 的网页对话为每个人启动一个 Host，并通过 `AHEL_LAUNCH_TO
 
 每个对话都会记录它开始时所在的 ahel.ai 工作区。顶层对话在任何提示写入日志之前走第一步时，Host 会追加仅写入日志的会话事件 `ahel-account/chat-workspace`（`{ workspace }`），记录所选工作区；未选择工作区时，记录 ahel.ai 团队摘要为该账号指定的工作区；第一个轮次若在该步之前被取消，标记留给下一个轮次。该事件带有信封的 `ignorable: true`，不认识它的构建仍能打开该对话。`ahelWorkspace` 会话投影在每一行会话列表上携带该 id 或 null，分叉会继承它。在有此标记之前已有提示的对话，或开始时两种工作区都无法读取（未登录、ahel.ai 不可达）的对话，不带标记。网页对话只列出所选工作区的对话。
 
-该标记绑定对话：它的 Ahel MCP 工具调用（经 `mcp-client/workspace` 应答）、卡片按键、Ahel 模型请求和 Ahel 网页搜索调用（`chatWorkspace(sessionId)`，仅 Host）都在标记的工作区中进行，不论之后选择了哪个工作区；子代理在其父对话的工作区中进行。选择另一个工作区只改变列出哪些对话以及新对话从哪里开始；不带标记的对话跟随当前选择。Remote 方法 `pinChat(sessionId, workspace)` 用此人有席位的工作区（实时从 ahel.ai 读取，否则用已保存的资料）标记一个尚未走过任何一步的对话，排队的议题运行就这样使用其议题的工作区；否则以 `ahel-account/workspace-unavailable` 失败。`ahelIssues.list` 在所选工作区中读取，未选择时在团队摘要为该账号指定的默认工作区中读取，并返回该 id；`get`、`comment` 和 `run` 接受运行的工作区，未提供时 `run` 和 `comment` 发往该运行对话所在的工作区。
+该标记绑定对话：它的 Ahel MCP 工具调用（经 `mcp-client/workspace` 应答）、卡片按键、Ahel 模型请求和 Ahel 网页搜索调用（`chatWorkspace(sessionId)`，仅 Host）都在标记的工作区中进行，不论之后选择了哪个工作区；子代理在其父对话的工作区中进行。选择另一个工作区只改变列出哪些对话以及新对话从哪里开始；不带标记的对话跟随当前选择。Remote 方法 `pinChat(sessionId, workspace)` 用此人有席位的工作区（实时从 ahel.ai 读取，否则用已保存的资料）标记一个尚未走过任何一步的对话，排队的议题运行就这样使用其议题的工作区；否则以 `ahel-account/workspace-unavailable` 失败。`ahelIssues.list` 在所选工作区中读取，未选择时在团队摘要为该账号指定的默认工作区中读取，并返回该 id；`get`、`comment` 和 `run` 接受运行的工作区，未提供时 `run` 和 `comment` 发往该运行对话所在的工作区。`ahelIssues.confirmWaiting(id, sessionId)` 在对话所在的工作区中读取此人自己的某张确认卡片是否仍被列为等待其按下（`GET /api/desktop/approvals`，只读）。
 
 <a id="catalog-the-ahelcatalog-namespace"></a>
 ## 目录：`ahelCatalog` 命名空间

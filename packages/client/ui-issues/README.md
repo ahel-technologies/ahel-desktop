@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The Issues panel of Ahel Desktop over the signed-in ahel.ai workspace: the board and list with filters, the issue detail drawer, New Issue, and Run with Ahel, which seeds a new chat with the issue and reports the chat's state as the issue's run. While signed in it also claims the runs this person queued on ahel.ai and opens each one's chat. A run acts in the workspace its issue was read in: its chat is pinned there before the first message, its reports and summary go there, and a workspace the person no longer has a seat in fails the run with the reason. A turn that ends on a card waiting for the person (a connector confirm, a held call or a connector question) reports `waiting_approval` or `waiting_input` until the card is pressed or the chat goes on.
+The Issues panel of Ahel Desktop over the signed-in ahel.ai workspace: the board and list with filters, the issue detail drawer, New Issue, and Run with Ahel, which seeds a new chat with the issue and reports the chat's state as the issue's run. While signed in it also claims the runs this person queued on ahel.ai and opens each one's chat. A run acts in the workspace its issue was read in: its chat is pinned there before the first message, its reports and summary go there, and a workspace the person no longer has a seat in fails the run with the reason. A turn that ends on a card waiting for the person (a connector confirm, a held call or a connector question) reports `waiting_approval` or `waiting_input` until the card is pressed, on the card or on ahel.ai, or the chat goes on.
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ The Issues panel of Ahel Desktop over the signed-in ahel.ai workspace: the board
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount it after `dsh-ahel-account` on the Host; it reads the Host's `ahelIssues` Remote namespace. Other packages open one issue with the `ahel-issues/open` event and ask for a read with `ahel-issues/poll`. The board re-reads every 60 s while the window has focus and on window focus. A detail read that ahel.ai rate-limits or does not answer repeats by itself while the drawer is open, after ahel.ai's Retry-After or a wait that doubles from 2 s up to 30 s, and the drawer says it is waiting instead of showing an error.
+Mount it after `dsh-ahel-account` on the Host; it reads the Host's `ahelIssues` Remote namespace. Other packages open one issue with the `ahel-issues/open` event and ask for a read with `ahel-issues/poll`. The board re-reads every 60 s while the window has focus and on window focus. A detail read that ahel.ai rate-limits or does not answer repeats by itself while the drawer is open, after ahel.ai's Retry-After or a wait that doubles from 2 s up to 30 s, and the drawer says it is waiting instead of showing an error. When a turn ends on a pending confirm card, the run reads every 15 s, then 30 s, then every 60 s whether ahel.ai still lists the card among the person's open confirm cards; it stops when the chat goes on or closes, the run ends, or the card expires. Once the card is pressed or declined on ahel.ai (`/app/confirm/<id>` or Ahel Desktop's Approvals), the run sends the card's own continuation once through ui-mcp-app, as the card's button would: ahel.ai runs a pressed card once with the pressed values and refuses a declined one. The chat is then told the outcome and finishes its turn: a card that ran lets the run finish with its summary, a declined card reports `waiting_input`, and a card that expired unpressed fails the run with the reason `confirm expired`.
 
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
@@ -30,7 +30,7 @@ Mount it after `dsh-ahel-account` on the Host; it reads the Host's `ahelIssues` 
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-`feed.ts` holds the shared issues state and every write; `IssueDetail.tsx` owns the detail reads and their repeat timer; `run.ts` starts and follows a run's chat; `pickup.ts` claims runs queued on ahel.ai.
+`feed.ts` holds the shared issues state and every write; `IssueDetail.tsx` owns the detail reads and their repeat timer; `run.ts` starts and follows a run's chat, and reads and continues the confirm card a turn ended on; `pickup.ts` claims runs queued on ahel.ai.
 
 </details>
 

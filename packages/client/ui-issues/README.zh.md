@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-Ahel Desktop 中基于已登录 ahel.ai 工作区的议题面板：带筛选的看板与列表、议题详情抽屉、新建议题，以及“用 Ahel 运行”——它用议题开启一个新对话，并把该对话的状态报告为议题的运行。登录期间，它还会认领此人在 ahel.ai 上排队的运行，并打开每个运行的对话。运行在其议题被读取时所在的工作区中进行：它的对话在第一条消息之前固定到该工作区，报告和摘要发往那里；若此人在该工作区已没有席位，运行以该原因失败。以等待此人的卡片（连接器确认、被拦下的调用或连接器问题）结束的轮次会报告 `waiting_approval` 或 `waiting_input`，直到卡片被按下或对话继续。
+Ahel Desktop 中基于已登录 ahel.ai 工作区的议题面板：带筛选的看板与列表、议题详情抽屉、新建议题，以及“用 Ahel 运行”——它用议题开启一个新对话，并把该对话的状态报告为议题的运行。登录期间，它还会认领此人在 ahel.ai 上排队的运行，并打开每个运行的对话。运行在其议题被读取时所在的工作区中进行：它的对话在第一条消息之前固定到该工作区，报告和摘要发往那里；若此人在该工作区已没有席位，运行以该原因失败。以等待此人的卡片（连接器确认、被拦下的调用或连接器问题）结束的轮次会报告 `waiting_approval` 或 `waiting_input`，直到卡片被按下（在卡片上或在 ahel.ai 上）或对话继续。
 
 ## 目录
 
@@ -22,7 +22,7 @@ Ahel Desktop 中基于已登录 ahel.ai 工作区的议题面板：带筛选的�
 <a id="use-this-package"></a>
 ## 使用本包
 
-在 Host 上的 `dsh-ahel-account` 之后挂载；它读取 Host 的 `ahelIssues` Remote 命名空间。其他包通过 `ahel-issues/open` 事件打开某个议题，通过 `ahel-issues/poll` 请求读取。窗口获得焦点时看板每 60 秒重新读取一次，窗口重新获得焦点时也会读取。ahel.ai 限流或未应答的详情读取会在抽屉打开期间自动重试，等待 ahel.ai 的 Retry-After，否则从 2 秒起逐次加倍、最多 30 秒；抽屉显示正在等待，而不是错误。
+在 Host 上的 `dsh-ahel-account` 之后挂载；它读取 Host 的 `ahelIssues` Remote 命名空间。其他包通过 `ahel-issues/open` 事件打开某个议题，通过 `ahel-issues/poll` 请求读取。窗口获得焦点时看板每 60 秒重新读取一次，窗口重新获得焦点时也会读取。ahel.ai 限流或未应答的详情读取会在抽屉打开期间自动重试，等待 ahel.ai 的 Retry-After，否则从 2 秒起逐次加倍、最多 30 秒；抽屉显示正在等待，而不是错误。轮次以待处理的确认卡片结束时，运行会先在 15 秒后、再在 30 秒后、之后每 60 秒读取 ahel.ai 是否仍把该卡片列在此人待处理的确认卡片中；对话继续或关闭、运行结束或卡片过期时停止读取。卡片在 ahel.ai（`/app/confirm/<id>` 或 Ahel Desktop 的审批）上被按下或拒绝后，运行像卡片按钮那样，经 ui-mcp-app 发送一次卡片自己的续接调用：ahel.ai 用按下时的值执行一次已按下的卡片，并拒绝已拒绝的卡片。随后对话被告知结果并完成其轮次：已执行的卡片让运行带着摘要结束，被拒绝的卡片报告 `waiting_input`，未被按下就过期的卡片使运行以原因 `confirm expired` 失败。
 
 <a id="understand-the-implementation"></a>
 ## 理解实现
@@ -30,7 +30,7 @@ Ahel Desktop 中基于已登录 ahel.ai 工作区的议题面板：带筛选的�
 <details>
 <summary>实现内部细节——点击展开</summary>
 
-`feed.ts` 保存共享的议题状态与所有写操作；`IssueDetail.tsx` 负责详情读取及其重试计时器；`run.ts` 启动并跟踪运行的对话；`pickup.ts` 认领在 ahel.ai 上排队的运行。
+`feed.ts` 保存共享的议题状态与所有写操作；`IssueDetail.tsx` 负责详情读取及其重试计时器；`run.ts` 启动并跟踪运行的对话，并读取和续接轮次结束时所在的确认卡片；`pickup.ts` 认领在 ahel.ai 上排队的运行。
 
 </details>
 

@@ -11,7 +11,18 @@
  * waiting for the person (a connector confirm or a held call, whose result
  * names a pending interaction) reports `waiting_approval` (`waiting_input` for
  * a connector question) instead of `finished`; the person's press on the card,
- * or the chat's next turn, moves the run on. While the run is live the
+ * or the chat's next turn, moves the run on. While a turn has ended on a
+ * pending confirm card, the run reads whether ahel.ai still lists the card as
+ * waiting for the person, after {@link CONFIRM_POLL_FIRST_MS} and then at
+ * doubling intervals up to {@link CONFIRM_POLL_MAX_MS}, until the chat goes
+ * on or closes, the run ends, or the card's expiry passes. Once the card is
+ * no longer listed (pressed or declined on ahel.ai), the run sends the card's
+ * own continuation once: ahel.ai runs a pressed card exactly once, with the
+ * values it was pressed with, and refuses a declined or unpressed one, so
+ * nothing runs that the person did not press. The run then tells the chat the
+ * outcome in a note and the chat finishes its turn: a card that ran lets the
+ * run finish, a declined one reports `waiting_input`, an expired one fails the
+ * run with the reason `confirm expired`. While the run is live the
  * current state is reported again every {@link KEEP_ALIVE_MS}, so ahel.ai's
  * sweep of runs without reports leaves it alone. Steps are the tool calls
  * made so far; the expected total stays unknown because the goal package
@@ -80,7 +91,49 @@ export interface RunHost {
   subscribeCardCalls(listener: (sessionId: string, structuredContent: unknown) => void): () => void
   /** Archive a chat a run opened and never used. */
   discard(sessionId: string): void
+  /** Whether the chat is still in the person's chat list; false once it is archived or deleted. */
+  chatOpen(sessionId: string): boolean
+  /**
+   * Whether a confirm card still waits for the person's press on ahel.ai, read in the workspace the chat acts in.
+   * @returns true while it waits, false once it does not, null when unknown.
+   */
+  confirmWaiting(sessionId: string, interactionId: string): Promise<boolean | null>
+  /**
+   * Send a confirm card's own continuation through the chat's tool pipeline, as the card's button does.
+   * @returns the call's MCP result fields, or null when the chat cannot call its card's server.
+   */
+  continueConfirm(sessionId: string, confirm: PendingConfirm): Promise<ConfirmContinuation | null>
+  /** The note that tells the chat how a confirm card it ended on was answered, in the person's language. */
+  confirmNote(outcome: ConfirmOutcome): string
 }
+
+/** A pending confirm card a turn ended on, read from its persisted card record. */
+export interface PendingConfirm {
+  /** The MCP server that drew the card. */
+  readonly server: string
+  /** The card's action id (`action.id`), which its continuation names. */
+  readonly actionId: string
+  /** The card's interaction id. */
+  readonly interactionId: string
+  /** What the card does (`action.summary`). */
+  readonly what: string
+  /** Epoch milliseconds after which the card can no longer run, or null when the card names none. */
+  readonly expiresAt: number | null
+}
+
+/** MCP result fields of a confirm card's continuation. */
+export interface ConfirmContinuation {
+  readonly content: readonly unknown[]
+  readonly structuredContent?: unknown
+  readonly isError?: boolean
+}
+
+/** How the person answered a confirm card outside the chat. */
+export type ConfirmOutcome =
+  | { readonly kind: 'ran'; readonly what: string; readonly receipt: string }
+  | { readonly kind: 'declined'; readonly what: string }
+  | { readonly kind: 'expired'; readonly what: string }
+  | { readonly kind: 'failed'; readonly what: string; readonly reason: string }
 
 /** How a run start ended. */
 export type RunStart =
@@ -102,19 +155,94 @@ export function cardWait(structuredContent: unknown): RunWait | null {
   return view.mode === 'confirm' ? 'waiting_approval' : 'waiting_input'
 }
 
+/** The persisted card record of the last tool result that rendered a card. */
+function lastCard(entries: readonly RunEntry[]): { readonly server?: unknown; readonly structuredContent?: unknown } | null {
+  for (const { event } of [...entries].reverse()) {
+    if (event.type !== 'tool/result') continue
+    const meta = (event.data as { meta?: { mcpApp?: { server?: unknown; structuredContent?: unknown } } } | undefined)?.meta
+    if (meta?.mcpApp !== undefined) return meta.mcpApp
+  }
+  return null
+}
+
+/** A card's interaction id, or undefined. */
+function interactionOf(structuredContent: unknown): string | undefined {
+  const id = (structuredContent as { interaction?: { id?: unknown } } | null | undefined)?.interaction?.id
+  return typeof id === 'string' ? id : undefined
+}
+
 /**
  * What the chat's latest card waits for.
  * @param entries - the chat's event window.
+ * @param answered - interaction ids of cards answered outside the chat; such a card waits for nothing.
  * @returns the wait of the last tool result that rendered a card, or null.
  */
-export function lastCardWait(entries: readonly RunEntry[]): RunWait | null {
-  for (const { event } of [...entries].reverse()) {
-    if (event.type !== 'tool/result') continue
-    const meta = (event.data as { meta?: { mcpApp?: { structuredContent?: unknown } } } | undefined)?.meta
-    if (meta?.mcpApp === undefined) continue
-    return cardWait(meta.mcpApp.structuredContent)
+export function lastCardWait(entries: readonly RunEntry[], answered: ReadonlySet<string> = new Set()): RunWait | null {
+  const card = lastCard(entries)
+  if (card === null) return null
+  const id = interactionOf(card.structuredContent)
+  return id !== undefined && answered.has(id) ? null : cardWait(card.structuredContent)
+}
+
+/**
+ * The pending confirm card the chat's latest card is, if it is one the person can press on ahel.ai.
+ * @param entries - the chat's event window.
+ * @returns the card, or null.
+ */
+export function pendingConfirm(entries: readonly RunEntry[]): PendingConfirm | null {
+  const card = lastCard(entries)
+  const view = card?.structuredContent as {
+    view?: unknown
+    mode?: unknown
+    interaction?: { id?: unknown; status?: unknown; expiresAt?: unknown }
+    action?: { id?: unknown; summary?: unknown }
+  } | null | undefined
+  if (typeof card?.server !== 'string' || view?.view !== 'question' || view.mode !== 'confirm') return null
+  const { interaction, action } = view
+  if (interaction?.status !== 'pending' || typeof interaction.id !== 'string' || typeof action?.id !== 'string') return null
+  const expiresAt = typeof interaction.expiresAt === 'string' ? Date.parse(interaction.expiresAt) : Number.NaN
+  return {
+    server: card.server,
+    actionId: action.id,
+    interactionId: interaction.id,
+    what: typeof action.summary === 'string' ? action.summary : action.id,
+    expiresAt: Number.isNaN(expiresAt) ? null : expiresAt,
   }
-  return null
+}
+
+/** Longest server text a confirm outcome carries. */
+const MAX_OUTCOME_TEXT = 1_000
+
+/** The text blocks of MCP content, joined and bounded. */
+function contentText(content: readonly unknown[]): string {
+  const text = content.flatMap((block) => {
+    const { type, text: value } = (block ?? {}) as { type?: unknown; text?: unknown }
+    return type === 'text' && typeof value === 'string' ? [value] : []
+  }).join('\n').trim()
+  return text.length <= MAX_OUTCOME_TEXT ? text : `${text.slice(0, MAX_OUTCOME_TEXT)}…`
+}
+
+/**
+ * Read a confirm card's continuation as the person's answer. ahel.ai's refusals carry no code, so an unpressed card
+ * (`Refused: … runs only when the person presses …`), a run already in flight and a declined card (`withdrawn`) are
+ * read from its words.
+ * @param result - the continuation's MCP result fields.
+ * @param what - what the card does.
+ * @returns the outcome, or null while the card still waits for a press or its run is in flight.
+ */
+export function confirmOutcome(result: ConfirmContinuation, what: string): ConfirmOutcome | null {
+  const text = contentText(result.content)
+  const view = result.structuredContent as { view?: unknown; interaction?: { status?: unknown } } | null | undefined
+  if (view?.view === 'question' || view?.view === 'approval') {
+    // The card again: expired, withdrawn, waiting on its fields, or held by an approval rule until a manager answers.
+    if (view.interaction?.status === 'expired') return { kind: 'expired', what }
+    if (view.interaction?.status === 'cancelled') return { kind: 'declined', what }
+    return null
+  }
+  if (result.isError !== true) return { kind: 'ran', what, receipt: text }
+  if (/^Refused:/.test(text) || /already (running|being submitted)/.test(text)) return null
+  if (/withdrawn/.test(text)) return { kind: 'declined', what }
+  return { kind: 'failed', what, reason: text.split('\n', 1)[0] ?? '' }
 }
 
 /** Steps are reported at most this often while the state stays the same. */
@@ -122,6 +250,15 @@ const STEP_REPORT_MS = 3_000
 
 /** A live run reports its state again this often; ahel.ai fails a live run after 30 minutes without a report. */
 const KEEP_ALIVE_MS = 5 * 60_000
+
+/** The first read of a pending confirm card's state comes this long after the turn ends on it. */
+const CONFIRM_POLL_FIRST_MS = 15_000
+
+/** Reads of a pending confirm card's state double their interval up to this. */
+const CONFIRM_POLL_MAX_MS = 60_000
+
+/** The reason a run whose confirm card expired unpressed fails with. */
+const CONFIRM_EXPIRED_REASON = 'confirm expired'
 
 /** Count tool calls in some event entries. */
 function toolCalls(entries: readonly RunEntry[]): number {
@@ -184,12 +321,12 @@ export async function startRun(
   let state: IssueRunState = 'running'
   let steps = toolCalls(binding.eventSource.getSnapshot().entries)
   let reported = 0
-  const send = (next: IssueRunState, force: boolean): void => {
+  const send = (next: IssueRunState, force: boolean, reason?: string): void => {
     const now = Date.now()
     if (!force && next === state && now - reported < STEP_REPORT_MS) return
     state = next
     reported = now
-    report({ sessionId, state, steps, totalSteps: null })
+    report({ sessionId, state, steps, totalSteps: null, ...reason === undefined ? {} : { reason } })
   }
   if (claim === undefined) {
     send('running', true)
@@ -204,11 +341,11 @@ export async function startRun(
 
   let ended = false
   const disposers: (() => void)[] = []
-  const end = (final: 'finished' | 'failed', withSummary = true): void => {
+  const end = (final: 'finished' | 'failed', withSummary = true, reason?: string): void => {
     if (ended) return
     ended = true
     for (const dispose of disposers) dispose()
-    send(final, true)
+    send(final, true, reason)
     if (final === 'finished' && withSummary) {
       const reply = lastReply(binding.eventSource.getSnapshot().entries)
       if (reply !== '') summarise?.(reply, sessionId)
@@ -219,10 +356,63 @@ export async function startRun(
   let started = session.getSnapshot().running
   /** The card the last turn ended on waits for the person; the run reports that wait until the card is answered. */
   let parked = false
+  /** Confirm cards answered outside the chat, whose outcome the chat was told. */
+  const answered = new Set<string>()
+  /** The outcome the running turn was told; it decides what the turn's end reports. */
+  let told: ConfirmOutcome | null = null
+  let stopWatch: (() => void) | null = null
+
+  /** Read a pending confirm card's state until it changes, then tell the chat the outcome once. */
+  const watchConfirm = (confirm: PendingConfirm): void => {
+    let delay = CONFIRM_POLL_FIRST_MS
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let stopped = false
+    const stop = (): void => {
+      stopped = true
+      clearTimeout(timer)
+      if (stopWatch === stop) stopWatch = null
+    }
+    const schedule = (): void => {
+      const left = confirm.expiresAt === null ? delay : Math.max(0, confirm.expiresAt - Date.now())
+      timer = setTimeout(() => { void tick() }, Math.min(delay, left))
+      delay = Math.min(delay * 2, CONFIRM_POLL_MAX_MS)
+    }
+    const read = async (): Promise<ConfirmOutcome | null> => {
+      if (confirm.expiresAt !== null && Date.now() >= confirm.expiresAt) return { kind: 'expired', what: confirm.what }
+      if (await host.confirmWaiting(sessionId, confirm.interactionId) !== false) return null
+      if (stopped) return null
+      const result = await host.continueConfirm(sessionId, confirm)
+      return result === null ? null : confirmOutcome(result, confirm.what)
+    }
+    const tick = async (): Promise<void> => {
+      if (!host.chatOpen(sessionId)) { stop(); return }
+      let outcome: ConfirmOutcome | null
+      try {
+        outcome = await read()
+      } catch (error) {
+        console.warn('[ui-issues] could not read a confirm card\'s state:', error)
+        outcome = null
+      }
+      if (outcome !== null) answered.add(confirm.interactionId)
+      // A chat that went on, or a run that ended, already holds the continuation's result as logged card context.
+      if (stopped || ended) return
+      if (outcome === null) { schedule(); return }
+      stop()
+      told = outcome
+      void binding.send(host.confirmNote(outcome)).then((sent) => {
+        if (!sent.ok) end('failed')
+      }, () => { end('failed') })
+    }
+    stopWatch?.()
+    stopWatch = stop
+    schedule()
+  }
+
   const onSession = (): void => {
     const snapshot = session.getSnapshot()
     if (snapshot.running) {
       started = true
+      stopWatch?.()
       if (parked) {
         parked = false
         if (host.waiting(sessionId) === null) send('running', true)
@@ -231,10 +421,21 @@ export async function startRun(
     }
     if (!started || ended || parked) return
     if (snapshot.lastAgentError !== null || snapshot.promptError !== null) { end('failed'); return }
-    const wait = lastCardWait(binding.eventSource.getSnapshot().entries)
-    if (wait === null) { end('finished'); return }
+    const entries = binding.eventSource.getSnapshot().entries
+    const outcome = told
+    told = null
+    const wait = lastCardWait(entries, answered)
+    if (wait === null) {
+      if (outcome?.kind === 'declined') { parked = true; send('waiting_input', true); return }
+      if (outcome?.kind === 'expired') { end('failed', false, CONFIRM_EXPIRED_REASON); return }
+      if (outcome?.kind === 'failed') { end('failed', false, outcome.reason === '' ? undefined : outcome.reason); return }
+      end('finished')
+      return
+    }
     parked = true
     send(wait, true)
+    const confirm = wait === 'waiting_approval' ? pendingConfirm(entries) : null
+    if (confirm !== null) watchConfirm(confirm)
   }
   const onCardCall = (id: string, structuredContent: unknown): void => {
     if (id !== sessionId || !parked || ended || cardWait(structuredContent) !== null) return
@@ -260,7 +461,7 @@ export async function startRun(
   disposers.push(
     session.subscribe(onSession), binding.eventSource.subscribe(onEvents),
     host.subscribeWaiting(onWaiting), host.subscribeCardCalls(onCardCall),
-    () => { clearInterval(keepAlive) },
+    () => { clearInterval(keepAlive) }, () => { stopWatch?.() },
   )
 
   let result: RemoteResult<{ accepted: true }>
