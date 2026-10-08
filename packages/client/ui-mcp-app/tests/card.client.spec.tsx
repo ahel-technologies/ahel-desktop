@@ -99,6 +99,25 @@ describe('McpAppCard', () => {
     expect(view.container.querySelector('iframe')).toBeNull()
   })
 
+  it('folds a JSON text result into the structured details instead of printing it', async () => {
+    const offline = { readResource: async () => { throw new Error('offline') } }
+    const bare = { mcpApp: { v: 1, server: 'cards', tool: 'show', resourceUri: CARD_URI, visibility: ['model'] } }
+    const view = render(<McpAppCard {...cardProps(cardNode(bare, '{"rows":[{"name":"Nordline"}]}'), offline)} />)
+    const fallback = await waitFor(() => {
+      const element = view.container.querySelector<HTMLElement>('[data-mcp-app-fallback="failed"]')
+      if (element === null) throw new Error('fallback not shown yet')
+      return element
+    })
+    expect(fallback.querySelector('details')?.open).toBe(false)
+    expect(fallback.querySelector('pre')?.textContent).toContain('"name": "Nordline"')
+    expect(fallback.textContent?.replace(fallback.querySelector('details')?.textContent ?? '', '')).toBe(en.failed)
+    view.unmount()
+    // Text that only starts like JSON stays visible text.
+    const prose = render(<McpAppCard {...cardProps(cardNode(bare, '{not json'), offline)} />)
+    await waitFor(() => { expect(prose.container.textContent).toContain('{not json') })
+    expect(prose.container.querySelector('details')).toBeNull()
+  })
+
   it('falls back without reading the resource when the persisted record was truncated', () => {
     const readResource = vi.fn()
     const truncated = { mcpApp: { v: 1, server: 'cards', tool: 'show', resourceUri: CARD_URI, visibility: ['model'], truncated: true } }

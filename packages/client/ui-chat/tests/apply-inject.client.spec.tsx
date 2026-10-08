@@ -1,3 +1,4 @@
+import { createUserMessage } from '@ahel/dsh-llm'
 import { MessageId } from '@ahel/dsh-llm/brand'
 // @vitest-environment jsdom
 /** Chat inject factories exercised over independently mounted Conversation and Chat plugins. */
@@ -202,6 +203,25 @@ describe('Chat inject API', () => {
         sessionId: ROOT, atSeq: 18, increaseTitle: true, onCreated: expect.any(Function) as (childId: SessionId) => void,
       })
     })
+    await b.runtime.dispose()
+  })
+
+  it('retries an interrupted Turn by queueing its prompt text again', async () => {
+    const b = await bench()
+    const { injected } = b.chatViewApi(b.rootReference)
+    await b.runtime.sessions.replaceEvents(ROOT, [
+      { type: 'event', event: { type: 'turn/start', seq: SessionSeq(1), time: 1, data: { turn: 1 } } },
+      { type: 'event', event: { type: 'user/message', seq: SessionSeq(2), time: 2, surfaceOp: 'append', data: createUserMessage({
+        content: [{ type: 'text', text: 'List 20 companies' }, { type: 'image', attachment: ATTACHMENT }],
+        source: { kind: 'user' },
+      }) } },
+      { type: 'event', event: { type: 'turn/end', seq: SessionSeq(3), time: 3, data: { turn: 1, reason: { kind: 'interrupted' } } } },
+    ])
+    injected.retryTurn(1)
+    expect(b.session.prompt).toHaveBeenCalledExactlyOnceWith([{ type: 'text', text: 'List 20 companies' }], 'queue')
+    // A Turn without loaded prompt text sends nothing.
+    injected.retryTurn(2)
+    expect(b.session.prompt).toHaveBeenCalledOnce()
     await b.runtime.dispose()
   })
 
