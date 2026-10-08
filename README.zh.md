@@ -10,7 +10,7 @@ Ahel Desktop 是 [ahel.ai](https://ahel.ai) 的桌面聊天应用。使用 ahel.
 
 从[最新 release](https://github.com/ahel-technologies/ahel-desktop/releases/latest) 下载 macOS（Apple 芯片）或 Windows 版本。
 
-当前构建尚未签名。macOS：右键点击应用并选择“打开”。Windows：SmartScreen > 更多信息 > 仍要运行。
+当前构建为未签名的测试版。macOS：先打开一次应用；macOS 拒绝后，前往“系统设置 > 隐私与安全性”，点击“仍要打开”并输入 Mac 密码（macOS 15 上右键“打开”已不再有效）。Windows：SmartScreen > 更多信息 > 仍要运行。
 
 ## 从源码构建
 
