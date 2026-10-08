@@ -1,9 +1,12 @@
-/** The Inbox main panel: handoffs teammates shared with you and issue updates in one list, newest first, and the handoffs you sent. */
+/**
+ * The Inbox main panel: handoffs teammates shared with you and issue updates in one list, newest first, and the handoffs you sent.
+ * Each read sets the Inbox badge to the list's unread rows; a summary poll that counts differently re-reads the list.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { HandoffList, HandoffReceivedRow, HandoffSentRow, IssueInboxItem } from '@ahel/dsh-ahel-account/types'
 import type { InboxInjected, InboxLoad, InboxPageProps } from './contract.ts'
 import type { AhelAccountKey } from '../locales.ts'
-import { inboxEntries, ISSUE_KIND_COPY, WEB_ISSUES } from './issue-items.ts'
+import { handoffUnread, inboxEntries, inboxUnread, ISSUE_KIND_COPY, WEB_ISSUES } from './issue-items.ts'
 import catalog from '../catalog/Catalog.module.css'
 import css from './Team.module.css'
 
@@ -63,6 +66,7 @@ function ReceivedItem({ row, now, open, markDone, openUrl, reload, t }: {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<RowNotice | null>(null)
   const done = row.status === 'done'
+  const unread = handoffUnread(row)
   const next = firstLine(row.next)
 
   const run = (action: () => ReturnType<InboxInjected['open']>): void => {
@@ -75,9 +79,9 @@ function ReceivedItem({ row, now, open, markDone, openUrl, reload, t }: {
   }
 
   return (
-    <li className={css.row} data-unread={row.unread || undefined}>
+    <li className={css.row} data-unread={unread || undefined}>
       <p className={css.title}>
-        {row.unread && <span className={css.dot} role="img" aria-label={t('inboxUnread')} />}
+        {unread && <span className={css.dot} role="img" aria-label={t('inboxUnread')} />}
         <span>{row.title}</span>
         {done && <span className={css.tag}>{t('inboxDone')}</span>}
       </p>
@@ -185,8 +189,10 @@ function SentItem({ row, now, openUrl, t }: {
  * @param props - composed slot props: the Inbox face, its hooks and `t`.
  * @returns the page.
  */
-export function InboxPage({ load, open, openIssue, markDone, openUrl, openWebInbox, signIn, useAccount, t }: InboxPageProps) {
+export function InboxPage({ load, open, openIssue, markDone, openUrl, openWebInbox, signIn, useAccount, useSummary, t }: InboxPageProps) {
   const view = useAccount(value => value)
+  const polledAt = useSummary(value => value.summary?.at ?? null)
+  const polledUnread = useSummary(value => value.summary?.inbox?.unread ?? null)
   const [answer, setAnswer] = useState<InboxLoad | null>(null)
   const [now, setNow] = useState(() => Date.now())
   // Only the newest read publishes.
@@ -213,6 +219,15 @@ export function InboxPage({ load, open, openIssue, markDone, openUrl, openWebInb
     window.addEventListener('focus', onFocus)
     return () => { window.removeEventListener('focus', onFocus) }
   }, [signedIn, workspace, reload])
+
+  // A fresh summary poll that counts other unread rows than the list shows means the list is stale.
+  const shownUnread = answer?.ok === true ? inboxUnread(answer.list) : null
+  const stale = useRef({ shownUnread, polledUnread })
+  stale.current = { shownUnread, polledUnread }
+  useEffect(() => {
+    const { shownUnread: shown, polledUnread: polled } = stale.current
+    if (polledAt !== null && shown !== null && polled !== null && polled !== shown) reload()
+  }, [polledAt, reload])
 
   useEffect(() => {
     const timer = setInterval(() => { setNow(Date.now()) }, TICK_MS)

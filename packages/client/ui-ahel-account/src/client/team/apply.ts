@@ -23,7 +23,7 @@ import { NS } from '../locales.ts'
 import { ApprovalsPanelIcon, InboxPanelIcon } from '../catalog/PanelIcons.tsx'
 import { ApprovalsPage } from './ApprovalsPage.tsx'
 import { InboxPage } from './InboxPage.tsx'
-import { openIssueItem } from './issue-items.ts'
+import { inboxUnread, openIssueItem } from './issue-items.ts'
 import { HandOffButton, ShareHandoffDialog, ShareHandoffMenuItem, type ShareHandoffInjected, type ShareRequest } from './ShareHandoff.tsx'
 import { TeamHeader, TeamStrip } from './TeamGlance.tsx'
 import type {
@@ -200,8 +200,11 @@ function registerInbox(ctx: Context, account: AhelAccountInjected, summary: Team
   const face: InboxInjected = {
     load: async () => {
       const result = await ctx.remote.ahelTeam.inbox()
-      // A `run_queued` row may be this person's run waiting for this desktop.
-      if (result.ok) ctx.emit('ahel-issues/poll')
+      if (result.ok) {
+        summary.adoptInbox(inboxUnread(result.value))
+        // A `run_queued` row may be this person's run waiting for this desktop.
+        ctx.emit('ahel-issues/poll')
+      }
       return result.ok ? { ok: true, list: result.value } : inboxFailure(result.error)
     },
     open: async (row) => {

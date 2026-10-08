@@ -337,7 +337,7 @@ export type DesktopCredits =
 export interface DesktopSummary {
   readonly workspace: { readonly id: string; readonly name: string; readonly role: string }
   readonly approvals: { readonly rows: readonly ApprovalRow[] } | null
-  /** Received handoffs that are unread and not done. */
+  /** Inbox rows that are unread: received handoffs that are not done, plus issue rows. */
   readonly inbox: { readonly unread: number } | null
   readonly credits: DesktopCredits | null
   /** The caller as ahel.ai names them now; absent from an older ahel.ai. */
@@ -504,6 +504,8 @@ export interface HandoffList {
   readonly detail: string
   /** Issue rows (assigned, mentioned, run finished or failed), newest first; null when ahel.ai could not read them. */
   readonly items?: readonly IssueInboxItem[] | null
+  /** Unread issue rows across the whole Inbox, which can exceed the rows in `items`; null when ahel.ai could not count them. */
+  readonly unreadItems?: number | null
 }
 
 /** One opened handoff; opening marks it read. */

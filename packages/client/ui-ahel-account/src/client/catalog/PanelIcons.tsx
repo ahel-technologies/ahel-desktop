@@ -68,7 +68,7 @@ export function ApprovalsPanelIcon({ size, wide, useSummary }: ApprovalsPanelIco
 }
 
 /**
- * Render the Inbox tray glyph with the count of unread handoffs; the badge
+ * Render the Inbox tray glyph with the count of unread Inbox rows (handoffs and issue updates); the badge
  * hides at zero, caps at 9+ and sits like the Approvals badge.
  * @param props - the sidebar's icon share and the Inbox face.
  * @returns the decorative glyph and badge.

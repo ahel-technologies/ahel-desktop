@@ -5929,7 +5929,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'HandoffList',
-    declaration: 'export interface HandoffList {\n    readonly view: \'handoff_list\';\n    readonly scope: \'all\' | \'received\' | \'sent\';\n    readonly received: readonly HandoffReceivedRow[];\n    readonly sent: readonly HandoffSentRow[];\n    readonly detail: string;\n    readonly items?: readonly IssueInboxItem[] | null;\n}',
+    declaration: 'export interface HandoffList {\n    readonly view: \'handoff_list\';\n    readonly scope: \'all\' | \'received\' | \'sent\';\n    readonly received: readonly HandoffReceivedRow[];\n    readonly sent: readonly HandoffSentRow[];\n    readonly detail: string;\n    readonly items?: readonly IssueInboxItem[] | null;\n    readonly unreadItems?: number | null;\n}',
   },
   {
     name: 'HandoffRead',

@@ -34,7 +34,7 @@ ahel.ai 账户在浏览器中的界面，用于 Ahel Desktop 与 ahel.ai/chat �
 <details>
 <summary>实现内部细节——点击展开</summary>
 
-`team/summary.ts` 运行唯一共享的 `ahelTeam.summary()` 轮询。`models/source.ts` 把它与账户视图以及 `ahelTeam.models()` / `workspaceModel()` 合并为选择器的 `ModelBillingState` 和默认模型行的视图；来自摘要、GET 与 PUT 的值按到达顺序生效。`models/DefaultModelRow.tsx` 在 `settings.models.header` 位中渲染该行。来源通过 `ctx.inject(['modelDirectories'], …)` 注册，因此没有选择器时本包也能加载。
+`team/summary.ts` 运行唯一共享的 `ahelTeam.summary()` 轮询。每次读取收件箱都会把轮询的 `inbox.unread` 设为该次收件箱读取的计数：未完成的未读交接，加上 ahel.ai 对整个收件箱未读议题行的计数，可能多于列表显示的行（`adoptInbox`），使侧边栏徽标与网页对话侧栏与列表一致；之后的轮询计数不同时，已打开的收件箱会重新读取。`models/source.ts` 把它与账户视图以及 `ahelTeam.models()` / `workspaceModel()` 合并为选择器的 `ModelBillingState` 和默认模型行的视图；来自摘要、GET 与 PUT 的值按到达顺序生效。`models/DefaultModelRow.tsx` 在 `settings.models.header` 位中渲染该行。来源通过 `ctx.inject(['modelDirectories'], …)` 注册，因此没有选择器时本包也能加载。
 
 </details>
 

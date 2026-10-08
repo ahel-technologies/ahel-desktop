@@ -3,12 +3,16 @@
  * comments with a composer, the activity log, and beside them the
  * properties (status, priority, assignee, project, labels, parent) with
  * Run with Ahel (agent-assigned issues), Hand off and, for owners, Delete. A write ahel.ai refuses
- * shows its reason in place.
+ * shows its reason in place. A read ahel.ai was too busy for or did not answer repeats by itself
+ * while the drawer is open, and says so in place.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Issue, IssueActivity, IssueComment, IssuePatch, IssueProject, IssueRun } from '@ahel/dsh-ahel-account/types'
 import type { IssuesAnswer, IssuesInjected } from './contract.ts'
-import { activityText, ago, ALL_STATUSES, isPriority, isStatus, parentExample, parseLabels, PRIORITIES, priorityKey, statusKey, type Translate } from './model.ts'
+import {
+  activityText, ago, ALL_STATUSES, isPriority, isStatus, parentExample, parseLabels, PRIORITIES, priorityKey, retryWait, statusKey,
+  type Translate,
+} from './model.ts'
 import { Markdown } from './Markdown.tsx'
 import { assigneeValue, Assignee, RunProgress, StatusIcon, type AssigneeOption } from './Parts.tsx'
 import css from './Issues.module.css'
@@ -54,23 +58,48 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ru
   const [handOff, setHandOff] = useState<{ to: string; note: string } | null>(null)
   const [newProject, setNewProject] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [retrying, setRetrying] = useState(false)
   const generation = useRef(0)
+  const alive = useRef(false)
+  const repeats = useRef(0)
+  const repeat = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const drawer = useRef<HTMLElement>(null)
   const issue = live ?? loaded
 
   const { detail } = actions
   const load = useCallback((): void => {
+    if (!alive.current) return
+    clearTimeout(repeat.current)
     const mine = ++generation.current
     void detail(issueKey).then((answer) => {
       if (mine !== generation.current) return
-      if (!answer.ok) { setError(answer.message ?? t('failed')); return }
+      const retry = answer.retry
+      setRetrying(retry !== null)
+      if (retry === null) repeats.current = 0
+      else repeat.current = setTimeout(load, retryWait(retry.afterMs, repeats.current++))
+      if (!answer.ok) {
+        if (retry === null) setError(answer.message ?? t('failed'))
+        return
+      }
       setLoaded(answer.issue)
-      setComments(answer.comments)
-      setActivity(answer.activity)
+      if (answer.comments !== null) setComments(answer.comments)
+      if (answer.activity !== null) setActivity(answer.activity)
     }).catch(() => { if (mine === generation.current) setError(t('failed')) })
   }, [detail, issueKey, t])
 
-  useEffect(() => { setError(null); setLoaded(null); load() }, [load])
+  useEffect(() => {
+    setError(null)
+    setLoaded(null)
+    setRetrying(false)
+    repeats.current = 0
+    alive.current = true
+    load()
+    return () => {
+      alive.current = false
+      generation.current++
+      clearTimeout(repeat.current)
+    }
+  }, [load])
   useEffect(() => { if (issue !== null) setTitle(issue.title) }, [issue?.title])
   // The scrim lets clicks through, so cards, chats and the sidebar stay usable; a press outside the drawer closes it.
   useEffect(() => {
@@ -107,7 +136,11 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ru
             <span className={css.key}>{issueKey}</span>
             <button type="button" className={`${css.btn} ${css.btnGhost}`} onClick={close}>{t('close')}</button>
           </header>
-          <div className={css.mainCol}>{error !== null ? <p className={css.error} role="alert">{error}</p> : <p className={css.muted}>{t('loading')}</p>}</div>
+          <div className={css.mainCol}>
+            {error !== null
+              ? <p className={css.error} role="alert">{error}</p>
+              : <p className={css.muted} role="status">{t(retrying ? 'retrying' : 'loading')}</p>}
+          </div>
         </aside>
       </>
     )
@@ -160,6 +193,7 @@ export function IssueDetail({ issueKey, live, run, projects, assignees, role, ru
               onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur() }}
             />
             {error !== null && <p className={css.error} role="alert">{error}</p>}
+            {error === null && retrying && <p className={css.muted} role="status">{t('retrying')}</p>}
             {handOff !== null && (
               <section className={css.section} aria-label={t('handOff')}>
                 <label className={css.field}>{t('handOffTo')}
