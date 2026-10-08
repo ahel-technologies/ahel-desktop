@@ -71,22 +71,38 @@ export function stampChat(session: Session, workspace: string): void {
  * account (the team summary's, which the hosted Chats list shows while none is selected).
  * @param selected - `ahelAccount.workspace()`.
  * @param picked - reads the team summary's workspace, or undefined when `ahelTeam` is not mounted.
- * @returns the id, or undefined when neither is known (signed out, ahel.ai unreachable).
+ * @param signal - the step's abort signal; an abort stops waiting for `picked`.
+ * @param limitMs - the longest wait for `picked`, so a slow ahel.ai delays the first step by at most this long.
+ * @returns the id, or undefined when neither is known (signed out, ahel.ai unreachable or slower than `limitMs`, step aborted).
  * @throws what `selected` throws.
  */
 export async function chatWorkspace(
   selected: () => Promise<string | undefined>,
   picked: (() => Promise<string>) | undefined,
+  signal?: AbortSignal,
+  limitMs = PICKED_LIMIT_MS,
 ): Promise<string | undefined> {
   const id = await selected()
-  if (id !== undefined || picked === undefined) return id
+  if (id !== undefined || picked === undefined || signal?.aborted === true) return id
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let onAbort: (() => void) | undefined
+  const giveUp = new Promise<undefined>((resolve) => {
+    timer = setTimeout(resolve, limitMs, undefined)
+    onAbort = () => { resolve(undefined) }
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
   try {
-    return await picked()
-  } catch (_unavailable) {
-    // Signed out or ahel.ai unreachable: the chat stays unstamped and lists under the default.
-    return undefined
+    // Signed out, ahel.ai unreachable or slow, or the step aborted: the chat stays unstamped
+    // for now and lists under the default; a later step of a chat with no prompt tries again.
+    return await Promise.race([picked().catch((_unavailable: unknown) => undefined), giveUp])
+  } finally {
+    clearTimeout(timer)
+    if (onAbort !== undefined) signal?.removeEventListener('abort', onAbort)
   }
 }
+
+/** The longest wait for the team summary's workspace at a chat's first step. */
+const PICKED_LIMIT_MS = 2_000
 
 /** Plugin name. */
 export const name = 'ahel-chat-workspace'
@@ -112,6 +128,7 @@ export function apply(ctx: Context): void {
       const workspace = await chatWorkspace(
         () => ctx.ahelAccount.workspace(),
         team === undefined ? undefined : async () => (await team.summary()).workspace.id,
+        signal,
       )
       if (workspace !== undefined) stampChat(session, workspace)
     } catch (error) {

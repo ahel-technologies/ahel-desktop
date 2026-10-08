@@ -45,4 +45,13 @@ describe('chatWorkspace', () => {
     await expect(chatWorkspace(() => Promise.resolve(undefined), undefined)).resolves.toBeUndefined()
     await expect(chatWorkspace(() => Promise.resolve(undefined), () => Promise.reject(new Error('signed out')))).resolves.toBeUndefined()
   })
+
+  it('stops waiting for a slow team summary after the limit or when the step aborts', async () => {
+    const never = () => new Promise<string>(() => undefined)
+    await expect(chatWorkspace(() => Promise.resolve(undefined), never, undefined, 10)).resolves.toBeUndefined()
+    const abort = new AbortController()
+    const waiting = chatWorkspace(() => Promise.resolve(undefined), never, abort.signal, 60_000)
+    abort.abort()
+    await expect(waiting).resolves.toBeUndefined()
+  })
 })
