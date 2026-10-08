@@ -7486,6 +7486,9 @@ importers:
       '@ahel/dsh-agent':
         specifier: workspace:*
         version: link:../../core/agent
+      '@ahel/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
       '@ahel/dsh-brand':
         specifier: workspace:*
         version: link:../../util/brand

@@ -56,7 +56,7 @@ ahel.ai 的网页对话为每个人启动一个 Host，并通过 `AHEL_LAUNCH_TO
 
 ### 对话所属工作区
 
-每个对话都会记录它开始时所在的 ahel.ai 工作区。顶层对话的第一个轮次走到第一步时，若已选择工作区，Host 会追加仅写入日志的会话事件 `ahel-account/chat-workspace`（`{ workspace }`）。`ahelWorkspace` 会话投影在每一行会话列表上携带该 id 或 null，分叉会继承它。更早开始的对话，或未选择工作区时开始的对话，不带标记。网页对话只列出所选工作区的对话。
+每个对话都会记录它开始时所在的 ahel.ai 工作区。顶层对话在任何提示写入日志之前走第一步时，若已选择工作区，Host 会追加仅写入日志的会话事件 `ahel-account/chat-workspace`（`{ workspace }`）；第一个轮次若在该步之前被取消，标记留给下一个轮次。该事件带有信封的 `ignorable: true`，不认识它的构建仍能打开该对话。`ahelWorkspace` 会话投影在每一行会话列表上携带该 id 或 null，分叉会继承它。在有此标记之前已有提示的对话，或未选择工作区时开始的对话，不带标记。网页对话只列出所选工作区的对话。
 
 <a id="catalog-the-ahelcatalog-namespace"></a>
 ## 目录：`ahelCatalog` 命名空间
