@@ -7,12 +7,12 @@
  * the chat follows the workspace the chat gateway's `ahel_chat_workspace`
  * cookie names, and a switch made in the chat is pinned on ahel.ai so the next
  * load keeps it. The Chats list shows the chats started in the selected
- * workspace (the Host stamps each chat at its first step).
+ * workspace (the Host stamps each chat at its first step); until the account
+ * and that follow have settled it shows only the New chat draft (./scope.ts).
  * Only the hosted overlay (packages/bundle/web-app/hosted/chat.patch.yml)
  * mounts this package; the desktop and plain web profiles keep their sidebar.
  */
 import type { Context } from '@ahel/cordis'
-import type { SessionSummary } from '@ahel/dsh-api-session-controller/client'
 import type { Issue, IssueRunState } from '@ahel/dsh-ahel-account/types'
 import type { AhelAccountView } from '@ahel/dsh-ahel-account/types'
 import type { MainPanelId } from '@ahel/dsh-client-ui-layout/client'
@@ -24,12 +24,14 @@ import type {} from '@ahel/dsh-api-remotes/client'
 import type {} from '@ahel/dsh-client-locale/client'
 import type {} from '@ahel/dsh-client-ui-renderer/client'
 import type {} from '@ahel/dsh-client-ui-settings/client'
+import type {} from '@ahel/dsh-api-session-controller/client'
 import type {} from '@ahel/dsh-client-ui-workspace/client'
 import type { HostedShellInjected } from './contract.ts'
 import { HostedAside } from './Aside.tsx'
 import { BrandHomeLink, HostedGreeting, HostedHeroMark, HostedSubtitle } from './Hero.tsx'
 import { HostedRail } from './Rail.tsx'
 import { cell, relay } from './observable.ts'
+import { type FollowState, watchChatScope } from './scope.ts'
 import { en, NS, zh } from './locales.ts'
 
 export { APP_HOME, HELP_URL, INBOX_PANEL, NAV } from './Rail.tsx'
@@ -39,6 +41,8 @@ export type {
   HostedSubtitleProps,
 } from './contract.ts'
 export type { HostedChatKey } from './locales.ts'
+export { chatScope, inChatScope, onlyDraft, watchChatScope } from './scope.ts'
+export type { ChatScope, ChatScopeDeps, FollowState } from './scope.ts'
 
 // The event @ahel/dsh-client-ui-issues declares and listens to; the chat column only emits it.
 declare module '@ahel/cordis' {
@@ -68,6 +72,8 @@ const WAITING_STATES: readonly IssueRunState[] = ['waiting_input', 'waiting_appr
 const NEXT_THEME: Readonly<Record<ThemePreference, ThemePreference>> = { system: 'light', light: 'dark', dark: 'system' }
 
 const EMPTY_SUMMARY: TeamSummaryState = { summary: null, outdated: false, error: null }
+const FOLLOW_WAITING: FollowState = { kind: 'waiting' }
+const FOLLOW_SETTLED: FollowState = { kind: 'settled' }
 const NO_ISSUES: readonly Issue[] = []
 
 /** Required services: slots, dictionaries, the main-panel layout and the theme. */
@@ -120,41 +126,6 @@ export function pinAppWorkspace(id: string): void {
   }).catch(() => undefined)
 }
 
-/** The workspace whose chats the Chats list shows, and the workspace unstamped chats count as. */
-export interface ChatScope {
-  readonly current: string
-  readonly home: string
-}
-
-/**
- * The Chats list's workspace scope. Unstamped chats count as the account default's: the workspace
- * ahel.ai picks while none is selected, else the oldest membership, ahel.ai's default for a person
- * without a single invited seat.
- * @param view - the account view.
- * @param picked - the workspace the team summary names, or null.
- * @returns the scope, or null while signed out, when every chat shows.
- */
-export function chatScope(view: AhelAccountView | null, picked: string | null): ChatScope | null {
-  if (view?.status !== 'signed-in' || view.profile === null) return null
-  const oldest = view.profile.workspaces[0]?.id ?? null
-  const current = view.workspace ?? picked ?? oldest
-  if (current === null) return null
-  return { current, home: view.workspace === null ? current : oldest ?? current }
-}
-
-/**
- * Whether the Chats list shows a chat: the New chat draft always, a stamped chat in its workspace,
- * an unstamped one in the scope's `home`. Subagent rows pass: the list never shows them as chats.
- * @param session - the Session row.
- * @param scope - the list's scope.
- * @returns true to list the row.
- */
-export function inChatScope(session: Pick<SessionSummary, 'blank' | 'origin' | 'projectionValues'>, scope: ChatScope): boolean {
-  if (session.blank || session.origin === 'subagent') return true
-  const stamp = session.projectionValues?.ahelWorkspace
-  return (typeof stamp === 'string' ? stamp : scope.home) === scope.current
-}
-
 /**
  * Merge the waiting runs of each state, newest first.
  * @param pages - one issue list per waiting state.
@@ -178,6 +149,7 @@ export function apply(ctx: Context): void {
   const summary = relay<TeamSummaryState>(EMPTY_SUMMARY)
   const waitingIssues = cell<readonly Issue[]>(NO_ISSUES)
   const chatSeat = cell<HTMLElement | null>(null)
+  const follow = cell<FollowState>(FOLLOW_WAITING)
   const theme: HostObservable<ThemePreference> = {
     getSnapshot: () => ctx.theme.getTheme().preference,
     subscribe: listener => ctx.on('theme/change', () => { listener() }),
@@ -247,39 +219,39 @@ export function apply(ctx: Context): void {
       }
     }, 'ui-hosted-chat: account actions')
     // Once per page load: the first signed-in view moves to the workspace ahel.ai shows as active.
+    // The Chats list waits for this follow (./scope.ts), so it never shows the previous workspace first.
     inner.effect(() => {
       let followed = false
-      const follow = (): void => {
+      let live = true
+      const followNow = (): void => {
         const view = ui.account.getSnapshot()
         if (followed || view?.status !== 'signed-in' || view.profile === null) return
         followed = true
         const id = workspaceToFollow(view, readCookie(CHAT_WORKSPACE_COOKIE))
-        if (id !== null) void ui.selectWorkspace(id).catch(() => undefined)
+        if (id === null) {
+          follow.set(FOLLOW_SETTLED)
+          return
+        }
+        follow.set({ kind: 'moving', to: id })
+        void ui.selectWorkspace(id).catch(() => undefined).finally(() => { if (live) follow.set(FOLLOW_SETTLED) })
       }
-      follow()
-      return ui.account.subscribe(follow)
+      followNow()
+      const off = ui.account.subscribe(followNow)
+      return () => {
+        live = false
+        off()
+        follow.set(FOLLOW_WAITING)
+      }
     }, 'ui-hosted-chat: follow the active workspace')
   })
 
-  ctx.inject(['ahelAccountUi', 'uiWorkspace'], (inner) => {
-    const ui = inner.ahelAccountUi
-    // Re-scoped on every account or summary change that moves the selected or the default workspace.
-    inner.effect(() => {
-      let key: string | null = null
-      let release: (() => void) | undefined
-      const sync = (): void => {
-        const scope = chatScope(ui.account.getSnapshot(), ui.summary.getSnapshot().summary?.workspace.id ?? null)
-        const next = scope === null ? null : `${scope.current} ${scope.home}`
-        if (next === key) return
-        key = next
-        release?.()
-        release = scope === null ? undefined : inner.uiWorkspace.scopeSessions(session => inChatScope(session, scope))
-      }
-      sync()
-      const offAccount = ui.account.subscribe(sync)
-      const offSummary = ui.summary.subscribe(sync)
-      return () => { offAccount(); offSummary(); release?.() }
-    }, 'ui-hosted-chat: chats of the selected workspace')
+  // Registered as soon as the Session browser exists: until the account and the follow settle, only the draft lists.
+  ctx.inject(['uiWorkspace', 'sessions'], (inner) => {
+    inner.effect(() => watchChatScope({
+      account, summary, follow, sessions: inner.sessions.list,
+      scopeSessions: filter => inner.uiWorkspace.scopeSessions(filter),
+      startChat: () => { inner.uiWorkspace.startSession() },
+    }), 'ui-hosted-chat: chats of the selected workspace')
   })
 
   ctx.inject(['ahelAccountUi', 'remote.ahelIssues'], (inner) => {
