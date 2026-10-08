@@ -22,7 +22,7 @@ ahel.ai 账户在浏览器中的界面，用于 Ahel Desktop 与 ahel.ai/chat �
 <a id="use-this-package"></a>
 ## 使用本包
 
-在 Host 上的 `dsh-ahel-account` 之后挂载。它挂载 Host 的 `ahelAccount`、`ahelCatalog` 与 `ahelTeam` Remote 命名空间，并通过 `watch` 流保持一份实时账户视图。
+在 Host 上的 `dsh-ahel-account` 之后挂载。它挂载 Host 的 `ahelAccount`、`ahelCatalog` 与 `ahelTeam` Remote 命名空间，并通过 `watch` 流保持一份实时账户视图。在该流的第一份视图到达之前，账户菜单只是一个忙碌占位，不提供“登录”，因此已登录的人不会在 Host 启动期间看到未登录的入口。
 
 “设置 > 模型”新增两行。顶部的“此工作区的默认模型”按厂商分组列出计量模型及其典型消息价格。所有者或团队负责人选择默认模型，ahel 网页对话与 Ahel Desktop 中的新对话从它开始；其他人只能查看。ahel.ai 已不再列出的默认模型显示由 id 推出的名称并标注“（不在列表中）”。保存被拒绝时，在该行下方显示 ahel.ai 的原句。未登录或 ahel.ai 尚未报告该设置时隐藏该行。在提供方各行之下，Ahel 行显示账户及其登录按钮。
 

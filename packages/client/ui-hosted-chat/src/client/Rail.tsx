@@ -5,6 +5,9 @@
  * account entry names the person and their email and opens a menu with the
  * in-app Chat settings; the settings seat itself stays mounted out of sight,
  * so its window and its shortcut keep working.
+ * Until the Host's account check has answered, the switcher and the account
+ * entry are placeholders: no Sign in and no Log out, so a signed-in person
+ * never sees the signed-out rail while the Host starts.
  * ahel.ai pages open in the same tab; Chat and Inbox are in-app panels. The
  * rail draws New chat and the Chats list into the chat column through a
  * portal, so the session rows keep the sidebar's own browser.
@@ -135,6 +138,28 @@ function AccountEntry({
   )
 }
 
+/** The account check's answer: `pending` until the Host's first account view arrives. */
+type AccountPhase = 'pending' | 'signed-in' | 'signed-out'
+
+/**
+ * Read the account phase from a view.
+ * @param view - the account view, or null before the first answer.
+ * @returns the phase.
+ */
+function accountPhase(view: { readonly status: 'signed-in' | 'signed-out' } | null): AccountPhase {
+  return view === null ? 'pending' : view.status
+}
+
+/** Placeholder of the account entry while the account check has not answered: no control to press. */
+function AccountPending({ wide, t }: Pick<HostedRailProps, 'wide' | 't'>): ReactNode {
+  return (
+    <div className={css.pending} role="status" aria-busy="true" aria-label={t('accountLoading')}>
+      <span className={clsx(css.avatar, css.skeleton)} aria-hidden="true" />
+      {wide && <span className={clsx(css.pendingBar, css.skeleton)} aria-hidden="true" />}
+    </div>
+  )
+}
+
 /**
  * The workspace switcher: the current workspace and a list of the account's
  * workspaces. On the collapsed rail it opens the column instead.
@@ -214,7 +239,8 @@ export function HostedRail(props: HostedRailProps): ReactNode {
     selectPanel, signOut, cycleTheme, t,
   } = props
   const activePanel = usePanelInfo(info => info.activePanelId)
-  const signedIn = useAccount(view => view?.status === 'signed-in')
+  const phase = useAccount(accountPhase)
+  const signedIn = phase === 'signed-in'
   const unread = useSummary(state => state.summary?.inbox?.unread ?? 0)
   const theme = THEMES[useTheme(preference => preference)]
   const seat = useChatSeat(element => element)
@@ -224,7 +250,9 @@ export function HostedRail(props: HostedRailProps): ReactNode {
 
   return (
     <div className={clsx(css.rail, !wide && css.collapsed)}>
-      <WorkspaceSwitcher {...props} />
+      {phase === 'pending'
+        ? <div className={clsx(wide ? css.switcherPending : css.switcherRailPending, css.skeleton)} aria-hidden="true" />
+        : <WorkspaceSwitcher {...props} />}
       <nav className={css.nav} aria-label={t('navLabel')}>
         {NAV.map((row) => {
           const label = t(row.key)
@@ -255,8 +283,10 @@ export function HostedRail(props: HostedRailProps): ReactNode {
             {wide && <span className={css.label}>{t('help')}</span>}
           </a>
         ))}
-        {/* Signed out, the shared entry offers Sign in. */}
-        <div className={css.account}>{signedIn ? <AccountEntry {...props} /> : renderFooterActions()}</div>
+        {/* Signed out, the shared entry offers Sign in; before the account check answers, neither. */}
+        <div className={css.account}>
+          {signedIn ? <AccountEntry {...props} /> : phase === 'pending' ? <AccountPending wide={wide} t={t} /> : renderFooterActions()}
+        </div>
         {/* Out of sight: the settings window portals beside the app root, so it shows when opened. */}
         <div className={css.settingsSeat}>{renderSettings()}</div>
         {tooltip(t(theme.key), (

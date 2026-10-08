@@ -79,6 +79,24 @@ describe('hosted chat app rail', () => {
     expect(screen.queryByText('Workspace')).toBeNull()
   })
 
+  it('offers no Sign in, Log out or Inbox until the account check answers', () => {
+    rail({ useAccount: hook<AhelAccountView | null>(null), useSummary: hook({ summary: null, outdated: false, error: null }) })
+    const foot = screen.getByRole('group', { name: 'Account and help' })
+    expect(within(foot).getByRole('status', { name: 'Loading your account' }).getAttribute('aria-busy')).toBe('true')
+    expect(within(foot).queryByTestId('sign-in-entry')).toBeNull()
+    expect(within(foot).queryByRole('button', { name: 'Log out' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Inbox/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Switch workspace/ })).toBeNull()
+  })
+
+  it('offers the shared Sign in entry once the account check answers signed out', () => {
+    const signedOut: AhelAccountView = { status: 'signed-out', profile: null, attempt: null, workspace: null, reachable: true }
+    rail({ useAccount: hook<AhelAccountView | null>(signedOut), useSummary: hook({ summary: null, outdated: false, error: null }) })
+    const foot = screen.getByRole('group', { name: 'Account and help' })
+    expect(within(foot).getByTestId('sign-in-entry')).toBeTruthy()
+    expect(within(foot).queryByRole('status', { name: 'Loading your account' })).toBeNull()
+  })
+
   it('switches the workspace and opens in-app panels', () => {
     const props = rail()
     fireEvent.click(screen.getByRole('button', { name: 'Switch workspace: Ahel' }))

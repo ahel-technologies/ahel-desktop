@@ -149,7 +149,8 @@ export function ConversationContent(props: ConversationContentProps) {
     ...(inert
       ? {
         disabled: true,
-        placeholder: t('placeholder.workspace'),
+        // Without a picker (the hosted chat) there is nothing to choose: the bar waits for its chat, blank.
+        placeholder: workspacePicker ? t('placeholder.workspace') : '',
         workspacePickerOpen: pickerOpen,
         onRequestWorkspace: () => { setPickerOpen(true) },
       }
