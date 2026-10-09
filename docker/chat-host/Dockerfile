@@ -32,11 +32,14 @@ RUN node docker/chat-host/runtime-manifest.mjs \
   && chmod 0755 /out/entrypoint.sh
 
 FROM node:${NODE_VERSION}-slim
+# CHAT_READY_PATH: the ahel-account plugin's hostedReadyPath default. Its
+# presence tells the chat gateway's startup probe that this image serves it.
 ENV NODE_ENV=production \
     DSH_HOME=/data \
     CHAT_PORT=3080 \
     CHAT_PUBLIC_URL=https://ahel.ai/chat/ \
     CHAT_TRUSTED_HOST=ahel.ai \
+    CHAT_READY_PATH=/_ahel/ready \
     NODE_OPTIONS=--max-old-space-size=320
 COPY --from=build /out /app
 RUN mkdir -p /data && chown node:node /data

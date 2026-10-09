@@ -16,6 +16,7 @@
 | `CHAT_PUBLIC_URL` | `https://ahel.ai/chat/` | Advertised root (printed URL, web-surface prompt) |
 | `CHAT_TRUSTED_HOST` | `ahel.ai` | Browser-visible authority the API fence accepts |
 | `CHAT_PORT` | `3080` | Listen port |
+| `CHAT_READY_PATH` | `/_ahel/ready` | Set by the image, never by the pod: the readiness path this image serves (see Probes) |
 | `DSH_HOME` | `/data` | Mount the person's volume here |
 
 ## The launch grant
@@ -30,7 +31,9 @@ The gateway picks the Host's browser launch token (`DSH_BROWSER_TOKEN`, 32 rando
 
 ## Probes
 
-Every page answers `401` without the cookie, so a Kubernetes `httpGet` probe fails. The port opens a moment before the routes are mounted, and `/` answers `404` in that window, so a listening port does not mean the Host serves. The gateway therefore checks `GET /` itself (anything but `404` or `5xx`) once per pod before it sends a browser there; the pod uses a `tcpSocket` probe on 3080. This exec probe (the image `HEALTHCHECK` uses the same command) suits liveness:
+Every page answers `401` without the cookie, so a Kubernetes `httpGet` probe on `/` fails. The port opens a moment before the routes are mounted, and `/` answers `404` in that window, so a listening port does not mean the Host serves.
+
+A Host launched with `AHEL_LAUNCH_TOKEN` also serves `GET /_ahel/ready` without the cookie (the `ahel-account` option `hostedReadyPath`). It answers `503 {"ready":false}` until the launch grant was stored or refused, then `200 {"ready":true,"reason":"account"}`; 20 seconds after the plugin loaded (`hostedReadyCeilingMs`) it answers `200` with `"reason":"ceiling"` even while ahel.ai has not answered, so a stuck handoff only brings back the client's account placeholder. The image sets `CHAT_READY_PATH=/_ahel/ready`; the gateway's exec startup probe reads that path when the variable is set and falls back to `GET /` (anything but `404` or `5xx`) in images without it, so the pod turns Ready only once the first page load is signed in. The gateway still checks `GET /` itself once per pod before it sends a browser there, and the readiness probe stays a `tcpSocket` probe on 3080. This exec probe (the image `HEALTHCHECK` uses the same command) suits liveness:
 
 ```sh
 node -e "fetch('http://127.0.0.1:3080/').then(r=>process.exit(r.status<500?0:1),()=>process.exit(1))"
