@@ -1953,12 +1953,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: '@Remote(\'updateModelContext\') updateModelContext(agent: Agent, server: string, update: McpAppJsonObject): void',
-        description: 'Record a card\'s `ui/update-model-context` payload as context for the Agent\'s next model request (a logged inbox event).',
+        description: 'Record a card\'s `ui/update-model-context` payload as context for the Agent\'s next turn (a logged inbox event); a repeated payload is dropped.',
         parameters: [{ name: 'agent', description: 'lookup parameter resolved from the Session identity.' }, { name: 'server', description: 'the card\'s MCP server.' }, { name: 'update', description: 'the payload: `content` blocks and optional `structuredContent`.' }],
       },
       {
         signature: '@Remote(\'callTool\') async callTool(agent: Agent, server: string, tool: string, args: McpAppJsonObject, signal: AbortSignal): Promise<McpAppCallResult>',
-        description: 'Run one MCP tool for a card, through the same registry pipeline and approval seam as a model call. The tool must belong to `server` and its MCP Apps visibility must include `app`. Each call is reported to the Agent as logged context for its next model request (tool name and result text; arguments are omitted because they can carry tokens).',
+        description: 'Run one MCP tool for a card, through the same registry pipeline and approval seam as a model call. The tool must belong to `server` and its MCP Apps visibility must include `app`. Each call is reported to the Agent as logged context for its next turn (tool name and result text; arguments are omitted because they can carry tokens); a report the Agent already received is dropped.',
         parameters: [{ name: 'agent', description: 'lookup parameter resolved from the Session identity.' }, { name: 'server', description: 'the card\'s MCP server; calls to other servers are refused.' }, { name: 'tool', description: 'raw MCP tool name.' }, { name: 'args', description: 'tool arguments from the card.' }, { name: 'signal', description: 'carrier cancellation.' }],
         returns: 'MCP `CallToolResult` fields; failures arrive with `isError: true`.',
       },

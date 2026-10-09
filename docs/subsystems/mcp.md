@@ -146,7 +146,7 @@ Remote namespace `mcpApps`: resource reads and host-proxied tool calls for MCP A
 
 /**
  * Record a card's `ui/update-model-context` payload as context for the
- * Agent's next model request (a logged inbox event).
+ * Agent's next turn (a logged inbox event); a repeated payload is dropped.
  * @param agent - lookup parameter resolved from the Session identity.
  * @param server - the card's MCP server.
  * @param update - the payload: `content` blocks and optional `structuredContent`.
@@ -157,8 +157,9 @@ Remote namespace `mcpApps`: resource reads and host-proxied tool calls for MCP A
  * Run one MCP tool for a card, through the same registry pipeline and
  * approval seam as a model call. The tool must belong to `server` and its
  * MCP Apps visibility must include `app`. Each call is reported to the
- * Agent as logged context for its next model request (tool name and
- * result text; arguments are omitted because they can carry tokens).
+ * Agent as logged context for its next turn (tool name and result text;
+ * arguments are omitted because they can carry tokens); a report the Agent
+ * already received is dropped.
  * @param agent - lookup parameter resolved from the Session identity.
  * @param server - the card's MCP server; calls to other servers are refused.
  * @param tool - raw MCP tool name.
