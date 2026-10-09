@@ -101,7 +101,7 @@ function bench(view: AhelAccountView | null, rows: readonly SessionSummary[]) {
   const filters = new Set<SessionFilter>()
   const startChat = vi.fn()
   const dispose = watchChatScope({
-    account, summary, follow, sessions, startChat,
+    account, summary, follow, sessions, startChat, takeDraft: () => null,
     scopeSessions: (filter) => { filters.add(filter); return () => { filters.delete(filter) } },
   })
   const listed = (): string[] => {

@@ -4,12 +4,13 @@
  * the load's follow of the gateway cookie has picked the workspace, only the
  * blank New chat draft passes; then a chat passes in the workspace it was
  * started in, and a subagent with its top-level chat. A switch away from the open chat's workspace starts a new chat.
+ * Once the load's follow has settled, a waiting `?prompt=` text (./prompt-draft.ts) goes into a blank chat's composer.
  */
 import type { SessionListState, SessionSummary } from '@ahel/dsh-api-session-controller/client'
 import type { AhelAccountView } from '@ahel/dsh-ahel-account/types'
 import type { TeamSummaryState } from '@ahel/dsh-client-ui-ahel-account/client'
 import type { HostObservable } from '@ahel/dsh-client-ui-slots'
-import type { SessionFilter } from '@ahel/dsh-client-ui-workspace/client'
+import type { SessionFilter, StartSessionOptions } from '@ahel/dsh-client-ui-workspace/client'
 
 /** The workspace whose chats the Chats list shows, and the workspace unstamped chats count as. */
 export interface ChatScope {
@@ -94,13 +95,26 @@ export interface ChatScopeDeps {
   readonly sessions: HostObservable<SessionListState>
   /** `uiWorkspace.scopeSessions`. */
   readonly scopeSessions: (filter: SessionFilter) => () => void
-  /** `uiWorkspace.startSession` with no target: a new chat in the current folder Workspace. */
-  readonly startChat: () => void
+  /**
+   * `uiWorkspace.startSession` with no target: a new chat in the current folder Workspace (the
+   * Workspace's blank chat when it has one).
+   * @param options - the composer text for that chat; a draft it already holds is kept.
+   */
+  readonly startChat: (options?: StartSessionOptions) => void
+  /**
+   * Take the `?prompt=` text waiting for a chat, once.
+   * @returns the text, or null when none waits.
+   */
+  readonly takeDraft: () => string | null
 }
 
 /**
  * Keep one Session filter registered for the hosted Chats list, re-registered whenever the scope
- * moves, and start a new chat when the main view shows a chat outside the scope.
+ * moves, and start a new chat when the main view shows a chat outside the scope. The first time the
+ * account is signed in, the follow has settled and a chat is open, a waiting `?prompt=` text is taken:
+ * it rides the new chat the scope starts, or else starts one (the open blank chat itself when that is
+ * open). The chat's draft never replaces text it holds, and nothing is sent; while signed out the text
+ * keeps waiting for Sign in.
  * @param deps - the observables and the workspace actions.
  * @returns the disposer, which releases the filter.
  */
@@ -108,6 +122,14 @@ export function watchChatScope(deps: ChatScopeDeps): () => void {
   let key: string | undefined
   let release: (() => void) | undefined
   let checked: string | undefined
+  let drafted = false
+  // Once per load, after the follow: earlier, the scope may still move and replace the chat it went into.
+  const takeDraft = (): StartSessionOptions | undefined => {
+    if (drafted || deps.follow.getSnapshot().kind !== 'settled') return undefined
+    drafted = true
+    const prompt = deps.takeDraft()
+    return prompt === null ? undefined : { prompt }
+  }
   const sync = (): void => {
     const scope = chatScope(deps.account.getSnapshot(), deps.summary.getSnapshot().summary?.workspace.id ?? null, deps.follow.getSnapshot())
     const next = scope === null ? '' : `${scope.current} ${scope.home}`
@@ -125,9 +147,15 @@ export function watchChatScope(deps: ChatScopeDeps): () => void {
     if (main === undefined) return
     // Once per scope and open chat: a chat that only lost its stamp for a moment is never left twice.
     const at = `${next} ${main.id}`
-    if (at === checked) return
-    checked = at
-    if (!inChatScope(main, scope, list.byId)) deps.startChat()
+    if (at !== checked) {
+      checked = at
+      if (!inChatScope(main, scope, list.byId)) {
+        deps.startChat(takeDraft())
+        return
+      }
+    }
+    const draft = takeDraft()
+    if (draft !== undefined) deps.startChat(draft)
   }
   sync()
   const offs = [deps.account, deps.summary, deps.follow, deps.sessions].map(source => source.subscribe(sync))

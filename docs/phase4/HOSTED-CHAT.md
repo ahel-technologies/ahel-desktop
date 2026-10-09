@@ -33,6 +33,10 @@ The gateway picks the Host's browser launch token (`DSH_BROWSER_TOKEN`, 32 rando
 
 The chat follows the ahel.ai account theme, the `ahel.theme` cookie (`light`, `dark` or `system`; Path=/, Domain=.ahel.ai, readable by page script) that ahel.ai and app.ahel.ai write from Settings > Appearance. The `ui-hosted-chat` Host half adds a boot script after ui-theme's, so the first paint already uses the cookie's palette; the theme service starts from it, and the chat re-reads the cookie when the tab regains focus. A theme change made in the chat (the rail's Theme row or Chat settings > Appearance) writes the same cookie, with the Domain attribute only on ahel.ai hosts, and the `ahel.theme` localStorage key of the ahel.ai origin. Without the cookie the chat keeps `system`; a non-loopback page does not store the chat's own theme setting.
 
+## Starter prompts
+
+ahel.ai's task starters open `https://ahel.ai/chat/?prompt=<url-encoded text>`. On load `ui-hosted-chat` removes the `prompt` parameter from the address (the other parameters and the hash stay) and keeps the trimmed text, cut at 4,000 UTF-16 code units, in the tab's sessionStorage under `ahel.chat.promptDraft`. Once the account is signed in and the load's workspace follow has settled, the text is taken from storage once and goes in as the composer draft of a blank chat: the open blank chat, or the new chat New chat would open when a chat with history is open. A blank chat that already holds a draft keeps it and the text is dropped; nothing is sent. While the chat is signed out the text stays in storage, so Sign in (`?signin=1`, a new pod, a reload of `/chat/`) brings it back. The gateway's cookie exchange on the bare mount (`GET /?token=`, then the Host's `303 ./`) does not carry the query on, so a load that needs that exchange loses the text until the gateway keeps the query.
+
 ## Probes
 
 Every page answers `401` without the cookie, so a Kubernetes `httpGet` probe on `/` fails. The port opens a moment before the routes are mounted, and `/` answers `404` in that window, so a listening port does not mean the Host serves.

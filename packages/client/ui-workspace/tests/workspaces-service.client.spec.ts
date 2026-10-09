@@ -778,6 +778,23 @@ describe('UiWorkspaceService', () => {
     expect(b.sessions.create).toHaveBeenCalledExactlyOnceWith({ workspaceId: wid('a') })
   })
 
+  it('puts the text of a New Session request made before the lists load into a new Session, not the restored one', async () => {
+    const history = summary('history', { cwd: '/w/a', updatedAt: 1 })
+    persistSelection({ sessionId: history.id })
+    const b = bench()
+
+    b.uiWorkspace.startSession(undefined, { prompt: 'from the address bar' })
+    b.workspaces.list.set(workspaceState([workspace('a', [history.id])]))
+    b.sessions.list.set(sessionState([history]))
+    await vi.waitFor(() => {
+      expect(b.sessions.retain.mock.calls.map(args => args[0])).toEqual([history.id, sid('created-a')])
+    })
+    expect(b.requestDraftInitialization).toHaveBeenCalledExactlyOnceWith(
+      b.sessions.retained[1]!.reference.binding, { prompt: 'from the address bar' },
+    )
+    expect(b.sessions.retained[1]!.reference.binding.sessionId).toBe(sid('created-a'))
+  })
+
   it('keeps the startup default-Workspace preparation when New Session is requested during it', async () => {
     const pending = Promise.withResolvers<WorkspaceView>()
     const b = bench({ workspaces: workspaceState(), sessions: sessionState(), configureWorkspaces: (workspaces) => {
