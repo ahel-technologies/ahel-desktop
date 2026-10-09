@@ -16,7 +16,7 @@ import type {
   IWorkspaces, WorkspaceId, WorkspaceSnapshot, WorkspaceView,
 } from '@ahel/dsh-api-workspace-controller/client'
 import type { SessionId } from '@ahel/dsh-session/types'
-import type {} from '@ahel/dsh-client-ui-layout/client'
+import type { MainPanelId } from '@ahel/dsh-client-ui-layout/client'
 import type { DraftInitializationOptions } from '@ahel/dsh-client-ui-conversation/client'
 import type { RowToast } from './contract/slots.ts'
 import { pinOrderAccounts, pinOrderSource } from './pin-order.ts'
@@ -64,6 +64,9 @@ export interface UiWorkspace {
   /**
    * Start a New Session flow and navigate to its Session; a creation the Host
    * refuses is shown through the Workspace notice and leaves the selection as it was.
+   * A request that names no Workspace before the first selection restoration
+   * has finished waits for it and then runs, so a click during page load is
+   * never dropped.
    * @param workspaceId - explicit target; absent inherits the current or most recent Workspace.
    * @param options - initial content; existing text or attachments are preserved unless clearPreviousDraft is true.
    */
@@ -152,6 +155,13 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     {}, { persist: { name: 'dsh.sessions.current' } },
   )
   private mainReference: SessionReference | undefined
+  /** The page load's first selection restoration: waiting for both lists, running, or finished. */
+  private initialNavigation: 'waiting' | 'connecting' | 'done' = 'waiting'
+  /**
+   * A New Session request made before {@link initialNavigation} finished with
+   * no Workspace to target yet, and the main panel shown when it was made.
+   */
+  private pendingStart: { readonly options: StartSessionOptions | undefined; readonly panel: MainPanelId | null } | undefined
   private readonly sessionFilters = new Set<SessionFilter>()
   private combinedFilter: SessionFilter | null = null
   private readonly scopeListeners = new Set<() => void>()
@@ -230,10 +240,12 @@ class UiWorkspaceService extends Service implements UiWorkspace {
   }
 
   openSession(target: SessionTarget): void {
+    this.pendingStart = undefined
     this.replaceMain(target, this.lifetime.signal, 'reveal')
   }
 
   async openWorkspace(workspaceId: WorkspaceId, beforeOpen?: (sessionId: SessionId) => void): Promise<void> {
+    this.pendingStart = undefined
     const navigation = AbortSignal.any([this.ctx.layout.beginNavigation(), this.lifetime.signal])
     let sessionId: SessionId
     try {
@@ -266,6 +278,12 @@ class UiWorkspaceService extends Service implements UiWorkspace {
       ? recentWorkspace(workspace.items, sessions.byId)
       : undefined
     const target = workspaceId ?? currentWorkspaceId ?? recent
+    if (target === undefined && this.initialNavigation !== 'done') {
+      // Clearing now would abort the restoration that prepares the first
+      // Workspace and Session; run this request once it has finished.
+      this.pendingStart = { options: draftOptions, panel: this.ctx.layout.panelInfo.getSnapshot().activePanelId }
+      return
+    }
     if (target === undefined) {
       if (initializeDraft) {
         this.notify({ kind: 'createFailed', message: this.ctx.locale.bind('workspace')('draft.workspaceRequired') })
@@ -349,24 +367,23 @@ class UiWorkspaceService extends Service implements UiWorkspace {
   }
 
   private watchNavigation(): () => void {
-    let initial: 'waiting' | 'connecting' | 'done' = 'waiting'
     const reconcile = (): void => {
       if (this.lifetime.signal.aborted) return
       if (this.clearArchivedCurrent()) return
-      if (initial !== 'waiting') return
+      if (this.initialNavigation !== 'waiting') return
       const workspace = this.workspaces.list.getSnapshot()
       const sessions = this.sessions.list.getSnapshot()
       if (workspace.phase !== 'ready' || sessions.phase !== 'ready') return
       if (this.mainReference !== undefined) {
-        initial = 'done'
+        this.finishInitialNavigation(false)
         return
       }
-      initial = 'connecting'
+      this.initialNavigation = 'connecting'
       void this.restoreSelection(workspace, sessions).then(
-        () => { initial = 'done' },
+        (openedBlank) => { this.finishInitialNavigation(openedBlank) },
         (reason: unknown) => {
           if (this.lifetime.signal.aborted) return
-          initial = 'waiting'
+          this.initialNavigation = 'waiting'
           console.warn('initial Session restoration failed:', reason)
         },
       )
@@ -382,18 +399,35 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     }
   }
 
-  private async restoreSelection(workspaces: WorkspaceSnapshot, sessions: SessionListState): Promise<void> {
+  /**
+   * Mark the first restoration finished and run a New Session request made while it was pending.
+   * @param openedBlank - whether the restoration opened a blank Session, which already is the new chat.
+   */
+  private finishInitialNavigation(openedBlank: boolean): void {
+    this.initialNavigation = 'done'
+    const pending = this.pendingStart
+    this.pendingStart = undefined
+    if (pending === undefined || this.lifetime.signal.aborted) return
+    // Opening a panel since the request supersedes it.
+    if (this.ctx.layout.panelInfo.getSnapshot().activePanelId !== pending.panel) return
+    // Only draft content still needs the request once a blank Session is open.
+    if (openedBlank && pending.options === undefined) return
+    this.startSession(undefined, pending.options)
+  }
+
+  /** @returns whether a blank Session was opened. */
+  private async restoreSelection(workspaces: WorkspaceSnapshot, sessions: SessionListState): Promise<boolean> {
     const saved = this.selection.getSnapshot()
     if (saved.subagentAddress !== undefined) {
       this.replaceMain(saved.subagentAddress, this.lifetime.signal, 'preserve')
-      return
+      return false
     }
     const summary = saved.sessionId === undefined ? undefined : sessions.byId[saved.sessionId]
     const workspace = summary === undefined ? undefined
       : workspaces.items.find(item => item.sessionIds.includes(summary.id))
     if (summary !== undefined && (!summary.blank || workspace === undefined)) {
       this.replaceMain(summary.id, this.lifetime.signal, 'preserve')
-      return
+      return summary.blank
     }
     const navigation = AbortSignal.any([this.ctx.layout.beginNavigation(), this.lifetime.signal])
     let sessionId: SessionId | undefined
@@ -404,13 +438,13 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     let target = workspace?.workspaceId ?? recentWorkspace(workspaces.items, sessions.byId)
     if (target === undefined && workspaces.items.length === 0 && sessions.ids.length === 0) {
       const prepared = await this.initializeDefaultWorkspace(navigation)
-      if (navigation.aborted) return
+      if (navigation.aborted) return false
       target = prepared?.workspaceId
     }
     if (sessionId === undefined && target !== undefined) sessionId = await this.connectWorkspace(target)
-    if (sessionId !== undefined && !navigation.aborted) {
-      this.replaceMain(sessionId, navigation, 'preserve')
-    }
+    if (sessionId === undefined || navigation.aborted) return false
+    this.replaceMain(sessionId, navigation, 'preserve')
+    return true
   }
 
   private async initializeDefaultWorkspace(signal: AbortSignal): Promise<WorkspaceView | undefined> {

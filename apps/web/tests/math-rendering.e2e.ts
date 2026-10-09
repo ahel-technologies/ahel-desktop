@@ -50,7 +50,7 @@ function mathFixture(): string {
         text: [
           '## Math rendering',
           '',
-          'Inline dollar $\\theta$ and backslash \\(\\frac{1}{5}\\).',
+          'Inline double dollar $$\\theta$$ and backslash \\(\\frac{1}{5}\\).',
           '',
           '\\[\\frac{\\pi}{4} < \\theta < \\frac{\\pi}{2}\\]',
           '',
@@ -58,7 +58,7 @@ function mathFixture(): string {
           '',
           '| Symbol | Value |',
           '| --- | --- |',
-          '| $\\theta$ | \\(\\frac{1}{5}\\) |',
+          '| $$\\theta$$ | \\(\\frac{1}{5}\\) |',
           '',
           DONE,
         ].join('\n'),

@@ -11,7 +11,7 @@
 - button "Completed in {{duration}}" [disabled]
 - heading "Math rendering" [level=2]
 - paragraph:
-  - text: Inline dollar
+  - text: Inline double dollar
   - math: θ
   - text: and backslash
   - math: 1 5

@@ -33,13 +33,15 @@ export function parseGfm(text: string): Root {
 
 /**
  * Parse GFM markdown plus TeX math with the compatibility delimiters
- * (the settled arm's grammar).
+ * (the settled arm's grammar). Inline math needs `\(…\)` or `$$…$$`: a
+ * single `$` stays literal text so prices such as `$0.30 and $1.20` never
+ * become math.
  * @param text - Markdown source.
  * @returns The mdast root.
  */
 export function parseGfmWithMath(text: string): Root {
   return recoverLocalImages(fromMarkdown(text, {
-    extensions: [gfm(), cjkFriendlyStrong(), mathCompatibility(), math()],
+    extensions: [gfm(), cjkFriendlyStrong(), mathCompatibility(), math({ singleDollarTextMath: false })],
     mdastExtensions: [gfmFromMarkdown(), mathFromMarkdown()],
   }), text)
 }

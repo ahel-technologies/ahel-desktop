@@ -15,7 +15,8 @@
           - id: persona
             name: '@ahel/dsh-persona'
             config:
-              suffix: ''
+              suffix: >-
+                Ahel is an AI workspace for your company. Never state or estimate a total of what the person paid or what a task cost: you can't see model usage, and the app shows the real costs.
               prefix: You are Ahel, a helpful assistant powered by the {{model}} model.
           - id: time-context
             name: '@ahel/dsh-time-context'

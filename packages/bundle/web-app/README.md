@@ -69,7 +69,7 @@ When you launch `dsh --profile web` over SSH, the URL line still prints but the 
 
 ### Per-session agent setup
 
-Each browser session uses the shipped `standard` preset: the Ahel persona, the current time, context compaction with `/compact`, and the ask-user tool. MCP tools come from the MCP client rows the Host mounts, not from the preset. Edits saved from the Web editor override the preset's plugins by id in `$DSH_HOME/profiles/web/cordis.patch.yml`.
+Each browser session uses the shipped `standard` preset: the Ahel persona (its suffix, the last system-prompt section, names Ahel an AI workspace for your company and tells the model never to state or estimate a total of what the person paid, because model usage is not visible to it), the current time, context compaction with `/compact`, and the ask-user tool. MCP tools come from the MCP client rows the Host mounts, not from the preset. Edits saved from the Web editor override the preset's plugins by id in `$DSH_HOME/profiles/web/cordis.patch.yml`.
 
 -----
 

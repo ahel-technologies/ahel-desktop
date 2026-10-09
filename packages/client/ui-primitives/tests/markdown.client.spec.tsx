@@ -88,7 +88,7 @@ describe('MarkdownText', () => {
       '`**注意：**内容`',
       '**Notice:**text',
       '*提醒！*继续',
-      '$**注意：**内容$',
+      '\\(**注意：**内容\\)',
       '```md',
       '**注意：**内容',
       '```',
@@ -379,13 +379,13 @@ describe('MarkdownText', () => {
 
   it('renders inline and display TeX through KaTeX without enabling trusted commands', () => {
     const source = [
-      'Einstein wrote $E = mc^2$.',
+      'Einstein wrote \\(E = mc^2\\).',
       '',
       '$$',
       '\\frac{\\partial \\mathbf{u}}{\\partial t} + (\\mathbf{u} \\cdot \\nabla)\\mathbf{u} = -\\frac{1}{\\rho}\\nabla p',
       '$$',
       '',
-      '$\\href{javascript:alert(1)}{unsafe}$',
+      '\\(\\href{javascript:alert(1)}{unsafe}\\)',
     ].join('\n')
     const { container } = render(<MarkdownText text={source} />)
 
@@ -395,9 +395,44 @@ describe('MarkdownText', () => {
     expect(container.querySelector('a')).toBeNull()
   })
 
+  it('keeps single-dollar prices as plain text while double dollars stay math', () => {
+    const source = [
+      'The queries cost $0.30 in total, and the balance is now $4.36.',
+      '',
+      '| Plan | Price |',
+      '| --- | --- |',
+      '| Pro | $19 a month, or $190 a year |',
+      '',
+      'Inline $$x^2$$ still renders.',
+    ].join('\n')
+    const { container } = render(<MarkdownText text={source} />)
+
+    expect(container.querySelector('p')?.textContent).toBe('The queries cost $0.30 in total, and the balance is now $4.36.')
+    expect(container.querySelector('td:last-child')?.textContent).toBe('$19 a month, or $190 a year')
+    expect(container.querySelectorAll('.katex')).toHaveLength(1)
+    expect(container.querySelector('.katex annotation')?.textContent).toBe('x^2')
+  })
+
+  it('keeps links in table cells clickable in streaming and settled renders', () => {
+    const source = [
+      '| Title | Buyer | Value | Deadline | Link |',
+      '| --- | --- | --- | --- | --- |',
+      '| Ledger system | Työllisyysrahasto | n/a | 2026-10-20 | [Notice](https://example.com/notice/1) |',
+      '| Chip reader | Migri | n/a | 2026-10-31 | https://example.com/notice/2 |',
+    ].join('\n')
+    for (const streaming of [true, false]) {
+      const view = render(<MarkdownText text={source} streaming={streaming} />)
+      const anchors = [...view.container.querySelectorAll('td a')]
+      expect(anchors.map(anchor => anchor.getAttribute('href')))
+        .toEqual(['https://example.com/notice/1', 'https://example.com/notice/2'])
+      expect(anchors.map(anchor => anchor.getAttribute('target'))).toEqual(['_blank', '_blank'])
+      view.unmount()
+    }
+  })
+
   it('renders common TeX delimiters and same-line tagged display blocks after the reply settles', () => {
     const source = [
-      'Inline dollar $\\theta$ and backslash \\(\\frac{1}{5}\\).',
+      'Inline double dollar $$\\theta$$ and backslash \\(\\frac{1}{5}\\).',
       '',
       '\\[\\frac{\\pi}{4} < \\theta < \\frac{\\pi}{2}\\]',
       '',
@@ -405,7 +440,7 @@ describe('MarkdownText', () => {
       '',
       '| Symbol | Value |',
       '| --- | --- |',
-      '| $\\theta$ | \\(\\frac{1}{5}\\) |',
+      '| $$\\theta$$ | \\(\\frac{1}{5}\\) |',
     ].join('\n')
     const { container } = render(<MarkdownText text={source} />)
 
