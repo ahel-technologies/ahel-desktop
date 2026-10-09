@@ -38,7 +38,9 @@ function bounded(text: string): string {
 }
 
 /**
- * Model-facing account of one card-initiated tool call.
+ * Model-facing account of one card-initiated tool call. A card calls tools on
+ * a press and on its own (for example to read its current state when it is
+ * drawn), and the Host cannot tell which, so the text claims no press.
  * @param server - the card's MCP server.
  * @param tool - raw MCP tool name.
  * @param outcome - the call's MCP result fields.
@@ -46,7 +48,7 @@ function bounded(text: string): string {
  */
 export function cardActionText(server: string, tool: string, outcome: McpAppCallResult): string {
   const status = outcome.isError === true ? 'failed' : 'succeeded'
-  return bounded(`[${server} card] The user pressed a control on the card, which called ${tool}; the call ${status}. Result:\n${textOf(outcome.content)}`)
+  return bounded(`[${server} card] The card called ${tool}; the call ${status}. Result:\n${textOf(outcome.content)}`)
 }
 
 /**

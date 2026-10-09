@@ -61,7 +61,8 @@ Chat 过程分组（`[data-step-process]`）内的调用行可能被折叠、限
 | 文件 | 作用 |
 |---|---|
 | [`src/index.ts`](src/index.ts) | Host 控制器：`readResource` 和 `callTool` Remote 方法 |
-| [`src/call-result.ts`](src/call-result.ts) | 把注册表结果转换为 MCP `CallToolResult` 字段 |
+| [`src/call-result.ts`](src/call-result.ts) | 把注册表结果转换为 MCP `CallToolResult` 字段；面向模型的报告文本 |
+| [`src/card-reports.ts`](src/card-reports.ts) | 卡片报告投递：不重复，且从不进入正在运行的轮次 |
 | [`src/types.ts`](src/types.ts) | 浏览器安全的线路类型 |
 | [`src/client/bridge.ts`](src/client/bridge.ts) | MCP Apps JSON-RPC 桥接的宿主端 |
 | [`src/client/document.ts`](src/client/document.ts) | 内容安全策略与框架沙箱 |
@@ -90,23 +91,23 @@ Chat 过程分组（`[data-step-process]`）内的调用行可能被折叠、限
 
 #### 模型看到什么
 
-本包不向模型提供任何内容。模型看到的是 MCP 工具的普通文本结果。卡片自身的工具调用、资源读取以及 `ui/update-model-context` 内容都不会写入 Session 日志，也不会进入任何模型请求。
+模型看到的是 MCP 工具的普通文本结果。此外，每次卡片发起的 `tools/call` 和每个 `ui/update-model-context` 内容都会作为来源为 `mcp-app` 的已记录用户消息到达模型：`[<server> card] The card called <tool>; the call succeeded.`（或 `failed.`）后接结果文本，或 `[<server> card] Current card state:` 后接内容的文本和结构化内容。该文本不声称有按下操作，因为卡片也会自行调用工具，例如在绘制时读取自身状态。消息加入 Agent 的下一个轮次，位于该轮次的提示之前；轮次运行期间到达的消息会等到轮次结束，因此绝不会给正在运行的轮次增加步骤。Agent 已收到过的文本会被丢弃，因此页面重新加载后再次绘制的卡片不会增加任何内容。资源读取不进入任何模型请求。
 
 #### Token 影响
 
-无；卡片不增加模型输入。
+每条不同的卡片报告为下一轮次的输入增加一条最多 4,000 个字符的用户消息。
 
 #### KV Cache 影响
 
-无；本包既不组装也不发送提供方请求。
+报告追加在已有历史之后，因此缓存前缀保持不变。
 
 ## 已知限制与延期工作
 
 <a id="known-limitations-and-deferred-work"></a>
 
 - **轮次之外的审批按拒绝处理** —— `ask` 决定需要一个打开的轮次，因此当 Agent 空闲时，若策略要求对卡片发起的调用进行询问，该调用会被拒绝。
-- **卡片调用不记录日志** —— 卡片 `tools/call` 的结果只返回给卡片；模型不会得知，回放也不会显示。
-- **卡片的模型上下文只保存不发送** —— 每张卡片保留最新的 `ui/update-model-context` 内容，但尚未加入下一次请求；`ui/message` 会被拒绝。
+- **卡片报告等待下一个提示** —— 报告不会单独发送；它在收件箱中等待，直到用户的下一个提示开启一个轮次。`ui/message` 会被拒绝。
+- **重复抑制保存在内存中** —— Agent 收到过的文本按 Host 进程记忆（每个 Agent 最近 256 条），因此 Host 重启后，再次绘制的卡片会再报告一次自身状态。
 - **单层沙箱框架** —— 卡片运行在一个不透明源框架中，而不是规范为 Web 宿主描述的双层沙箱代理框架，因此不支持 `_meta.ui.domain` 以及依赖 `allow-same-origin` 的应用（存储、Cookie）。
 - **仅内联显示** —— `ui/request-display-mode` 返回 `inline`；不提供全屏和画中画。
 - **仅限应用的工具** —— 可见性不含 `model` 的工具不会被桥接，因此卡片无法调用它们。
