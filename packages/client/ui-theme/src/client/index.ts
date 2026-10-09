@@ -177,7 +177,7 @@ export class ThemeRuntime {
   constructor(ctx: ClientContext, host: ConfigForm<ThemeSettings>) {
     this.ctx = ctx
     this.host = host
-    this.preference = DEFAULT_PREFERENCE
+    this.preference = bootstrapPreference()
     // Non-browser runs (node e2e booting the client tree) have no matchMedia.
     this.media = typeof matchMedia === 'undefined' ? undefined : matchMedia('(prefers-color-scheme: dark)')
     this.snapshot = this.buildSnapshot()
@@ -357,6 +357,21 @@ export class ThemeRuntime {
     this.snapshot = this.buildSnapshot()
     this.ctx.emit('theme/change', this.snapshot)
   }
+}
+
+/**
+ * Read the built-in preference the boot scripts wrote on
+ * `html[data-ds-theme-source]` before any plugin ran, so the initial snapshot
+ * matches first paint until the durable settings adoption lands. A later boot
+ * row may replace ui-theme's own value (the hosted chat writes the ahel.ai
+ * account theme there). Non-browser runs, mounts without a boot script and
+ * values other than a built-in preference fall back to the schema default.
+ */
+function bootstrapPreference(): ThemePreference {
+  /* v8 ignore next -- needs a documentless run (node e2e booting the client tree), not constructible under jsdom */
+  if (typeof document === 'undefined') return DEFAULT_PREFERENCE
+  const raw = document.documentElement.dataset.dsThemeSource
+  return isThemePreference(raw) ? raw : DEFAULT_PREFERENCE
 }
 
 /**

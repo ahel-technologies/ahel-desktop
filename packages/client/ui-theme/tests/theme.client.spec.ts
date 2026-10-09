@@ -46,6 +46,34 @@ describe('ThemeRuntime', () => {
     }
   })
 
+  it('seeds the initial preference from the boot-script root attribute, ignoring junk', () => {
+    // A boot row (ui-theme's, or the hosted chat's account theme after it) writes
+    // the preference on <html> before any plugin runs; the first snapshot follows it.
+    document.documentElement.dataset.dsThemeSource = 'dark'
+    try {
+      const { theme, host } = make()
+      expect(theme.getTheme().preference).toBe('dark')
+      expect(theme.getTheme().active.id).toBe('dark')
+      expect(host.set).not.toHaveBeenCalled()
+      document.documentElement.dataset.dsThemeSource = 'sepia'
+      expect(make().theme.getTheme().preference).toBe('system')
+    } finally {
+      delete document.documentElement.dataset.dsThemeSource
+    }
+  })
+
+  it('lets the durable preference replace the boot-script seed', () => {
+    document.documentElement.dataset.dsThemeSource = 'dark'
+    try {
+      const { theme, host } = make()
+      host.publish({ status: 'ready', value: { preference: 'light', fontSize: 14 }, revision: 1, writable: true })
+      expect(theme.getTheme().preference).toBe('light')
+      expect(host.set).not.toHaveBeenCalled()
+    } finally {
+      delete document.documentElement.dataset.dsThemeSource
+    }
+  })
+
   it.each([10, 22])('setFontSize(%i) switches, writes through the scope, and republishes; same value is a no-op', (fontSize) => {
     const { theme, events, host } = make()
     theme.setFontSize(fontSize)
