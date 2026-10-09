@@ -112,7 +112,7 @@ export function VoiceInput({ sessionId, inputActions, locked, onActiveChange,
       const audio = await active.capture.stop(active.maxDurationSeconds)
       if (run !== generation.current) return
       if (audio.byteLength > active.maxAudioBytes) { feedback(t('tooLarge')); return }
-      const result = await transcribe({ audioBase64: audioBase64(audio), ...active.selection }, active.abort.signal)
+      const result = await transcribe({ audioBase64: audioBase64(audio), ...active.selection, sessionId }, active.abort.signal)
       if (run !== generation.current) return
       if (!result.ok) { feedback(t('failed', { message: result.error.message })); return }
       if (result.value.text === '') { feedback(t('empty')); return }

@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-语音输入的 `cloud` 识别服务。它把一段完成的录音（16 kHz 单声道 PCM16 WAV，最长 60 秒）连同已登录 Ahel 账户的令牌和所选工作区，发送到 ahel.ai 的计费接口 `POST https://ahel.ai/api/llm/v1/audio/transcriptions`。ahel.ai 用支持音频的模型转写，并从工作区余额扣费。录音不会被保存。界面标注“通过 ahel.ai 转写”。
+语音输入的 `cloud` 识别服务。它把一段完成的录音（16 kHz 单声道 PCM16 WAV，最长 60 秒）连同已登录 Ahel 账户的令牌，发送到 ahel.ai 的计费接口 `POST https://ahel.ai/api/llm/v1/audio/transcriptions`。`X-Ahel-Workspace` 指明录音所在对话的工作区（该对话的 `ahelWorkspace` 标记）；尚未标记的对话使用所选工作区。ahel.ai 用支持音频的模型转写，并从该工作区余额扣费。录音不会被保存。界面标注“通过 ahel.ai 转写”。
 
 ## 目录
 

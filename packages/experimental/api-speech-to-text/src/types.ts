@@ -1,5 +1,5 @@
 /** JSON-safe inputs and results of the experimental speech Remote namespace. */
-import type { SpeechProviderId, SpeechSnapshot } from '@ahel/dsh-experimental-speech-to-text/types'
+import type { SpeechInput, SpeechProviderId, SpeechSnapshot } from '@ahel/dsh-experimental-speech-to-text/types'
 import type {} from '@ahel/dsh-typert-protocol'
 
 declare module '@ahel/dsh-typert-protocol' {
@@ -16,6 +16,8 @@ export interface TranscriptionRequest {
   readonly audioBase64: string
   readonly providerId?: SpeechProviderId
   readonly language?: string
+  /** The chat whose composer recorded the audio. */
+  readonly sessionId?: NonNullable<SpeechInput['sessionId']>
 }
 
 /** Current provider choices and audio intake limits. */

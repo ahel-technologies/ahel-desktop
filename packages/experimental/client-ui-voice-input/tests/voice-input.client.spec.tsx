@@ -97,7 +97,7 @@ it('keeps provider and language fixed and preserves conflicting text for explici
   act(() => { b.readiness.set({ ...state, catalog: { ...state.catalog!, selection: { providerId: id, language: 'en' } } }) })
   stop()
   const insert = await screen.findByRole('button', { name: zh.insert })
-  expect(b.transcribe).toHaveBeenCalledWith(expect.objectContaining({ language: 'auto' }), expect.any(AbortSignal))
+  expect(b.transcribe).toHaveBeenCalledWith(expect.objectContaining({ language: 'auto', sessionId: 'one' }), expect.any(AbortSignal))
   fireEvent.click(insert)
   expect(screen.getByRole('button', { name: zh.insert })).toBeTruthy()
   b.inputActions.insertText.mockReturnValue(true)

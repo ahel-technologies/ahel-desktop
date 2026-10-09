@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-A `cloud` speech provider for the voice input. It sends one finished recording (16 kHz mono PCM16 WAV, at most 60 seconds) to ahel.ai's metered route `POST https://ahel.ai/api/llm/v1/audio/transcriptions` with the signed-in Ahel account's bearer and selected workspace. ahel.ai transcribes it with an audio-capable model and charges the workspace balance. The recording is not stored. The UI labels it "Transcribed through ahel.ai".
+A `cloud` speech provider for the voice input. It sends one finished recording (16 kHz mono PCM16 WAV, at most 60 seconds) to ahel.ai's metered route `POST https://ahel.ai/api/llm/v1/audio/transcriptions` with the signed-in Ahel account's bearer. `X-Ahel-Workspace` names the workspace of the chat whose composer recorded it (the chat's `ahelWorkspace` stamp), else the selected workspace for a chat not stamped yet. ahel.ai transcribes it with an audio-capable model and charges that workspace's balance. The recording is not stored. The UI labels it "Transcribed through ahel.ai".
 
 ## Table of Contents
 

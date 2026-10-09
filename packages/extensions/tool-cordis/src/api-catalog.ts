@@ -7990,7 +7990,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SpeechInput',
-    declaration: 'export interface SpeechInput {\n    readonly audio: Uint8Array;\n    readonly language: string;\n}',
+    declaration: 'export interface SpeechInput {\n    readonly audio: Uint8Array;\n    readonly language: string;\n    readonly sessionId?: Branded<\'SessionId\'>;\n}',
   },
   {
     name: 'SpeechPreparation',
@@ -8030,7 +8030,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SpeechRequest',
-    declaration: 'export interface SpeechRequest {\n    readonly audio: Uint8Array;\n    readonly providerId?: SpeechProviderId;\n    readonly language?: string;\n}',
+    declaration: 'export interface SpeechRequest {\n    readonly audio: Uint8Array;\n    readonly providerId?: SpeechProviderId;\n    readonly language?: string;\n    readonly sessionId?: Branded<\'SessionId\'>;\n}',
   },
   {
     name: 'SpeechSelection',
@@ -8618,7 +8618,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'TranscriptionRequest',
-    declaration: 'export interface TranscriptionRequest {\n    readonly audioBase64: string;\n    readonly providerId?: SpeechProviderId;\n    readonly language?: string;\n}',
+    declaration: 'export interface TranscriptionRequest {\n    readonly audioBase64: string;\n    readonly providerId?: SpeechProviderId;\n    readonly language?: string;\n    readonly sessionId?: NonNullable<SpeechInput[\'sessionId\']>;\n}',
   },
   {
     name: 'TurnCompleteInput',
