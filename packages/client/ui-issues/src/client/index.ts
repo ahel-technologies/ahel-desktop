@@ -12,7 +12,10 @@
  * acts in the workspace its issue was read in (the board's for Run with Ahel,
  * the pickup read's for a queued run). The
  * detail names the model a run's chat uses, read from ui-model-selection
- * when that plugin is loaded.
+ * when that plugin is loaded. A run whose chat ended on a confirm card sends
+ * the card's continuation through ui-mcp-app's `mcpApps` namespace once the
+ * person answered it on ahel.ai; without that plugin the run waits until the
+ * card expires or the chat goes on.
  * Other packages open an issue with the `ahel-issues/open` event.
  */
 import type { Context } from '@ahel/cordis'
@@ -29,12 +32,13 @@ import type {} from '@ahel/dsh-client-ui-session/client'
 import type {} from '@ahel/dsh-client-ui-workspace/client'
 import type {} from '@ahel/dsh-client-ui-model-selection/client'
 import type {} from '@ahel/dsh-client-ui-mcp-app/client'
+import type {} from '@ahel/dsh-client-ui-mcp-app/remote'
 import type { Issue, IssueRunReport } from '@ahel/dsh-ahel-account/types'
 import type { IssuesInjected } from './contract.ts'
 import { createIssuesFeed, type IssuesAccount, type RunWorkspace } from './feed.ts'
 import { IssuesPage } from './IssuesPage.tsx'
 import { IssuesPanelIcon } from './PanelIcons.tsx'
-import { issueUrl, runSeed } from './model.ts'
+import { confirmNote, issueUrl, runSeed } from './model.ts'
 import { createPickup } from './pickup.ts'
 import { startRun, type RunHost, type RunSession, type RunStart } from './run.ts'
 import { createPickupToast, PickupToast } from './PickupToast.tsx'
@@ -155,6 +159,13 @@ function register(ctx: Context): void {
     return off
   }
 
+  /** The `mcpApps` namespace while ui-mcp-app has it mounted. */
+  let mcpApps: Context['remote']['mcpApps'] | undefined
+  ctx.inject(['remote.mcpApps'], (inner) => {
+    mcpApps = inner.remote.mcpApps
+    inner.effect(() => () => { mcpApps = undefined }, 'ui-issues: forget mcpApps')
+  })
+
   const runHost: RunHost = {
     pinChat: async (sessionId, workspace) => {
       const result = await ctx.remote.ahelAccount.pinChat(sessionId as SessionId, workspace)
@@ -199,6 +210,24 @@ function register(ctx: Context): void {
         console.warn('[ui-issues] could not archive an unused run chat:', error)
       })
     },
+    chatOpen: (sessionId) => {
+      const list = ctx.sessions.list.getSnapshot()
+      return list.phase !== 'ready' || list.ids.includes(sessionId as SessionId)
+    },
+    confirmWaiting: async (sessionId, interactionId) => {
+      const result = await ctx.remote.ahelIssues.confirmWaiting(interactionId, sessionId)
+      return result.ok ? result.value : null
+    },
+    continueConfirm: async (sessionId, confirm) => {
+      if (mcpApps === undefined) return null
+      // The card's own continuation, with no answer and no press token: ahel.ai runs it only on the press it recorded.
+      const result = await mcpApps.callTool(
+        sessionId as SessionId, confirm.server, 'run_action', { action_id: confirm.actionId, interaction_id: confirm.interactionId },
+        new AbortController().signal,
+      )
+      return result.ok ? result.value : null
+    },
+    confirmNote: outcome => confirmNote(outcome, t),
   }
 
   const launch = async (

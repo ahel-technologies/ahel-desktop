@@ -5,7 +5,8 @@
  * an issue run name the run's workspace instead. An ahel.ai without
  * those routes answers every method with `ahel-issues/outdated`; a write the
  * person's role does not allow answers `ahel-issues/forbidden` carrying
- * ahel.ai's reason. Runs this Host reported live (running or waiting) and
+ * ahel.ai's reason. An issue run reads whether a confirm card its chat ended on
+ * still waits for the person's press (`confirmWaiting`). Runs this Host reported live (running or waiting) and
  * never ended are reported `failed` with the reason `desktop closed` when the
  * Host stops, within {@link CLOSE_DEADLINE_MS}.
  */
@@ -292,6 +293,23 @@ export class AhelIssues extends TypertRemoteService {
       sessionId: last.sessionId, state: 'failed', steps: last.steps, totalSteps: last.totalSteps, reason: CLOSED_REASON,
     } satisfies IssueRunReport, { deadline: signal, workspace })))
     await Promise.race([reports, new Promise((resolve) => { signal.addEventListener('abort', resolve, { once: true }) })])
+  }
+
+  /**
+   * Whether one of the person's own confirm cards still waits for their press, read from ahel.ai's list of their
+   * open confirm cards (`GET /api/desktop/approvals`, which changes nothing) in the workspace the chat acts in.
+   * The list holds at most 50 cards, so a card past them reads as no longer waiting.
+   * @param id - the card's interaction id.
+   * @param sessionId - the chat that shows the card.
+   * @returns true while the card is listed, false once it is not (pressed, declined or expired), null when ahel.ai could not
+   *   list the person's confirm cards.
+   * @throws RemoteError `ahel-issues/*`.
+   */
+  @Remote
+  async confirmWaiting(id: string, sessionId: string): Promise<boolean | null> {
+    const answer = fields(await this.call('GET', '/api/desktop/approvals', undefined, { workspace: this.ctx.ahelAccount.chatWorkspace(sessionId) }))
+    if (fields(answer.sources).confirms !== 'ok' || !Array.isArray(answer.rows)) return null
+    return answer.rows.some((row) => { const card = fields(row); return card.kind === 'confirm' && card.id === id })
   }
 
   /**

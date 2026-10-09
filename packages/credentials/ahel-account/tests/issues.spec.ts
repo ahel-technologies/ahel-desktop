@@ -42,6 +42,11 @@ async function mockIssuesApi() {
       if (url.pathname === '/api/desktop/issues/AHEL-137/comments') {
         json(200, { comments: [] }); return
       }
+      if (url.pathname === '/api/desktop/approvals' && request.method === 'GET') {
+        const workspace = url.searchParams.get('workspace')
+        if (workspace === 't-down') { json(200, { rows: [], sources: { confirms: 'unavailable', held: 'not_shown' } }); return }
+        json(200, { rows: [{ kind: 'held', id: 'h1' }, { kind: 'confirm', id: 'i-open' }], sources: { confirms: 'ok', held: 'ok' } }); return
+      }
       if (url.pathname === '/api/desktop/handoffs' && request.method === 'POST') {
         json(200, { updated: 1 }); return
       }
@@ -137,4 +142,26 @@ it('with no workspace selected, reads in the account default and names it; a sum
 
   await ctx.ahelIssues.comment('AHEL-137', 'Done.', 'agent', undefined, 'run-chat')
   expect(api.seen.filter(row => row.method === 'POST').map(row => new URLSearchParams(row.search).get('workspace'))).toEqual(['t-issue'])
+})
+
+it('reads whether a confirm card still waits for its press in the workspace its chat acts in', async () => {
+  const api = await mockIssuesApi()
+  const ctx = new Context()
+  ctx.provide('ahelAccount', {
+    workspace: () => Promise.resolve('t1'),
+    chatWorkspace: (sessionId: string) => sessionId === 's-bound' ? 't-chat' : sessionId === 's-down' ? 't-down' : undefined,
+    accessToken: () => Promise.resolve('access-1'),
+    revalidate: () => Promise.resolve(),
+  })
+  const plugin = ctx.plugin(AhelIssues, { appOrigin: api.origin })
+  await plugin
+  cleanups.push(() => plugin.dispose())
+
+  expect(await ctx.ahelIssues.confirmWaiting('i-open', 's-bound')).toBe(true)
+  expect(api.seen.at(-1)).toMatchObject({ method: 'GET', path: '/api/desktop/approvals', search: '?workspace=t-chat' })
+  expect(await ctx.ahelIssues.confirmWaiting('i-pressed', 's-bound')).toBe(false)
+  expect(await ctx.ahelIssues.confirmWaiting('h1', 's-other')).toBe(false)
+  expect(api.seen.at(-1)).toMatchObject({ search: '?workspace=t1' })
+  expect(await ctx.ahelIssues.confirmWaiting('i-open', 's-down')).toBeNull()
+  expect(api.seen.every(row => row.method === 'GET')).toBe(true)
 })

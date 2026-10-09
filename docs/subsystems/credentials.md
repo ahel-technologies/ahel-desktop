@@ -345,6 +345,18 @@ Child service of `AhelAccount`; the Remote namespace `ahelIssues`.
 @Remote async run(key: string, report: IssueRunReport, runWorkspace?: string): Promise<IssueWriteAnswer>
 
 /**
+ * Whether one of the person's own confirm cards still waits for their press, read from ahel.ai's list of their
+ * open confirm cards (`GET /api/desktop/approvals`, which changes nothing) in the workspace the chat acts in.
+ * The list holds at most 50 cards, so a card past them reads as no longer waiting.
+ * @param id - the card's interaction id.
+ * @param sessionId - the chat that shows the card.
+ * @returns true while the card is listed, false once it is not (pressed, declined or expired), null when ahel.ai could not
+ *   list the person's confirm cards.
+ * @throws RemoteError `ahel-issues/*`.
+ */
+@Remote async confirmWaiting(id: string, sessionId: string): Promise<boolean | null>
+
+/**
  * Who issues can be assigned to: the workspace's seats and the Ahel agent with its model.
  * @returns the members and agents.
  * @throws RemoteError `ahel-issues/*`.

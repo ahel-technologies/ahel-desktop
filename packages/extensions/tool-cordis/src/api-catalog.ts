@@ -626,6 +626,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['RemoteError `ahel-issues/refused` with `details.error === \'run_claimed\'` when another session holds the run, or another `ahel-issues/*`.'],
       },
       {
+        signature: '@Remote async confirmWaiting(id: string, sessionId: string): Promise<boolean | null>',
+        description: 'Whether one of the person\'s own confirm cards still waits for their press, read from ahel.ai\'s list of their open confirm cards (`GET /api/desktop/approvals`, which changes nothing) in the workspace the chat acts in. The list holds at most 50 cards, so a card past them reads as no longer waiting.',
+        parameters: [{ name: 'id', description: 'the card\'s interaction id.' }, { name: 'sessionId', description: 'the chat that shows the card.' }],
+        returns: 'true while the card is listed, false once it is not (pressed, declined or expired), null when ahel.ai could not list the person\'s confirm cards.',
+        throws: ['RemoteError `ahel-issues/*`.'],
+      },
+      {
         signature: '@Remote async assignees(): Promise<IssueAssignees>',
         description: 'Who issues can be assigned to: the workspace\'s seats and the Ahel agent with its model.',
         parameters: [],
