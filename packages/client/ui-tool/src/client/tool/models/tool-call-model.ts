@@ -120,6 +120,67 @@ const TOOL_TITLE_KEYS: Record<string, ToolTitleKey> = {
   wait_agent: 'tool.title.waitAgent',
 }
 
+/** Wire prefix of the Ahel MCP server's tools: the bundles' `mcp-ahel` row connects it as `serverName: ahel`. */
+const AHEL_TOOL_PREFIX = 'mcp__ahel__'
+
+/**
+ * Plain-language row of one Ahel MCP tool: its title, the arguments whose text
+ * forms the summary (joined in this order), and whether the call is internal
+ * plumbing the transcript hides unless it failed.
+ */
+interface AhelToolRow {
+  readonly titleKey: ToolTitleKey
+  readonly summaryKeys: readonly string[]
+  readonly quiet: boolean
+}
+
+const ahelRow = (titleKey: ToolTitleKey, summaryKeys: readonly string[] = [], quiet = false): AhelToolRow => ({
+  titleKey, summaryKeys, quiet,
+})
+
+/** The Ahel connector's fixed tool list (ahel.ai `MCP_TOOLS` plus `get_started`) by raw tool name. */
+const AHEL_TOOLS: Readonly<Record<string, AhelToolRow>> = {
+  explore: ahelRow('tool.title.ahel.searchApps', ['query']),
+  search: ahelRow('tool.title.ahel.searchApps', ['query']),
+  catalog_search: ahelRow('tool.title.ahel.searchApps', ['query']),
+  fetch: ahelRow('tool.title.ahel.appDetails', ['id']),
+  install: ahelRow('tool.title.ahel.installApp', ['id']),
+  stack_add: ahelRow('tool.title.ahel.installApp', ['id']),
+  switch: ahelRow('tool.title.ahel.changeApp', ['key']),
+  stack_set_enabled: ahelRow('tool.title.ahel.changeApp', ['key']),
+  use: ahelRow('tool.title.ahel.useApp', ['key', 'tool']),
+  run_action: ahelRow('tool.title.ahel.runAction', ['action_id']),
+  raw_request: ahelRow('tool.title.ahel.callApi', ['service', 'path']),
+  run_script: ahelRow('tool.title.ahel.runScript', ['credential']),
+  installed: ahelRow('tool.title.ahel.checkApps', [], true),
+  stack_list: ahelRow('tool.title.ahel.checkApps', [], true),
+  get_started: ahelRow('tool.title.ahel.checkApps', [], true),
+  status: ahelRow('tool.title.ahel.checkConnections', [], true),
+  credentials_status: ahelRow('tool.title.ahel.checkConnections', [], true),
+  tools: ahelRow('tool.title.ahel.lookUp', ['key'], true),
+  list_actions: ahelRow('tool.title.ahel.lookUp', ['service'], true),
+  skill_read: ahelRow('tool.title.ahel.lookUp', ['key'], true),
+}
+
+/**
+ * The Ahel row of a wire tool name.
+ * @param toolName - wire tool name.
+ * @returns the row, or undefined for a tool that is not one of the Ahel connector's.
+ */
+function ahelTool(toolName: string): AhelToolRow | undefined {
+  return toolName.startsWith(AHEL_TOOL_PREFIX) ? AHEL_TOOLS[toolName.slice(AHEL_TOOL_PREFIX.length)] : undefined
+}
+
+/**
+ * Whether a call is internal plumbing whose row the transcript hides (an Ahel
+ * inventory, status or lookup read); a failed call still shows its row.
+ * @param toolName - wire tool name.
+ * @returns true for a quiet tool.
+ */
+export function isQuietTool(toolName: string): boolean {
+  return ahelTool(toolName)?.quiet === true
+}
+
 /**
  * Classify a tool name into its row variant.
  * @param toolName - wire tool name.
@@ -135,7 +196,7 @@ export function classifyTool(toolName: string): ToolRowVariant {
  * @returns the localized title key.
  */
 export function toolTitleKey(toolName: string): ToolTitleKey {
-  return TOOL_TITLE_KEYS[toolName] ?? VARIANT_TITLE_KEYS[classifyTool(toolName)]
+  return ahelTool(toolName)?.titleKey ?? TOOL_TITLE_KEYS[toolName] ?? VARIANT_TITLE_KEYS[classifyTool(toolName)]
 }
 
 /** Everything ToolRow needs, derived once from the frozen slice. */
@@ -240,6 +301,17 @@ function deriveSummary(variant: ToolRowVariant, argsRaw: string): string {
   return firstLine(argsRaw)
 }
 
+/**
+ * Summary of an Ahel row: the text of its summary arguments present so far, in order.
+ * @param row - the Ahel row.
+ * @param args - the call's argument view.
+ * @returns the summary, empty when none of the arguments has text.
+ */
+function ahelSummary(row: AhelToolRow, args: ToolArgs): string {
+  return row.summaryKeys.map(key => args.text(key)).filter((text): text is string => text !== undefined && text !== '')
+    .map(firstLine).join(' · ')
+}
+
 /** Path keys only — never `url` (web_fetch lands on the read variant). */
 const FILE_PATH_KEYS = ['path', 'file_path'] as const
 
@@ -307,11 +379,14 @@ export function toolRowModel(toolName: string, block: ToolCallBlock, cwd?: strin
   const state: ToolRowState = !done ? block.phase === 'preparing' ? 'preparing' : 'running'
     : block.error?.code === 'interrupted' ? 'stopped'
       : block.isError ? 'error' : 'ok'
+  const ahel = ahelTool(toolName)
   const primary = argumentSummary(variant, block.args, cwd, home)
   // The argument view serves every stage; the raw text is the fallback when it carries nothing useful.
-  const base = primary.summary !== '' || argsRaw === null ? primary.summary
-    : argsRaw === '' ? block.callId
-      : abbreviateHomePath(relativizeToCwd(deriveSummary(variant, argsRaw), cwd), home)
+  // An Ahel row names its act in the title and reads only its own arguments: never the wire name or raw JSON.
+  const base = ahel !== undefined ? ahelSummary(ahel, block.args)
+    : primary.summary !== '' || argsRaw === null ? primary.summary
+      : argsRaw === '' ? block.callId
+        : abbreviateHomePath(relativizeToCwd(deriveSummary(variant, argsRaw), cwd), home)
   const summary = [titleKey === 'tool.title.generic' ? toolName : '', base].filter(Boolean).join(' · ')
   // The empty string is "no text" for both derived result fields: a settled
   // call with blank content has nothing to expand, and a blank first line

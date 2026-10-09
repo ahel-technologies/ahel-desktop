@@ -76,9 +76,20 @@ export function AccountMenu({
     void action().catch(() => undefined).finally(() => { setBusy(false); if (close) setOpen(false) })
   }
 
+  // Before the Host's first account view there is no answer yet: no Sign in to press.
+  if (view === null) {
+    return (
+      <div className={css.entry}>
+        <div className={`${css.trigger} ${css.pending} ${wide ? '' : css.rail}`} role="status" aria-busy="true" aria-label={t('accountLoading')}>
+          <AhelTile size={wide ? 18 : 20} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div ref={root} className={css.entry}>
-      {view?.reachable === false && (
+      {!view.reachable && (
         // Clears itself: the Host re-reads ahel.ai every few seconds and the view follows.
         <div className={css.offline} role="status" title={t('offline')}>
           <span className={css.offlineDot} aria-hidden="true" />
@@ -97,7 +108,7 @@ export function AccountMenu({
           <div className={css.identity}>
             <div className={css.name}>{signedIn ? (name ?? profile?.email ?? t('account')) : t('signedOut')}</div>
             {profile !== null && name !== null && <div className={css.caption}>{profile.email}</div>}
-            {view?.attempt?.phase === 'failed' && <div className={css.caption}>{t('failed')}</div>}
+            {view.attempt?.phase === 'failed' && <div className={css.caption}>{t('failed')}</div>}
             {signedIn && team.outdated && <div className={css.caption}>{t('updateAhel')}</div>}
             {credits?.visible === true && (
               <div className={css.balance}>

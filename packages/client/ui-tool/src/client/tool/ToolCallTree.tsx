@@ -2,7 +2,7 @@
 import { memo, useMemo, type ReactNode } from 'react'
 import type { ToolCallBlock } from '@ahel/dsh-client-ui-chat/client'
 import type { ToolAppOwnerProps, ToolCallOwnerProps, ToolCallPhaseProps, ToolTreeProps } from '../contract/slots.ts'
-import { toolRowModel } from './models/tool-call-model.ts'
+import { isQuietTool, toolRowModel } from './models/tool-call-model.ts'
 import { GenericToolCard } from './toolviews/GenericToolCard.tsx'
 import css from './ToolCallTree.module.css'
 
@@ -52,13 +52,16 @@ const ToolCall = memo(function ToolCall({
     () => call.phase === 'result' && hasAppRecord(call) ? { callId, toolName, block: call.block } : null,
     [callId, toolName, call],
   )
+  // Plumbing reads (an Ahel inventory or status check) show no row unless they failed; their card still shows.
+  const quiet = isQuietTool(toolName) && !(call.phase === 'result' && call.block.isError)
+  if (quiet && app === null && (children === null || children === undefined)) return null
   return (
     <div
       className={css.callRow}
       data-chat-anchor-key={`call:${callId}`}
       data-chat-call-id={callId}
     >
-      {autoReviewDenied
+      {quiet ? null : autoReviewDenied
         ? <GenericToolCard {...owner} t={t} />
         : renderSlot('tool.call.toolview', owner, {
           entryKey: toolName,

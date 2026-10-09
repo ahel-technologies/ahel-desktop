@@ -447,3 +447,61 @@
   padding-left: 8px;
   overflow: hidden;
 }
+
+/* Placeholders while the account check has not answered. */
+.skeleton {
+  background: var(--dsw-alias-interactive-bg-active);
+  animation: hosted-rail-pending 2s cubic-bezier(0.36, 0, 0.64, 1) infinite;
+}
+
+.switcherPending,
+.switcherRailPending {
+  flex: none;
+  box-sizing: border-box;
+  height: 36px;
+  border-radius: var(--dsw-radius-sm);
+}
+
+.switcherPending {
+  margin: 0 2px;
+}
+
+.switcherRailPending {
+  width: 36px;
+}
+
+.pending {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 32px;
+  margin: 0 2px;
+  padding: 0 10px 0 8px;
+}
+
+.collapsed .pending {
+  flex: none;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+}
+
+.pendingBar {
+  width: min(140px, 70%);
+  height: 10px;
+  border-radius: 4px;
+}
+
+@keyframes hosted-rail-pending {
+  0% { opacity: 1; }
+  40% { opacity: 0.55; }
+  80%, 100% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}

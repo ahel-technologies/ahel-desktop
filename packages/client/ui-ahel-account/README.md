@@ -22,7 +22,7 @@ The browser face of the ahel.ai account, in Ahel Desktop and in the hosted chat 
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount it after `dsh-ahel-account` on the Host. It mounts the Host's `ahelAccount`, `ahelCatalog` and `ahelTeam` Remote namespaces and keeps one live account view from the `watch` stream.
+Mount it after `dsh-ahel-account` on the Host. It mounts the Host's `ahelAccount`, `ahelCatalog` and `ahelTeam` Remote namespaces and keeps one live account view from the `watch` stream. Until the stream's first view arrives, the account menu is a busy placeholder with no Sign in, so a signed-in person never sees the signed-out entry while the Host starts.
 
 Settings > Models gets two rows. At the top, "Default model for this workspace" lists the metered models grouped by maker with their typical message price. The owner or a team lead picks the default, where new chats in ahel chat and Ahel Desktop start; everyone else sees it read-only. A default ahel.ai no longer lists shows its id-derived name with "(not in the list)". A refused save shows ahel.ai's sentence under the row. Signed out, or while ahel.ai does not report the setting, the row is hidden. Below the provider rows, the Ahel row shows the account and its Sign in button.
 

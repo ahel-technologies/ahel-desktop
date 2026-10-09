@@ -146,6 +146,29 @@ describe('keyed toolview hole through the real machinery', () => {
     await b.runtime.dispose()
   })
 
+  it('names Ahel connector calls in plain words and hides its plumbing reads unless they fail', async () => {
+    const card = { mcpApp: { v: 1, server: 'ahel', tool: 'installed', resourceUri: 'ui://ahel/apps.html', visibility: ['model'] } }
+    const b = await bench([
+      toolResult(3, 'inventory', 'mcp__ahel__installed', '{}'),
+      toolResult(4, 'explore', 'mcp__ahel__explore', '{"query":"Estonian companies registry","kind":"app"}'),
+      toolResult(5, 'carded', 'mcp__ahel__installed', '{}', { meta: card }),
+      toolResult(6, 'failed', 'mcp__ahel__get_started', '{}', { isError: true, content: [{ type: 'text', text: 'ahel.ai did not answer' }] }),
+    ])
+    b.slots.register({ name: 'tool.call.app' }, ({ callId }) => <div data-testid={`app-${callId}`} />)
+    const view = b.runtime.renderRoot()
+    const row = (id: string) => view.container.querySelector(`[data-chat-call-id="${id}"]`)
+    expect(row('inventory')).toBeNull()
+    expect(row('explore')?.textContent).toContain('Search apps')
+    expect(row('explore')?.textContent).toContain('Estonian companies registry')
+    // The card of a hidden call still shows, without a row above it.
+    expect(view.getByTestId('app-carded')).toBeTruthy()
+    expect(row('carded')?.textContent).toBe('')
+    expect(row('failed')?.textContent).toContain('Check your apps')
+    expect(view.container.textContent).not.toContain('mcp__ahel__')
+    expect(view.container.textContent).not.toContain('{}')
+    await b.runtime.dispose()
+  })
+
   it('renders Auto denial copy through the real machinery', async () => {
     const b = await bench([
       toolResult(

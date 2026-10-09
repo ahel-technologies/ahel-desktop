@@ -398,3 +398,13 @@
   font-size: 12px;
   line-height: 18px;
 }
+
+/* Before the first account view: the entry's place, nothing to press. */
+.trigger.pending {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.trigger.pending:hover {
+  background: transparent;
+}
