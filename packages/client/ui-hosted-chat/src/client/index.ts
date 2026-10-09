@@ -12,6 +12,8 @@
  * Only the hosted overlay (packages/bundle/web-app/hosted/chat.patch.yml)
  * mounts this package; the desktop and plain web profiles keep their sidebar.
  * The theme follows the ahel.ai account theme cookie (./account-theme.ts).
+ * A `?prompt=` text from ahel.ai's starters becomes a blank chat's composer
+ * draft once signed in, never sent (./prompt-draft.ts).
  */
 import type { Context } from '@ahel/cordis'
 import type { Issue, IssueRunState } from '@ahel/dsh-ahel-account/types'
@@ -34,6 +36,7 @@ import { BrandHomeLink, HostedGreeting, HostedHeroMark, HostedSubtitle } from '.
 import { HostedRail } from './Rail.tsx'
 import { cell, relay } from './observable.ts'
 import { type FollowState, watchChatScope } from './scope.ts'
+import { capturePromptDraft, takePromptDraft } from './prompt-draft.ts'
 import { en, NS, zh } from './locales.ts'
 
 export { APP_HOME, HELP_URL, INBOX_PANEL, NAV } from './Rail.tsx'
@@ -44,6 +47,8 @@ export type {
 } from './contract.ts'
 export type { HostedChatKey } from './locales.ts'
 export { chatScope, inChatScope, onlyDraft, watchChatScope } from './scope.ts'
+export { capturePromptDraft, MAX_PROMPT_DRAFT, PROMPT_DRAFT_KEY, PROMPT_PARAM, readPromptParam, takePromptDraft } from './prompt-draft.ts'
+export type { PromptPage, PromptParam } from './prompt-draft.ts'
 export type { ChatRow, ChatScope, ChatScopeDeps, FollowState } from './scope.ts'
 
 // The event @ahel/dsh-client-ui-issues declares and listens to; the chat column only emits it.
@@ -147,6 +152,8 @@ export function mergeWaiting(pages: readonly (readonly Issue[])[]): readonly Iss
 export function apply(ctx: Context): void {
   ctx.effect(() => ctx.locale.register(NS, { en, zh }), 'ui-hosted-chat: dictionaries')
   ctx.effect(() => followAccountTheme(ctx), 'ui-hosted-chat: the ahel.ai account theme')
+  // Before any chat opens: the address bar loses ?prompt= and the text waits in this tab for a blank chat.
+  capturePromptDraft(window)
 
   const account = relay<AhelAccountView | null>(null)
   const summary = relay<TeamSummaryState>(EMPTY_SUMMARY)
@@ -253,7 +260,8 @@ export function apply(ctx: Context): void {
     inner.effect(() => watchChatScope({
       account, summary, follow, sessions: inner.sessions.list,
       scopeSessions: filter => inner.uiWorkspace.scopeSessions(filter),
-      startChat: () => { inner.uiWorkspace.startSession() },
+      startChat: (options) => { inner.uiWorkspace.startSession(undefined, options) },
+      takeDraft: () => takePromptDraft(window),
     }), 'ui-hosted-chat: chats of the selected workspace')
   })
 

@@ -61,8 +61,9 @@
 # ahel_chat_workspace cookie names; a switch made in the chat is pinned on
 # ahel.ai. The account entry opens Chat settings. The brand links to
 # app.ahel.ai/app. The theme follows ahel.ai's `ahel.theme` cookie from the
-# first paint, and a theme change in the chat writes it back. Only this overlay
-# mounts it; the desktop and plain web sidebars stay as they are.
+# first paint, and a theme change in the chat writes it back. A `?prompt=`
+# text from ahel.ai's starters becomes a blank chat's draft, never sent. Only
+# this overlay mounts it; the desktop and plain web sidebars stay as they are.
 - insert:
     - id: ui-hosted-chat
       name: '@ahel/dsh-client-ui-hosted-chat'
