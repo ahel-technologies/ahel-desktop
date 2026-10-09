@@ -107,7 +107,7 @@ describe('MarkdownBody', () => {
 
   it('resolves cross-page references and math when the cumulative text reaches EOF', () => {
     const first = 'Read [the guide][guide].\n\nFirst.\n\nSecond.\n\nThird.\n\nFourth.'
-    const second = '\n[guide]: https://example.test/guide\n\nValue $x^2$.'
+    const second = '\n[guide]: https://example.test/guide\n\nValue \\(x^2\\).'
     const view = render(<MarkdownBody {...props(content([first], false))} />)
     view.rerender(<MarkdownBody {...props(content([first, second], false))} />)
     expect(view.container.querySelector('.katex')).toBeNull()

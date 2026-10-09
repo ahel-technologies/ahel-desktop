@@ -374,31 +374,22 @@ describe('web e2e: markdown tables fill the column, wide ones break out and scro
     expect(tripwire.pageErrors).toEqual([])
   }, 120_000)
 
-  it('reveals the wide table scrollbar on hover only', async () => {
+  it('keeps the wide table scrollable at rest without hover or focus', async () => {
     onTestFailed(() => saveFailureShot(page, 'web-e2e-markdown-wide-table-scrollbar'))
     await sweep()
     await settleAt(1680)
     const wide = page.locator('[class*="tableScroll"]', { hasText: WIDE_MARKER })
-    // Chromium never repaints state-conditioned scrollbar STYLES, so the
-    // hover reveal toggles overflow-x itself; the resting padding matches
-    // the bar height so the swap does not move anything below. Both are
-    // ordinary properties whose computed values follow :hover.
-    const overflowState = () => wide.evaluate(element => [
-      getComputedStyle(element).overflowX,
-      getComputedStyle(element).paddingBottom,
-    ].join(' '))
     // Park the pointer away and drop focus: the keyboard case above leaves
-    // the wrapper focused, and focus-visible also reveals the bar.
+    // the wrapper focused.
     await page.mouse.move(4, 4)
     await wide.evaluate((element) => { element.blur() })
-    await expect.poll(overflowState, { timeout: 5_000 }).toBe('hidden 5px')
-    // Resting hidden overflow keeps the scroll position reachable and intact.
-    expect(await wide.evaluate(element => element.scrollLeft)).toBeGreaterThanOrEqual(0)
-    await wide.hover()
-    await expect.poll(overflowState, { timeout: 5_000 }).toBe('scroll 0px')
-    // Pointer leaves: the bar rests hidden again.
-    await page.mouse.move(4, 4)
-    await expect.poll(overflowState, { timeout: 5_000 }).toBe('hidden 5px')
+    await expect.poll(() => wide.evaluate(element => getComputedStyle(element).overflowX), { timeout: 5_000 })
+      .toBe('auto')
+    await wide.evaluate((element) => { element.scrollLeft = 0 })
+    await wide.evaluate((element) => { element.scrollLeft = element.scrollWidth })
+    expect(await wide.evaluate(element => element.scrollLeft)).toBeGreaterThan(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth))
+      .toBeLessThanOrEqual(0)
     expect(tripwire.pageErrors).toEqual([])
   }, 120_000)
 

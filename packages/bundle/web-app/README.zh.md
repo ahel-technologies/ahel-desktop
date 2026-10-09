@@ -69,7 +69,7 @@ dsh --profile web --no-open --port 8080
 
 ### 按会话的 agent 设置
 
-每个浏览器会话使用随发行版交付的 `standard` preset：Ahel persona、当前时间、带 `/compact` 的上下文压缩，以及向用户提问工具。MCP 工具来自 Host 挂载的 MCP 客户端行，而不是来自 preset。从 Web 编辑器保存的修改会在 `$DSH_HOME/profiles/web/cordis.patch.yml` 中按 id 覆盖 preset 的插件。
+每个浏览器会话使用随发行版交付的 `standard` preset：Ahel persona（其 suffix 位于系统提示词最后一节，说明 Ahel 是面向公司的 AI 工作区，并要求模型绝不陈述或估算用户支付的总额，因为模型看不到模型用量）、当前时间、带 `/compact` 的上下文压缩，以及向用户提问工具。MCP 工具来自 Host 挂载的 MCP 客户端行，而不是来自 preset。从 Web 编辑器保存的修改会在 `$DSH_HOME/profiles/web/cordis.patch.yml` 中按 id 覆盖 preset 的插件。
 
 -----
 
