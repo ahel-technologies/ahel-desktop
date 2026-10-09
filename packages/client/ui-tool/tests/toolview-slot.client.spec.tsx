@@ -169,6 +169,21 @@ describe('keyed toolview hole through the real machinery', () => {
     await b.runtime.dispose()
   })
 
+  it('shows a failed Ahel call as one plain sentence and keeps the raw error for the expanded row', async () => {
+    const raw = 'nothing here has the id "knowledge:company-check"'
+    const b = await bench([
+      toolResult(3, 'missing', 'mcp__ahel__fetch', '{"id":"knowledge:company-check"}', { isError: true, content: [{ type: 'text', text: raw }] }),
+    ])
+    const view = b.runtime.renderRoot()
+    const row = view.container.querySelector('[data-chat-call-id="missing"]')
+    expect(row?.textContent).toContain('Read app details')
+    expect(row?.textContent).toContain("This step didn't work; open it for the details.")
+    expect(row?.textContent).not.toContain(raw)
+    fireEvent.click(view.getByRole('button', { name: /Read app details/ }))
+    expect(view.container.querySelector('[data-chat-call-id="missing"]')?.textContent).toContain(raw)
+    await b.runtime.dispose()
+  })
+
   it('renders Auto denial copy through the real machinery', async () => {
     const b = await bench([
       toolResult(

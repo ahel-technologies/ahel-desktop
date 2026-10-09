@@ -218,6 +218,12 @@ export interface ToolRowModel {
   output: string | null
   /** First line of the result text on an error row; null for every other state. */
   errorSummary: string | null
+  /**
+   * An Ahel connector call that failed: the collapsed row shows one plain
+   * sentence instead of the server's raw error text, which stays in `output`
+   * for the expanded row.
+   */
+  plainFailure: boolean
   /** Structured Auto-review denial identity; null for every ordinary result. */
   autoReviewDenial: AutoReviewDenial | null
   state: ToolRowState
@@ -402,6 +408,7 @@ export function toolRowModel(toolName: string, block: ToolCallBlock, cwd?: strin
     bodyRaw,
     output,
     errorSummary,
+    plainFailure: ahel !== undefined && state === 'error',
     autoReviewDenial: deriveAutoReviewDenial(block),
     state,
   }
