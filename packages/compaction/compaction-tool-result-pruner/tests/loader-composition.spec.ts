@@ -59,7 +59,54 @@ describe('compaction-tool-result-pruner real Loader composition', () => {
       thresholdChars: 100,
       headChars: 20,
       tailChars: 10,
+      earlierResults: { enabled: false, thresholdChars: 8192, keepChars: 2048 },
     })
+  })
+
+  it('reads the earlier-result knob from the Host environment', async () => {
+    root = await mkdtemp(join(tmpdir(), 'dsh-compact-tool-result-trim-loader-'))
+    const configPath = join(root, 'cordis.yml')
+    await writeFile(configPath, [
+      "- name: '@ahel/dsh-session-projection'",
+      "- name: '@ahel/dsh-token-meter'",
+      "- name: '@ahel/dsh-compaction-tool-result-pruner'",
+      '  config:',
+      '    earlierResults:',
+      '      enabled: !!js "process.env.DSH_TRIM_EARLIER_TOOL_RESULTS !== \'off\'"',
+      '',
+    ].join('\n'))
+    const load = async (): Promise<boolean> => {
+      const ctx = new Context()
+      context = ctx
+      ctx.baseUrl = pathToFileURL(root!).href + '/'
+      await ctx.plugin(Loader)
+      ctx.loader.builtins.include = Include
+      ctx.loader.internal = {
+        version: 'v2',
+        async import(specifier: string) {
+          if (specifier === '@ahel/dsh-session-projection') return SessionProjectionRegistry
+          if (specifier === '@ahel/dsh-token-meter') return TokenMeter
+          if (specifier === '@ahel/dsh-compaction-tool-result-pruner') return ToolResultPruner
+          throw new Error(`unexpected Loader import: ${specifier}`)
+        },
+      } as unknown as NonNullable<typeof ctx.loader.internal>
+      await ctx.loader.create({ name: 'cordis:include', config: { path: pathToFileURL(configPath).href } })
+      await ctx.loader.await()
+      const enabled = ctx.toolResultPruner.config.earlierResults.enabled
+      await ctx.fiber.dispose()
+      context = undefined
+      return enabled
+    }
+    const previous = process.env.DSH_TRIM_EARLIER_TOOL_RESULTS
+    try {
+      delete process.env.DSH_TRIM_EARLIER_TOOL_RESULTS
+      expect(await load()).toBe(true)
+      process.env.DSH_TRIM_EARLIER_TOOL_RESULTS = 'off'
+      expect(await load()).toBe(false)
+    } finally {
+      if (previous === undefined) delete process.env.DSH_TRIM_EARLIER_TOOL_RESULTS
+      else process.env.DSH_TRIM_EARLIER_TOOL_RESULTS = previous
+    }
   })
 
   it('rejects stale config after plugin schema normalization', async () => {

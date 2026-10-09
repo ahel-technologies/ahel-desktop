@@ -9,8 +9,8 @@
   en: c33be357bd396480
   zh: 24ca01f2f3f9ee47
 /ahel-dsh-compaction-tool-result-pruner/summary:
-  en: a711510ce8293003
-  zh: 0150d10c05bc2e59
+  en: 51b46c037a00bd23
+  zh: b5822a5ae7070bc2
 /ahel-dsh-compaction-tool-result-pruner/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
@@ -24,11 +24,14 @@
   en: a5cb5c94edcd91e3
   zh: ed95adc91d11bbda
 /ahel-dsh-compaction-tool-result-pruner/use-this-package/setting-the-size-limits:
-  en: 9a357040ff261f6e
-  zh: 7434bb64ca9bd094
+  en: b3b2edeacfa8a749
+  zh: 6ef81a553d25ea48
 /ahel-dsh-compaction-tool-result-pruner/use-this-package/when-trimming-runs:
-  en: d72e0074faebe148
-  zh: dfb484a385a7ebbf
+  en: 8ecf35480de2a589
+  zh: fca63a5adbc5414b
+/ahel-dsh-compaction-tool-result-pruner/use-this-package/trimming-results-the-model-already-saw:
+  en: 07586355e72304e3
+  zh: f48b2a74c7629db2
 /ahel-dsh-compaction-tool-result-pruner/understand-the-implementation:
   en: 57aaa53880042873
   zh: 667f54624411c37d
@@ -39,8 +42,8 @@
   en: 9813749e4f016897
   zh: f2b2b5d6e5e8977a
 /ahel-dsh-compaction-tool-result-pruner/understand-the-implementation/source-map:
-  en: 4544e91902960a0e
-  zh: 0b07cb7e3d96267b
+  en: d6323a3c2e2433af
+  zh: 7c00bec9ee1a4dc1
 /ahel-dsh-compaction-tool-result-pruner/further-exploration:
   en: 3253e154e7610bbd
   zh: ba28c7411fd5c8bb
@@ -59,6 +62,18 @@
 /ahel-dsh-compaction-tool-result-pruner/model-experience/pruned-tool-result/kv-cache-effect:
   en: aac7de507412ba39
   zh: bdd8f391ad9c9a81
+/ahel-dsh-compaction-tool-result-pruner/model-experience/trimmed-earlier-result:
+  en: 4459a826e297e5f0
+  zh: 9a1057a7413c1f9b
+/ahel-dsh-compaction-tool-result-pruner/model-experience/trimmed-earlier-result/what-the-model-sees:
+  en: 6cb6a89ca1211f04
+  zh: cc0536b4d25ac96a
+/ahel-dsh-compaction-tool-result-pruner/model-experience/trimmed-earlier-result/token-effect:
+  en: 018dff5e1d3fe7b2
+  zh: 95b8f7241e6ad477
+/ahel-dsh-compaction-tool-result-pruner/model-experience/trimmed-earlier-result/kv-cache-effect:
+  en: 9c7307e149b3198d
+  zh: c85de1f5d39b907a
 /ahel-dsh-compaction-tool-result-pruner/known-limitations-and-deferred-work:
   en: 2a7be98dc032e9bc
   zh: d6710b1130722d12

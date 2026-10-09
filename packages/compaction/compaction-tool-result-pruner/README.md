@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-compaction-tool-result-pruner` keeps oversized tool output from filling the context window. Once a compaction trigger qualifies, it replaces over-budget text with a bounded head, a short "middle pruned" marker, and a bounded tail; below-pressure conversations remain unchanged. The complete original result remains in the session log for exact replay and inspection. Trimming makes no model call and may relieve enough token pressure to skip summarization. Character budgets only approximate token use; the token meter determines whether pressure was relieved.
+`dsh-compaction-tool-result-pruner` keeps oversized tool output from filling the context window. Once a compaction trigger qualifies, it replaces over-budget text with a bounded head, a short "middle pruned" marker, and a bounded tail; below-pressure conversations remain unchanged. The complete original result remains in the session log for exact replay and inspection. Trimming makes no model call and may relieve enough token pressure to skip summarization. Character budgets only approximate token use; the token meter determines whether pressure was relieved. Optionally, it also trims large results the model already saw before every step, so a multi-step turn stops re-sending them in full.
 
 ## Table of Contents
 
@@ -52,12 +52,19 @@ All settings are optional; the defaults trim any result with more than 8,192 tex
 | `thresholdChars` | `8192` | Trim when combined text exceeds this many Unicode code points. |
 | `headChars` | `4096` | Leading Unicode code points retained. |
 | `tailChars` | `1024` | Trailing Unicode code points retained. |
+| `earlierResults.enabled` | `false` | Trim large results the model already saw before every step. |
+| `earlierResults.thresholdChars` | `8192` | Trim a seen result whose text exceeds this many Unicode code points. |
+| `earlierResults.keepChars` | `2048` | Leading Unicode code points a trimmed result keeps ahead of its note. |
 
 Character counts are Unicode code points, so slicing never splits an emoji pair, though a multi-character grapheme can still be cut. The head plus the marker plus the tail must fit within the threshold, so a valid configuration trims every over-budget result without growth or repeated rewriting. An unknown setting rejects the plugin at construction.
 
 ### When trimming runs
 
 Trimming only runs when a compaction trigger qualifies: `dsh-compaction-basic` invokes it after pressure or overflow is confirmed, before it selects what to condense. Below pressure nothing is trimmed, and trimming itself makes no model call.
+
+### Trimming results the model already saw
+
+With `earlierResults.enabled`, the pruner runs on `agent/pre-step` before every step, independently of compaction pressure. A result is seen once an assistant message follows it; the results after the latest assistant message are the next request's fresh input and are always sent whole. A seen result whose text exceeds `earlierResults.thresholdChars` keeps its first `earlierResults.keepChars` code points followed by `[trimmed: X KB more; call the tool again for the full result]`. Error results, results with a non-text block, and cards that still ask the person (a question, approval, or confirm card, or text naming an `interaction_id`) are never trimmed. Each trim is the same logged single-node replacement the compaction prune uses: the original event, its card, and the Web transcript stay unchanged. A trim is written once, so every later request sends identical bytes for that result. The Ahel standard preset turns it on; `DSH_TRIM_EARLIER_TOOL_RESULTS=off` in the Host environment turns it off.
 
 -----
 
@@ -85,9 +92,9 @@ Pruning measures `text` blocks by Unicode code point (non-text blocks cost zero)
 
 | File | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | Plugin entry: `ToolResultPruner` service, `pruneSession` / `pruneContent` / `measureContent` |
-| [`src/config.ts`](src/config.ts) | `PRUNE_MARKER`, defaults, code-point counting, budget validation |
-| [`src/types.ts`](src/types.ts) | `ToolResultPruneConfig`, `ResolvedConfig`, `PrunedEntry`, `PruneResult` |
+| [`src/index.ts`](src/index.ts) | Plugin entry: `ToolResultPruner` service, `pruneSession` / `pruneContent` / `measureContent`, `trimEarlierResults` / `trimContent` and the `agent/pre-step` listener |
+| [`src/config.ts`](src/config.ts) | `PRUNE_MARKER`, `trimNote`, defaults, code-point counting, budget validation |
+| [`src/types.ts`](src/types.ts) | `ToolResultPruneConfig`, `EarlierResultTrimConfig`, `ResolvedConfig`, `PrunedEntry`, `PruneResult` |
 
 </details>
 
@@ -122,6 +129,20 @@ Each rewritten tool result has at most `thresholdChars` text code points. Prunin
 #### KV Cache effect
 
 Replacing an earlier result invalidates reuse from the first changed token. The pruned prefix is eligible for reuse while its route, envelope, and preceding history remain identical.
+
+### Trimmed earlier result
+
+#### What the model sees
+
+From the second request after a result arrived, the model sees its first `earlierResults.keepChars` code points and the line `[trimmed: X KB more; call the tool again for the full result]`, where X is the removed size in whole KB rounded up. The request right after the call still carries the whole result.
+
+#### Token effect
+
+Each trimmed result costs at most `earlierResults.keepChars` code points plus the note on every later step instead of its full size.
+
+#### KV Cache effect
+
+A result is trimmed exactly once, in the first request after the one that delivered it, and stays byte-identical afterwards. That request reuses the prefix up to the result and rewrites the cache from there; later requests reuse it in full. Providers with automatic prefix caching match up to the trimmed result directly. For Anthropic explicit caching, `dsh-llm-pi-ai` writes an extra breakpoint ahead of each request's fresh results, so the next request finds an entry that ends before the result it trims.
 
 ## Known Limitations and Deferred Work
 

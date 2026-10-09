@@ -6823,6 +6823,9 @@ importers:
       '@ahel/cordis-plugin-loader':
         specifier: workspace:~
         version: link:../../../vendor/loader
+      '@ahel/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
       '@ahel/dsh-compaction':
         specifier: workspace:*
         version: link:../compaction

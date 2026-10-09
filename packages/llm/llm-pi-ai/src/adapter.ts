@@ -58,6 +58,7 @@ import type {
 import type { AttachmentStore, ImageAttachmentRef } from '@ahel/dsh-attachment'
 import { idleWatchdog, timeoutOf } from '@ahel/dsh-timeout'
 import type { ResolvedPiAiProviderProfile } from './config.ts'
+import { markBeforeFreshToolResults } from './cache-breakpoint.ts'
 import { toPiContext } from './context.ts'
 import { createModels, getSupportedThinkingLevels } from './models.ts'
 import { toStreamChunks } from './stream.ts'
@@ -142,15 +143,21 @@ function profileOptions(
     ...profile.websocketConnectTimeoutMs === undefined ? {} : { websocketConnectTimeoutMs: profile.websocketConnectTimeoutMs },
     // The agent recovery layer owns visible attempts; one adapter call is one SDK attempt.
     maxRetries: 0,
-    ...profile.body === undefined ? {} : { onPayload: mergeBody(profile.body) },
+    onPayload: finishPayload(profile.body),
   }
 }
 
-/** Merge a profile's extra body fields over the payload pi-ai built. */
-function mergeBody(body: Readonly<Record<string, unknown>>): NonNullable<SimpleStreamOptions['onPayload']> {
-  return payload => typeof payload === 'object' && payload !== null && !Array.isArray(payload)
-    ? { ...payload, ...body }
-    : undefined
+/**
+ * Merge a profile's extra body fields over the payload pi-ai built, then add
+ * the prompt-cache breakpoint ahead of fresh tool results.
+ */
+function finishPayload(body: Readonly<Record<string, unknown>> | undefined): NonNullable<SimpleStreamOptions['onPayload']> {
+  return (payload, model) => {
+    const merged = body !== undefined && typeof payload === 'object' && payload !== null && !Array.isArray(payload)
+      ? { ...payload, ...body }
+      : payload
+    return markBeforeFreshToolResults(model.api, merged)
+  }
 }
 
 /**

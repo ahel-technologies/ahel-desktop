@@ -233,6 +233,44 @@ measureContent(blocks: readonly ContentBlock[]): number
 pruneContent(blocks: readonly ContentBlock[]): ContentBlock[] | null
 
 /**
+ * Keep the first `earlierResults.keepChars` text code points of an
+ * over-threshold all-text result and end it with {@link trimNote}.
+ * @param blocks - original tool-result content.
+ * @returns trimmed content, or `null` when the result is within the
+ * threshold or carries a non-text block.
+ */
+trimContent(blocks: readonly ContentBlock[]): ContentBlock[] | null
+
+/**
+ * Record one committed event for {@link trimEarlierResults}: an original
+ * `tool/result` waits until an `assistant/message` follows it. The
+ * `session/event` listener feeds every event while trimming is enabled.
+ * @param session - the session whose log grew.
+ * @param event - the appended event.
+ */
+observeEvent(session: Session, event: SessionEvent): void
+
+/**
+ * Trim every large tool result the model already saw: an observed
+ * original `tool/result` that an `assistant/message` follows. Results
+ * after the latest assistant message are the next request's fresh input
+ * and stay whole. Each observed result is decided once, when it is first
+ * seen: error results, results with non-text blocks, results no longer on
+ * the surface, and pending question or confirm cards are never trimmed.
+ * Each trim is one logged single-node replacement, preceded by its
+ * `compaction/prune` shadow price, that changes only the message content;
+ * the original event and its card stay in the log. A replacement is fixed
+ * once written, so every later request sends the same bytes for that
+ * result. Results committed before this service started are not observed
+ * and stay as logged.
+ * @param session - session whose current surface is trimmed.
+ * @returns landed replacements and aggregate Unicode-code-point savings.
+ * @throws when the session rejects a replacement; replacements committed
+ * earlier in the pass remain durable.
+ */
+trimEarlierResults(session: Session): PruneResult
+
+/**
  * Prune every over-budget tool result from one stable current-surface snapshot.
  * Each replacement preserves the complete event data except for `content`,
  * cites the shadowed node so replay can recover the replacement input, and is
@@ -247,7 +285,7 @@ pruneContent(blocks: readonly ContentBlock[]): ContentBlock[] | null
 pruneSession(session: Session): PruneResult
 ```
 
-Types: [ContentBlock](llm-streaming.zh.md) · [Session](session.zh.md)
+Types: [ContentBlock](llm-streaming.zh.md) · [Session](session.zh.md) · [SessionEvent](session.zh.md)
 
 Source: [`packages/compaction/compaction-tool-result-pruner/src/index.ts`](../../packages/compaction/compaction-tool-result-pruner/src/index.ts)
 

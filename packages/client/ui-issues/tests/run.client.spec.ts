@@ -3,7 +3,7 @@ import type { IssueRunReport } from '@ahel/dsh-ahel-account/types'
 import { makeTranslate } from '@ahel/dsh-client-test-runtime'
 import { en } from '../src/client/locales.ts'
 import { runSeed, type Translate } from '../src/client/model.ts'
-import { startRun, type RunEntry, type RunHost, type RunSession, type RunWait } from '../src/client/run.ts'
+import { lastCardWait, startRun, type RunEntry, type RunHost, type RunSession, type RunWait } from '../src/client/run.ts'
 import { RemoteError } from '@ahel/dsh-typert-protocol'
 import { createIssuesFeed } from '../src/client/feed.ts'
 import { backendOf, ISSUES } from './fixture.client.ts'
@@ -190,4 +190,14 @@ it('a turn that ends on a connector question reports waiting_input; a card alrea
   asked.card({ view: 'question', interaction: { id: 'q1', status: 'completed' } })
   asked.setRunning(false)
   expect(reports.at(-1)?.state).toBe('finished')
+})
+
+it('reads the wait from the last original card, not from a replacement that re-states an older card', () => {
+  const pending = { view: 'question', mode: 'confirm', interaction: { status: 'pending' } }
+  const entries: RunEntry[] = [
+    { event: { type: 'tool/result', surfaceOp: 'append', data: { meta: { mcpApp: { v: 1, structuredContent: { rows: [] } } } } } },
+    { event: { type: 'tool/result', surfaceOp: 'append', data: { meta: { mcpApp: { v: 1, structuredContent: pending } } } } },
+    { event: { type: 'tool/result', surfaceOp: { op: 'replace', startSeq: 0, endSeq: 0 }, data: { meta: { mcpApp: { v: 1, structuredContent: { rows: [] } } } } } },
+  ]
+  expect(lastCardWait(entries)).toBe('waiting_approval')
 })

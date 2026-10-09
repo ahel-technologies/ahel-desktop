@@ -3708,6 +3708,24 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'pruned content, or `null` when the text is within budget.',
       },
       {
+        signature: 'trimContent(blocks: readonly ContentBlock[]): ContentBlock[] | null',
+        description: 'Keep the first `earlierResults.keepChars` text code points of an over-threshold all-text result and end it with trimNote.',
+        parameters: [{ name: 'blocks', description: 'original tool-result content.' }],
+        returns: 'trimmed content, or `null` when the result is within the threshold or carries a non-text block.',
+      },
+      {
+        signature: 'observeEvent(session: Session, event: SessionEvent): void',
+        description: 'Record one committed event for trimEarlierResults: an original `tool/result` waits until an `assistant/message` follows it. The `session/event` listener feeds every event while trimming is enabled.',
+        parameters: [{ name: 'session', description: 'the session whose log grew.' }, { name: 'event', description: 'the appended event.' }],
+      },
+      {
+        signature: 'trimEarlierResults(session: Session): PruneResult',
+        description: 'Trim every large tool result the model already saw: an observed original `tool/result` that an `assistant/message` follows. Results after the latest assistant message are the next request\'s fresh input and stay whole. Each observed result is decided once, when it is first seen: error results, results with non-text blocks, results no longer on the surface, and pending question or confirm cards are never trimmed. Each trim is one logged single-node replacement, preceded by its `compaction/prune` shadow price, that changes only the message content; the original event and its card stay in the log. A replacement is fixed once written, so every later request sends the same bytes for that result. Results committed before this service started are not observed and stay as logged.',
+        parameters: [{ name: 'session', description: 'session whose current surface is trimmed.' }],
+        returns: 'landed replacements and aggregate Unicode-code-point savings.',
+        throws: ['when the session rejects a replacement; replacements committed earlier in the pass remain durable.'],
+      },
+      {
         signature: 'pruneSession(session: Session): PruneResult',
         description: 'Prune every over-budget tool result from one stable current-surface snapshot. Each replacement preserves the complete event data except for `content`, cites the shadowed node so replay can recover the replacement input, and is immediately preceded by a `compaction/prune` shadow-price event pricing the shadowed node through the injected token meter, so pure consumers can subtract it without per-node state.',
         parameters: [{ name: 'session', description: 'session whose current surface is rewritten.' }],

@@ -146,6 +146,7 @@ Config 更新严格验证发生变化的 provider。初始加载将已存储的�
 | [`src/models.ts`](src/models.ts) | 基于 pi-ai 窄入口的 model collection、静态 provider 与 reasoning level |
 | [`src/provider.ts`](src/provider.ts) | 受支持协议表与提供方构建 |
 | [`src/context.ts`](src/context.ts) | Harness 到 pi-ai 的上下文转换、图片处理、回放恢复 |
+| [`src/cache-breakpoint.ts`](src/cache-breakpoint.ts) | 新工具结果之前的 Anthropic prompt cache 断点 |
 | [`src/stream.ts`](src/stream.ts) | 把 pi-ai 事件转换为 harness `StreamChunk` 值 |
 | [`src/replay.ts`](src/replay.ts) | 带版本的 `ReplayEnvelope` 存储与校验 |
 | [`src/discovery.ts`](src/discovery.ts) | 面向配置界面的端点询问 |
@@ -192,7 +193,7 @@ Config 更新严格验证发生变化的 provider。初始加载将已存储的�
 
 #### KV Cache 影响
 
-转换保持逻辑请求顺序，图片句柄与卸载占位符则会添加模型可见文本。即使附件身份与请求字节保持稳定，执行世界路径变化也会改写历史句柄，并可能从该图片起阻止复用。更换适配器实例、提供方、模型或其他上游 token 具有相同的后缀影响。一次省略决策会把较早图片换成占位文本，因此复用在该消息处结束；省略永不回退，此后前缀保持稳定。
+转换保持逻辑请求顺序，图片句柄与卸载占位符则会添加模型可见文本。即使附件身份与请求字节保持稳定，执行世界路径变化也会改写历史句柄，并可能从该图片起阻止复用。更换适配器实例、提供方、模型或其他上游 token 具有相同的后缀影响。一次省略决策会把较早图片换成占位文本，因此复用在该消息处结束；省略永不回退，此后前缀保持稳定。当 pi-ai 标记 Anthropic `cache_control` 断点且请求以工具结果结尾时，适配器会在这些结果之前最后一个含文本的块上再加一个断点（Messages API 中为助手回合的最后一个 text 或 `tool_use` 块），不超过四个断点的上限，使之后修剪这些结果的请求仍能读取它们之前的已缓存历史。
 
 ### 提供方响应
 
