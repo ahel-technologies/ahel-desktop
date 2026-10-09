@@ -3714,8 +3714,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'trimmed content, or `null` when the result is within the threshold or carries a non-text block.',
       },
       {
+        signature: 'observeEvent(session: Session, event: SessionEvent): void',
+        description: 'Record one committed event for trimEarlierResults: an original `tool/result` waits until an `assistant/message` follows it. The `session/event` listener feeds every event while trimming is enabled.',
+        parameters: [{ name: 'session', description: 'the session whose log grew.' }, { name: 'event', description: 'the appended event.' }],
+      },
+      {
         signature: 'trimEarlierResults(session: Session): PruneResult',
-        description: 'Trim every large tool result the model already saw: a `tool/result` surface node before the latest `assistant/message` node. Results after it are the next request\'s fresh input and stay whole. Error results, replacements, results with non-text blocks, and pending question or confirm cards are never trimmed. Each trim is one logged single-node replacement, preceded by its `compaction/prune` shadow price, that changes only the message content; the original event and its card stay in the log. A replacement is fixed once written, so every later request sends the same bytes for that result.',
+        description: 'Trim every large tool result the model already saw: an observed original `tool/result` that an `assistant/message` follows. Results after the latest assistant message are the next request\'s fresh input and stay whole. Each observed result is decided once, when it is first seen: error results, results with non-text blocks, results no longer on the surface, and pending question or confirm cards are never trimmed. Each trim is one logged single-node replacement, preceded by its `compaction/prune` shadow price, that changes only the message content; the original event and its card stay in the log. A replacement is fixed once written, so every later request sends the same bytes for that result. Results committed before this service started are not observed and stay as logged.',
         parameters: [{ name: 'session', description: 'session whose current surface is trimmed.' }],
         returns: 'landed replacements and aggregate Unicode-code-point savings.',
         throws: ['when the session rejects a replacement; replacements committed earlier in the pass remain durable.'],

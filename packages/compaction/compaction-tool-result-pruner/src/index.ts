@@ -44,6 +44,12 @@ interface SnapshotCandidate {
   readonly event: SessionEvent<'tool/result'>
 }
 
+/** Original tool results the model has not seen yet, and the latest assistant message. */
+interface AwaitingSight {
+  readonly results: Map<SessionSeq, SessionEvent<'tool/result'>>
+  lastAssistant: SessionSeq | undefined
+}
+
 /** Deterministic head/middle/tail pruning for current tool-result surface nodes. */
 export class ToolResultPruner extends Service {
   // The token meter prices each shadowed node for its logged shadow-price
@@ -64,10 +70,14 @@ export class ToolResultPruner extends Service {
   /** Resolved and immutable character budgets. */
   readonly config: ResolvedConfig
 
+  /** Per-session results committed since this service started and not yet decided. */
+  private readonly awaitingSight = new WeakMap<Session, AwaitingSight>()
+
   constructor(ctx: Context, config: ToolResultPruneConfig = {}) {
     super(ctx, 'toolResultPruner')
     this.config = resolveConfig(config)
     if (this.config.earlierResults.enabled) {
+      ctx.on('session/event', (session, event) => { this.observeEvent(session, event) })
       ctx.on('agent/pre-step', async ({ agent, signal }, next) => {
         if (!signal.aborted) {
           try {
@@ -173,40 +183,52 @@ export class ToolResultPruner extends Service {
   }
 
   /**
-   * Trim every large tool result the model already saw: a `tool/result`
-   * surface node before the latest `assistant/message` node. Results after
-   * it are the next request's fresh input and stay whole. Error results,
-   * replacements, results with non-text blocks, and pending question or
-   * confirm cards are never trimmed. Each trim is one logged single-node
-   * replacement, preceded by its `compaction/prune` shadow price, that
-   * changes only the message content; the original event and its card stay
-   * in the log.
-   * A replacement is fixed once written, so every later request sends the
-   * same bytes for that result.
+   * Record one committed event for {@link trimEarlierResults}: an original
+   * `tool/result` waits until an `assistant/message` follows it. The
+   * `session/event` listener feeds every event while trimming is enabled.
+   * @param session - the session whose log grew.
+   * @param event - the appended event.
+   */
+  observeEvent(session: Session, event: SessionEvent): void {
+    let tracked = this.awaitingSight.get(session)
+    if (tracked === undefined) {
+      tracked = { results: new Map(), lastAssistant: undefined }
+      this.awaitingSight.set(session, tracked)
+    }
+    if (event.type === 'tool/result' && event.surfaceOp === 'append') tracked.results.set(event.seq, event)
+    else if (event.type === 'assistant/message') tracked.lastAssistant = event.seq
+  }
+
+  /**
+   * Trim every large tool result the model already saw: an observed
+   * original `tool/result` that an `assistant/message` follows. Results
+   * after the latest assistant message are the next request's fresh input
+   * and stay whole. Each observed result is decided once, when it is first
+   * seen: error results, results with non-text blocks, results no longer on
+   * the surface, and pending question or confirm cards are never trimmed.
+   * Each trim is one logged single-node replacement, preceded by its
+   * `compaction/prune` shadow price, that changes only the message content;
+   * the original event and its card stay in the log. A replacement is fixed
+   * once written, so every later request sends the same bytes for that
+   * result. Results committed before this service started are not observed
+   * and stay as logged.
    * @param session - session whose current surface is trimmed.
    * @returns landed replacements and aggregate Unicode-code-point savings.
    * @throws when the session rejects a replacement; replacements committed
    * earlier in the pass remain durable.
    */
   trimEarlierResults(session: Session): PruneResult {
-    const nodes = session.surface.nodes
-    let seenEnd = -1
-    for (let index = nodes.length - 1; index >= 0; index--) {
-      // Existing Session history read; surface seqs are validated log references.
-      // oxlint-disable-next-line typescript/no-deprecated, typescript/no-non-null-assertion
-      if (session.eventAt(nodes[index]!)?.type === 'assistant/message') {
-        seenEnd = index
-        break
-      }
-    }
-    const candidates: SnapshotCandidate[] = []
-    for (const seq of nodes.slice(0, Math.max(0, seenEnd))) {
-      // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
-      const event = session.eventAt(seq)
-      if (event?.type === 'tool/result' && isTrimmable(event)) candidates.push({ seq, event })
-    }
+    const tracked = this.awaitingSight.get(session)
     const pruned: PrunedEntry[] = []
     let charsRemoved = 0
+    if (tracked?.lastAssistant === undefined) return { pruned, charsRemoved }
+    const nodes = new Set(session.surface.nodes)
+    const candidates: SnapshotCandidate[] = []
+    for (const [seq, event] of tracked.results) {
+      if (seq > tracked.lastAssistant) continue
+      tracked.results.delete(seq)
+      if (nodes.has(seq) && isTrimmable(event)) candidates.push({ seq, event })
+    }
     for (const { seq, event } of candidates) {
       const original = session.deriveEventMessage(event) as ToolResultMessage
       const content = this.trimContent(original.content)
@@ -298,12 +320,9 @@ export class ToolResultPruner extends Service {
   }
 }
 
-/**
- * Whether one original tool result may be trimmed once the model has seen it:
- * not a replacement, not an error, and not a card still asking the person.
- */
+/** Whether one original tool result may be trimmed once the model has seen it: not an error, and not a card still asking the person. */
 function isTrimmable(event: SessionEvent<'tool/result'>): boolean {
-  if (event.surfaceOp !== 'append' || event.data.message.isError === true || event.data.error !== undefined) return false
+  if (event.data.message.isError === true || event.data.error !== undefined) return false
   return !asksThePerson(event.data.meta) && !event.data.message.content.some(block => block.type === 'text' && block.text.includes('interaction_id'))
 }
 

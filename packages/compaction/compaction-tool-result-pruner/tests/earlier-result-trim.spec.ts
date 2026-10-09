@@ -10,11 +10,22 @@ import ToolResultPruner, { trimNote } from '@ahel/dsh-compaction-tool-result-pru
 
 const MODEL = 'test-model'
 
-function service(enabled = true): ToolResultPruner {
+function service(): ToolResultPruner {
   const ctx = new Context()
   new SessionProjectionRegistry(ctx)
   void new TokenMeter(ctx)
-  return new ToolResultPruner(ctx, { earlierResults: { enabled, thresholdChars: 200, keepChars: 40 } })
+  return new ToolResultPruner(ctx, { earlierResults: { enabled: true, thresholdChars: 200, keepChars: 40 } })
+}
+
+const observed = new WeakMap<Session, number>()
+
+/** Feed the events appended since the last call, as the `session/event` listener does, then trim. */
+function trim(pruner: ToolResultPruner, session: Session): ReturnType<ToolResultPruner['trimEarlierResults']> {
+  const events = session.snapshotEvents()
+  for (const event of events.slice(observed.get(session) ?? 0)) pruner.observeEvent(session, event)
+  const result = pruner.trimEarlierResults(session)
+  observed.set(session, session.snapshotEvents().length)
+  return result
 }
 
 /** Append one model step that calls a tool and records its result; returns the result seq. */
@@ -71,7 +82,7 @@ describe('earlier tool-result trimming', () => {
     toolStep(session, 1, 'seen', text('A'))
     toolStep(session, 2, 'fresh', text('B'))
 
-    const result = service().trimEarlierResults(session)
+    const result = trim(service(), session)
 
     expect(result.pruned.map(entry => entry.callId)).toEqual([ToolCallId('seen')])
     expect(sent(session, 'seen')).toBe(`${'A'.repeat(40)}${trimNote(960)}`)
@@ -84,14 +95,14 @@ describe('earlier tool-result trimming', () => {
     const pruner = service()
     toolStep(session, 1, 'one', text('A'))
     toolStep(session, 2, 'two', text('B'))
-    pruner.trimEarlierResults(session)
+    trim(pruner, session)
     const firstTrim = sent(session, 'one')
     toolStep(session, 3, 'three', text('C'))
-    const second = pruner.trimEarlierResults(session)
+    const second = trim(pruner, session)
 
     expect(second.pruned.map(entry => entry.callId)).toEqual([ToolCallId('two')])
     expect(sent(session, 'one')).toBe(firstTrim)
-    expect(pruner.trimEarlierResults(session)).toEqual({ pruned: [], charsRemoved: 0 })
+    expect(trim(pruner, session)).toEqual({ pruned: [], charsRemoved: 0 })
     const replay = Session.create(session.id, session.snapshotEvents())
     expect(replay.deriveMessages()).toEqual(session.deriveMessages())
   })
@@ -108,7 +119,7 @@ describe('earlier tool-result trimming', () => {
     }, { surfaceOp: 'append' })
     session.append('step/end', { turn: 1, step: 2 })
 
-    expect(service().trimEarlierResults(session).pruned.map(entry => entry.callId)).toEqual([ToolCallId('last')])
+    expect(trim(service(), session).pruned.map(entry => entry.callId)).toEqual([ToolCallId('last')])
   })
 
   it('never trims errors, cards that ask the person, non-text results, or short results', () => {
@@ -124,7 +135,7 @@ describe('earlier tool-result trimming', () => {
     toolStep(session, 7, 'card', text('K'), { meta: { mcpApp: { v: 1, server: 'ahel', tool: 'use', resourceUri: 'ui://ahel/app.html', visibility: ['model'], structuredContent: { rows: [] } } } })
     toolStep(session, 8, 'fresh', text('F'))
 
-    expect(service().trimEarlierResults(session).pruned.map(entry => entry.callId)).toEqual([ToolCallId('card')])
+    expect(trim(service(), session).pruned.map(entry => entry.callId)).toEqual([ToolCallId('card')])
   })
 
   it('keeps the stored transcript: originals stay and replacements change only the text', () => {
@@ -134,7 +145,7 @@ describe('earlier tool-result trimming', () => {
     toolStep(session, 2, 'fresh', text('B'))
     const before = structuredClone(session.snapshotEvents())
 
-    const { pruned } = service().trimEarlierResults(session)
+    const { pruned } = trim(service(), session)
 
     const after = session.snapshotEvents()
     expect(after.slice(0, before.length)).toEqual(before)

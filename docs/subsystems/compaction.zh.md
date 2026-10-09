@@ -242,16 +242,27 @@ pruneContent(blocks: readonly ContentBlock[]): ContentBlock[] | null
 trimContent(blocks: readonly ContentBlock[]): ContentBlock[] | null
 
 /**
- * Trim every large tool result the model already saw: a `tool/result`
- * surface node before the latest `assistant/message` node. Results after
- * it are the next request's fresh input and stay whole. Error results,
- * replacements, results with non-text blocks, and pending question or
- * confirm cards are never trimmed. Each trim is one logged single-node
- * replacement, preceded by its `compaction/prune` shadow price, that
- * changes only the message content; the original event and its card stay
- * in the log.
- * A replacement is fixed once written, so every later request sends the
- * same bytes for that result.
+ * Record one committed event for {@link trimEarlierResults}: an original
+ * `tool/result` waits until an `assistant/message` follows it. The
+ * `session/event` listener feeds every event while trimming is enabled.
+ * @param session - the session whose log grew.
+ * @param event - the appended event.
+ */
+observeEvent(session: Session, event: SessionEvent): void
+
+/**
+ * Trim every large tool result the model already saw: an observed
+ * original `tool/result` that an `assistant/message` follows. Results
+ * after the latest assistant message are the next request's fresh input
+ * and stay whole. Each observed result is decided once, when it is first
+ * seen: error results, results with non-text blocks, results no longer on
+ * the surface, and pending question or confirm cards are never trimmed.
+ * Each trim is one logged single-node replacement, preceded by its
+ * `compaction/prune` shadow price, that changes only the message content;
+ * the original event and its card stay in the log. A replacement is fixed
+ * once written, so every later request sends the same bytes for that
+ * result. Results committed before this service started are not observed
+ * and stay as logged.
  * @param session - session whose current surface is trimmed.
  * @returns landed replacements and aggregate Unicode-code-point savings.
  * @throws when the session rejects a replacement; replacements committed
@@ -274,7 +285,7 @@ trimEarlierResults(session: Session): PruneResult
 pruneSession(session: Session): PruneResult
 ```
 
-Types: [ContentBlock](llm-streaming.zh.md) · [Session](session.zh.md)
+Types: [ContentBlock](llm-streaming.zh.md) · [Session](session.zh.md) · [SessionEvent](session.zh.md)
 
 Source: [`packages/compaction/compaction-tool-result-pruner/src/index.ts`](../../packages/compaction/compaction-tool-result-pruner/src/index.ts)
 
