@@ -236,6 +236,7 @@
     { "path": "./packages/experimental/browser-use-stagehand-native" },
     { "path": "./packages/api/terminal-controller/tsconfig.host.json" },
     { "path": "./packages/client/ui-sidebar-documentpreview/tsconfig.host.json" },
+    { "path": "./packages/client/ui-hosted-chat/tsconfig.host.json" },
     { "path": "./packages/client/ui-sidebar-browser/tsconfig.host.json" },
     { "path": "./packages/client/ui-settings-general/tsconfig.host.json" },
 

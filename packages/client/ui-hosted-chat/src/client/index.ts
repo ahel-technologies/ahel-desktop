@@ -11,6 +11,7 @@
  * and that follow have settled it shows only the New chat draft (./scope.ts).
  * Only the hosted overlay (packages/bundle/web-app/hosted/chat.patch.yml)
  * mounts this package; the desktop and plain web profiles keep their sidebar.
+ * The theme follows the ahel.ai account theme cookie (./account-theme.ts).
  */
 import type { Context } from '@ahel/cordis'
 import type { Issue, IssueRunState } from '@ahel/dsh-ahel-account/types'
@@ -27,6 +28,7 @@ import type {} from '@ahel/dsh-client-ui-settings/client'
 import type {} from '@ahel/dsh-api-session-controller/client'
 import type {} from '@ahel/dsh-client-ui-workspace/client'
 import type { HostedShellInjected } from './contract.ts'
+import { followAccountTheme } from './account-theme.ts'
 import { HostedAside } from './Aside.tsx'
 import { BrandHomeLink, HostedGreeting, HostedHeroMark, HostedSubtitle } from './Hero.tsx'
 import { HostedRail } from './Rail.tsx'
@@ -144,6 +146,7 @@ export function mergeWaiting(pages: readonly (readonly Issue[])[]): readonly Iss
  */
 export function apply(ctx: Context): void {
   ctx.effect(() => ctx.locale.register(NS, { en, zh }), 'ui-hosted-chat: dictionaries')
+  ctx.effect(() => followAccountTheme(ctx), 'ui-hosted-chat: the ahel.ai account theme')
 
   const account = relay<AhelAccountView | null>(null)
   const summary = relay<TeamSummaryState>(EMPTY_SUMMARY)

@@ -29,6 +29,10 @@ A Host launched with a token reports `hosted` in the account view. Its Sign in o
 
 The gateway picks the Host's browser launch token (`DSH_BROWSER_TOKEN`, 32 random bytes in base64url) and puts it in the pod spec, so it never reads pod logs. On the bare mount it sends `GET /?token=<token>` with `Host: ahel.ai` (after stripping `/chat`); the Host answers `303 ./` with a `dsh-auth-<hash>` cookie (`Path=/`, HttpOnly, SameSite=Strict, no `Secure`), which the gateway rewrites to `Path=/chat/; Secure; SameSite=Lax`. The token survives a container restart (same pod spec), and so does the cookie, because its signing secret lives in `/data/.credentials.yaml`. The proxy preserves `Host`, strips `/chat`, forwards WebSocket upgrades (`/api/remote.mux`) and redirects `/chat` to `/chat/` ([reverse-proxy guide](../user/guide/public-deployments.md)). The Host still prints `dsh web: <public url>?token=...` on stdout.
 
+## Theme
+
+The chat follows the ahel.ai account theme, the `ahel.theme` cookie (`light`, `dark` or `system`; Path=/, Domain=.ahel.ai, readable by page script) that ahel.ai and app.ahel.ai write from Settings > Appearance. The `ui-hosted-chat` Host half adds a boot script after ui-theme's, so the first paint already uses the cookie's palette; the theme service starts from it, and the chat re-reads the cookie when the tab regains focus. A theme change made in the chat (the rail's Theme row or Chat settings > Appearance) writes the same cookie, with the Domain attribute only on ahel.ai hosts, and the `ahel.theme` localStorage key of the ahel.ai origin. Without the cookie the chat keeps `system`; a non-loopback page does not store the chat's own theme setting.
+
 ## Probes
 
 Every page answers `401` without the cookie, so a Kubernetes `httpGet` probe on `/` fails. The port opens a moment before the routes are mounted, and `/` answers `404` in that window, so a listening port does not mean the Host serves.
