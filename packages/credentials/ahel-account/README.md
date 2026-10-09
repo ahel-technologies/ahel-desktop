@@ -43,6 +43,8 @@ The ahel.ai account for Ahel Desktop. One browser sign-in stores one OAuth grant
 | `launchTokenEnv` | `AHEL_LAUNCH_TOKEN` | Environment variable holding a launch grant from ahel.ai's hosted chat; empty disables it |
 | `hostedSignInPath` | `/chat/` | Path on `appOrigin` a launched Host's Sign in reloads |
 | `hostedSignOutPath` | `/app/settings` | Path on `appOrigin` a launched Host's Sign out opens |
+| `hostedReadyPath` | `/_ahel/ready` | Exact web-server path a launched Host answers readiness on; empty serves none |
+| `hostedReadyCeilingMs` | `20000` | Milliseconds after load at which a launched Host counts as ready while its launch grant is unsettled |
 
 The service is `ctx.ahelAccount`; the Remote namespace `ahelAccount` exposes `state()`, `signIn()`, `cancelSignIn(id)`, `signOut()`, `profile()` and the `watch` stream. Host code also has `accessToken()` (refreshes on demand), `revalidate()` (forces one refresh after a 401), `setOpener(fn)` and `reportBilling(billing)`. `dsh-llm-ahel` calls `reportBilling` with each metered request's hold and settle; the view's `billing` then carries the latest one (phase, Session, model, held, charged and balance cents) to `watch` subscribers without emitting `ahel-account/changed`. Signing out or choosing another workspace clears it.
 
@@ -51,6 +53,8 @@ Sign-in copies the `ahel` CLI flow: discovery, a loopback listener on `127.0.0.1
 ### Launch grant (hosted chat)
 
 ahel.ai's hosted chat starts one Host per person and hands it the person's sign-in through `AHEL_LAUNCH_TOKEN`: JSON `{"client_id": "...", "refresh_token": "..."}` for a first-party client ahel.ai minted. At load the plugin removes the variable from `process.env`, redeems the refresh token once at the discovered token endpoint (with `resource`), reads the profile and stores the result under `AHEL_ACCOUNT`, replacing a grant an earlier pod left on the volume. ahel.ai rotates refresh tokens, so the copy in the process environment stops working after that first refresh. `state()` and every bearer read wait for this step. A malformed or refused token is logged without its value and leaves the account signed out.
+
+A launched Host whose composition has `webServer` also serves `GET hostedReadyPath` without the browser cookie: `503 {"ready":false}` until the launch grant was stored or refused, then `200 {"ready":true,"reason":"account"}`, or `200` with `"reason":"ceiling"` once `hostedReadyCeilingMs` passed first. Other methods answer `405`; no answer carries account data. ahel.ai's chat gateway keeps the person on its starting page until this route answers `200`, so the first page load already shows the account.
 
 A Host launched this way reports `hosted: { signInUrl, signOutUrl }` in the view. `signIn()` and `signOut()` refuse, because the person's ahel.ai session owns the grant; the client sends Sign in to `signInUrl` (a fresh launch) and Sign out to `signOutUrl`. Hosts started without the variable report `hosted: null`.
 

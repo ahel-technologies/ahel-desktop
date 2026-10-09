@@ -34,6 +34,7 @@ import { Remote, RemoteError, TypertRemoteService } from '@ahel/dsh-typert-proto
 import { AhelCatalog } from './catalog.ts'
 import { AhelTeam } from './team.ts'
 import { AhelIssues } from './issues.ts'
+import { hostedReadiness, serveHostedReady } from './hosted-ready.ts'
 import * as chatWorkspace from './chat-workspace.ts'
 import * as defaultModel from './default-model.ts'
 import {
@@ -107,6 +108,13 @@ export interface Config {
   hostedSignInPath?: string
   /** Path on `appOrigin` a launched Host's Sign out opens. */
   hostedSignOutPath?: string
+  /**
+   * Exact path a launched Host's web server answers `200` on once the launch grant settled, `503` before
+   * (`./hosted-ready.ts`); the chat gateway's pod probe reads it. Empty serves no route.
+   */
+  hostedReadyPath?: string
+  /** Milliseconds after load at which a launched Host counts as ready even while its launch grant is unsettled. */
+  hostedReadyCeilingMs?: number
 }
 
 /** Validated configuration. */
@@ -125,6 +133,8 @@ export const Config = Schema.object({
   launchTokenEnv: Schema.string().pattern(/^([A-Za-z_][A-Za-z0-9_]*)?$/).default('AHEL_LAUNCH_TOKEN'),
   hostedSignInPath: Schema.string().pattern(/^\//).default('/chat/?signin=1'),
   hostedSignOutPath: Schema.string().pattern(/^\//).default('/app/settings'),
+  hostedReadyPath: Schema.string().pattern(/^(\/[^/?#]+)*$/).default('/_ahel/ready'),
+  hostedReadyCeilingMs: Schema.number().min(0).max(600_000).default(20_000),
 })
 
 /** Opens the authorize URL in the person's browser (Electron `shell.openExternal`). */
@@ -243,6 +253,9 @@ export class AhelAccount extends TypertRemoteService {
         return false
       })
       this.launched = adopted.then(() => undefined)
+      if (resolved.hostedReadyPath !== '') {
+        serveHostedReady(ctx, resolved.hostedReadyPath, hostedReadiness(ctx, this.launched, resolved.hostedReadyCeilingMs))
+      }
     }
     // A grant kept from an earlier boot carries the profile read at its sign-in; read it again once.
     void adopted.then(fresh => fresh ? undefined : this.refreshProfile()).catch((error: unknown) => {

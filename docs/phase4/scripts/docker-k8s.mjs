@@ -4,7 +4,8 @@
 // persistentvolumeclaims (get, create) in one namespace. A pod becomes a
 // container on one bridge network with the pod spec's env, user, memory and
 // CPU limits, a read-only root and a /tmp tmpfs; a claim becomes a named
-// volume. Readiness is the pod's tcpSocket probe: the port accepts.
+// volume. Readiness is the pod's probes: the port accepts and, for an image
+// that sets CHAT_READY_PATH, that path answers 200 (the startup probe).
 import http from 'node:http'
 import net from 'node:net'
 
@@ -21,6 +22,15 @@ function docker(method, path, body) {
     })
     req.on('error', reject)
     req.end(payload)
+  })
+}
+
+function answers200(ip, port, path) {
+  return new Promise((resolve) => {
+    const req = http.request({ host: ip, port, path, timeout: 1000 }, (res) => { res.resume(); resolve(res.statusCode === 200) })
+    req.on('timeout', () => req.destroy())
+    req.on('error', () => resolve(false))
+    req.end()
   })
 }
 
@@ -102,8 +112,9 @@ export function dockerK8sClient({ network, prefix, stubDir, extraEnv }) {
         const info = res.json
         const ip = info.NetworkSettings?.Networks?.[network]?.IPAddress || undefined
         const running = info.State?.Running === true
-        const ready = running && ip ? await accepts(ip, 3080) : false
         const env = (info.Config?.Env ?? []).map((kv) => { const at = kv.indexOf('='); return { name: kv.slice(0, at), value: kv.slice(at + 1) } })
+        const readyPath = env.find((e) => e.name === 'CHAT_READY_PATH')?.value
+        const ready = running && ip ? await accepts(ip, 3080) && (!readyPath || await answers200(ip, 3080, readyPath)) : false
         return {
           status: 200,
           json: {

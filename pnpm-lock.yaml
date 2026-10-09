@@ -7507,6 +7507,9 @@ importers:
       '@ahel/dsh-credentials-local':
         specifier: workspace:*
         version: link:../credentials-local
+      '@ahel/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
       '@ahel/dsh-llm':
         specifier: workspace:*
         version: link:../../llm/llm

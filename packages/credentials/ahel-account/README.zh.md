@@ -43,6 +43,8 @@ Ahel Desktop 的 ahel.ai 账户。一次浏览器登录在凭据引用 `AHEL_ACC
 | `launchTokenEnv` | `AHEL_LAUNCH_TOKEN` | 保存 ahel.ai 网页对话启动授权的环境变量；为空则停用 |
 | `hostedSignInPath` | `/chat/` | 由网页对话启动的 Host 点击登录时重新加载的 `appOrigin` 路径 |
 | `hostedSignOutPath` | `/app/settings` | 由网页对话启动的 Host 点击退出时打开的 `appOrigin` 路径 |
+| `hostedReadyPath` | `/_ahel/ready` | 由网页对话启动的 Host 在 Web 服务器上回答就绪状态的精确路径；为空则不提供 |
+| `hostedReadyCeilingMs` | `20000` | 加载后经过这么多毫秒，即使启动授权尚未完成，由网页对话启动的 Host 也视为就绪 |
 
 服务为 `ctx.ahelAccount`；Remote 命名空间 `ahelAccount` 公开 `state()`、`signIn()`、`cancelSignIn(id)`、`signOut()`、`profile()` 与 `watch` 流。Host 代码还可使用 `accessToken()`（按需刷新）、`revalidate()`（401 后强制刷新一次）、`setOpener(fn)` 与 `reportBilling(billing)`。`dsh-llm-ahel` 用每次计量请求的冻结与结算调用 `reportBilling`；视图的 `billing` 随后把最近一次（阶段、会话、模型、冻结、扣费与余额的美分数）送给 `watch` 订阅者，不触发 `ahel-account/changed`。退出登录或选择其他工作区会清除它。
 
@@ -51,6 +53,8 @@ Ahel Desktop 的 ahel.ai 账户。一次浏览器登录在凭据引用 `AHEL_ACC
 ### 启动授权（网页对话）
 
 ahel.ai 的网页对话为每个人启动一个 Host，并通过 `AHEL_LAUNCH_TOKEN` 交付此人的登录：ahel.ai 为第一方客户端签发的 JSON `{"client_id": "...", "refresh_token": "..."}`。加载时插件从 `process.env` 中移除该变量，在发现的令牌端点（带 `resource`）兑换一次刷新令牌，读取 profile，并把结果保存在 `AHEL_ACCOUNT` 下，替换先前 pod 留在卷上的授权。ahel.ai 会轮换刷新令牌，因此进程环境中的副本在首次刷新后即失效。`state()` 与每次 bearer 读取都会等待这一步。格式错误或被拒绝的令牌会在不记录其值的情况下写入日志，账户保持未登录。
+
+组合中带有 `webServer` 的已启动 Host 还会在不需要浏览器 cookie 的情况下提供 `GET hostedReadyPath`：在启动授权被保存或被拒绝之前回答 `503 {"ready":false}`，之后回答 `200 {"ready":true,"reason":"account"}`；若先到达 `hostedReadyCeilingMs`，则回答带 `"reason":"ceiling"` 的 `200`。其他方法回答 `405`；任何回答都不携带账户数据。ahel.ai 的对话网关会让此人停留在启动页面，直到该路由回答 `200`，因此首次页面加载即已显示账户。
 
 以这种方式启动的 Host 在视图中报告 `hosted: { signInUrl, signOutUrl }`。`signIn()` 与 `signOut()` 会拒绝，因为授权归此人的 ahel.ai 会话所有；客户端把登录发送到 `signInUrl`（重新启动），把退出发送到 `signOutUrl`。未带该变量启动的 Host 报告 `hosted: null`。
 
