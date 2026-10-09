@@ -28,6 +28,7 @@
   "license": "MIT",
   "peerDependencies": {
     "@ahel/cordis": "workspace:~",
+    "@ahel/dsh-agent": "workspace:*",
     "@ahel/dsh-compaction": "workspace:*",
     "@ahel/dsh-llm": "workspace:*",
     "@ahel/dsh-session": "workspace:*",
@@ -46,6 +47,7 @@
     "@ahel/dsh-session": "workspace:*",
     "@ahel/dsh-session-projection": "workspace:*",
     "@ahel/dsh-token-meter": "workspace:*",
-    "@ahel/dsh-compaction-image-offload": "workspace:*"
+    "@ahel/dsh-compaction-image-offload": "workspace:*",
+    "@ahel/dsh-agent": "workspace:*"
   }
 }

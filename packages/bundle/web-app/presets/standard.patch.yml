@@ -31,11 +31,18 @@
                 name: '@ahel/dsh-compaction-basic'
               - id: command-compact
                 name: '@ahel/dsh-command-compact'
+              # earlierResults: before each step, a result over 8 KB the model
+              # already saw is cut to its first 2 KB plus a one-line note;
+              # DSH_TRIM_EARLIER_TOOL_RESULTS=off turns it off.
               - id: tool-result-pruner
                 name: '@ahel/dsh-compaction-tool-result-pruner'
                 config:
                   thresholdChars: 8192
                   headChars: 4096
                   tailChars: 1024
+                  earlierResults:
+                    enabled: !!js "process.env.DSH_TRIM_EARLIER_TOOL_RESULTS !== 'off'"
+                    thresholdChars: 8192
+                    keepChars: 2048
           - id: tool-ask-user
             name: '@ahel/dsh-tool-ask-user'

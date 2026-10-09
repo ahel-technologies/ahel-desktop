@@ -33,7 +33,7 @@ declare module '@ahel/dsh-api-session-controller/client' {
 
 /** One chat event a run reads: tool calls count as steps, the last assistant message is the summary. */
 export interface RunEntry {
-  readonly event: { readonly type: string; readonly data?: unknown }
+  readonly event: { readonly type: string; readonly data?: unknown; readonly surfaceOp?: unknown }
 }
 
 /** The part of a chat a run reads and drives. */
@@ -105,11 +105,12 @@ export function cardWait(structuredContent: unknown): RunWait | null {
 /**
  * What the chat's latest card waits for.
  * @param entries - the chat's event window.
- * @returns the wait of the last tool result that rendered a card, or null.
+ * @returns the wait of the last original tool result that rendered a card, or null.
  */
 export function lastCardWait(entries: readonly RunEntry[]): RunWait | null {
   for (const { event } of [...entries].reverse()) {
-    if (event.type !== 'tool/result') continue
+    // A replacement (compaction, earlier-result trim) re-states an older card.
+    if (event.type !== 'tool/result' || typeof event.surfaceOp === 'object') continue
     const meta = (event.data as { meta?: { mcpApp?: { structuredContent?: unknown } } } | undefined)?.meta
     if (meta?.mcpApp === undefined) continue
     return cardWait(meta.mcpApp.structuredContent)

@@ -100,9 +100,10 @@ describe('tool-result pruning configuration', () => {
     const raw = { thresholdChars: 100, headChars: 20, tailChars: 10 }
     const resolved = resolveConfig(raw)
     raw.headChars = 1
-    expect(resolved).toEqual({ thresholdChars: 100, headChars: 20, tailChars: 10 })
+    const earlierResults = { enabled: false, thresholdChars: 8192, keepChars: 2048 }
+    expect(resolved).toEqual({ thresholdChars: 100, headChars: 20, tailChars: 10, earlierResults })
     expect(Object.isFrozen(resolved)).toBe(true)
-    expect(DEFAULTS).toEqual({ thresholdChars: 8192, headChars: 4096, tailChars: 1024 })
+    expect(DEFAULTS).toEqual({ thresholdChars: 8192, headChars: 4096, tailChars: 1024, earlierResults })
     expect(Object.isFrozen(DEFAULTS)).toBe(true)
   })
 
@@ -113,6 +114,10 @@ describe('tool-result pruning configuration', () => {
       [{ tailChars: 1.5 }, /tailChars .* non-negative integer/],
       [{ thresholdChars: 50, headChars: 20, tailChars: 20 }, /headChars \+ marker \+ tailChars/],
       [{ threshold: 10 }, /unknown key "threshold"/],
+      [{ earlierResults: { keep: 1 } }, /unknown earlierResults key "keep"/],
+      [{ earlierResults: { thresholdChars: 0 } }, /earlierResults.thresholdChars .* positive integer/],
+      [{ earlierResults: { keepChars: -1 } }, /earlierResults.keepChars .* non-negative integer/],
+      [{ earlierResults: { thresholdChars: 100, keepChars: 50 } }, /earlierResults.keepChars \+ note/],
     ] as Array<[unknown, RegExp]>
     for (const [config, pattern] of bad) {
       expect(() => resolveConfig(config as ToolResultPruneConfig)).toThrow(pattern)

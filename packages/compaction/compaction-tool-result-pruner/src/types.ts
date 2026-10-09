@@ -9,6 +9,25 @@ export interface ToolResultPruneConfig {
   headChars?: number
   /** Maximum trailing Unicode code points retained. Defaults to `1024`. */
   tailChars?: number
+  /** Before each step, trim large results the model already saw. Off unless enabled. */
+  earlierResults?: EarlierResultTrimConfig
+}
+
+/** Before-step trimming of large tool results from earlier steps. */
+export interface EarlierResultTrimConfig {
+  /** Trim seen results before every step. Defaults to `false`. */
+  enabled?: boolean
+  /** Trim when a result's text exceeds this many Unicode code points. Defaults to `8192`. */
+  thresholdChars?: number
+  /** Leading Unicode code points kept ahead of the trim note. Defaults to `2048`. */
+  keepChars?: number
+}
+
+/** Validated, detached, deeply immutable earlier-result trimming policy. */
+export interface ResolvedEarlierResultTrimConfig {
+  readonly enabled: boolean
+  readonly thresholdChars: number
+  readonly keepChars: number
 }
 
 /** Validated, detached, deeply immutable pruning configuration. */
@@ -16,6 +35,7 @@ export interface ResolvedConfig {
   readonly thresholdChars: number
   readonly headChars: number
   readonly tailChars: number
+  readonly earlierResults: ResolvedEarlierResultTrimConfig
 }
 
 /** Cited source event and size accounting for one landed surface replacement. */

@@ -141,3 +141,27 @@ it('leaves other model families unmarked, so their automatic prefix caching sees
   expect(JSON.stringify(proxy.bodies[0]!.body)).not.toContain('cache_control')
   expect(proxy.bodies[0]!.headers['x-session-id']).toBe('session-42')
 })
+
+it('writes a cache entry ahead of the fresh tool results, so a request that trims them still reads the history before', async () => {
+  const proxy = await recordingProxy()
+  const ctx = await signedIn(proxy.baseURL)
+  const model = MODELS[0]!
+  const [, second] = steps(model)
+  const callId = 'call_2' as ToolCallId
+  const call = createAssistantMessage({ content: [{ type: 'text', text: 'Searching too.' }, { type: 'tool-call', id: callId, name: 'search', arguments: '{"query":"x"}' }], source: { provider: 'ahel', model } })
+  const fresh = createToolResultMessage({ callId, content: [{ type: 'text', text: 'found' }], isError: false })
+  // The third request trims the first result the model already saw.
+  const trimmed = createToolResultMessage({ callId: 'call_1' as ToolCallId, content: [{ type: 'text', text: '# Readme\n\n[trimmed: 1 KB more; call the tool again for the full result]' }], isError: false })
+  await send(ctx, model, second)
+  await send(ctx, model, [...second.slice(0, 3), trimmed, call, fresh])
+  type Messages = Array<{ role: string; content: unknown }>
+  const [b, c] = proxy.bodies.map(entry => entry.body.messages as Messages) as [Messages, Messages]
+
+  // Step 2 marks the user turn before its fresh result; step 3 is identical up to that marker.
+  const marked = b.findIndex((message, index) => index > 0 && index < b.length - 1 && JSON.stringify(message).includes('cache_control'))
+  expect(b[marked]!.role).toBe('user')
+  expect(unmarked(c.slice(0, marked + 1))).toEqual(unmarked(b.slice(0, marked + 1)))
+  // Step 3 marks the assistant text that issued its fresh call.
+  expect(c[4]!.content).toEqual([expect.objectContaining({ text: 'Searching too.', cache_control: { type: 'ephemeral' } })])
+  expect(JSON.stringify(c).split('"cache_control"').length - 1).toBeLessThanOrEqual(4)
+})

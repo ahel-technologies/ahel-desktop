@@ -3708,6 +3708,19 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'pruned content, or `null` when the text is within budget.',
       },
       {
+        signature: 'trimContent(blocks: readonly ContentBlock[]): ContentBlock[] | null',
+        description: 'Keep the first `earlierResults.keepChars` text code points of an over-threshold all-text result and end it with trimNote.',
+        parameters: [{ name: 'blocks', description: 'original tool-result content.' }],
+        returns: 'trimmed content, or `null` when the result is within the threshold or carries a non-text block.',
+      },
+      {
+        signature: 'trimEarlierResults(session: Session): PruneResult',
+        description: 'Trim every large tool result the model already saw: a `tool/result` surface node before the latest `assistant/message` node. Results after it are the next request\'s fresh input and stay whole. Error results, replacements, results with non-text blocks, and pending question or confirm cards are never trimmed. Each trim is one logged single-node replacement, preceded by its `compaction/prune` shadow price, that changes only the message content; the original event and its card stay in the log. A replacement is fixed once written, so every later request sends the same bytes for that result.',
+        parameters: [{ name: 'session', description: 'session whose current surface is trimmed.' }],
+        returns: 'landed replacements and aggregate Unicode-code-point savings.',
+        throws: ['when the session rejects a replacement; replacements committed earlier in the pass remain durable.'],
+      },
+      {
         signature: 'pruneSession(session: Session): PruneResult',
         description: 'Prune every over-budget tool result from one stable current-surface snapshot. Each replacement preserves the complete event data except for `content`, cites the shadowed node so replay can recover the replacement input, and is immediately preceded by a `compaction/prune` shadow-price event pricing the shadowed node through the injected token meter, so pure consumers can subtract it without per-node state.',
         parameters: [{ name: 'session', description: 'session whose current surface is rewritten.' }],

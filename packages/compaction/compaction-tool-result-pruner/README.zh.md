@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-compaction-tool-result-pruner` 防止超大工具输出填满上下文窗口。压缩触发条件满足后，它会把超出预算的文本替换为长度受限的头部、简短的「middle pruned」标记与长度受限的尾部；未达到压力阈值的对话保持不变。完整原始结果仍保留在会话日志中，可供精确回放与检查。修剪不发起模型调用，并可能充分缓解 token 压力，使压缩跳过摘要。字符预算只能近似 token 用量；token meter 负责判定压力是否得到缓解。
+`dsh-compaction-tool-result-pruner` 防止超大工具输出填满上下文窗口。压缩触发条件满足后，它会把超出预算的文本替换为长度受限的头部、简短的「middle pruned」标记与长度受限的尾部；未达到压力阈值的对话保持不变。完整原始结果仍保留在会话日志中，可供精确回放与检查。修剪不发起模型调用，并可能充分缓解 token 压力，使压缩跳过摘要。字符预算只能近似 token 用量；token meter 负责判定压力是否得到缓解。它还可以选择在每一步之前修剪模型已经看过的大型结果，使多步回合不再完整重发它们。
 
 ## 目录
 
@@ -52,12 +52,19 @@ kind: "package-reference"
 | `thresholdChars` | `8192` | 合并文本超过此 Unicode 码点数时修剪。 |
 | `headChars` | `4096` | 保留的开头 Unicode 码点数。 |
 | `tailChars` | `1024` | 保留的末尾 Unicode 码点数。 |
+| `earlierResults.enabled` | `false` | 在每一步之前修剪模型已经看过的大型结果。 |
+| `earlierResults.thresholdChars` | `8192` | 已看过的结果文本超过此 Unicode 码点数时修剪。 |
+| `earlierResults.keepChars` | `2048` | 修剪后的结果在说明行之前保留的开头 Unicode 码点数。 |
 
 字符数以 Unicode 码点计，因此切片绝不会拆分 emoji 对，但多字符字素仍可能被切断。头部加标记加尾部之和必须不超过阈值，因此有效配置可以修剪每个超出预算的结果，不会增长或重复改写。未知设置会导致插件在构造时被拒绝。
 
 ### 修剪何时运行
 
 修剪只在压缩触发条件满足后运行：`dsh-compaction-basic` 在压力或溢出确认后、选择要压缩的内容之前调用它。低于压力时不会修剪任何内容，修剪本身也不发起模型调用。
+
+### 修剪模型已经看过的结果
+
+启用 `earlierResults.enabled` 后，修剪器在每一步之前通过 `agent/pre-step` 运行，与压缩压力无关。结果之后出现助手消息时，即视为模型已看过；最新助手消息之后的结果是下一次请求的新输入，始终完整发送。文本超过 `earlierResults.thresholdChars` 的已看过结果保留其前 `earlierResults.keepChars` 个码点，后接 `[trimmed: X KB more; call the tool again for the full result]`。错误结果、含非文本块的结果，以及仍在向用户提问的卡片（question、approval 或 confirm 卡片，或文本中含 `interaction_id`）永远不会被修剪。每次修剪都是与压缩剪枝相同的、写入日志的单节点替换：原始事件、其卡片与 Web 对话记录保持不变。修剪只写入一次，因此之后每次请求为该结果发送的字节完全相同。Ahel 标准 preset 默认启用它；在 Host 环境中设置 `DSH_TRIM_EARLIER_TOOL_RESULTS=off` 即可关闭。
 
 -----
 
@@ -85,9 +92,9 @@ kind: "package-reference"
 
 | 文件 | 职责 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 插件入口：`ToolResultPruner` 服务、`pruneSession` / `pruneContent` / `measureContent` |
-| [`src/config.ts`](src/config.ts) | `PRUNE_MARKER`、默认值、码点计数、预算验证 |
-| [`src/types.ts`](src/types.ts) | `ToolResultPruneConfig`、`ResolvedConfig`、`PrunedEntry`、`PruneResult` |
+| [`src/index.ts`](src/index.ts) | 插件入口：`ToolResultPruner` 服务、`pruneSession` / `pruneContent` / `measureContent`、`trimEarlierResults` / `trimContent` 与 `agent/pre-step` 监听器 |
+| [`src/config.ts`](src/config.ts) | `PRUNE_MARKER`、`trimNote`、默认值、码点计数、预算验证 |
+| [`src/types.ts`](src/types.ts) | `ToolResultPruneConfig`、`EarlierResultTrimConfig`、`ResolvedConfig`、`PrunedEntry`、`PruneResult` |
 
 </details>
 
@@ -122,6 +129,20 @@ kind: "package-reference"
 #### KV Cache 影响
 
 替换较早的结果会使从第一个改变的 token 起的复用失效。当其路由、envelope 与之前的历史保持一致时，已剪枝前缀可以复用。
+
+### 已修剪的较早结果
+
+#### 模型看到的内容
+
+从结果到达后的第二次请求起，模型看到其前 `earlierResults.keepChars` 个码点以及一行 `[trimmed: X KB more; call the tool again for the full result]`，其中 X 为移除的大小，按整 KB 向上取整。紧随调用之后的那次请求仍携带完整结果。
+
+#### Token 影响
+
+每个已修剪结果在之后每一步最多花费 `earlierResults.keepChars` 个码点加说明行，而非其完整大小。
+
+#### KV Cache 影响
+
+每个结果只修剪一次，发生在交付它的请求之后的第一次请求中，此后保持字节不变。该请求复用到该结果为止的前缀并从那里重写缓存；之后的请求完整复用。具有自动前缀缓存的提供方会直接匹配到已修剪结果为止。对于 Anthropic 显式缓存，`dsh-llm-pi-ai` 会在每次请求的新结果之前写入一个额外断点，使下一次请求能找到一个在其修剪的结果之前结束的缓存条目。
 
 ## 已知限制与延期工作
 

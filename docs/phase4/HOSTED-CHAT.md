@@ -18,6 +18,7 @@
 | `CHAT_PORT` | `3080` | Listen port |
 | `CHAT_READY_PATH` | `/_ahel/ready` | Set by the image, never by the pod: the readiness path this image serves (see Probes) |
 | `DSH_HOME` | `/data` | Mount the person's volume here |
+| `DSH_TRIM_EARLIER_TOOL_RESULTS` | unset (on) | `off` sends every earlier tool result whole again instead of trimming results over 8 KB the model already saw to 2 KB ([pruner](../../packages/compaction/compaction-tool-result-pruner/README.md#trimming-results-the-model-already-saw)) |
 
 ## The launch grant
 
