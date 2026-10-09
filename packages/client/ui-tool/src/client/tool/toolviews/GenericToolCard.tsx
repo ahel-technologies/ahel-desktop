@@ -60,7 +60,7 @@ export function GenericToolCard({ toolName, block, cwd, home, openFile, inspect,
       // single-file AND carries a card, so the card expands under the path link.
       bodyRaw={singleFile || autoReview !== null ? null : model.bodyRaw}
       output={autoReview?.output ?? model.output}
-      errorSummary={autoReview?.summary ?? model.errorSummary}
+      errorSummary={autoReview?.summary ?? (model.plainFailure ? t('tool.ahel.failed') : model.errorSummary)}
       terminal={terminal}
       diff={diff}
       read={read}
