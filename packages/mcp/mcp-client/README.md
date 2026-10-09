@@ -58,7 +58,7 @@ Add one entry per server; nothing else is required. After the harness starts, th
 | `serverName` | required | Namespace for the server's tool names; `[A-Za-z0-9_-]{1,32}`, unique inside one registration scope |
 | `command` / `args` / `env` / `cwd` | — | stdio: executable, arguments, extra env merged over scrubbed ambient env, working directory |
 | `url` / `headers` | — | streamable-http: endpoint URL and extra request headers |
-| `auth.credentialRef` | — | streamable-http: credential reference holding an OAuth grant (e.g. `AHEL_ACCOUNT`); the server connects only while it is set, sends its bearer, refreshes it within `auth.refreshSkewMs` (60 s) or after a 401, and drops its tools when the reference is removed; `auth.workspaceParam` sends the grant's selected workspace as that query parameter; a call for an Agent sends the workspace the `mcp-client/workspace` event names for it instead, for example the calling chat's |
+| `auth.credentialRef` | — | streamable-http: credential reference holding an OAuth grant (e.g. `AHEL_ACCOUNT`); the server connects only while it is set, sends its bearer, refreshes it within `auth.refreshSkewMs` (60 s) or after a 401, and drops its tools when the reference is removed; `auth.workspaceParam` sends the grant's selected workspace as that query parameter, and selecting another workspace keeps the connection and its running calls; a call for an Agent sends the workspace the `mcp-client/workspace` event names for it instead, for example the calling chat's |
 | `toolCallTimeoutMs` | `60,000` | Timeout per `tools/call` or resource request |
 | `maxInstructionBytes` | `32,768` | Maximum UTF-8 bytes of server instructions including attribution; an oversized value rejects the connection |
 | `failOnStartupError` | `false` | Reject plugin activation when the initial connection or tool synchronization fails |
@@ -216,7 +216,6 @@ These limits describe what you cannot do with this plugin and when it needs oper
 - **Reconnect handles failed negotiation and transport close** — a failed initial probe or crashed stdio child uses the configured reconnect budget. Once HTTP is connected, request failures use the SDK transport's recovery rather than respawning the connection.
 - **Image is the only durable rich-result bridge** — PNG, JPEG, WebP, and GIF enter Native context after exact capability proof. Audio and embedded-resource payloads remain execution-local with explicit diagnostics, while resource links preserve only their name and URI as text.
 - **Invalid protocol results or output schemas fail through the SDK** — the bridge does not accept legacy `toolResult` substitutes or bypass advertised schema validation.
-- **A new selected workspace reconnects a `workspaceParam` server** — calls in flight on the old connection fail, and tools are listed from the newly selected workspace while calls that `mcp-client/workspace` binds keep their own workspace ([#49](https://github.com/ahel-technologies/ahel-desktop/issues/49)).
 - **Task-required MCP tools are rejected at call time** — a tool that requires the task-based execution extension throws instead of bridging; the extension is not implemented.
 
 <a id="dev-note"></a>

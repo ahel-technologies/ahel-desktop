@@ -49,16 +49,24 @@ export function assertTransportAllowed(config: Pick<Config, 'transport' | 'serve
   }
 }
 
+/** Grant inputs of a Streamable HTTP server configured with `auth`. */
+export interface GrantTransport {
+  /** Bearer source read per request. */
+  authProvider: AuthProvider
+  /** The grant's currently selected workspace, read per request outside a bound call. */
+  selectedWorkspace: () => string | undefined
+}
+
 /**
  * Create an MCP transport from the resolved plugin config.
  *
  * @param config - Resolved plugin config discriminated on `transport`.
- * @param authProvider - bearer source for Streamable HTTP servers configured with `auth`.
+ * @param grant - bearer source and selected workspace for Streamable HTTP servers configured with `auth`.
  * @returns A connected-ready MCP Transport (stdio or Streamable HTTP); with `auth.workspaceParam`, each
- *   request of a call run by `inWorkspace` carries that call's workspace.
+ *   request of a call run by `inWorkspace` carries that call's workspace and every other request the selected one.
  * @throws McpTransportRefusedError for stdio when `DSH_MCP_STDIO=off`.
  */
-export function createTransport(config: Config, authProvider?: AuthProvider): Transport {
+export function createTransport(config: Config, grant?: GrantTransport): Transport {
   switch (config.transport) {
     case 'stdio':
       assertTransportAllowed(config)
@@ -73,8 +81,10 @@ export function createTransport(config: Config, authProvider?: AuthProvider): Tr
         new URL(config.url),
         {
           requestInit: { headers: config.headers },
-          ...authProvider === undefined ? {} : { authProvider },
-          ...config.auth?.workspaceParam === undefined ? {} : { fetch: workspaceFetch(config.auth.workspaceParam) },
+          ...grant === undefined ? {} : { authProvider: grant.authProvider },
+          ...config.auth?.workspaceParam === undefined
+            ? {}
+            : { fetch: workspaceFetch(config.auth.workspaceParam, grant?.selectedWorkspace) },
         },
       )
   }

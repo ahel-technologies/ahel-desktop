@@ -23,7 +23,7 @@ import type { ReconnectConfig, ResolvedReconnectPolicy } from './connection.ts'
 import { registerServerContext } from './server-context.ts'
 import { oauthGrantAuthProvider, readOAuthGrant } from './oauth.ts'
 import { assertTransportAllowed } from './transport.ts'
-import type { AuthProvider } from '@modelcontextprotocol/client'
+import type { GrantTransport } from './transport.ts'
 // Type import that also declaration-merges `ctx.tools` onto Context.
 import type { ToolExecution } from '@ahel/dsh-tools'
 
@@ -141,7 +141,7 @@ export interface GrantAuthConfig {
   /** Deadline for one token-refresh request in milliseconds. */
   refreshTimeoutMs: number
   /**
-   * Query parameter that carries the grant's selected workspace; the server reconnects when the selection changes.
+   * Query parameter that carries the grant's selected workspace on every request; a selection change keeps the connection.
    * A call for an Agent sends the workspace `mcp-client/workspace` names for it instead, when one does.
    */
   workspaceParam?: string
@@ -225,7 +225,9 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
 /**
  * Hold one connection session while the configured reference stores a grant.
  * Presence is re-read on every committed change to that reference, so a
- * sign-in connects and a sign-out disposes the session and its tools.
+ * sign-in connects and a sign-out disposes the session and its tools. A new
+ * selected workspace keeps the session: requests outside a bound call carry
+ * the selection read at the latest change.
  */
 function applyGrantGate(ctx: Context, config: StreamableHttpConfig, auth: GrantAuthConfig, reconnect: ResolvedReconnectPolicy): void {
   const ref = credentialRef(auth.credentialRef)
@@ -235,24 +237,20 @@ function applyGrantGate(ctx: Context, config: StreamableHttpConfig, auth: GrantA
       requestTimeoutMs: auth.refreshTimeoutMs,
     })
     let session: Fiber | undefined
-    let sessionUrl: string | undefined
+    let selected: string | undefined
+    const selectedWorkspace = (): string | undefined => selected
     let queue = Promise.resolve()
     const sync = (): void => {
       queue = queue.then(async () => {
         const grant = await readOAuthGrant(authCtx.credentials, ref)
-        const url = grant === undefined ? undefined : endpointFor(config.url, auth.workspaceParam, grant.workspace)
-        // A new selected workspace reconnects: calls in flight on the old session fail, and tools are
-        // listed from the new workspace while calls bound by `mcp-client/workspace` keep their own (#49).
-        if (session !== undefined && url !== sessionUrl) {
+        selected = grant?.workspace
+        if (session !== undefined && grant === undefined) {
           const stopping = session
           session = undefined
-          sessionUrl = undefined
           await stopping.dispose()
         }
-        if (url !== undefined && session === undefined) {
-          const sessionConfig = { ...config, url }
-          sessionUrl = url
-          session = authCtx.plugin({ name: 'mcp-client-session', apply: (sessionCtx: Context) => connect(sessionCtx, sessionConfig, reconnect, authProvider) })
+        if (grant !== undefined && session === undefined) {
+          session = authCtx.plugin({ name: 'mcp-client-session', apply: (sessionCtx: Context) => connect(sessionCtx, config, reconnect, { authProvider, selectedWorkspace }) })
         }
       }).catch((error: unknown) => {
         authCtx.logger.warn(`mcp-client(${config.serverName}): ${auth.credentialRef} could not be read: ${String(error)}`)
@@ -264,28 +262,14 @@ function applyGrantGate(ctx: Context, config: StreamableHttpConfig, auth: GrantA
 }
 
 /**
- * The server URL for one grant: the selected workspace rides as a query parameter when configured.
- * @param base - configured server URL.
- * @param param - query parameter name, or undefined to send none.
- * @param workspace - the grant's selected workspace.
- * @returns the URL to connect.
- */
-function endpointFor(base: string, param: string | undefined, workspace: string | undefined): string {
-  if (param === undefined || workspace === undefined) return base
-  const url = new URL(base)
-  url.searchParams.set(param, workspace)
-  return url.href
-}
-
-/**
  * Connect one MCP server and publish its initial tool generation.
  * @param ctx - context owning the connection and its tool registrations.
  * @param config - resolved transport and server namespace configuration.
  * @param reconnect - resolved reconnect policy.
- * @param authProvider - bearer source for a grant-authenticated server.
+ * @param grant - bearer source and selected workspace of a grant-authenticated server.
  * @returns startup readiness after connection and initial tool discovery settle.
  */
-async function connect(ctx: Context, config: Config, reconnect: ResolvedReconnectPolicy, authProvider?: AuthProvider): Promise<void> {
+async function connect(ctx: Context, config: Config, reconnect: ResolvedReconnectPolicy, grant?: GrantTransport): Promise<void> {
   // Reserve the namespace next: a duplicate `serverName` fails THIS instance
   // at load with an actionable error and leaves the earlier instance intact.
   ctx.effect(() => {
@@ -307,7 +291,7 @@ async function connect(ctx: Context, config: Config, reconnect: ResolvedReconnec
   // The supervisor owns the client/transport generations, the reconnect
   // loop, and the live tool registrations; disposal stops reconnection,
   // quiesces in-flight work, and unregisters the current generation.
-  const connection = startConnection(ctx, config, reconnect, authProvider)
+  const connection = startConnection(ctx, config, reconnect, grant)
   registerServerContext(ctx, config.serverName, connection)
   let stopping: Promise<void> | undefined
   const dispose = (): Promise<void> => stopping ??= connection.dispose()
